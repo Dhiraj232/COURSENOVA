@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Certificate Courses - RENVOX</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #1e3a8a;
+            --secondary-color: #f3f4f6;
+            --accent-color: #10b981;
+            --text-dark: #1f2937;
+            --text-light: #6b7280;
+            --border-color: #e5e7eb;
+            --white: #ffffff;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: var(--text-dark);
+            background-color: var(--white);
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
+        }
+
+        /* ==================== NAVBAR ==================== */
+        .navbar {
+            position: sticky;
+            top: 0;
+            background-color: var(--white);
+            border-bottom: 1px solid var(--border-color);
+            z-index: 1000;
+            padding: 0.8rem 2rem;
+            transition: all 0.3s ease;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .logo {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--primary-color);
+            text-decoration: none;
+            font-family: 'Poppins', sans-serif;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-menu {
+            display: flex;
+            list-style: none;
+            gap: 2.5rem;
+            flex: 1;
+        }
+
+        .nav-menu a {
+            text-decoration: none;
+            color: var(--text-dark);
+            font-weight: 500;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .nav-menu a:after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background-color: var(--primary-color);
+            transition: width 0.3s ease;
+        }
+
+        .nav-menu a:hover:after,
+        .nav-menu a.active:after {
+            width: 100%;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn-user {
+            padding: 0.65rem 1.5rem;
+            background-color: var(--secondary-color);
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-user:hover {
+            background-color: var(--primary-color);
+            color: var(--white);
+        }
+
+        /* ==================== CONTAINER ==================== */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* ==================== PAGE HEADER ==================== */
+        .page-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #3730a3 100%);
+            color: var(--white);
+            padding: 3rem 2rem;
+            margin-bottom: 3rem;
+            text-align: center;
+        }
+
+        .page-header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-header p {
+            font-size: 1.05rem;
+            opacity: 0.9;
+        }
+
+        /* ==================== CERTIFICATE CARDS ==================== */
+        .certificates-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .cert-card {
+            background: var(--white);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .cert-card:hover {
+            border-color: var(--primary-color);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
+            transform: translateY(-6px);
+        }
+
+        .cert-card-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #3730a3 100%);
+            padding: 2rem;
+            color: var(--white);
+            text-align: center;
+        }
+
+        .cert-icon {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .cert-card-title {
+            font-size: 1.4rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .cert-card-body {
+            padding: 2rem;
+        }
+
+        .cert-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .info-label {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            font-weight: 600;
+            margin-bottom: 0.3rem;
+        }
+
+        .info-value {
+            font-size: 1rem;
+            color: var(--text-dark);
+            font-weight: 600;
+        }
+
+        .cert-description {
+            color: var(--text-light);
+            font-size: 0.95rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.6;
+        }
+
+        .cert-highlights {
+            list-style: none;
+            margin-bottom: 1.5rem;
+        }
+
+        .cert-highlights li {
+            padding: 0.5rem 0;
+            display: flex;
+            gap: 0.8rem;
+            color: var(--text-dark);
+            font-size: 0.9rem;
+        }
+
+        .cert-highlights li:before {
+            content: "✓";
+            color: var(--accent-color);
+            font-weight: bold;
+            min-width: 20px;
+        }
+
+        .cert-price {
+            background-color: var(--secondary-color);
+            padding: 1.5rem;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .price-amount {
+            font-size: 2rem;
+            color: var(--primary-color);
+            font-weight: 700;
+        }
+
+        .price-period {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        .btn-enroll {
+            width: 100%;
+            padding: 0.95rem;
+            background-color: var(--primary-color);
+            color: var(--white);
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .btn-enroll:hover {
+            background-color: #1e2d6f;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(30, 58, 138, 0.3);
+        }
+
+        .btn-enroll.free {
+            background-color: var(--accent-color);
+        }
+
+        .btn-enroll.free:hover {
+            background-color: #059669;
+        }
+
+        /* ==================== FOOTER ==================== */
+        .footer {
+            background-color: var(--text-dark);
+            color: var(--white);
+            padding: 3rem 2rem 1rem;
+            margin-top: 3rem;
+        }
+
+        .footer-bottom {
+            max-width: 1200px;
+            margin: 0 auto;
+            border-top: 1px solid #4b5563;
+            padding-top: 2rem;
+            text-align: center;
+            color: #9ca3af;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 1rem;
+            }
+
+            .page-header {
+                padding: 2rem 1rem;
+                margin-bottom: 2rem;
+            }
+
+            .page-header h1 {
+                font-size: 1.5rem;
+            }
+
+            .certificates-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .nav-menu {
+                display: none;
+            }
+
+            .cert-info {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- ==================== NAVBAR ==================== -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo">
+                <i class="fas fa-book"></i> RENVOX
+            </a>
+            <ul class="nav-menu">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="subjects.html">Subjects</a></li>
+                <li><a href="practice.html">Practice</a></li>
+                <li><a href="certificates.html" class="active">Certificates</a></li>
+                <li><a href="pricing.html">Pricing</a></li>
+            </ul>
+            <div class="nav-buttons" id="navButtons">
+                <!-- Filled by JavaScript -->
+            </div>
+        </div>
+    </nav>
+
+    <!-- ==================== PAGE HEADER ==================== -->
+    <div class="page-header">
+        <div class="container">
+            <h1>🎓 Certificate Courses</h1>
+            <p>Structured courses with assignments & verified certificates</p>
+        </div>
+    </div>
+
+    <!-- ==================== CERTIFICATES GRID ==================== -->
+    <div class="container">
+        <div class="certificates-grid" id="certGrid">
+            <!-- Filled by JavaScript -->
+        </div>
+    </div>
+
+    <!-- ==================== FOOTER ==================== -->
+    <footer class="footer">
+        <div class="footer-bottom">
+            <p>&copy; 2025 RENVOX – All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        const isLoggedIn = localStorage.getItem('renvoxUser') !== null;
+        const userName = localStorage.getItem('userName') || 'User';
+
+        const certificates = [
+            {
+                title: 'C Programming Fundamentals',
+                icon: '💻',
+                duration: '4 Weeks',
+                level: 'Beginner',
+                assignments: 8,
+                description: 'Master C programming from scratch with practical assignments and real-world projects.',
+                highlights: ['8 Assignments', 'Live Projects', '40+ Hours Content', 'Job Ready Skills'],
+                price: 799,
+                isFree: false
+            },
+            {
+                title: 'Data Structures Advanced',
+                icon: '🔗',
+                duration: '6 Weeks',
+                level: 'Intermediate',
+                assignments: 12,
+                description: 'Deep dive into data structures with interview prep and competitive programming.',
+                highlights: ['12 Assignments', 'Interview Questions', 'Coding Challenges', 'Certificate'],
+                price: 1199,
+                isFree: false
+            },
+            {
+                title: 'Web Development Bootcamp',
+                icon: '🌐',
+                duration: '8 Weeks',
+                level: 'Intermediate',
+                assignments: 10,
+                description: 'Complete web development course covering HTML, CSS, JavaScript, and React.',
+                highlights: ['10 Projects', 'Portfolio Ready', 'Job Support', 'Lifetime Access'],
+                price: 1999,
+                isFree: false
+            },
+            {
+                title: 'Python for Data Science',
+                icon: '🐍',
+                duration: '5 Weeks',
+                level: 'Intermediate',
+                assignments: 7,
+                description: 'Learn Python with NumPy, Pandas, Matplotlib for data science applications.',
+                highlights: ['7 Projects', 'Real Datasets', 'ML Basics', 'Career Ready'],
+                price: 999,
+                isFree: false
+            },
+            {
+                title: 'Database Management Systems',
+                icon: '🗄️',
+                duration: '3 Weeks',
+                level: 'Beginner',
+                assignments: 5,
+                description: 'Learn DBMS concepts with SQL and practical database design projects.',
+                highlights: ['5 Assignments', 'SQL Mastery', 'Database Design', 'Verified Cert'],
+                price: 599,
+                isFree: false
+            },
+            {
+                title: 'Learning Essentials (Free)',
+                icon: '📚',
+                duration: '2 Weeks',
+                level: 'Beginner',
+                assignments: 3,
+                description: 'Free beginner course to understand RENVOX platform and learning basics.',
+                highlights: ['3 Assignments', 'Free Access', 'Digital Certificate', 'No Credit Card'],
+                price: 0,
+                isFree: true
+            }
+        ];
+
+        function setupNavbar() {
+            const navButtons = document.getElementById('navButtons');
+            
+            if (isLoggedIn) {
+                navButtons.innerHTML = `
+                    <button class="btn-user">
+                        <i class="fas fa-user-circle"></i>
+                        <span>${userName}</span>
+                    </button>
+                    <button class="btn-user" style="background-color: #fee2e2; color: #dc2626;" onclick="logout()">Logout</button>
+                `;
+            } else {
+                navButtons.innerHTML = `
+                    <a href="login.html" class="btn-user">Login</a>
+                    <a href="signup.html" class="btn-user" style="background-color: var(--primary-color); color: white;">Sign Up</a>
+                `;
+            }
+        }
+
+        function renderCertificates() {
+            const grid = document.getElementById('certGrid');
+            
+            const html = certificates.map(cert => `
+                <div class="cert-card">
+                    <div class="cert-card-header">
+                        <div class="cert-icon">${cert.icon}</div>
+                        <h3 class="cert-card-title">${cert.title}</h3>
+                    </div>
+                    <div class="cert-card-body">
+                        <div class="cert-info">
+                            <div class="info-item">
+                                <span class="info-label">⏱️ Duration</span>
+                                <span class="info-value">${cert.duration}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">📊 Level</span>
+                                <span class="info-value">${cert.level}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">✏️ Assignments</span>
+                                <span class="info-value">${cert.assignments}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">🎓 Certification</span>
+                                <span class="info-value">Verified</span>
+                            </div>
+                        </div>
+                        
+                        <p class="cert-description">${cert.description}</p>
+                        
+                        <ul class="cert-highlights">
+                            ${cert.highlights.map(h => `<li>${h}</li>`).join('')}
+                        </ul>
+                        
+                        <div class="cert-price">
+                            ${cert.isFree ? 
+                                '<span class="price-amount">FREE</span>' :
+                                `<div class="price-amount">₹${cert.price}</div><div class="price-period">One-time payment</div>`
+                            }
+                        </div>
+                        
+                        <button class="btn-enroll ${cert.isFree ? 'free' : ''}" onclick="enrollCourse('${cert.title}')">
+                            ${isLoggedIn ? (cert.isFree ? 'Enroll Free' : 'Enroll Now') : 'Sign Up to Enroll'}
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            grid.innerHTML = html;
+        }
+
+        function enrollCourse(courseName) {
+            if (!isLoggedIn) {
+                window.location.href = 'signup.html';
+            } else {
+                alert(`Enrolled in: ${courseName}\n\nRedirecting to course page...`);
+            }
+        }
+
+        function logout() {
+            if (confirm('Logout?')) {
+                localStorage.removeItem('renvoxUser');
+                localStorage.removeItem('userName');
+                window.location.reload();
+            }
+        }
+
+        setupNavbar();
+        renderCertificates();
+    </script>
+    <!-- Navigation System -->
+    <script src="navigation.js"></script>
+</body>
+</html>

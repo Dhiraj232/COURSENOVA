@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Performance Reports - RENVOX</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- External CSS -->
+    <link rel="stylesheet" href="style.css">
+    
+    <style>
+        .reports-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            padding: 0.5rem 1rem;
+            background: var(--secondary-color);
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            color: var(--text-dark);
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .back-button:hover {
+            background: var(--primary-color);
+            color: var(--white);
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .page-description {
+            color: var(--text-light);
+            font-size: 1rem;
+        }
+
+        .filter-section {
+            background: var(--white);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .filter-label {
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .filter-select {
+            padding: 0.6rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--white);
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+        }
+
+        .report-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--white);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .stat-icon {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: var(--text-light);
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-trend {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--accent-color);
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .chart-section {
+            background: var(--white);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .chart-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 350px;
+            margin-bottom: 1.5rem;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .table-section {
+            background: var(--white);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 2rem;
+        }
+
+        .table-header {
+            background: linear-gradient(135deg, var(--primary-color), #3730a3);
+            color: var(--white);
+            padding: 1.5rem 2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+
+        .table-content {
+            overflow-x: auto;
+        }
+
+        .performance-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .performance-table thead {
+            background: var(--secondary-color);
+        }
+
+        .performance-table th {
+            padding: 1rem;
+            text-align: left;
+            color: var(--text-dark);
+            font-weight: 600;
+            border-bottom: 2px solid var(--border-color);
+        }
+
+        .performance-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-dark);
+        }
+
+        .performance-table tbody tr:hover {
+            background: var(--secondary-color);
+        }
+
+        .progress-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        .badge-excellent {
+            background: rgba(16, 185, 129, 0.1);
+            color: #059669;
+        }
+
+        .badge-good {
+            background: rgba(59, 130, 246, 0.1);
+            color: #2563eb;
+        }
+
+        .badge-fair {
+            background: rgba(245, 158, 11, 0.1);
+            color: #d97706;
+        }
+
+        .badge-poor {
+            background: rgba(239, 68, 68, 0.1);
+            color: #dc2626;
+        }
+
+        .mini-progress-bar {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .progress-bar-tiny {
+            flex: 1;
+            height: 6px;
+            background: var(--border-color);
+            border-radius: 10px;
+            overflow: hidden;
+            min-width: 100px;
+        }
+
+        .progress-fill-tiny {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color), #3730a3);
+        }
+
+        .insights-section {
+            background: linear-gradient(135deg, #f0f4ff, #f9fafb);
+            border: 2px solid var(--primary-color);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .insights-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .insights-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .insight-item {
+            background: var(--white);
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .insight-title {
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .insight-description {
+            color: var(--text-light);
+            line-height: 1.5;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-top: 1.5rem;
+        }
+
+        .btn-action {
+            padding: 0.75rem 1.5rem;
+            background: var(--primary-color);
+            color: var(--white);
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-action:hover {
+            background: #1a2d5e;
+            transform: translateY(-2px);
+        }
+
+        .btn-download {
+            background: var(--accent-color);
+        }
+
+        .btn-download:hover {
+            background: #059669;
+        }
+
+        @media (max-width: 768px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .chart-wrapper {
+                height: 250px;
+            }
+
+            .filter-section {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .filter-group {
+                width: 100%;
+            }
+
+            .filter-select {
+                width: 100%;
+            }
+
+            .performance-table {
+                font-size: 0.85rem;
+            }
+
+            .performance-table th,
+            .performance-table td {
+                padding: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- ==================== NAVBAR ==================== -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo">
+                <i class="fas fa-book"></i> RENVOX
+            </a>
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="subjects.html">Subjects</a></li>
+                <li><a href="practice.html">Practice</a></li>
+                <li><a href="certificates.html">Certificates</a></li>
+                <li><a href="pricing.html">Pricing</a></li>
+            </ul>
+            <div class="nav-buttons" id="navButtons">
+                <a href="login.html" class="btn-user">Login</a>
+                <a href="signup.html" class="btn-user" style="background-color: var(--primary-color); color: white;">Sign Up</a>
+            </div>
+            <button class="menu-toggle" id="menuToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- ==================== MAIN CONTENT ==================== -->
+    <div class="reports-container">
+        <!-- Back Button -->
+        <a href="dashboard.html" class="back-button">
+            <i class="fas fa-arrow-left"></i> Back to Dashboard
+        </a>
+
+        <!-- Header -->
+        <div class="page-header">
+            <h1 class="page-title">
+                <i class="fas fa-chart-line"></i> Performance Reports
+            </h1>
+            <p class="page-description">Comprehensive analytics and insights about your learning progress</p>
+        </div>
+
+        <!-- Filters -->
+        <div class="filter-section">
+            <div class="filter-group">
+                <label class="filter-label">Subject:</label>
+                <select class="filter-select" id="subjectFilter" onchange="updateReports()">
+                    <option value="">All Subjects</option>
+                    <option value="cpp">C Programming</option>
+                    <option value="dsa">Data Structures</option>
+                    <option value="math">Mathematics</option>
+                    <option value="physics">Physics</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">Period:</label>
+                <select class="filter-select" id="periodFilter" onchange="updateReports()">
+                    <option value="week">Last 7 Days</option>
+                    <option value="month">Last 30 Days</option>
+                    <option value="quarter">Last 3 Months</option>
+                    <option value="year">All Time</option>
+                </select>
+            </div>
+            <div class="action-buttons" style="margin-left: auto;">
+                <button class="btn-action btn-download" onclick="downloadReport()">
+                    <i class="fas fa-download"></i> Download PDF
+                </button>
+            </div>
+        </div>
+
+        <!-- Key Statistics -->
+        <div class="report-grid">
+            <div class="stat-card">
+                <div class="stat-icon">📚</div>
+                <div class="stat-label">Total Study Hours</div>
+                <div class="stat-value">48.5</div>
+                <div class="stat-trend">
+                    <i class="fas fa-arrow-up"></i> +12% from last week
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🎯</div>
+                <div class="stat-label">Average Accuracy</div>
+                <div class="stat-value">82%</div>
+                <div class="stat-trend">
+                    <i class="fas fa-arrow-up"></i> +5% improvement
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📊</div>
+                <div class="stat-label">Tests Completed</div>
+                <div class="stat-value">24</div>
+                <div class="stat-trend">
+                    <i class="fas fa-arrow-up"></i> 6 this week
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🔥</div>
+                <div class="stat-label">Current Streak</div>
+                <div class="stat-value">12</div>
+                <div class="stat-trend">
+                    Days practicing consistently
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Grid -->
+        <div class="charts-grid">
+            <!-- Accuracy Over Time Chart -->
+            <div class="chart-section">
+                <div class="chart-title">
+                    <i class="fas fa-line-chart"></i> Accuracy Trend
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="accuracyChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Performance by Subject Chart -->
+            <div class="chart-section">
+                <div class="chart-title">
+                    <i class="fas fa-bar-chart"></i> Performance by Subject
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="subjectChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Table -->
+        <div class="table-section">
+            <div class="table-header">
+                <i class="fas fa-table"></i> Detailed Performance
+            </div>
+            <div class="table-content">
+                <table class="performance-table">
+                    <thead>
+                        <tr>
+                            <th>Subject</th>
+                            <th>Tests Attempted</th>
+                            <th>Best Score</th>
+                            <th>Average Accuracy</th>
+                            <th>Progress</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>C Programming</strong></td>
+                            <td>12</td>
+                            <td>95%</td>
+                            <td>88%</td>
+                            <td>
+                                <div class="mini-progress-bar">
+                                    <div class="progress-bar-tiny">
+                                        <div class="progress-fill-tiny" style="width: 88%;"></div>
+                                    </div>
+                                    <span>88%</span>
+                                </div>
+                            </td>
+                            <td><span class="progress-badge badge-excellent">✓ Excellent</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Data Structures</strong></td>
+                            <td>8</td>
+                            <td>82%</td>
+                            <td>76%</td>
+                            <td>
+                                <div class="mini-progress-bar">
+                                    <div class="progress-bar-tiny">
+                                        <div class="progress-fill-tiny" style="width: 76%;"></div>
+                                    </div>
+                                    <span>76%</span>
+                                </div>
+                            </td>
+                            <td><span class="progress-badge badge-good">✓ Good</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Mathematics</strong></td>
+                            <td>6</td>
+                            <td>78%</td>
+                            <td>72%</td>
+                            <td>
+                                <div class="mini-progress-bar">
+                                    <div class="progress-bar-tiny">
+                                        <div class="progress-fill-tiny" style="width: 72%;"></div>
+                                    </div>
+                                    <span>72%</span>
+                                </div>
+                            </td>
+                            <td><span class="progress-badge badge-fair">○ Fair</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Physics</strong></td>
+                            <td>4</td>
+                            <td>65%</td>
+                            <td>58%</td>
+                            <td>
+                                <div class="mini-progress-bar">
+                                    <div class="progress-bar-tiny">
+                                        <div class="progress-fill-tiny" style="width: 58%;"></div>
+                                    </div>
+                                    <span>58%</span>
+                                </div>
+                            </td>
+                            <td><span class="progress-badge badge-poor">⚠ Needs Work</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Insights & Recommendations -->
+        <div class="insights-section">
+            <div class="insights-title">
+                <i class="fas fa-lightbulb"></i> AI-Powered Insights
+            </div>
+            <div class="insights-list">
+                <div class="insight-item">
+                    <div class="insight-title">🎯 Strong Performance Area</div>
+                    <div class="insight-description">
+                        You're excelling in C Programming with 88% average accuracy. Consider exploring advanced topics like pointers and dynamic memory allocation.
+                    </div>
+                </div>
+                <div class="insight-item">
+                    <div class="insight-title">📈 Recommended Focus Area</div>
+                    <div class="insight-description">
+                        Physics performance needs attention (58% accuracy). We recommend reviewing fundamentals and solving more practice problems. Try our conceptual videos.
+                    </div>
+                </div>
+                <div class="insight-item">
+                    <div class="insight-title">⏱️ Optimal Study Pattern</div>
+                    <div class="insight-description">
+                        Your performance improves by 15% when you take 2-3 quizzes per day with breaks. You're most focused between 8-10 AM.
+                    </div>
+                </div>
+                <div class="insight-item">
+                    <div class="insight-title">🏆 Next Milestone</div>
+                    <div class="insight-description">
+                        You're 2% away from the "Subject Master" badge in C Programming (90% required). Complete 3 more advanced quizzes to achieve it!
+                    </div>
+                </div>
+            </div>
+            <div class="action-buttons">
+                <button class="btn-action" onclick="viewTestRecommendations()">
+                    <i class="fas fa-check"></i> View Recommended Tests
+                </button>
+                <button class="btn-action btn-download" onclick="viewDetailedAnalysis()">
+                    <i class="fas fa-chart-bar"></i> Detailed Analysis
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== FOOTER ==================== -->
+    <footer class="footer">
+        <div style="max-width: 1200px; margin: 0 auto; text-align: center;">
+            <div class="footer-bottom">
+                <p>&copy; 2025 RENVOX – All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ==================== EXTERNAL JAVASCRIPT FILES ==================== -->
+    <script src="navigation.js"></script>
+
+    <script>
+        /**
+         * ==================== PERFORMANCE REPORTS PAGE ====================
+         * Comprehensive analytics dashboard with charts and insights
+         */
+
+        let accuracyChart, subjectChart;
+
+        // Initialize page
+        function initializeReports() {
+            setupUserDropdownIfNeeded();
+            initializeCharts();
+        }
+
+        // Initialize charts
+        function initializeCharts() {
+            // Accuracy Over Time Chart
+            const accuracyCtx = document.getElementById('accuracyChart');
+            if (accuracyCtx) {
+                accuracyChart = new Chart(accuracyCtx, {
+                    type: 'line',
+                    data: {
+                        labels: ['Day 1', 'Day 2', 'Day 3', 'Day 4', 'Day 5', 'Day 6', 'Day 7'],
+                        datasets: [{
+                            label: 'Accuracy %',
+                            data: [75, 78, 82, 80, 85, 88, 82],
+                            borderColor: '#1e3a8a',
+                            backgroundColor: 'rgba(30, 58, 138, 0.05)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.4,
+                            pointRadius: 6,
+                            pointBackgroundColor: '#1e3a8a',
+                            pointBorderWidth: 2,
+                            pointBorderColor: '#fff'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                max: 100,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value + '%';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Performance by Subject Chart
+            const subjectCtx = document.getElementById('subjectChart');
+            if (subjectCtx) {
+                subjectChart = new Chart(subjectCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['C Programming', 'Data Structures', 'Mathematics', 'Physics'],
+                        datasets: [{
+                            label: 'Average Accuracy %',
+                            data: [88, 76, 72, 58],
+                            backgroundColor: [
+                                '#1e3a8a',
+                                '#3730a3',
+                                '#6366f1',
+                                '#a5b4fc'
+                            ],
+                            borderRadius: 8,
+                            borderSkipped: false
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: true,
+                                labels: {
+                                    boxWidth: 12
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                max: 100,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value + '%';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        // Update reports based on filters
+        function updateReports() {
+            alert('📊 Updating reports with selected filters...');
+        }
+
+        // Download report
+        function downloadReport() {
+            alert('📥 Downloading Performance Report as PDF...\n\nYour comprehensive report will be saved to your Downloads folder');
+        }
+
+        // View test recommendations
+        function viewTestRecommendations() {
+            alert('🎯 Loading recommended tests based on your performance...\n\nRedirecting to practice page');
+        }
+
+        // View detailed analysis
+        function viewDetailedAnalysis() {
+            alert('📈 Opening detailed performance analysis...\n\nShowing question-by-question breakdown');
+        }
+
+        // Initialize
+        initializeReports();
+    </script>
+</body>
+</html>

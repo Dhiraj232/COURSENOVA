@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - RENVOX</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #1e3a8a;
+            --secondary-color: #f3f4f6;
+            --accent-color: #10b981;
+            --text-dark: #1f2937;
+            --text-light: #6b7280;
+            --border-color: #e5e7eb;
+            --white: #ffffff;
+            --error-color: #ef4444;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, var(--primary-color) 0%, #3730a3 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .auth-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0;
+            background: var(--white);
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            max-width: 900px;
+            width: 100%;
+        }
+
+        .auth-left {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #3730a3 100%);
+            color: var(--white);
+            padding: 3rem 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .auth-left h2 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .auth-left p {
+            font-size: 1rem;
+            opacity: 0.9;
+            line-height: 1.6;
+            margin-bottom: 2rem;
+        }
+
+        .auth-left ul {
+            list-style: none;
+        }
+
+        .auth-left li {
+            margin-bottom: 1rem;
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+        }
+
+        .auth-left li:before {
+            content: "✓";
+            font-weight: bold;
+            font-size: 1.3rem;
+            min-width: 30px;
+        }
+
+        .auth-right {
+            padding: 3rem 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .auth-form h3 {
+            font-size: 1.8rem;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .auth-form-subtitle {
+            color: var(--text-light);
+            margin-bottom: 2rem;
+            font-size: 0.95rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-dark);
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.85rem 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+        }
+
+        .form-group input::placeholder {
+            color: var(--text-light);
+        }
+
+        .forgot-password {
+            text-align: right;
+            margin-bottom: 1.5rem;
+        }
+
+        .forgot-password a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .forgot-password a:hover {
+            color: #3730a3;
+            text-decoration: underline;
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 0.95rem;
+            background-color: var(--primary-color);
+            color: var(--white);
+            border: none;
+            border-radius: 6px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 1rem;
+        }
+
+        .btn-login:hover {
+            background-color: #1e2d6f;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(30, 58, 138, 0.3);
+        }
+
+        .divider {
+            text-align: center;
+            margin: 1.5rem 0;
+            position: relative;
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        .divider:before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: var(--border-color);
+        }
+
+        .divider span {
+            background: var(--white);
+            padding: 0 0.5rem;
+            position: relative;
+        }
+
+        .btn-google {
+            width: 100%;
+            padding: 0.95rem;
+            background-color: var(--white);
+            color: var(--text-dark);
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.8rem;
+        }
+
+        .btn-google:hover {
+            background-color: var(--secondary-color);
+            border-color: var(--primary-color);
+        }
+
+        .signup-link {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: var(--text-light);
+            font-size: 0.95rem;
+        }
+
+        .signup-link a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 700;
+        }
+
+        .signup-link a:hover {
+            text-decoration: underline;
+        }
+
+        .error-message {
+            background-color: #fee2e2;
+            color: var(--error-color);
+            padding: 0.8rem;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+            border-left: 4px solid var(--error-color);
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        .success-message {
+            background-color: #dcfce7;
+            color: var(--accent-color);
+            padding: 0.8rem;
+            border-radius: 6px;
+            margin-bottom: 1.5rem;
+            border-left: 4px solid var(--accent-color);
+            font-size: 0.9rem;
+            display: none;
+        }
+
+        /* ==================== AI AGENT BUTTON ==================== */
+        .ai-agent-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, var(--primary-color) 0%, #3730a3 100%);
+            color: var(--white);
+            border: none;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 8px 24px rgba(30, 58, 138, 0.4);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 999;
+        }
+
+        .ai-agent-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 12px 32px rgba(30, 58, 138, 0.6);
+        }
+
+        .ai-agent-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* ==================== AI MODAL ==================== */
+        .ai-modal {
+            position: fixed;
+            bottom: 100px;
+            right: 30px;
+            width: 380px;
+            background: var(--white);
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            z-index: 998;
+            display: none;
+            flex-direction: column;
+            max-height: 600px;
+            overflow: hidden;
+        }
+
+        .ai-modal.active {
+            display: flex;
+            animation: slideUp 0.3s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .ai-modal-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #3730a3 100%);
+            color: var(--white);
+            padding: 1.2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .ai-modal-header h3 {
+            font-size: 1.1rem;
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .ai-modal-close {
+            background: none;
+            border: none;
+            color: var(--white);
+            font-size: 1.3rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .ai-modal-close:hover {
+            transform: rotate(90deg);
+        }
+
+        .ai-modal-body {
+            padding: 1.5rem;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .ai-modal-body::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .ai-modal-body::-webkit-scrollbar-track {
+            background: var(--secondary-color);
+            border-radius: 10px;
+        }
+
+        .ai-modal-body::-webkit-scrollbar-thumb {
+            background: var(--primary-color);
+            border-radius: 10px;
+        }
+
+        .form-group-modal {
+            margin-bottom: 1.2rem;
+        }
+
+        .form-group-modal label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-dark);
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .form-group-modal textarea {
+            width: 100%;
+            padding: 0.8rem;
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-family: 'Inter', sans-serif;
+            resize: vertical;
+            min-height: 80px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group-modal textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+        }
+
+        .camera-section {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            padding: 1rem;
+            background: var(--secondary-color);
+            border-radius: 8px;
+            margin-bottom: 1rem;
+        }
+
+        .camera-preview {
+            width: 100%;
+            border-radius: 6px;
+            background: #000;
+            display: none;
+            max-height: 200px;
+        }
+
+        .camera-preview.active {
+            display: block;
+        }
+
+        .captured-photo {
+            width: 100%;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            display: none;
+            max-height: 200px;
+        }
+
+        .captured-photo.active {
+            display: block;
+        }
+
+        .btn-camera {
+            width: 100%;
+            padding: 0.8rem;
+            background-color: var(--accent-color);
+            color: var(--white);
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-camera:hover {
+            background-color: #059669;
+            transform: translateY(-2px);
+        }
+
+        .btn-camera.recording {
+            background-color: #ef4444;
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .btn-camera-stop {
+            width: 100%;
+            padding: 0.8rem;
+            background-color: #ef4444;
+            color: var(--white);
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+            display: none;
+        }
+
+        .btn-camera-stop.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-camera-stop:hover {
+            background-color: #dc2626;
+        }
+
+        .btn-remove-photo {
+            width: 100%;
+            padding: 0.6rem;
+            background-color: var(--secondary-color);
+            color: var(--text-dark);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.85rem;
+        }
+
+        .btn-remove-photo:hover {
+            background-color: #e5e7eb;
+        }
+
+        .ai-modal-footer {
+            padding: 1.2rem;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            gap: 0.8rem;
+        }
+
+        .btn-submit-question {
+            flex: 1;
+            padding: 0.9rem;
+            background-color: var(--primary-color);
+            color: var(--white);
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+        }
+
+        .btn-submit-question:hover {
+            background-color: #1e2d6f;
+            transform: translateY(-2px);
+        }
+
+        .btn-submit-question:disabled {
+            background-color: var(--text-light);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .success-toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--accent-color);
+            color: var(--white);
+            padding: 1rem 1.5rem;
+            border-radius: 6px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            animation: slideInRight 0.3s ease;
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .auth-container {
+                grid-template-columns: 1fr;
+            }
+
+            .auth-left {
+                padding: 2rem 1.5rem;
+            }
+
+            .auth-right {
+                padding: 2rem 1.5rem;
+            }
+
+            .auth-left h2 {
+                font-size: 1.5rem;
+            }
+
+            .ai-modal {
+                width: calc(100% - 40px);
+                right: 20px;
+                bottom: 90px;
+                max-height: 70vh;
+            }
+
+            .ai-agent-btn {
+                bottom: 20px;
+                right: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <!-- Left Section -->
+        <div class="auth-left">
+            <div>
+                <h2>Welcome back to RENVOX</h2>
+                <p>Continue your learning journey. Access all your study materials, practice tests, and certificates.</p>
+                <ul>
+                    <li>Complete study curriculum</li>
+                    <li>Practice tests & quizzes</li>
+                    <li>Digital certificates</li>
+                    <li>Performance tracking</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Right Section (Login Form) -->
+        <div class="auth-right">
+            <form class="auth-form" id="loginForm">
+                <h3>Login</h3>
+                <p class="auth-form-subtitle">Enter your credentials to continue</p>
+
+                <div class="error-message" id="errorMsg"></div>
+                <div class="success-message" id="successMsg"></div>
+
+                <div class="form-group">
+                    <label for="email">Email or Mobile Number</label>
+                    <input 
+                        type="text" 
+                        id="email" 
+                        name="email" 
+                        placeholder="your@email.com or +91 98765 43210"
+                        required
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input 
+                        type="password" 
+                        id="password" 
+                        name="password" 
+                        placeholder="Enter your password"
+                        required
+                    >
+                </div>
+
+                <div class="forgot-password">
+                    <a href="#">Forgot password?</a>
+                </div>
+
+                <button type="submit" class="btn-login">Login to RENVOX</button>
+
+                <div class="divider">
+                    <span>or</span>
+                </div>
+
+                <button type="button" class="btn-google">
+                    <i class="fab fa-google"></i>
+                    Continue with Google
+                </button>
+
+                <div class="signup-link">
+                    Don't have an account? <a href="signup.html">Create one</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- ==================== AI AGENT BUTTON & MODAL ==================== -->
+    <button class="ai-agent-btn" id="aiAgentBtn" title="Ask AI Agent">
+        <i class="fas fa-robot"></i>
+    </button>
+
+    <!-- AI Modal -->
+    <div class="ai-modal" id="aiModal">
+        <div class="ai-modal-header">
+            <h3><i class="fas fa-star"></i> Ask AI Agent</h3>
+            <button class="ai-modal-close" id="closeAiModal">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="ai-modal-body">
+            <!-- Camera Section -->
+            <div class="camera-section">
+                <label style="margin: 0 0 0.5rem 0; font-weight: 600;">📸 Capture Photo</label>
+                <video id="cameraPreview" class="camera-preview"></video>
+                <img id="capturedPhoto" class="captured-photo" alt="Captured photo">
+                
+                <button type="button" class="btn-camera" id="startCameraBtn">
+                    <i class="fas fa-camera"></i> Open Camera
+                </button>
+
+                <button type="button" class="btn-camera-stop" id="stopCameraBtn">
+                    <i class="fas fa-stop-circle"></i> Stop Camera
+                </button>
+
+                <button type="button" class="btn-camera" id="capturePhotoBtn" style="display: none; background-color: #3b82f6;">
+                    <i class="fas fa-circle"></i> Take Photo
+                </button>
+
+                <button type="button" class="btn-remove-photo" id="removePhotoBtn" style="display: none;">
+                    <i class="fas fa-trash"></i> Remove Photo
+                </button>
+            </div>
+
+            <!-- Question Input -->
+            <div class="form-group-modal">
+                <label for="aiQuestion">📝 Ask Your Question</label>
+                <textarea 
+                    id="aiQuestion" 
+                    placeholder="Type your question here... (e.g., 'What is the answer to this problem?')"
+                    maxlength="500"
+                ></textarea>
+                <small style="color: var(--text-light);">
+                    <span id="charCount">0</span>/500 characters
+                </small>
+            </div>
+        </div>
+
+        <div class="ai-modal-footer">
+            <button type="button" class="btn-submit-question" id="submitQuestionBtn">
+                <i class="fas fa-paper-plane"></i> Send Question
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const loginForm = document.getElementById('loginForm');
+        const errorMsg = document.getElementById('errorMsg');
+        const successMsg = document.getElementById('successMsg');
+
+        loginForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value.trim();
+
+            // Reset messages
+            errorMsg.style.display = 'none';
+            successMsg.style.display = 'none';
+
+            // Validation
+            if (!email || !password) {
+                errorMsg.textContent = 'Please fill in all fields';
+                errorMsg.style.display = 'block';
+                return;
+            }
+
+            // For demo purposes
+            if (email === 'demo@renvox.com' && password === 'Demo@123') {
+                successMsg.textContent = 'Login successful! Redirecting...';
+                successMsg.style.display = 'block';
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 1500);
+            } else {
+                errorMsg.textContent = 'Invalid email or password';
+                errorMsg.style.display = 'block';
+            }
+        });
+
+        // Google Sign Up
+        document.querySelector('.btn-google').addEventListener('click', function() {
+            alert('Google login integration would go here');
+        });
+
+        /* ==================== AI AGENT FUNCTIONALITY ==================== */
+        const aiAgentBtn = document.getElementById('aiAgentBtn');
+        const aiModal = document.getElementById('aiModal');
+        const closeAiModal = document.getElementById('closeAiModal');
+        const startCameraBtn = document.getElementById('startCameraBtn');
+        const stopCameraBtn = document.getElementById('stopCameraBtn');
+        const capturePhotoBtn = document.getElementById('capturePhotoBtn');
+        const removePhotoBtn = document.getElementById('removePhotoBtn');
+        const submitQuestionBtn = document.getElementById('submitQuestionBtn');
+        const cameraPreview = document.getElementById('cameraPreview');
+        const capturedPhoto = document.getElementById('capturedPhoto');
+        const aiQuestion = document.getElementById('aiQuestion');
+        const charCount = document.getElementById('charCount');
+
+        let stream = null;
+        let photoData = null;
+        let canvas = null;
+
+        // Toggle AI Modal
+        aiAgentBtn.addEventListener('click', function() {
+            aiModal.classList.add('active');
+        });
+
+        closeAiModal.addEventListener('click', function() {
+            aiModal.classList.remove('active');
+            stopCamera();
+            resetForm();
+        });
+
+        // Close modal when clicking outside
+        document.addEventListener('click', function(e) {
+            if (e.target === aiModal) {
+                aiModal.classList.remove('active');
+                stopCamera();
+                resetForm();
+            }
+        });
+
+        // Character counter
+        aiQuestion.addEventListener('input', function() {
+            charCount.textContent = this.value.length;
+        });
+
+        // Start Camera
+        startCameraBtn.addEventListener('click', async function() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({
+                    video: {
+                        facingMode: 'environment',
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    }
+                });
+
+                cameraPreview.srcObject = stream;
+                cameraPreview.classList.add('active');
+                cameraPreview.play();
+
+                startCameraBtn.style.display = 'none';
+                capturePhotoBtn.style.display = 'flex';
+                stopCameraBtn.classList.add('active');
+
+                cameraPreview.addEventListener('loadedmetadata', function() {
+                    if (!canvas) {
+                        canvas = document.createElement('canvas');
+                        canvas.width = cameraPreview.videoWidth;
+                        canvas.height = cameraPreview.videoHeight;
+                    }
+                });
+
+                showToast('Camera activated! Click "Take Photo" to capture', 'info');
+            } catch (error) {
+                console.error('Camera error:', error);
+                showToast('Unable to access camera. Please check permissions.', 'error');
+                alert('Camera permission denied. Please enable camera access in your browser settings.');
+            }
+        });
+
+        // Stop Camera
+        stopCameraBtn.addEventListener('click', function() {
+            stopCamera();
+        });
+
+        function stopCamera() {
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+            cameraPreview.classList.remove('active');
+            startCameraBtn.style.display = 'flex';
+            capturePhotoBtn.style.display = 'none';
+            stopCameraBtn.classList.remove('active');
+        }
+
+        // Capture Photo
+        capturePhotoBtn.addEventListener('click', function() {
+            if (canvas && cameraPreview) {
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(cameraPreview, 0, 0, canvas.width, canvas.height);
+                photoData = canvas.toDataURL('image/jpeg', 0.8);
+
+                capturedPhoto.src = photoData;
+                capturedPhoto.classList.add('active');
+
+                cameraPreview.classList.remove('active');
+                capturePhotoBtn.style.display = 'none';
+                stopCameraBtn.classList.remove('active');
+                removePhotoBtn.style.display = 'block';
+
+                stopCamera();
+                showToast('Photo captured successfully!', 'success');
+            }
+        });
+
+        // Remove Photo
+        removePhotoBtn.addEventListener('click', function() {
+            photoData = null;
+            capturedPhoto.classList.remove('active');
+            capturedPhoto.src = '';
+            removePhotoBtn.style.display = 'none';
+            startCameraBtn.style.display = 'flex';
+        });
+
+        // Submit Question
+        submitQuestionBtn.addEventListener('click', function() {
+            const question = aiQuestion.value.trim();
+
+            if (!question && !photoData) {
+                showToast('Please enter a question or capture a photo!', 'error');
+                return;
+            }
+
+            // Disable button and show loading
+            submitQuestionBtn.disabled = true;
+            submitQuestionBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+            // Simulate sending to AI agent
+            setTimeout(function() {
+                const response = {
+                    question: question || 'Photo Analysis',
+                    hasPhoto: photoData !== null,
+                    status: 'submitted'
+                };
+
+                console.log('Question submitted:', response);
+
+                showToast('Question submitted to AI Agent! We\'ll provide the answer shortly.', 'success');
+                
+                // Reset form
+                resetForm();
+                setTimeout(function() {
+                    aiModal.classList.remove('active');
+                }, 1500);
+            }, 1500);
+        });
+
+        function resetForm() {
+            aiQuestion.value = '';
+            charCount.textContent = '0';
+            photoData = null;
+            capturedPhoto.classList.remove('active');
+            capturedPhoto.src = '';
+            removePhotoBtn.style.display = 'none';
+            startCameraBtn.style.display = 'flex';
+            stopCameraBtn.classList.remove('active');
+            cameraPreview.classList.remove('active');
+            submitQuestionBtn.disabled = false;
+            submitQuestionBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Question';
+            stopCamera();
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = 'success-toast';
+            
+            let icon = '✓';
+            let bgColor = 'var(--accent-color)';
+            
+            if (type === 'error') {
+                icon = '✕';
+                bgColor = '#ef4444';
+            } else if (type === 'info') {
+                icon = 'ℹ';
+                bgColor = '#3b82f6';
+            }
+            
+            toast.innerHTML = `<i class="fas fa-${type === 'error' ? 'exclamation-circle' : type === 'info' ? 'info-circle' : 'check-circle'}"></i> ${message}`;
+            toast.style.backgroundColor = bgColor;
+            document.body.appendChild(toast);
+
+            setTimeout(function() {
+                toast.remove();
+            }, 3000);
+        }
+    </script>
+    <!-- Navigation System -->
+    <script src="navigation.js"></script>
+</body>
+</html>

@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - RENVOX</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- External CSS -->
+    <link rel="stylesheet" href="style.css">
+    
+    <style>
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .dashboard-header {
+            margin-bottom: 2rem;
+        }
+
+        .dashboard-header h1 {
+            font-size: 2rem;
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .welcome-message {
+            font-size: 1rem;
+            color: var(--text-light);
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--primary-color), #3730a3);
+            color: var(--white);
+            padding: 2rem;
+            border-radius: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 4px 15px rgba(30, 58, 138, 0.2);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-card.green {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+
+        .stat-card.orange {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+
+        .stat-card.red {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 800;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .stat-icon {
+            font-size: 3rem;
+            opacity: 0.3;
+        }
+
+        .main-sections {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .main-sections {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .section-box {
+            background: var(--white);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .section-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .progress-item {
+            margin-bottom: 1.5rem;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--secondary-color);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-color), #10b981);
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+
+        .activity-item {
+            padding: 1rem;
+            border-left: 4px solid var(--accent-color);
+            background: var(--secondary-color);
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .activity-info h4 {
+            font-size: 0.95rem;
+            color: var(--text-dark);
+            margin-bottom: 0.25rem;
+        }
+
+        .activity-info p {
+            font-size: 0.85rem;
+            color: var(--text-light);
+        }
+
+        .activity-time {
+            color: var(--text-light);
+            font-size: 0.85rem;
+            text-align: right;
+        }
+
+        .quick-actions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .action-btn {
+            padding: 1rem;
+            background: var(--secondary-color);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            text-decoration: none;
+            color: var(--text-dark);
+            font-weight: 600;
+        }
+
+        .action-btn:hover {
+            background: var(--primary-color);
+            color: var(--white);
+            border-color: var(--primary-color);
+        }
+
+        .action-btn i {
+            display: block;
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .achievements {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .achievement-badge {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--accent-color), #059669);
+            border-radius: 12px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: var(--white);
+            text-align: center;
+            font-weight: 700;
+            transition: transform 0.3s ease;
+        }
+
+        .achievement-badge:hover {
+            transform: scale(1.05);
+        }
+
+        .achievement-icon {
+            font-size: 2rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .achievement-label {
+            font-size: 0.75rem;
+        }
+
+        .login-prompt {
+            background: linear-gradient(135deg, var(--primary-color), #3730a3);
+            color: var(--white);
+            padding: 3rem;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .login-prompt h2 {
+            margin-bottom: 1rem;
+        }
+
+        .login-prompt p {
+            margin-bottom: 1.5rem;
+        }
+
+        .btn-login-prompt {
+            display: inline-block;
+            padding: 0.75rem 2rem;
+            background: var(--white);
+            color: var(--primary-color);
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            margin: 0 0.5rem;
+        }
+
+        .btn-login-prompt:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <!-- ==================== NAVBAR ==================== -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo">
+                <i class="fas fa-book"></i> RENVOX
+            </a>
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="subjects.html">Subjects</a></li>
+                <li><a href="practice.html">Practice</a></li>
+                <li><a href="certificates.html">Certificates</a></li>
+                <li><a href="pricing.html">Pricing</a></li>
+            </ul>
+            <div class="nav-buttons" id="navButtons">
+                <!-- Filled by JavaScript -->
+            </div>
+            <button class="menu-toggle" id="menuToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- ==================== MAIN CONTENT ==================== -->
+    <div class="dashboard-container" id="dashboardContent">
+        <!-- Welcome Section -->
+        <div class="dashboard-header">
+            <h1>Welcome back, <span id="dashboardUserName">User</span>! 👋</h1>
+            <p class="welcome-message">Here's your learning progress and achievements</p>
+        </div>
+
+        <!-- Statistics Grid -->
+        <div class="dashboard-grid">
+            <div class="stat-card">
+                <div>
+                    <div class="stat-number" id="totalTests">12</div>
+                    <div class="stat-label">Tests Completed</div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+            </div>
+
+            <div class="stat-card green">
+                <div>
+                    <div class="stat-number" id="avgAccuracy">82%</div>
+                    <div class="stat-label">Average Accuracy</div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+            </div>
+
+            <div class="stat-card orange">
+                <div>
+                    <div class="stat-number" id="currentStreak">7</div>
+                    <div class="stat-label">Day Streak</div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-fire"></i>
+                </div>
+            </div>
+
+            <div class="stat-card red">
+                <div>
+                    <div class="stat-number" id="unfinishedTopics">5</div>
+                    <div class="stat-label">Topics to Improve</div>
+                </div>
+                <div class="stat-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Sections -->
+        <div class="main-sections">
+            <!-- Learning Progress -->
+            <div class="section-box">
+                <div class="section-title">
+                    <i class="fas fa-book"></i> Learning Progress
+                </div>
+
+                <div class="progress-item">
+                    <div class="progress-label">
+                        <span>C Programming</span>
+                        <span>65%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 65%;"></div>
+                    </div>
+                </div>
+
+                <div class="progress-item">
+                    <div class="progress-label">
+                        <span>Data Structures</span>
+                        <span>52%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 52%;"></div>
+                    </div>
+                </div>
+
+                <div class="progress-item">
+                    <div class="progress-label">
+                        <span>Mathematics</span>
+                        <span>88%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 88%;"></div>
+                    </div>
+                </div>
+
+                <div class="progress-item">
+                    <div class="progress-label">
+                        <span>Physics</span>
+                        <span>45%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 45%;"></div>
+                    </div>
+                </div>
+
+                <div class="quick-actions">
+                    <button class="action-btn" onclick="goToPage('practice')">
+                        <i class="fas fa-play"></i>
+                        Continue Practice
+                    </button>
+                    <button class="action-btn" onclick="goToPage('subjects')">
+                        <i class="fas fa-book"></i>
+                        Explore Subjects
+                    </button>
+                    <button class="action-btn" onclick="goToPage('certificates')">
+                        <i class="fas fa-certificate"></i>
+                        My Certificates
+                    </button>
+                </div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="section-box">
+                <div class="section-title">
+                    <i class="fas fa-history"></i> Recent Activity
+                </div>
+
+                <div class="activity-item">
+                    <div class="activity-info">
+                        <h4>📝 Chapter Test - Variables & Data Types</h4>
+                        <p>Score: 22/25 | Accuracy: 88%</p>
+                    </div>
+                    <div class="activity-time">2h ago</div>
+                </div>
+
+                <div class="activity-item">
+                    <div class="activity-info">
+                        <h4>🧩 Topic Practice - Control Flow</h4>
+                        <p>Score: 18/20 | Accuracy: 90%</p>
+                    </div>
+                    <div class="activity-time">4h ago</div>
+                </div>
+
+                <div class="activity-item">
+                    <div class="activity-info">
+                        <h4>🎯 Mock Test - C Programming</h4>
+                        <p>Score: 45/50 | Accuracy: 90%</p>
+                    </div>
+                    <div class="activity-time">Yesterday</div>
+                </div>
+
+                <div class="quick-actions">
+                    <button class="action-btn" onclick="goToPage('practice')">
+                        <i class="fas fa-chart-bar"></i>
+                        View Analytics
+                    </button>
+                    <button class="action-btn" onclick="goToPerformanceReports()">
+                        <i class="fas fa-chart-line"></i>
+                        Performance Report
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Achievements -->
+        <div class="section-box" style="margin-top: 2rem;">
+            <div class="section-title">
+                <i class="fas fa-star"></i> Achievements & Badges
+            </div>
+
+            <div class="achievements">
+                <div class="achievement-badge">
+                    <div class="achievement-icon">🏆</div>
+                    <div class="achievement-label">Top Performer</div>
+                </div>
+
+                <div class="achievement-badge" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                    <div class="achievement-icon">🔥</div>
+                    <div class="achievement-label">7-Day Streak</div>
+                </div>
+
+                <div class="achievement-badge" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed);">
+                    <div class="achievement-icon">📚</div>
+                    <div class="achievement-label">Knowledge Seeker</div>
+                </div>
+
+                <div class="achievement-badge" style="background: linear-gradient(135deg, #06b6d4, #0891b2);">
+                    <div class="achievement-icon">⭐</div>
+                    <div class="achievement-label">Consistent Learner</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- ==================== FOOTER ==================== -->
+    <footer class="footer">
+        <div style="max-width: 1200px; margin: 0 auto; text-align: center;">
+            <div class="footer-bottom">
+                <p>&copy; 2025 RENVOX – All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ==================== EXTERNAL JAVASCRIPT FILES ==================== -->
+    <!-- Navigation System -->
+    <script src="navigation.js"></script>
+
+    <script>
+        /**
+         * ==================== DASHBOARD INITIALIZATION ====================
+         * Handle dashboard page loading and data display
+         */
+
+        const isLoggedIn = localStorage.getItem('renvoxUser') !== null;
+        const userName = localStorage.getItem('userName') || 'User';
+
+        // Setup navbar
+        function setupDashboardNavbar() {
+            const navButtons = document.getElementById('navButtons');
+            
+            if (isLoggedIn) {
+                navButtons.innerHTML = `
+                    <button class="btn-user">
+                        <i class="fas fa-user-circle"></i>
+                        <span>${userName}</span>
+                    </button>
+                    <button class="btn-user" style="background-color: #fee2e2; color: #dc2626;" onclick="logout()">Logout</button>
+                `;
+            } else {
+                navButtons.innerHTML = `
+                    <a href="login.html" class="btn-user">Login</a>
+                    <a href="signup.html" class="btn-user" style="background-color: var(--primary-color); color: white;">Sign Up</a>
+                `;
+            }
+        }
+
+        // Show content for all users
+        document.getElementById('dashboardUserName').textContent = userName;
+
+        // Logout function
+        function logout() {
+            if (confirm('Logout?')) {
+                localStorage.removeItem('renvoxUser');
+                localStorage.removeItem('userName');
+                localStorage.removeItem('userClass');
+                window.location.reload();
+            }
+        }
+
+        // Go to performance reports
+        function goToPerformanceReports() {
+            window.location.href = 'performance-reports.html';
+        }
+
+        setupDashboardNavbar();
+    </script>
+</body>
+</html>

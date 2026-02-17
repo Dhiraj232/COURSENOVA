@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics - RENVOX</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- External CSS -->
+    <link rel="stylesheet" href="style.css">
+    
+    <style>
+        .analytics-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .analytics-header {
+            margin-bottom: 2rem;
+        }
+
+        .analytics-header h1 {
+            font-size: 2rem;
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .analytics-subtext {
+            color: var(--text-light);
+        }
+
+        .filter-section {
+            background: var(--white);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .filter-group select {
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--white);
+            cursor: pointer;
+            font-family: 'Inter', sans-serif;
+        }
+
+        .analytics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .analytics-card {
+            background: var(--white);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .card-label {
+            color: var(--text-light);
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-value {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+
+        .card-trend {
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .trend-up {
+            color: var(--accent-color);
+        }
+
+        .trend-down {
+            color: #ef4444;
+        }
+
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        @media (max-width: 1024px) {
+            .charts-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .chart-box {
+            background: var(--white);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .chart-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 1rem;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+
+        .performance-table {
+            background: var(--white);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 2rem;
+        }
+
+        .table-header {
+            background: var(--secondary-color);
+            padding: 1rem 1.5rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+            gap: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .table-row {
+            padding: 1rem 1.5rem;
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+            gap: 1rem;
+            border-bottom: 1px solid var(--border-color);
+            align-items: center;
+            transition: background 0.3s ease;
+        }
+
+        .table-row:hover {
+            background: var(--secondary-color);
+        }
+
+        .table-row:last-child {
+            border-bottom: none;
+        }
+
+        .subject-name {
+            font-weight: 600;
+            color: var(--text-dark);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .score-cell {
+            text-align: center;
+            color: var(--text-dark);
+        }
+
+        .accuracy-bar {
+            background: var(--secondary-color);
+            border-radius: 6px;
+            overflow: hidden;
+            height: 6px;
+        }
+
+        .accuracy-fill {
+            background: linear-gradient(90deg, var(--accent-color), #10b981);
+            height: 100%;
+        }
+
+        .time-cell {
+            text-align: right;
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        .login-prompt {
+            background: linear-gradient(135deg, var(--primary-color), #3730a3);
+            color: var(--white);
+            padding: 3rem;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .login-prompt h2 {
+            margin-bottom: 1rem;
+        }
+
+        .login-prompt p {
+            margin-bottom: 1.5rem;
+        }
+
+        .btn-login-prompt {
+            display: inline-block;
+            padding: 0.75rem 2rem;
+            background: var(--white);
+            color: var(--primary-color);
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            margin: 0 0.5rem;
+        }
+
+        .btn-login-prompt:hover {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <!-- ==================== NAVBAR ==================== -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo">
+                <i class="fas fa-book"></i> RENVOX
+            </a>
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="subjects.html">Subjects</a></li>
+                <li><a href="practice.html">Practice</a></li>
+                <li><a href="certificates.html">Certificates</a></li>
+                <li><a href="pricing.html">Pricing</a></li>
+            </ul>
+            <div class="nav-buttons" id="navButtons">
+                <!-- Filled by JavaScript -->
+            </div>
+            <button class="menu-toggle" id="menuToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- ==================== MAIN CONTENT ==================== -->
+    <div class="analytics-container" id="analyticsContent">
+        <!-- Header -->
+        <div class="analytics-header">
+            <h1>📊 Your Performance Analytics</h1>
+            <p class="analytics-subtext">Track your learning progress and performance metrics</p>
+        </div>
+
+        <!-- Filter Section -->
+        <div class="filter-section">
+            <div class="filter-group">
+                <label>Subject</label>
+                <select id="subjectFilter">
+                    <option>All Subjects</option>
+                    <option>C Programming</option>
+                    <option>Data Structures</option>
+                    <option>Mathematics</option>
+                    <option>Physics</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Period</label>
+                <select id="periodFilter">
+                    <option>Last 7 Days</option>
+                    <option>Last 30 Days</option>
+                    <option>Last 90 Days</option>
+                    <option>All Time</option>
+                </select>
+            </div>
+            <button class="btn-user" style="margin-left: auto;" onclick="downloadReport()">
+                <i class="fas fa-download"></i> Download Report
+            </button>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="analytics-grid">
+            <div class="analytics-card">
+                <div class="card-label">Tests Completed</div>
+                <div class="card-value" id="testsCompleted">12</div>
+                <div class="card-trend trend-up">
+                    <i class="fas fa-arrow-up"></i> +2 this week
+                </div>
+            </div>
+
+            <div class="analytics-card">
+                <div class="card-label">Average Accuracy</div>
+                <div class="card-value" id="avgAccuracy">82%</div>
+                <div class="card-trend trend-up">
+                    <i class="fas fa-arrow-up"></i> +3% vs last week
+                </div>
+            </div>
+
+            <div class="analytics-card">
+                <div class="card-label">Total Study Hours</div>
+                <div class="card-value" id="studyHours">24</div>
+                <div class="card-trend trend-up">
+                    <i class="fas fa-arrow-up"></i> +5h this week
+                </div>
+            </div>
+
+            <div class="analytics-card">
+                <div class="card-label">Current Streak</div>
+                <div class="card-value" id="currentStreak">7</div>
+                <div class="card-trend">
+                    <i class="fas fa-fire" style="color: #f59e0b;"></i> Days
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="charts-grid">
+            <!-- Accuracy Over Time -->
+            <div class="chart-box">
+                <div class="chart-title">📈 Accuracy Over Time</div>
+                <div class="chart-container">
+                    <canvas id="accuracyChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Performance by Subject -->
+            <div class="chart-box">
+                <div class="chart-title">📚 Performance by Subject</div>
+                <div class="chart-container">
+                    <canvas id="subjectChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Performance Table -->
+        <div class="performance-table">
+            <div class="table-header">
+                <div>Subject / Topic</div>
+                <div style="text-align: center;">Tests</div>
+                <div style="text-align: center;">Best Score</div>
+                <div style="text-align: center;">Avg Accuracy</div>
+                <div style="text-align: right;">Last Attempt</div>
+            </div>
+
+            <div class="table-row">
+                <div class="subject-name">💻 C Programming</div>
+                <div class="score-cell">5</div>
+                <div class="score-cell">48/50</div>
+                <div class="score-cell">
+                    <div class="accuracy-bar">
+                        <div class="accuracy-fill" style="width: 85%;"></div>
+                    </div>
+                    85%
+                </div>
+                <div class="time-cell">2 hours ago</div>
+            </div>
+
+            <div class="table-row">
+                <div class="subject-name">🔗 Data Structures</div>
+                <div class="score-cell">4</div>
+                <div class="score-cell">42/50</div>
+                <div class="score-cell">
+                    <div class="accuracy-bar">
+                        <div class="accuracy-fill" style="width: 72%;"></div>
+                    </div>
+                    72%
+                </div>
+                <div class="time-cell">Yesterday</div>
+            </div>
+
+            <div class="table-row">
+                <div class="subject-name">📐 Mathematics</div>
+                <div class="score-cell">3</div>
+                <div class="score-cell">50/50</div>
+                <div class="score-cell">
+                    <div class="accuracy-bar">
+                        <div class="accuracy-fill" style="width: 90%;"></div>
+                    </div>
+                    90%
+                </div>
+                <div class="time-cell">3 days ago</div>
+            </div>
+
+            <div class="table-row">
+                <div class="subject-name">⚛️ Physics</div>
+                <div class="score-cell">2</div>
+                <div class="score-cell">35/50</div>
+                <div class="score-cell">
+                    <div class="accuracy-bar">
+                        <div class="accuracy-fill" style="width: 68%;"></div>
+                    </div>
+                    68%
+                </div>
+                <div class="time-cell">1 week ago</div>
+            </div>
+
+            <div class="table-row">
+                <div class="subject-name">🧪 Chemistry</div>
+                <div class="score-cell">1</div>
+                <div class="score-cell">40/50</div>
+                <div class="score-cell">
+                    <div class="accuracy-bar">
+                        <div class="accuracy-fill" style="width: 80%;"></div>
+                    </div>
+                    80%
+                </div>
+                <div class="time-cell">2 weeks ago</div>
+            </div>
+        </div>
+    </div>
+
+
+
+    <!-- ==================== FOOTER ==================== -->
+    <footer class="footer">
+        <div style="max-width: 1200px; margin: 0 auto; text-align: center;">
+            <div class="footer-bottom">
+                <p>&copy; 2025 RENVOX – All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ==================== EXTERNAL JAVASCRIPT FILES ==================== -->
+    <!-- Navigation System -->
+    <script src="navigation.js"></script>
+
+    <script>
+        /**
+         * ==================== ANALYTICS PAGE INITIALIZATION ====================
+         * Handle analytics page with charts and performance data
+         */
+
+        const isLoggedIn = localStorage.getItem('renvoxUser') !== null;
+        const userName = localStorage.getItem('userName') || 'User';
+
+        // Setup navbar
+        function setupAnalyticsNavbar() {
+            const navButtons = document.getElementById('navButtons');
+            
+            if (isLoggedIn) {
+                navButtons.innerHTML = `
+                    <button class="btn-user">
+                        <i class="fas fa-user-circle"></i>
+                        <span>${userName}</span>
+                    </button>
+                    <button class="btn-user" style="background-color: #fee2e2; color: #dc2626;" onclick="logout()">Logout</button>
+                `;
+            } else {
+                navButtons.innerHTML = `
+                    <a href="login.html" class="btn-user">Login</a>
+                    <a href="signup.html" class="btn-user" style="background-color: var(--primary-color); color: white;">Sign Up</a>
+                `;
+            }
+        }
+
+        // Show content for all users
+        initializeCharts();
+
+        // Initialize charts
+        function initializeCharts() {
+            // Accuracy Over Time Chart
+            const accuracyCtx = document.getElementById('accuracyChart').getContext('2d');
+            new Chart(accuracyCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'Accuracy %',
+                        data: [78, 80, 82, 81, 83, 85, 82],
+                        borderColor: '#1e3a8a',
+                        backgroundColor: 'rgba(30, 58, 138, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointBackgroundColor: '#1e3a8a',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            labels: { font: { family: "'Poppins', sans-serif" } }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            max: 100,
+                            min: 0,
+                            ticks: { font: { family: "'Inter', sans-serif" } }
+                        }
+                    }
+                }
+            });
+
+            // Performance by Subject Chart
+            const subjectCtx = document.getElementById('subjectChart').getContext('2d');
+            new Chart(subjectCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['C Programming', 'Data Structures', 'Mathematics', 'Physics', 'Chemistry'],
+                    datasets: [{
+                        label: 'Accuracy %',
+                        data: [85, 72, 90, 68, 80],
+                        backgroundColor: [
+                            '#1e3a8a',
+                            '#8b5cf6',
+                            '#10b981',
+                            '#ef4444',
+                            '#f59e0b'
+                        ],
+                        borderRadius: 6,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            max: 100,
+                            ticks: { font: { family: "'Inter', sans-serif" } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Download report
+        function downloadReport() {
+            alert('📥 Report downloaded successfully!');
+        }
+
+        // Logout function
+        function logout() {
+            if (confirm('Logout?')) {
+                localStorage.removeItem('renvoxUser');
+                localStorage.removeItem('userName');
+                localStorage.removeItem('userClass');
+                window.location.reload();
+            }
+        }
+
+        setupAnalyticsNavbar();
+    </script>
+</body>
+</html>

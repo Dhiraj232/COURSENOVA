@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Study Materials - RENVOX</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- External CSS -->
+    <link rel="stylesheet" href="style.css">
+    
+    <style>
+        .materials-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            padding: 0.5rem 1rem;
+            background: var(--secondary-color);
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            color: var(--text-dark);
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .back-button:hover {
+            background: var(--primary-color);
+            color: var(--white);
+        }
+
+        .materials-header {
+            background: linear-gradient(135deg, var(--primary-color), #3730a3);
+            color: var(--white);
+            padding: 2.5rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .header-icon {
+            font-size: 3rem;
+            flex-shrink: 0;
+        }
+
+        .header-content h1 {
+            margin: 0 0 0.5rem 0;
+            font-size: 2rem;
+        }
+
+        .header-content p {
+            opacity: 0.9;
+            margin: 0;
+        }
+
+        .filter-section {
+            background: var(--white);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .filter-label {
+            font-weight: 600;
+            color: var(--text-dark);
+            font-size: 0.95rem;
+        }
+
+        .filter-select {
+            padding: 0.6rem 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: var(--white);
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 200px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 0.6rem 1rem 0.6rem 2.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-light);
+        }
+
+        .materials-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .material-card {
+            background: var(--white);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .material-card:hover {
+            border-color: var(--primary-color);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transform: translateY(-4px);
+        }
+
+        .material-thumbnail {
+            width: 100%;
+            height: 200px;
+            background: linear-gradient(135deg, var(--primary-color), #3730a3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--white);
+            font-size: 3rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .material-badge {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(255, 255, 255, 0.9);
+            color: var(--primary-color);
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .material-content {
+            padding: 1.5rem;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .material-type {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            width: fit-content;
+            background: var(--secondary-color);
+            color: var(--primary-color);
+            padding: 0.35rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+
+        .material-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+            line-height: 1.4;
+        }
+
+        .material-description {
+            color: var(--text-light);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            flex: 1;
+            line-height: 1.5;
+        }
+
+        .material-meta {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--border-color);
+            font-size: 0.85rem;
+            color: var(--text-light);
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .material-buttons {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .btn-view-material {
+            flex: 1;
+            padding: 0.7rem;
+            background: var(--primary-color);
+            color: var(--white);
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .btn-view-material:hover {
+            background: #1a2d5e;
+            transform: translateY(-2px);
+        }
+
+        .btn-download-material {
+            padding: 0.7rem 1rem;
+            background: var(--secondary-color);
+            color: var(--primary-color);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .btn-download-material:hover {
+            background: var(--primary-color);
+            color: var(--white);
+            border-color: var(--primary-color);
+        }
+
+        .chapters-section {
+            background: var(--white);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .chapter-accordion {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .accordion-header {
+            padding: 1rem;
+            background: var(--secondary-color);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .accordion-header:hover {
+            background: var(--primary-color);
+            color: var(--white);
+            border-color: var(--primary-color);
+        }
+
+        .accordion-header.active {
+            background: var(--primary-color);
+            color: var(--white);
+            border-color: var(--primary-color);
+        }
+
+        .accordion-content {
+            display: none;
+            padding: 1.5rem;
+            background: var(--white);
+            border: 1px solid var(--border-color);
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            margin-bottom: 0.5rem;
+        }
+
+        .accordion-content.active {
+            display: block;
+        }
+
+        .material-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .material-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--secondary-color);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .material-item:hover {
+            background: rgba(30, 58, 138, 0.05);
+        }
+
+        .material-item-icon {
+            font-size: 1.8rem;
+            flex-shrink: 0;
+        }
+
+        .material-item-info {
+            flex: 1;
+        }
+
+        .material-item-name {
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 0.25rem;
+        }
+
+        .material-item-details {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            display: flex;
+            gap: 1rem;
+        }
+
+        .material-item-buttons {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .btn-small {
+            padding: 0.5rem 1rem;
+            background: var(--primary-color);
+            color: var(--white);
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-small:hover {
+            background: #1a2d5e;
+        }
+
+        .btn-download-small {
+            background: var(--accent-color);
+        }
+
+        .btn-download-small:hover {
+            background: #059669;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-light);
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .materials-header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .header-content h1 {
+                font-size: 1.5rem;
+            }
+
+            .filter-section {
+                flex-direction: column;
+            }
+
+            .filter-group {
+                width: 100%;
+            }
+
+            .search-box {
+                min-width: unset;
+                width: 100%;
+            }
+
+            .materials-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- ==================== NAVBAR ==================== -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo">
+                <i class="fas fa-book"></i> RENVOX
+            </a>
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="subjects.html">Subjects</a></li>
+                <li><a href="practice.html">Practice</a></li>
+                <li><a href="certificates.html">Certificates</a></li>
+                <li><a href="pricing.html">Pricing</a></li>
+            </ul>
+            <div class="nav-buttons" id="navButtons">
+                <a href="login.html" class="btn-user">Login</a>
+                <a href="signup.html" class="btn-user" style="background-color: var(--primary-color); color: white;">Sign Up</a>
+            </div>
+            <button class="menu-toggle" id="menuToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- ==================== MAIN CONTENT ==================== -->
+    <div class="materials-container">
+        <!-- Back Button -->
+        <a href="subject-detail.html" class="back-button" id="backButton">
+            <i class="fas fa-arrow-left"></i> Back to Subject
+        </a>
+
+        <!-- Header -->
+        <div class="materials-header">
+            <div class="header-icon">📚</div>
+            <div class="header-content">
+                <h1 id="headerTitle">C Programming Study Materials</h1>
+                <p id="headerDesc">Complete notes, code snippets, and resources for comprehensive learning</p>
+            </div>
+        </div>
+
+        <!-- Filter Section -->
+        <div class="filter-section">
+            <div class="filter-group">
+                <label class="filter-label">Type:</label>
+                <select class="filter-select" id="typeFilter" onchange="filterMaterials()">
+                    <option value="">All Types</option>
+                    <option value="video">🎬 Videos</option>
+                    <option value="pdf">📄 Notes (PDF)</option>
+                    <option value="code">💻 Code Snippets</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label class="filter-label">Difficulty:</label>
+                <select class="filter-select" id="difficultyFilter" onchange="filterMaterials()">
+                    <option value="">All Levels</option>
+                    <option value="beginner">Beginner</option>
+                    <option value="intermediate">Intermediate</option>
+                    <option value="advanced">Advanced</option>
+                </select>
+            </div>
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="Search materials..." id="searchInput" onkeyup="filterMaterials()">
+            </div>
+        </div>
+
+        <!-- Featured Materials Grid -->
+        <div class="materials-grid" id="materialsGrid">
+            <!-- Filled by JavaScript -->
+        </div>
+
+        <!-- Chapters Section -->
+        <div class="chapters-section">
+            <div class="section-title">
+                <i class="fas fa-list"></i> Materials by Chapter
+            </div>
+            <div class="chapter-accordion" id="chapterAccordion">
+                <!-- Filled by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== FOOTER ==================== -->
+    <footer class="footer">
+        <div style="max-width: 1200px; margin: 0 auto; text-align: center;">
+            <div class="footer-bottom">
+                <p>&copy; 2025 RENVOX – All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ==================== EXTERNAL JAVASCRIPT FILES ==================== -->
+    <script src="navigation.js"></script>
+
+    <script>
+        /**
+         * ==================== STUDY MATERIALS PAGE ====================
+         * Display comprehensive study materials including notes, code snippets,
+         * and learning resources organized by chapter
+         */
+
+        // Materials Data
+        const materialsData = {
+            'C Programming': {
+                icon: '💻',
+                description: 'Complete notes, code snippets, and resources for comprehensive learning',
+                materials: [
+                    {
+                        id: 1,
+                        chapter: 1,
+                        type: 'video',
+                        title: 'Introduction to C - Complete Guide',
+                        description: 'Comprehensive video tutorial covering C fundamentals, history, and setup',
+                        difficulty: 'beginner',
+                        duration: 1475,
+                        downloads: 567,
+                        rating: 4.9
+                    },
+                    {
+                        id: 2,
+                        chapter: 1,
+                        type: 'pdf',
+                        title: 'Introduction to C - Complete Guide',
+                        description: 'Comprehensive notes covering C fundamentals, history, and setup',
+                        difficulty: 'beginner',
+                        pages: 45,
+                        downloads: 234,
+                        rating: 4.8
+                    },
+                    {
+                        id: 2,
+                        chapter: 1,
+                        type: 'code',
+                        title: 'Hello World & Basic Programs',
+                        description: '15 basic C programs with explanations and outputs',
+                        difficulty: 'beginner',
+                        lines: 300,
+                        downloads: 189,
+                        rating: 4.7
+                    },
+                    {
+                        id: 3,
+                        chapter: 2,
+                        type: 'pdf',
+                        title: 'Variables & Data Types Deep Dive',
+                        description: 'Detailed explanations of all C data types with examples',
+                        difficulty: 'beginner',
+                        pages: 52,
+                        downloads: 267,
+                        rating: 4.9
+                    },
+                    {
+                        id: 4,
+                        chapter: 2,
+                        type: 'code',
+                        title: 'Data Type Conversion Programs',
+                        description: '20 programs demonstrating type casting and conversions',
+                        difficulty: 'intermediate',
+                        lines: 450,
+                        downloads: 145,
+                        rating: 4.6
+                    },
+                    {
+                        id: 5,
+                        chapter: 3,
+                        type: 'pdf',
+                        title: 'Operators & Expressions Reference',
+                        description: 'Complete operator cheat sheet with operator precedence',
+                        difficulty: 'beginner',
+                        pages: 38,
+                        downloads: 198,
+                        rating: 4.8
+                    },
+                    {
+                        id: 6,
+                        chapter: 4,
+                        type: 'pdf',
+                        title: 'Control Flow Statements Master Guide',
+                        description: 'If-else, loops, switch - with flow diagrams',
+                        difficulty: 'intermediate',
+                        pages: 68,
+                        downloads: 312,
+                        rating: 4.9
+                    },
+                    {
+                        id: 7,
+                        chapter: 4,
+                        type: 'code',
+                        title: '50 Control Flow Problems',
+                        description: 'Programs covering if-else, for, while, do-while, switch',
+                        difficulty: 'intermediate',
+                        lines: 800,
+                        downloads: 256,
+                        rating: 4.8
+                    },
+                    {
+                        id: 8,
+                        chapter: 5,
+                        type: 'pdf',
+                        title: 'Functions - Concepts & Examples',
+                        description: 'Function declaration, recursion, and scope explained',
+                        difficulty: 'intermediate',
+                        pages: 55,
+                        downloads: 187,
+                        rating: 4.7
+                    },
+                    {
+                        id: 9,
+                        chapter: 6,
+                        type: 'pdf',
+                        title: 'Arrays & Strings Complete Reference',
+                        description: 'Single & multi-dimensional arrays, string operations',
+                        difficulty: 'intermediate',
+                        pages: 72,
+                        downloads: 234,
+                        rating: 4.8
+                    },
+                    {
+                        id: 10,
+                        chapter: 7,
+                        type: 'pdf',
+                        title: 'Pointers & Memory Advanced Guide',
+                        description: 'Pointer arithmetic, dynamic memory, and common pitfalls',
+                        difficulty: 'advanced',
+                        pages: 85,
+                        downloads: 198,
+                        rating: 4.9
+                    },
+                    {
+                        id: 11,
+                        chapter: 7,
+                        type: 'code',
+                        title: 'Pointer Programs Collection',
+                        description: '30 programs on pointers with explanations',
+                        difficulty: 'advanced',
+                        lines: 650,
+                        downloads: 142,
+                        rating: 4.7
+                    },
+                    {
+                        id: 12,
+                        chapter: 8,
+                        type: 'pdf',
+                        title: 'Strings - Operations & Manipulation',
+                        description: 'String functions, patterns, and algorithms',
+                        difficulty: 'intermediate',
+                        pages: 48,
+                        downloads: 203,
+                        rating: 4.8
+                    }
+                ],
+                chapters: [
+                    { id: 1, name: 'Introduction to C', materials: [1, 2] },
+                    { id: 2, name: 'Variables & Data Types', materials: [3, 4] },
+                    { id: 3, name: 'Operators & Expressions', materials: [5] },
+                    { id: 4, name: 'Control Flow Statements', materials: [6, 7] },
+                    { id: 5, name: 'Functions', materials: [8] },
+                    { id: 6, name: 'Arrays', materials: [9] },
+                    { id: 7, name: 'Pointers', materials: [10, 11] },
+                    { id: 8, name: 'Strings', materials: [12] }
+                ]
+            }
+        };
+
+        // Get subject from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const selectedSubject = urlParams.get('subject') || 'C Programming';
+        const subject = materialsData[selectedSubject] || materialsData['C Programming'];
+
+        // Initialize page
+        function initializeMaterials() {
+            document.getElementById('headerTitle').textContent = selectedSubject + ' Study Materials';
+            document.getElementById('backButton').href = 'subject-detail.html?subject=' + encodeURIComponent(selectedSubject);
+            
+            renderMaterials();
+            renderChapters();
+            setupUserDropdownIfNeeded();
+        }
+
+        // Render featured materials grid
+        function renderMaterials() {
+            const filtered = getFilteredMaterials();
+            
+            if (filtered.length === 0) {
+                document.getElementById('materialsGrid').innerHTML = `
+                    <div style="grid-column: 1/-1;">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">📭</div>
+                            <h3>No materials found</h3>
+                            <p>Try adjusting your filters</p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+
+            const html = filtered.map(m => {
+                const icon = m.type === 'pdf' ? '📄' : m.type === 'code' ? '💻' : '🎬';
+                const typeLabel = m.type === 'pdf' ? 'PDF Notes' : m.type === 'code' ? 'Code Snippets' : 'Video Tutorial';
+                
+                return `
+                    <div class="material-card">
+                        <div class="material-thumbnail">
+                            ${icon}
+                            <div class="material-badge">${m.difficulty}</div>
+                        </div>
+                        <div class="material-content">
+                            <div class="material-type">
+                                <i class="fas fa-${m.type === 'pdf' ? 'file-pdf' : m.type === 'code' ? 'code' : 'play-circle'}"></i>
+                                ${typeLabel}
+                            </div>
+                            <div class="material-title">${m.title}</div>
+                            <div class="material-description">${m.description}</div>
+                            <div class="material-meta">
+                                <div class="meta-item">
+                                    <i class="fas fa-star" style="color: #f59e0b;"></i>
+                                    ${m.rating}
+                                </div>
+                                <div class="meta-item">
+                                    <i class="fas fa-download"></i>
+                                    ${m.downloads}
+                                </div>
+                                <div class="meta-item">
+                                    <i class="fas fa-${m.type === 'pdf' ? 'file' : m.type === 'code' ? 'code' : 'video'}"></i>
+                                    ${m.type === 'pdf' ? m.pages + ' pages' : m.type === 'code' ? m.lines + ' lines' : m.duration + ' seconds'}
+                                </div>
+                            </div>
+                            <div class="material-buttons">
+                                ${m.type === 'video' ? `<button class="btn-view-material" onclick="watchVideo('${m.id}', '${m.title}')"><i class="fas fa-play"></i> Watch</button>` : `<button class="btn-view-material" onclick="viewMaterial('${m.id}')"><i class="fas fa-eye"></i> View</button>`}
+                                <button class="btn-download-material" onclick="downloadMaterial('${m.title}')">
+                                    <i class="fas fa-download"></i> Download
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('materialsGrid').innerHTML = html;
+        }
+
+        // Render chapters accordion
+        function renderChapters() {
+            const html = subject.chapters.map((ch, idx) => {
+                const materials = ch.materials.map(mId => subject.materials.find(m => m.id === mId));
+                const itemsHtml = materials.map(m => {
+                    const icon = m.type === 'pdf' ? '📄' : m.type === 'code' ? '💻' : '🎬';
+                    return `
+                        <div class="material-item">
+                            <div class="material-item-icon">${icon}</div>
+                            <div class="material-item-info">
+                                <div class="material-item-name">${m.title}</div>
+                                <div class="material-item-details">
+                                    <span>${m.type === 'pdf' ? m.pages + ' pages' : m.lines + ' lines'}</span>
+                                    <span>${m.difficulty}</span>
+                                    <span>${m.downloads} downloads</span>
+                                </div>
+                            </div>
+                            <div class="material-item-buttons">
+                                ${m.type === 'video' ? `<button class="btn-small" onclick="watchVideo('${m.id}', '${m.title}')"><i class="fas fa-play"></i> Watch</button>` : `<button class="btn-small" onclick="viewMaterial('${m.id}')">View</button>`}
+                                <button class="btn-small btn-download-small" onclick="downloadMaterial('${m.title}')">Download</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                return `
+                    <div>
+                        <div class="accordion-header" onclick="toggleAccordion(this)">
+                            <span><i class="fas fa-book"></i> Chapter ${ch.id}: ${ch.name}</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </div>
+                        <div class="accordion-content">
+                            <div class="material-list">
+                                ${itemsHtml}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('chapterAccordion').innerHTML = html;
+        }
+
+        // Toggle accordion
+        function toggleAccordion(header) {
+            header.classList.toggle('active');
+            header.nextElementSibling.classList.toggle('active');
+        }
+
+        // Get filtered materials
+        function getFilteredMaterials() {
+            const typeFilter = document.getElementById('typeFilter').value;
+            const difficultyFilter = document.getElementById('difficultyFilter').value;
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+
+            return subject.materials.filter(m => {
+                const matchType = !typeFilter || m.type === typeFilter;
+                const matchDifficulty = !difficultyFilter || m.difficulty === difficultyFilter;
+                const matchSearch = !searchTerm || m.title.toLowerCase().includes(searchTerm) || m.description.toLowerCase().includes(searchTerm);
+                return matchType && matchDifficulty && matchSearch;
+            });
+        }
+
+        // Filter materials
+        function filterMaterials() {
+            renderMaterials();
+        }
+
+        // View material
+        function viewMaterial(materialId) {
+            const material = subject.materials.find(m => m.id === parseInt(materialId));
+            alert(`📖 Opening: ${material.title}\n\n${material.description}`);
+        }
+
+        // Watch video
+        function watchVideo(materialId, title) {
+            const subjectName = new URLSearchParams(window.location.search).get('subject') || 'C Programming';
+            window.location.href = 'video-player.html?videoId=' + materialId + '&subject=' + encodeURIComponent(subjectName);
+        }
+
+        // Download material
+        function downloadMaterial(title) {
+            alert(`⬇️ Downloading: ${title}\n\nFile will be saved to your Downloads folder`);
+        }
+
+        // Initialize
+        initializeMaterials();
+    </script>
+</body>
+</html>

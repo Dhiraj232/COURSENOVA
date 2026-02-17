@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subjects - RENVOX</title>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-color: #1e3a8a;
+            --secondary-color: #f3f4f6;
+            --accent-color: #10b981;
+            --text-dark: #1f2937;
+            --text-light: #6b7280;
+            --border-color: #e5e7eb;
+            --white: #ffffff;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            color: var(--text-dark);
+            background-color: var(--white);
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
+        }
+
+        /* ==================== NAVBAR ==================== */
+        .navbar {
+            position: sticky;
+            top: 0;
+            background-color: var(--white);
+            border-bottom: 1px solid var(--border-color);
+            z-index: 1000;
+            padding: 0.8rem 2rem;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            background-color: rgba(255, 255, 255, 0.95);
+        }
+
+        .navbar.scrolled {
+            padding: 0.5rem 2rem;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .logo {
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--primary-color);
+            text-decoration: none;
+            font-family: 'Poppins', sans-serif;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .logo:hover {
+            transform: translateY(-2px);
+        }
+
+        .nav-menu {
+            display: flex;
+            list-style: none;
+            gap: 2.5rem;
+            align-items: center;
+            flex: 1;
+        }
+
+        .nav-menu a {
+            text-decoration: none;
+            color: var(--text-dark);
+            font-weight: 500;
+            transition: all 0.3s ease;
+            font-size: 0.95rem;
+            position: relative;
+            padding-bottom: 0.25rem;
+        }
+
+        .nav-menu a:after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background-color: var(--primary-color);
+            transition: width 0.3s ease;
+        }
+
+        .nav-menu a:hover:after,
+        .nav-menu a.active:after {
+            width: 100%;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .btn-user {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.65rem 1.5rem;
+            background-color: var(--secondary-color);
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            color: var(--text-dark);
+        }
+
+        .btn-user:hover {
+            background-color: var(--primary-color);
+            color: var(--white);
+        }
+
+        .btn-logout {
+            padding: 0.65rem 1.5rem;
+            background-color: #fee2e2;
+            color: #dc2626;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-logout:hover {
+            background-color: #fca5a5;
+        }
+
+        .menu-toggle {
+            display: none;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--primary-color);
+        }
+
+        /* ==================== PAGE HEADER ==================== */
+        .page-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #3730a3 100%);
+            color: var(--white);
+            padding: 3rem 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .page-header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .page-header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-header p {
+            font-size: 1.05rem;
+            opacity: 0.9;
+        }
+
+        /* ==================== CONTAINER ==================== */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* ==================== FILTER SECTION ==================== */
+        .filter-section {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-group {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .filter-group label {
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .filter-group select {
+            padding: 0.6rem 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 6px;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .filter-group select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+        }
+
+        /* ==================== SUBJECT CARDS ==================== */
+        .subjects-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .subject-card {
+            background: var(--white);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 2rem;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .subject-card:hover {
+            border-color: var(--primary-color);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            transform: translateY(-4px);
+        }
+
+        .subject-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .subject-icon {
+            font-size: 2.5rem;
+        }
+
+        .subject-name {
+            font-size: 1.3rem;
+            color: var(--primary-color);
+            margin: 0;
+        }
+
+        .subject-info {
+            color: var(--text-light);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .progress-section {
+            margin: 1.5rem 0;
+        }
+
+        .progress-label {
+            font-size: 0.85rem;
+            color: var(--text-dark);
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background-color: var(--border-color);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+            border-radius: 3px;
+            transition: width 0.3s ease;
+        }
+
+        .btn-view {
+            width: 100%;
+            padding: 0.8rem;
+            background-color: var(--primary-color);
+            color: var(--white);
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+        }
+
+        .btn-view:hover {
+            background-color: #1e2d6f;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(30, 58, 138, 0.3);
+        }
+
+        .readonly-badge {
+            display: inline-block;
+            background-color: #fef3c7;
+            color: #92400e;
+            padding: 0.4rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .login-prompt {
+            background: linear-gradient(135deg, #f0f4ff 0%, #f9fafb 100%);
+            border: 2px solid var(--primary-color);
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            margin: 3rem 0;
+        }
+
+        .login-prompt h3 {
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+            font-size: 1.3rem;
+        }
+
+        .login-prompt p {
+            color: var(--text-light);
+            margin-bottom: 1.5rem;
+        }
+
+        .btn-login-prompt {
+            padding: 0.9rem 2rem;
+            background-color: var(--primary-color);
+            color: var(--white);
+            border: none;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+
+        .btn-login-prompt:hover {
+            background-color: #1e2d6f;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(30, 58, 138, 0.3);
+        }
+
+        /* ==================== FOOTER ==================== */
+        .footer {
+            background-color: var(--text-dark);
+            color: var(--white);
+            padding: 3rem 2rem 1rem;
+            margin-top: 3rem;
+        }
+
+        .footer-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .footer-column h4 {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+
+        .footer-column ul {
+            list-style: none;
+        }
+
+        .footer-column a {
+            color: #d1d5db;
+            text-decoration: none;
+            transition: color 0.3s ease;
+            font-size: 0.95rem;
+        }
+
+        .footer-column a:hover {
+            color: var(--accent-color);
+        }
+
+        .footer-bottom {
+            border-top: 1px solid #4b5563;
+            padding-top: 2rem;
+            text-align: center;
+            color: #9ca3af;
+        }
+
+        @media (max-width: 768px) {
+            .navbar {
+                padding: 0.8rem 1rem;
+            }
+
+            .page-header {
+                padding: 2rem 1rem;
+                margin-bottom: 2rem;
+            }
+
+            .page-header h1 {
+                font-size: 1.5rem;
+            }
+
+            .container {
+                padding: 0 1rem;
+            }
+
+            .filter-section {
+                flex-direction: column;
+            }
+
+            .filter-group {
+                width: 100%;
+            }
+
+            .subjects-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .menu-toggle {
+                display: block;
+            }
+
+            .nav-menu {
+                display: none;
+                position: fixed;
+                left: 0;
+                top: 70px;
+                flex-direction: column;
+                background-color: var(--white);
+                width: 100%;
+                text-align: center;
+                gap: 1.5rem;
+                padding: 2rem 1rem;
+            }
+
+            .nav-menu.active {
+                display: flex;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- ==================== NAVBAR ==================== -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo">
+                <i class="fas fa-book"></i> RENVOX
+            </a>
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="subjects.html" class="active">Subjects</a></li>
+                <li><a href="practice.html">Practice</a></li>
+                <li><a href="certificates.html">Certificates</a></li>
+                <li><a href="pricing.html">Pricing</a></li>
+            </ul>
+            <div class="nav-buttons" id="navButtons">
+                <!-- Filled by JavaScript -->
+            </div>
+            <button class="menu-toggle" id="menuToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- ==================== PAGE HEADER ==================== -->
+    <div class="page-header">
+        <div class="page-header-content">
+            <h1>📚 Browse Subjects</h1>
+            <p id="headerSubtext">Structured syllabus-based content for your class and course</p>
+        </div>
+    </div>
+
+    <!-- ==================== FILTER SECTION (Only for logged in) ==================== -->
+    <div class="container" id="filterSection" style="display: none;">
+        <div class="filter-section">
+            <div class="filter-group">
+                <label for="classFilter">Class / Course:</label>
+                <select id="classFilter" onchange="filterSubjects()">
+                    <option value="">All Classes</option>
+                    <option value="11">Class 11</option>
+                    <option value="12">Class 12</option>
+                    <option value="ug">Undergraduate</option>
+                    <option value="pg">Postgraduate</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label for="categoryFilter">Category:</label>
+                <select id="categoryFilter" onchange="filterSubjects()">
+                    <option value="">All Categories</option>
+                    <option value="engineering">Engineering</option>
+                    <option value="science">Science</option>
+                    <option value="commerce">Commerce</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== SUBJECTS GRID ==================== -->
+    <div class="container">
+        <div class="subjects-grid" id="subjectsGrid">
+            <!-- Filled by JavaScript -->
+        </div>
+
+        <!-- Login Prompt (for non-logged-in users) -->
+        <div id="loginPrompt" style="display: none;">
+            <div class="login-prompt">
+                <h3>🔐 Unlock Full Access</h3>
+                <p>Create a free account to access personalized subjects, track your progress, and get practice questions tailored to your curriculum.</p>
+                <button class="btn-login-prompt" onclick="window.location.href='signup.html'">Sign Up Free</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== FOOTER ==================== -->
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-column">
+                <h4>Product</h4>
+                <ul>
+                    <li><a href="subjects.html">Subjects</a></li>
+                    <li><a href="practice.html">Practice</a></li>
+                    <li><a href="certificates.html">Certificates</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h4>Company</h4>
+                <ul>
+                    <li><a href="#">About Us</a></li>
+                    <li><a href="#">Contact</a></li>
+                    <li><a href="#">Blog</a></li>
+                </ul>
+            </div>
+            <div class="footer-column">
+                <h4>Legal</h4>
+                <ul>
+                    <li><a href="#">Privacy Policy</a></li>
+                    <li><a href="#">Terms of Service</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 RENVOX – All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // ==================== USER AUTHENTICATION STATE ==================== 
+        const isLoggedIn = localStorage.getItem('renvoxUser') !== null;
+        const userClass = localStorage.getItem('userClass') || '12';
+        const userName = localStorage.getItem('userName') || 'User';
+        let selectedDifficulty = 'easy';
+
+        // ==================== SAMPLE DATA ==================== 
+        const allSubjects = [
+            { id: 1, name: 'C Programming', icon: '💻', class: '11', category: 'engineering', chapters: 12, progress: 65, accuracy: 78 },
+            { id: 2, name: 'Data Structures', icon: '🔗', class: '12', category: 'engineering', chapters: 15, progress: 52, accuracy: 72 },
+            { id: 3, name: 'Mathematics', icon: '📐', class: '11', category: 'science', chapters: 18, progress: 88, accuracy: 85 },
+            { id: 4, name: 'Physics', icon: '⚛️', class: '12', category: 'science', chapters: 16, progress: 45, accuracy: 68 },
+            { id: 5, name: 'Chemistry', icon: '🧪', class: '12', category: 'science', chapters: 14, progress: 70, accuracy: 80 },
+            { id: 6, name: 'DBMS', icon: '🗄️', class: '12', category: 'engineering', chapters: 10, progress: 60, accuracy: 75 },
+        ];
+
+        const recentActivities = [
+            { icon: '📝', type: 'Chapter Test', subject: 'Variables & Data Types', score: '22/25', accuracy: '88%', time: '2 hours ago' },
+            { icon: '🧩', type: 'Topic Practice', subject: 'Control Flow', score: '18/20', accuracy: '90%', time: '4 hours ago' },
+            { icon: '🎯', type: 'Mock Test', subject: 'C Programming', score: '45/50', accuracy: '90%', time: 'Yesterday' },
+            { icon: '📚', type: 'Chapter Test', subject: 'Arrays & Strings', score: '28/30', accuracy: '93%', time: '2 days ago' },
+        ];
+
+        const weakAreas = [
+            { topic: 'Pointers & Memory Management', accuracy: 45 },
+            { topic: 'Dynamic Memory Allocation', accuracy: 52 },
+            { topic: 'File Handling', accuracy: 58 },
+            { topic: 'LinkedLists Implementation', accuracy: 62 },
+        ];
+
+        // ==================== SETUP NAVBAR ==================== 
+        function setupNavbar() {
+            const navButtons = document.getElementById('navButtons');
+            
+            if (isLoggedIn) {
+                navButtons.innerHTML = `
+                    <button class="btn-user">
+                        <i class="fas fa-user-circle"></i>
+                        <span>${userName}</span>
+                    </button>
+                    <button class="btn-logout" onclick="logout()">Logout</button>
+                `;
+            } else {
+                navButtons.innerHTML = `
+                    <a href="login.html" class="btn-user">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </a>
+                    <a href="signup.html" class="btn-user" style="background-color: var(--primary-color); color: var(--white);">
+                        <i class="fas fa-user-plus"></i> Sign Up
+                    </a>
+                `;
+            }
+        }
+
+        // ==================== LOAD SUBJECTS GRID ==================== 
+        function loadSubjectsGrid() {
+            const subjects = allSubjects;
+            
+            const html = subjects.map(s => {
+                const button = isLoggedIn 
+                    ? `<button class="btn-view" onclick="viewSubjectDetail('${s.name}')">View Subject</button>`
+                    : `<button class="btn-view" onclick="viewSubjectDetail('${s.name}')">Preview Subject</button>`;
+                
+                const badge = !isLoggedIn ? '<span style="position: absolute; top: 10px; right: 10px; background: var(--accent-color); color: var(--white); padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.75rem; font-weight: 700;">Preview</span>' : '';
+                
+                return `
+                    <div class="subject-card" onclick="viewSubjectDetail('${s.name}')">
+                        ${badge}
+                        <div class="subject-header">
+                            <div class="subject-icon">${s.icon}</div>
+                            <h3 class="subject-name">${s.name}</h3>
+                        </div>
+                        <p class="subject-info">${s.chapters} chapters • ${s.progress}% complete</p>
+                        <div class="progress-section">
+                            <div class="progress-label">
+                                <span>Progress</span>
+                                <span>${s.progress}%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: ${s.progress}%; background: linear-gradient(90deg, var(--primary-color), #3730a3);"></div>
+                            </div>
+                        </div>
+                        ${isLoggedIn ? `<p class="subject-info" style="margin-top: 1rem;">Accuracy: ${s.accuracy}%</p>` : ''}
+                        ${button}
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('subjectsGrid').innerHTML = html;
+        }
+
+        // ==================== VIEW SUBJECT DETAIL ==================== 
+        function viewSubjectDetail(subjectName) {
+            window.location.href = 'subject-detail.html?subject=' + encodeURIComponent(subjectName);
+        }
+
+        // ==================== LOAD QUICK STATS ==================== 
+        function loadQuickStats() {
+            const stats = [
+                { icon: '✅', label: 'Questions Practiced', value: '1,245', color: '#1e3a8a' },
+                { icon: '🎯', label: 'Accuracy %', value: '78%', color: '#10b981' },
+                { icon: '⏱', label: 'Avg Time / Question', value: '45s', color: '#f59e0b' },
+                { icon: '📈', label: 'Improvement Trend', value: '+12%', color: '#8b5cf6' },
+            ];
+
+            const html = stats.map(s => `
+                <div class="stat-card">
+                    <div class="stat-icon">${s.icon}</div>
+                    <div class="stat-value">${s.value}</div>
+                    <div class="stat-label">${s.label}</div>
+                </div>
+            `).join('');
+
+            document.getElementById('quickStats').innerHTML = html;
+        }
+
+        // ==================== LOAD CONTINUE PRACTICE ==================== 
+        function loadContinuePractice() {
+            const lastPractice = { 
+                icon: '💻',
+                subject: 'C Programming',
+                topic: 'Pointers & Memory Management',
+                progress: 65
+            };
+
+            const html = `
+                <div class="continue-icon">${lastPractice.icon}</div>
+                <div class="continue-info">
+                    <div class="continue-topic">Last practice session</div>
+                    <h3 class="continue-title">${lastPractice.subject}</h3>
+                    <p style="color: var(--text-light); margin-bottom: 0.8rem;">${lastPractice.topic}</p>
+                    <div class="continue-progress">
+                        <div style="font-size: 0.85rem; color: var(--text-light); margin-bottom: 0.3rem;">Progress: ${lastPractice.progress}%</div>
+                        <div class="progress-bar-small">
+                            <div class="progress-fill" style="width: ${lastPractice.progress}%"></div>
+                        </div>
+                    </div>
+                </div>
+                <button class="btn-resume" onclick="resumePractice()">Resume Practice</button>
+            `;
+
+            document.getElementById('continuePractice').innerHTML = html;
+        }
+
+        // ==================== LOAD SUBJECT PRACTICE LIST ==================== 
+        function loadSubjectPracticeList() {
+            const subjects = isLoggedIn ? allSubjects.filter(s => s.class === userClass) : allSubjects.slice(0, 4);
+
+            const html = subjects.map(s => `
+                <div class="subject-practice-card">
+                    <div class="subject-header-practice">
+                        <div class="subject-icon-practice">${s.icon}</div>
+                        <div class="subject-name-practice">${s.name}</div>
+                    </div>
+                    <span class="accuracy-badge">Accuracy: ${s.accuracy}%</span>
+                    <div class="progress-section-practice">
+                        <div class="progress-label-practice">
+                            <span>Progress</span>
+                            <span>${s.progress}%</span>
+                        </div>
+                        <div class="progress-bar-small">
+                            <div class="progress-fill" style="width: ${s.progress}%; background: linear-gradient(90deg, var(--primary-color), #10b981);"></div>
+                        </div>
+                    </div>
+                    <button class="btn-practice-now" onclick="practiceSubject('${s.name}')">Practice Now</button>
+                </div>
+            `).join('');
+
+            document.getElementById('subjectPracticeList').innerHTML = html;
+        }
+
+        // ==================== LOAD RECENT ACTIVITY ==================== 
+        function loadRecentActivity() {
+            const html = recentActivities.map(a => `
+                <div class="activity-item">
+                    <div class="activity-icon">${a.icon}</div>
+                    <div class="activity-details">
+                        <div class="activity-title">${a.type} - ${a.subject}</div>
+                        <div class="activity-meta">${a.time}</div>
+                    </div>
+                    <div class="activity-stat">
+                        <div>${a.score}</div>
+                        <div class="activity-stat-label">${a.accuracy}</div>
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById('activityList').innerHTML = html;
+        }
+
+        // ==================== LOAD WEAK AREAS ==================== 
+        function loadWeakAreas() {
+            const html = weakAreas.map(w => `
+                <div class="weak-area-card">
+                    <div class="weak-area-info">
+                        <div class="weak-area-topic">${w.topic}</div>
+                        <div class="weak-area-accuracy">Current Accuracy: <strong>${w.accuracy}%</strong> • Target: 75%</div>
+                    </div>
+                    <button class="btn-practice-weak" onclick="practiceWeakArea('${w.topic}')">Practice Again</button>
+                </div>
+            `).join('');
+
+            document.getElementById('weakAreasList').innerHTML = html;
+        }
+
+        // ==================== PRACTICE FUNCTIONS ==================== 
+        function selectDifficulty(btn, difficulty) {
+            document.querySelectorAll('.difficulty-btn').forEach(b => {
+                b.classList.remove('active');
+            });
+            btn.classList.add('active');
+            selectedDifficulty = difficulty;
+        }
+
+        function startTopicPractice() {
+            const topic = document.getElementById('topicSelect').value;
+            if (topic === 'Select a topic...') {
+                alert('Please select a topic first!');
+                return;
+            }
+            alert(`Starting ${selectedDifficulty.toUpperCase()} practice on: ${topic}`);
+        }
+
+        function startChapterTest() {
+            const chapter = document.getElementById('chapterSelect').value;
+            if (chapter === 'Select a chapter...') {
+                alert('Please select a chapter first!');
+                return;
+            }
+            alert(`Starting Chapter Test: ${chapter}`);
+        }
+
+        function attemptMockTest() {
+            const mock = document.getElementById('mockSelect').value;
+            if (mock === 'Select a mock test...') {
+                alert('Please select a mock test first!');
+                return;
+            }
+            alert(`Starting Mock Test: ${mock}`);
+        }
+
+        function resumePractice() {
+            alert('Resuming previous practice session...');
+        }
+
+        function changeSubject() {
+            alert('Subject selection feature coming soon!');
+        }
+
+        function practiceSubject(subject) {
+            alert(`Starting practice for: ${subject}`);
+        }
+
+        function practiceWeakArea(topic) {
+            alert(`Starting focused practice on: ${topic}`);
+        }
+
+        function viewAnalytics() {
+            alert('Redirecting to Performance Analytics...');
+        }
+
+        function logout() {
+            if (confirm('Logout?')) {
+                localStorage.removeItem('renvoxUser');
+                localStorage.removeItem('userName');
+                localStorage.removeItem('userClass');
+                window.location.reload();
+            }
+        }
+
+        // ==================== INITIALIZE ==================== 
+        setupNavbar();
+        loadSubjectsGrid();
+        loadQuickStats();
+        loadContinuePractice();
+        loadSubjectPracticeList();
+        loadRecentActivity();
+        loadWeakAreas();
+
+        // ==================== SCROLL EFFECT ==================== 
+        window.addEventListener('scroll', function() {
+            const navbar = document.getElementById('navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+    </script>
+
+    <!-- ==================== EXTERNAL JAVASCRIPT FILES ==================== -->
+    <!-- Navigation System -->
+    <script src="navigation.js"></script>
