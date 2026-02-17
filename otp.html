@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Verify — RENVOX</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        :root{ --primary:#1e3a8a; --bg:#ffffff; --muted:#6b7280; }
+        *{box-sizing:border-box}
+        body{font-family:Inter, sans-serif;background:#f7fafc;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:1rem}
+        .card{background:var(--bg);width:100%;max-width:420px;border-radius:12px;padding:1.5rem;box-shadow:0 12px 40px rgba(13,38,76,0.08);}
+        h1{font-family:Poppins, sans-serif;font-size:1.25rem;margin-bottom:0.25rem;color:var(--primary)}
+        p{margin:0 0 1rem 0;color:var(--muted)}
+        .otp-row{display:flex;gap:.5rem;margin:1rem 0}
+        .otp-input{flex:1;padding:.8rem;text-align:center;font-size:1.1rem;border:1px solid #e6e9ef;border-radius:8px}
+        .btn{display:inline-block;padding:.85rem 1rem;border-radius:8px;border:none;background:var(--primary);color:#fff;font-weight:600;cursor:pointer}
+        .btn-outline{background:#fff;color:var(--primary);border:1px solid #e6e9ef}
+        .muted{color:var(--muted);font-size:.95rem}
+        .resend{background:none;border:none;color:var(--primary);font-weight:600;cursor:pointer}
+        .center{display:flex;justify-content:center;gap:.5rem}
+        @media(max-width:420px){ .otp-row{gap:.4rem} }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Verify your account</h1>
+        <p>We've sent a verification code to your email or mobile number.</p>
+
+        <div class="otp-row" id="otpRow">
+            <input inputmode="numeric" maxlength="1" class="otp-input" id="d1" />
+            <input inputmode="numeric" maxlength="1" class="otp-input" id="d2" />
+            <input inputmode="numeric" maxlength="1" class="otp-input" id="d3" />
+            <input inputmode="numeric" maxlength="1" class="otp-input" id="d4" />
+            <input inputmode="numeric" maxlength="1" class="otp-input" id="d5" />
+            <input inputmode="numeric" maxlength="1" class="otp-input" id="d6" />
+        </div>
+
+        <div style="margin-bottom:1rem;" class="center">
+            <button class="btn" id="verifyBtn">Verify</button>
+            <button class="btn-outline" id="backBtn">Back</button>
+        </div>
+
+        <div class="center">
+            <span class="muted">Didn't receive the code?</span>
+            <button class="resend" id="resendBtn">Resend OTP</button>
+        </div>
+    </div>
+
+    <script>
+        const inputs = Array.from(document.querySelectorAll('.otp-input'));
+        inputs.forEach((inp, idx) => {
+            inp.addEventListener('input', (e) => {
+                const v = e.target.value.replace(/[^0-9]/g, '');
+                e.target.value = v;
+                if (v && idx < inputs.length - 1) inputs[idx+1].focus();
+            });
+            inp.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && !e.target.value && idx > 0) {
+                    inputs[idx-1].focus();
+                }
+            });
+        });
+
+        document.getElementById('verifyBtn').addEventListener('click', () => {
+            const code = inputs.map(i => i.value).join('');
+            if (code.length < 4) { alert('Please enter the full OTP'); return; }
+            const userId = localStorage.getItem('pendingUserId');
+            if (!userId) { alert('No pending signup found.'); return; }
+            fetch('/api/verify-otp', {
+                method: 'POST', headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({ userId, code })
+            }).then(r=>r.json()).then(data=>{
+                if (!data.ok) { alert(data.message || 'Verification failed'); return; }
+                // store token and redirect to login
+                localStorage.removeItem('pendingUserId');
+                localStorage.setItem('renvox_token', data.token);
+                alert('OTP verified. Account ready.');
+                window.location.href = 'index.html';
+            }).catch(err=>{ console.error(err); alert('Server error'); });
+        });
+
+        document.getElementById('resendBtn').addEventListener('click', () => {
+            const userId = localStorage.getItem('pendingUserId');
+            if (!userId) { alert('No pending signup found.'); return; }
+            fetch('/api/send-otp', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ userId }) })
+            .then(r=>r.json()).then(data=>{ if (data.ok) alert('OTP resent (mock). Check console or SMS.'); else alert(data.message||'Failed to resend'); })
+            .catch(err=>{ console.error(err); alert('Server error'); });
+        });
+
+        document.getElementById('backBtn').addEventListener('click', () => { window.history.back(); });
+    </script>
+</body>
+</html>

@@ -741,12 +741,27 @@
             successMsg.textContent = 'Account created successfully! Redirecting...';
             successMsg.style.display = 'block';
 
-            // Demo redirect
-            setTimeout(() => {
-                // In real app, send data to server
-                alert('Account created! Verify your email to continue.');
-                window.location.href = 'login.html';
-            }, 1500);
+            // Send signup to backend
+            fetch('/api/signup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ fullName, email, mobile, password, role })
+            }).then(r => r.json()).then(data => {
+                if (!data.ok) {
+                    errorMsg.textContent = data.message || 'Signup failed';
+                    errorMsg.style.display = 'block';
+                    return;
+                }
+                // store pending userId for OTP verification
+                localStorage.setItem('pendingUserId', data.userId);
+                successMsg.textContent = 'Account created! A verification code has been sent.';
+                successMsg.style.display = 'block';
+                setTimeout(() => { window.location.href = 'otp.html'; }, 900);
+            }).catch(err => {
+                console.error(err);
+                errorMsg.textContent = 'Server error. Please try later.';
+                errorMsg.style.display = 'block';
+            });
         });
 
         // Google Sign Up

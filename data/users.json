@@ -1,0 +1,54 @@
+[
+  {
+    "id": "1771355993763",
+    "fullName": "dhiraj kumar",
+    "email": "dhirajkumar464748@gmail.com",
+    "mobile": "8709865685",
+    "passwordHash": "$2b$10$YYgeEPKTFmqGYvRIyKSjj.r5VY.Bzqc/6GInh3R35HQnKb1HaSasm",
+    "role": "student",
+    "college": "",
+    "classInfo": "",
+    "verified": true,
+    "otp": null,
+    "otpExpiry": null
+  },
+  {
+    "id": "1771356323609",
+    "fullName": "Test User",
+    "email": "test1@renvox.com",
+    "mobile": "9999999999",
+    "passwordHash": "$2b$10$ELt4eJgO8NIYJijSsRCSz.4HgcvBMY.3FW5XvYdVwAKbvPY/2IEIW",
+    "role": "student",
+    "college": "",
+    "classInfo": "",
+    "verified": false,
+    "otp": "827880",
+    "otpExpiry": 1771356623609
+  },
+  {
+    "id": "1771356454163",
+    "fullName": "Test User2",
+    "email": "test2@renvox.com",
+    "mobile": "9999999998",
+    "passwordHash": "$2b$10$GYyJXhaRKP74t7LFGNPeLOBZpoogGiTd2cAwYQEhXvI/oJTu2j9mi",
+    "role": "student",
+    "college": "",
+    "classInfo": "",
+    "verified": false,
+    "otp": "358797",
+    "otpExpiry": 1771356754164
+  },
+  {
+    "id": "1771356513893",
+    "fullName": "Test User3",
+    "email": "test3@renvox.com",
+    "mobile": "9999999997",
+    "passwordHash": "$2b$10$pb9zBAuue7nTcTAx7nJ3O./Khig24KlhmLxcMJTPtFH997obEVnj6",
+    "role": "student",
+    "college": "",
+    "classInfo": "",
+    "verified": true,
+    "otp": null,
+    "otpExpiry": null
+  }
+]

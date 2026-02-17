@@ -1,0 +1,16 @@
+[
+  {
+    "id": 1771356454782,
+    "bookId": 1,
+    "from": "Test User2",
+    "text": "Is this book still available?",
+    "ts": 1771356454782
+  },
+  {
+    "id": 1771356514290,
+    "bookId": 1,
+    "from": "Test User3",
+    "text": "Is this book still available?",
+    "ts": 1771356514290
+  }
+]

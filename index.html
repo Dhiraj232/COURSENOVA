@@ -33,12 +33,21 @@
 
             </ul>
             <div class="nav-buttons" id="navButtons">
-                <a href="login.html" class="btn-login">
-                    <i class="fas fa-sign-in-alt"></i> Login
-                </a>
-                <a href="signup.html" class="btn-signup">
-                    <i class="fas fa-user-plus"></i> Sign Up
-                </a>
+                <div id="guestButtons">
+                    <a href="login.html" class="btn-login">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </a>
+                    <a href="signup.html" class="btn-signup">
+                        <i class="fas fa-user-plus"></i> Sign Up
+                    </a>
+                </div>
+                <div id="userArea" style="display:none; align-items:center; gap:.6rem;">
+                    <a id="profileLink" href="dashboard.html" style="display:flex;align-items:center;gap:.5rem;text-decoration:none;color:inherit;">
+                        <div id="userAvatar" style="width:36px;height:36px;border-radius:50%;background:var(--primary-color);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.95rem"></div>
+                        <div id="userGreeting" style="font-weight:600;color:var(--primary-color);"></div>
+                    </a>
+                    <button id="logoutBtn" class="btn" style="margin-left:.5rem;">Logout</button>
+                </div>
             </div>
             <button class="menu-toggle" id="menuToggle">
                 <i class="fas fa-bars"></i>
@@ -49,7 +58,7 @@
     <!-- ==================== HERO SECTION ==================== -->
     <section class="hero" id="home">
         <div class="hero-content">
-            <h1>Smart Learning Platform for Students</h1>
+            <h1 id="heroTitle">Smart Learning Platform for Students</h1>
             <p>Notes, Practice Questions & Certificates Designed for Indian Colleges</p>
             <ul class="value-points">
                 <li>Structured syllabus-based content</li>
@@ -344,6 +353,53 @@
                 }
             });
         });
+
+        // ==================== AUTH / USER UI ====================
+        async function loadUser() {
+            const guestButtons = document.getElementById('guestButtons');
+            const userArea = document.getElementById('userArea');
+            const userGreeting = document.getElementById('userGreeting');
+            const heroTitle = document.getElementById('heroTitle');
+
+            let user = null;
+            const local = localStorage.getItem('renvox_user');
+            const token = localStorage.getItem('renvox_token');
+            if (local) {
+                try { user = JSON.parse(local); } catch(e){ user = null; }
+            }
+
+            if (!user && token) {
+                try {
+                    const res = await fetch('/api/me', { headers: { 'Authorization': 'Bearer ' + token } });
+                    const data = await res.json();
+                    if (data && data.ok && data.user) {
+                        user = data.user;
+                        localStorage.setItem('renvox_user', JSON.stringify(user));
+                    }
+                } catch (e) { console.error('me fetch failed', e); }
+            }
+
+            if (user) {
+                guestButtons.style.display = 'none';
+                userArea.style.display = 'flex';
+                const firstName = (user.fullName || '').split(' ')[0] || 'User';
+                userGreeting.textContent = firstName;
+                if (heroTitle) heroTitle.textContent = `Welcome back, ${firstName}`;
+                const avatar = document.getElementById('userAvatar');
+                avatar.textContent = (firstName[0] || 'U').toUpperCase();
+                document.getElementById('logoutBtn').addEventListener('click', function() {
+                    localStorage.removeItem('renvox_token');
+                    localStorage.removeItem('renvox_user');
+                    window.location.href = 'login.html';
+                });
+            } else {
+                guestButtons.style.display = 'flex';
+                userArea.style.display = 'none';
+            }
+        }
+
+        // run on load
+        loadUser();
 
         // ==================== ACTIVE NAV LINK ====================
         window.addEventListener('scroll', function() {

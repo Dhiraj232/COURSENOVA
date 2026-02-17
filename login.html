@@ -735,32 +735,49 @@
 
         loginForm.addEventListener('submit', function(e) {
             e.preventDefault();
-            
-            const email = document.getElementById('email').value.trim();
+
+            const identifier = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value.trim();
 
             // Reset messages
             errorMsg.style.display = 'none';
             successMsg.style.display = 'none';
 
-            // Validation
-            if (!email || !password) {
+            if (!identifier || !password) {
                 errorMsg.textContent = 'Please fill in all fields';
                 errorMsg.style.display = 'block';
                 return;
             }
 
-            // For demo purposes
-            if (email === 'demo@renvox.com' && password === 'Demo@123') {
+            fetch('/api/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ identifier, password })
+            }).then(r => r.json()).then(data => {
+                if (!data.ok) {
+                    if (data.userId) {
+                        // need verification
+                        errorMsg.textContent = data.message + '. Please verify your account.';
+                        errorMsg.style.display = 'block';
+                        localStorage.setItem('pendingUserId', data.userId);
+                        setTimeout(() => { window.location.href = 'otp.html'; }, 900);
+                        return;
+                    }
+                    errorMsg.textContent = data.message || 'Login failed';
+                    errorMsg.style.display = 'block';
+                    return;
+                }
+                // store token and user
+                localStorage.setItem('renvox_token', data.token);
+                if (data.user) localStorage.setItem('renvox_user', JSON.stringify(data.user));
                 successMsg.textContent = 'Login successful! Redirecting...';
                 successMsg.style.display = 'block';
-                setTimeout(() => {
-                    window.location.href = 'index.html';
-                }, 1500);
-            } else {
-                errorMsg.textContent = 'Invalid email or password';
+                setTimeout(() => { window.location.href = 'index.html'; }, 900);
+            }).catch(err => {
+                console.error(err);
+                errorMsg.textContent = 'Server error. Please try later.';
                 errorMsg.style.display = 'block';
-            }
+            });
         });
 
         // Google Sign Up

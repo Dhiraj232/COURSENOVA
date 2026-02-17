@@ -288,7 +288,21 @@
                 <li><a href="pricing.html">Pricing</a></li>
             </ul>
             <div class="nav-buttons" id="navButtons">
-                <!-- Filled by JavaScript -->
+                <div id="guestButtons">
+                    <a href="login.html" class="btn-login">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </a>
+                    <a href="signup.html" class="btn-signup">
+                        <i class="fas fa-user-plus"></i> Sign Up
+                    </a>
+                </div>
+                <div id="userArea" style="display:none; align-items:center; gap:.6rem;">
+                    <a id="profileLink" href="dashboard.html" style="display:flex;align-items:center;gap:.5rem;text-decoration:none;color:inherit;">
+                        <div id="userAvatar" style="width:36px;height:36px;border-radius:50%;background:var(--primary-color);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.95rem"></div>
+                        <div id="userGreeting" style="font-weight:600;color:var(--primary-color);"></div>
+                    </a>
+                    <button id="logoutBtn" class="btn" style="margin-left:.5rem;">Logout</button>
+                </div>
             </div>
             <button class="menu-toggle" id="menuToggle">
                 <i class="fas fa-bars"></i>
@@ -500,6 +514,46 @@
     <script src="navigation.js"></script>
 
     <script>
+        async function loadUserToNavbar() {
+            const navButtons = document.getElementById('navButtons');
+            const guestButtons = document.getElementById('guestButtons');
+            const userArea = document.getElementById('userArea');
+            const userGreeting = document.getElementById('userGreeting');
+            const userAvatar = document.getElementById('userAvatar');
+            const logoutBtn = document.getElementById('logoutBtn');
+
+            let user = null;
+            const local = localStorage.getItem('renvox_user');
+            const token = localStorage.getItem('renvox_token');
+            if (local) {
+                try { user = JSON.parse(local); } catch(e){ user = null; }
+            }
+
+            if (!user && token) {
+                try {
+                    const res = await fetch('/api/me', { headers: { 'Authorization': 'Bearer ' + token } });
+                    const data = await res.json();
+                    if (data && data.ok && data.user) {
+                        user = data.user;
+                        localStorage.setItem('renvox_user', JSON.stringify(user));
+                    }
+                } catch (e) { console.error('me fetch failed', e); }
+            }
+
+            if (user) {
+                guestButtons.style.display = 'none';
+                userArea.style.display = 'flex';
+                const firstName = (user.fullName || '').split(' ')[0] || 'User';
+                userGreeting.textContent = firstName;
+                userAvatar.textContent = (firstName[0] || 'U').toUpperCase();
+                logoutBtn.addEventListener('click', () => { localStorage.removeItem('renvox_token'); localStorage.removeItem('renvox_user'); window.location.href='login.html'; });
+                document.getElementById('dashboardUserName').textContent = user.fullName || firstName;
+            } else {
+                guestButtons.style.display = 'flex';
+                userArea.style.display = 'none';
+            }
+        }
+        loadUserToNavbar();
         /**
          * ==================== DASHBOARD INITIALIZATION ====================
          * Handle dashboard page loading and data display

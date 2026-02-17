@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>College Store — RENVOX</title>
+	<link rel="stylesheet" href="style.css">
+	<style>
+		.container { max-width: 1100px; margin: 2rem auto; padding: 0 1rem; }
+		.filters { display:flex; gap: .75rem; flex-wrap:wrap; align-items:center; margin-bottom:1rem; }
+		.filter { display:flex; flex-direction:column; }
+		.books-grid { display:grid; grid-template-columns: repeat(auto-fill,minmax(240px,1fr)); gap:1rem; }
+		.book-card { border:1px solid var(--border-color,#e6e6e6); padding: .75rem; border-radius:8px; background:#fff; }
+		.book-thumb { height:140px; width:100%; object-fit:cover; border-radius:6px; margin-bottom:.5rem; }
+		.seller { font-size:.85rem; color:var(--text-light,#666); }
+		.sell-btn { margin-left:auto; }
+		.modal { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.4); }
+		.modal-card { background:#fff; padding:1rem; width:420px; border-radius:8px; }
+		.hide { display:none; }
+	</style>
+</head>
+<body>
+	<nav class="navbar">
+		<div class="nav-container">
+			<a href="index.html" class="logo"><i class="fas fa-book"></i> RENVOX</a>
+			<ul class="nav-menu">
+				<li><a href="index.html">Home</a></li>
+				<li><a href="store.html" class="active">Store</a></li>
+				<li><a href="family.html">Family</a></li>
+			</ul>
+			<div style="margin-left:auto; display:flex; gap:.5rem;">
+				<button class="btn" id="sellYourBookBtn">Sell Your Book</button>
+			</div>
+		</div>
+	</nav>
+
+	<main class="container">
+		<header>
+			<h1>College Store</h1>
+			<p>Buy and sell books, notes and projects within your college community.</p>
+		</header>
+
+		<section class="filters">
+			<div class="filter">
+				<label>College</label>
+				<select id="collegeFilter"><option value="">All Colleges</option><option>ABC College</option><option>XYZ University</option><option>Local Engineering College</option></select>
+			</div>
+			<div class="filter">
+				<label>Course / Branch</label>
+				<select id="courseFilter"><option value="">All</option><option>Computer Science</option><option>Mechanical</option><option>Commerce</option></select>
+			</div>
+			<div class="filter">
+				<label>Condition</label>
+				<select id="conditionFilter"><option value="">Any</option><option>New</option><option>Used</option></select>
+			</div>
+			<div class="filter">
+				<label>Max Price (₹)</label>
+				<input type="number" id="priceFilter" placeholder="e.g. 300" />
+			</div>
+			<div style="display:flex;align-items:end;gap:.5rem;">
+				<button class="btn-secondary" id="applyFiltersBtn">Apply</button>
+				<button class="btn" id="clearFiltersBtn">Clear</button>
+			</div>
+		</section>
+
+		<section id="booksSection">
+			<div class="books-grid" id="booksGrid"></div>
+		</section>
+	</main>
+
+	<!-- Sell modal -->
+	<div id="sellModal" class="modal hide">
+		<div class="modal-card">
+			<h3>List a Book for Sale</h3>
+			<div style="display:flex;flex-direction:column;gap:.5rem;margin-top:.5rem;">
+				<input id="bookName" placeholder="Book name" />
+				<input id="bookSubject" placeholder="Subject" />
+				<input id="bookCollege" placeholder="College (auto-fill if logged in)" />
+				<select id="bookCondition"><option>Used</option><option>New</option></select>
+				<input id="bookPrice" type="number" placeholder="Price in ₹" />
+				<input id="bookImage" type="file" accept="image/*" />
+				<img id="previewImg" style="max-width:100%; border-radius:6px; display:none;" />
+				<div style="display:flex;justify-content:flex-end;gap:.5rem;">
+					<button class="btn" onclick="closeSellModal()">Cancel</button>
+					<button class="btn-primary" id="listBookBtn">List Book</button>
+				</div>
+				<div style="margin-top:.5rem; display:flex; gap:.5rem; justify-content:flex-end;">
+					<button class="btn" id="requestVerificationBtn">Request College Verification</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		// Sample data store (frontend only)
+		const books = [
+			{id:1,name:'Data Structures in C',subject:'Computer Science',college:'ABC College',condition:'Used',price:150,seller:'Rohan (Senior)',img:''},
+			{id:2,name:'Engineering Mathematics',subject:'Maths',college:'XYZ University',condition:'New',price:300,seller:'Simran (Senior)',img:''},
+			{id:3,name:'Microeconomics',subject:'Economics',college:'Local Engineering College',condition:'Used',price:120,seller:'Amit (Senior)',img:''}
+		];
+
+		const booksGrid = document.getElementById('booksGrid');
+		const applyFiltersBtn = document.getElementById('applyFiltersBtn');
+		const clearFiltersBtn = document.getElementById('clearFiltersBtn');
+		const sellYourBookBtn = document.getElementById('sellYourBookBtn');
+		const sellModal = document.getElementById('sellModal');
+		const bookImage = document.getElementById('bookImage');
+		const previewImg = document.getElementById('previewImg');
+
+		function renderBooks(list) {
+			booksGrid.innerHTML = '';
+			list.forEach(b => {
+				const card = document.createElement('div'); card.className = 'book-card';
+				const img = document.createElement('img'); img.className = 'book-thumb';
+				img.src = b.img || 'https://via.placeholder.com/360x180?text=Book+Cover';
+				card.appendChild(img);
+				const h = document.createElement('h4'); h.textContent = b.name; card.appendChild(h);
+				const p = document.createElement('p'); p.textContent = `${b.subject} — ₹${b.price}`; card.appendChild(p);
+				const seller = document.createElement('div'); seller.className='seller'; seller.textContent = `Seller: ${b.seller} • ${b.college} • ${b.condition}`; card.appendChild(seller);
+				const actions = document.createElement('div'); actions.style.marginTop = '.75rem';
+				const chatBtn = document.createElement('button'); chatBtn.className='btn'; chatBtn.textContent = 'Chat with Seller'; chatBtn.onclick = () => openChat(b.id, b.seller);
+				const buyBtn = document.createElement('button'); buyBtn.className='btn-primary'; buyBtn.style.marginLeft='6px'; buyBtn.textContent='Buy Now'; buyBtn.onclick = () => alert('Payment placeholder — integrate UPI/PG here');
+				actions.appendChild(chatBtn); actions.appendChild(buyBtn);
+				card.appendChild(actions);
+				booksGrid.appendChild(card);
+			});
+		}
+
+		function applyFilters() {
+			const college = document.getElementById('collegeFilter').value;
+			const course = document.getElementById('courseFilter').value;
+			const condition = document.getElementById('conditionFilter').value;
+			const maxPrice = Number(document.getElementById('priceFilter').value || 0);
+			let filtered = books.slice();
+			if (college) filtered = filtered.filter(b => b.college === college);
+			if (condition) filtered = filtered.filter(b => b.condition === condition);
+			if (maxPrice) filtered = filtered.filter(b => b.price <= maxPrice);
+			renderBooks(filtered);
+		}
+
+		applyFiltersBtn.addEventListener('click', applyFilters);
+		clearFiltersBtn.addEventListener('click', () => { document.getElementById('collegeFilter').value=''; document.getElementById('conditionFilter').value=''; document.getElementById('priceFilter').value=''; renderBooks(books); });
+
+		// Sell modal logic
+		sellYourBookBtn.addEventListener('click', () => {
+			// auto-fill college from localStorage if available
+			const loggedCollege = localStorage.getItem('userCollege');
+			if (loggedCollege) document.getElementById('bookCollege').value = loggedCollege;
+			sellModal.classList.remove('hide');
+		});
+		function closeSellModal() { sellModal.classList.add('hide'); }
+
+		bookImage.addEventListener('change', (e) => {
+			const file = e.target.files[0];
+			if (!file) return; const reader = new FileReader();
+			reader.onload = function(ev){ previewImg.src = ev.target.result; previewImg.style.display='block'; }
+			reader.readAsDataURL(file);
+		});
+
+		document.getElementById('listBookBtn').addEventListener('click', () => {
+			const name = document.getElementById('bookName').value || 'Untitled';
+			const subject = document.getElementById('bookSubject').value || '';
+			const college = document.getElementById('bookCollege').value || 'Unknown College';
+			const condition = document.getElementById('bookCondition').value;
+			const price = Number(document.getElementById('bookPrice').value || 0);
+			const img = previewImg.src || '';
+			const id = Date.now();
+			books.unshift({id,name,subject,college,condition,price,seller:'You (Senior)',img});
+			renderBooks(books);
+			closeSellModal();
+			alert('Book listed successfully. Verification pending.');
+		});
+
+		// Request college verification
+		document.getElementById('requestVerificationBtn').addEventListener('click', () => {
+			const user = localStorage.getItem('renvox_user');
+			if (!user) { alert('Please login to request verification'); return; }
+			const parsed = JSON.parse(user);
+			const collegeEmail = document.getElementById('bookCollege').value || parsed.email;
+			fetch('/api/request-verification', {
+				method:'POST', headers:{'Content-Type':'application/json'},
+				body: JSON.stringify({ userId: parsed.id, collegeEmail })
+			}).then(r=>r.json()).then(data=>{
+				if (data.ok) alert('Verification request sent (mock). Check server console for link.'); else alert(data.message||'Request failed');
+			}).catch(err=>{ console.error(err); alert('Server error'); });
+		});
+
+		// initial render
+		renderBooks(books);
+        
+		// Chat modal
+		const chatModalHtml = `
+		<div id="chatModal" class="modal hide">
+			<div class="modal-card" style="width:420px;">
+				<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem;">
+					<strong id="chatTitle">Chat</strong>
+					<button class="btn" id="closeChatBtn">Close</button>
+				</div>
+				<div id="chatMessages" style="height:260px;overflow:auto;border:1px solid var(--border-color);padding:.6rem;border-radius:6px;background:#fff;margin-bottom:.5rem;"></div>
+				<div style="display:flex;gap:.5rem;">
+					<input id="chatInput" placeholder="Type a message" style="flex:1;padding:.6rem;border:1px solid var(--border-color);border-radius:6px" />
+					<button class="btn-primary" id="sendChatBtn">Send</button>
+				</div>
+			</div>
+		</div>`;
+		document.body.insertAdjacentHTML('beforeend', chatModalHtml);
+		const chatModal = document.getElementById('chatModal');
+		const chatMessages = document.getElementById('chatMessages');
+		const chatTitle = document.getElementById('chatTitle');
+		const chatInput = document.getElementById('chatInput');
+		const sendChatBtn = document.getElementById('sendChatBtn');
+		const closeChatBtn = document.getElementById('closeChatBtn');
+		let currentChatBook = null;
+
+		function openChat(bookId, seller) {
+			currentChatBook = bookId;
+			chatTitle.textContent = `Chat — ${seller}`;
+			chatMessages.innerHTML = 'Loading...';
+			chatModal.classList.remove('hide');
+			fetch(`/api/messages?bookId=${bookId}`).then(r=>r.json()).then(data=>{
+				chatMessages.innerHTML = '';
+				data.forEach(m => {
+					const d = document.createElement('div');
+					d.style.marginBottom = '.5rem';
+					d.innerHTML = `<strong style="font-size:.9rem">${m.from}</strong><div style="font-size:.9rem">${m.text}</div><small style="color:var(--text-light)">${new Date(m.ts).toLocaleString()}</small>`;
+					chatMessages.appendChild(d);
+				});
+				chatMessages.scrollTop = chatMessages.scrollHeight;
+			}).catch(err=>{ chatMessages.innerHTML = 'Unable to load messages'; console.error(err); });
+		}
+
+		sendChatBtn.addEventListener('click', () => {
+			const text = chatInput.value.trim();
+			if (!text || !currentChatBook) return;
+			const from = (localStorage.getItem('renvox_user') ? JSON.parse(localStorage.getItem('renvox_user')).fullName : 'You');
+			fetch('/api/messages', {
+				method:'POST', headers:{'Content-Type':'application/json'},
+				body: JSON.stringify({ bookId: currentChatBook, from, text })
+			}).then(r=>r.json()).then(res=>{
+				if (res.ok) {
+					const d = document.createElement('div'); d.style.marginBottom='.5rem'; d.innerHTML = `<strong>${from}</strong><div>${text}</div>`;
+					chatMessages.appendChild(d);
+					chatInput.value = '';
+					chatMessages.scrollTop = chatMessages.scrollHeight;
+				} else alert(res.message || 'Unable to send');
+			}).catch(err=>{ console.error(err); alert('Send failed'); });
+		});
+
+		closeChatBtn.addEventListener('click', () => { chatModal.classList.add('hide'); currentChatBook = null; chatMessages.innerHTML = ''; });
+	</script>
+
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+</body>
+</html>
