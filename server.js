@@ -23,7 +23,7 @@ function writeUsers(users) {
 
 function findUserByEmailOrMobile(identifier) {
   const users = readUsers();
-  return users.find(u => (u.email && u.email.toLowerCase() === (identifier||'').toLowerCase()) || (u.mobile && u.mobile === identifier));
+  return users.find(u => (u.email && u.email.toLowerCase() === (identifier || '').toLowerCase()) || (u.mobile && u.mobile === identifier));
 }
 
 function generateOtp() {
@@ -38,113 +38,139 @@ app.use(express.static(path.join(__dirname)));
 
 // Signup
 app.post('/api/signup', async (req, res) => {
-  const { fullName, email, mobile, password, role, college, classInfo } = req.body;
-  if (!fullName || !email || !mobile || !password) return res.status(400).json({ ok:false, message:'Missing required fields' });
+  try {
+    const { fullName, email, mobile, password, role, college, classInfo } = req.body;
+    if (!fullName || !email || !mobile || !password) return res.status(400).json({ ok: false, message: 'Missing required fields' });
 
-  const existing = findUserByEmailOrMobile(email) || findUserByEmailOrMobile(mobile);
-  if (existing) return res.status(409).json({ ok:false, message:'User already exists' });
+    const existing = findUserByEmailOrMobile(email) || findUserByEmailOrMobile(mobile);
+    if (existing) return res.status(409).json({ ok: false, message: 'User already exists' });
 
-  const hash = await bcrypt.hash(password, 10);
-  const users = readUsers();
-  const id = Date.now().toString();
-  const otp = generateOtp();
-  const otpExpiry = Date.now() + 5*60*1000; // 5 minutes
+    const hash = await bcrypt.hash(password, 10);
+    const users = readUsers();
+    const id = Date.now().toString();
+    const otp = generateOtp();
+    const otpExpiry = Date.now() + 5 * 60 * 1000; // 5 minutes
 
-  const user = {
-    id, fullName, email, mobile, passwordHash: hash, role: role||'student', college: college||'', classInfo: classInfo||'', verified: false,
-    otp, otpExpiry
-  };
-  users.push(user);
-  writeUsers(users);
+    const user = {
+      id, fullName, email, mobile, passwordHash: hash, role: role || 'student', college: college || '', classInfo: classInfo || '', verified: false,
+      otp, otpExpiry
+    };
+    users.push(user);
+    writeUsers(users);
 
-  // In real app: send OTP via SMS / email. For demo we log it.
-  console.log('Signup OTP for', email || mobile, otp);
+    // In real app: send OTP via SMS / email. For demo we log it.
+    console.log('Signup OTP for', email || mobile, otp);
 
-  res.json({ ok:true, message:'User created. OTP sent.', userId:id });
+    res.json({ ok: true, message: 'User created. OTP sent.', userId: id });
+  } catch (error) {
+    console.error('Signup Error:', error);
+    res.status(500).json({ ok: false, message: 'Server error during signup' });
+  }
 });
 
 // Send (or resend) OTP
 app.post('/api/send-otp', (req, res) => {
-  const { userId } = req.body;
-  if (!userId) return res.status(400).json({ ok:false, message:'userId required' });
-  const users = readUsers();
-  const user = users.find(u => String(u.id) === String(userId));
-  if (!user) return res.status(404).json({ ok:false, message:'User not found' });
-  const otp = generateOtp();
-  user.otp = otp;
-  user.otpExpiry = Date.now() + 5*60*1000;
-  writeUsers(users);
-  console.log('Resent OTP for', user.email||user.mobile, otp);
-  return res.json({ ok:true, message:'OTP resent' });
+  try {
+    const { userId } = req.body;
+    if (!userId) return res.status(400).json({ ok: false, message: 'userId required' });
+    const users = readUsers();
+    const user = users.find(u => String(u.id) === String(userId));
+    if (!user) return res.status(404).json({ ok: false, message: 'User not found' });
+    const otp = generateOtp();
+    user.otp = otp;
+    user.otpExpiry = Date.now() + 5 * 60 * 1000;
+    writeUsers(users);
+    console.log('Resent OTP for', user.email || user.mobile, otp);
+    return res.json({ ok: true, message: 'OTP resent' });
+  } catch (error) {
+    console.error('Resend OTP Error:', error);
+    res.status(500).json({ ok: false, message: 'Server error during OTP resend' });
+  }
 });
 
 // Verify OTP
 app.post('/api/verify-otp', (req, res) => {
-  const { userId, code } = req.body;
-  if (!userId || !code) return res.status(400).json({ ok:false, message:'userId and code required' });
-  const users = readUsers();
-  const user = users.find(u => String(u.id) === String(userId));
-  if (!user) return res.status(404).json({ ok:false, message:'User not found' });
-  if (!user.otp || Date.now() > (user.otpExpiry||0)) return res.status(400).json({ ok:false, message:'OTP expired or not set' });
-  if (user.otp !== code) return res.status(400).json({ ok:false, message:'Invalid OTP' });
-  user.verified = true;
-  user.otp = null; user.otpExpiry = null;
-  writeUsers(users);
+  try {
+    const { userId, code } = req.body;
+    if (!userId || !code) return res.status(400).json({ ok: false, message: 'userId and code required' });
+    const users = readUsers();
+    const user = users.find(u => String(u.id) === String(userId));
+    if (!user) return res.status(404).json({ ok: false, message: 'User not found' });
+    if (!user.otp || Date.now() > (user.otpExpiry || 0)) return res.status(400).json({ ok: false, message: 'OTP expired or not set' });
+    if (user.otp !== code) return res.status(400).json({ ok: false, message: 'Invalid OTP' });
+    user.verified = true;
+    user.otp = null; user.otpExpiry = null;
+    writeUsers(users);
 
-  const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
-  res.json({ ok:true, message:'Verified', token });
+    const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+    res.json({ ok: true, message: 'Verified', token, user: { id: user.id, fullName: user.fullName, email: user.email, mobile: user.mobile } });
+  } catch (error) {
+    console.error('Verify OTP Error:', error);
+    res.status(500).json({ ok: false, message: 'Server error during verification' });
+  }
 });
 
 // Login
 app.post('/api/login', async (req, res) => {
-  const { identifier, password } = req.body; // identifier = email or mobile
-  if (!identifier || !password) return res.status(400).json({ ok:false, message:'Missing fields' });
-  const user = findUserByEmailOrMobile(identifier);
-  if (!user) return res.status(404).json({ ok:false, message:'User not found' });
-  const match = await bcrypt.compare(password, user.passwordHash || '');
-  if (!match) return res.status(401).json({ ok:false, message:'Invalid credentials' });
-  if (!user.verified) return res.status(403).json({ ok:false, message:'Account not verified', userId: user.id });
-  const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
-  res.json({ ok:true, token, user: { id: user.id, fullName: user.fullName, email: user.email, mobile: user.mobile } });
+  try {
+    const { identifier, password } = req.body; // identifier = email or mobile
+    if (!identifier || !password) return res.status(400).json({ ok: false, message: 'Missing fields' });
+
+    // Ensure data directory exists
+    if (!fs.existsSync(path.dirname(DATA_FILE))) {
+      fs.mkdirSync(path.dirname(DATA_FILE), { recursive: true });
+    }
+
+    const user = findUserByEmailOrMobile(identifier);
+    if (!user) return res.status(404).json({ ok: false, message: 'User not found' });
+    const match = await bcrypt.compare(password, user.passwordHash || '');
+    if (!match) return res.status(401).json({ ok: false, message: 'Invalid credentials' });
+    if (!user.verified) return res.status(403).json({ ok: false, message: 'Account not verified', userId: user.id });
+    const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+    res.json({ ok: true, token, user: { id: user.id, fullName: user.fullName, email: user.email, mobile: user.mobile } });
+  } catch (error) {
+    console.error('Login Error:', error);
+    res.status(500).json({ ok: false, message: 'Server error during login' });
+  }
 });
 
 // Get current user from token
 app.get('/api/me', (req, res) => {
   const auth = req.headers.authorization || '';
   const token = auth.startsWith('Bearer ') ? auth.slice(7) : (req.query.token || '');
-  if (!token) return res.status(401).json({ ok:false, message:'Missing token' });
+  if (!token) return res.status(401).json({ ok: false, message: 'Missing token' });
   try {
     const payload = jwt.verify(token, JWT_SECRET);
     const users = readUsers();
     const user = users.find(u => String(u.id) === String(payload.userId));
-    if (!user) return res.status(404).json({ ok:false, message:'User not found' });
-    res.json({ ok:true, user: { id: user.id, fullName: user.fullName, email: user.email, mobile: user.mobile, verified: user.verified, role: user.role, college: user.college } });
+    if (!user) return res.status(404).json({ ok: false, message: 'User not found' });
+    res.json({ ok: true, user: { id: user.id, fullName: user.fullName, email: user.email, mobile: user.mobile, verified: user.verified, role: user.role, college: user.college } });
   } catch (err) {
-    return res.status(401).json({ ok:false, message:'Invalid token' });
+    return res.status(401).json({ ok: false, message: 'Invalid token' });
   }
 });
 
 // Simple endpoint to list users (for dev)
 app.get('/api/users', (req, res) => {
   const users = readUsers();
-  const safe = users.map(u => ({ id:u.id, fullName:u.fullName, email:u.email, mobile:u.mobile, verified:u.verified, role:u.role }));
+  const safe = users.map(u => ({ id: u.id, fullName: u.fullName, email: u.email, mobile: u.mobile, verified: u.verified, role: u.role }));
   res.json(safe);
 });
 
 // ---------------- Seller verification (college email) ----------------
 app.post('/api/request-verification', (req, res) => {
   const { userId, collegeEmail } = req.body;
-  if (!userId || !collegeEmail) return res.status(400).json({ ok:false, message:'userId and collegeEmail required' });
+  if (!userId || !collegeEmail) return res.status(400).json({ ok: false, message: 'userId and collegeEmail required' });
   const users = readUsers();
   const user = users.find(u => String(u.id) === String(userId));
-  if (!user) return res.status(404).json({ ok:false, message:'User not found' });
+  if (!user) return res.status(404).json({ ok: false, message: 'User not found' });
   // generate a short token
   const token = Math.random().toString(36).slice(2, 10);
-  user.collegeVerification = { collegeEmail, token, expiry: Date.now() + 24*60*60*1000 };
+  user.collegeVerification = { collegeEmail, token, expiry: Date.now() + 24 * 60 * 60 * 1000 };
   writeUsers(users);
   // In production send verification email to collegeEmail with tokenized link
   console.log(`College verification link (mock): http://localhost:${PORT || 4000}/api/verify-college?token=${token}`);
-  res.json({ ok:true, message:'Verification email sent (mock). Check server console for link.' });
+  res.json({ ok: true, message: 'Verification email sent (mock). Check server console for link.' });
 });
 
 app.get('/api/verify-college', (req, res) => {
@@ -179,12 +205,57 @@ app.get('/api/messages', (req, res) => {
 // Post a message
 app.post('/api/messages', (req, res) => {
   const { bookId, from, text } = req.body;
-  if (!bookId || !text) return res.status(400).json({ ok:false, message:'bookId and text required' });
+  if (!bookId || !text) return res.status(400).json({ ok: false, message: 'bookId and text required' });
   const msgs = readMessages();
   const msg = { id: Date.now(), bookId, from: from || 'Anonymous', text, ts: Date.now() };
   msgs.push(msg);
   writeMessages(msgs);
-  res.json({ ok:true, message: 'Message saved', msg });
+  res.json({ ok: true, message: 'Message saved', msg });
+});
+
+// ---------------- Content API ----------------
+const CONTENT_FILE = path.join(__dirname, 'data', 'content.json');
+
+function readContent() {
+  try { return JSON.parse(fs.readFileSync(CONTENT_FILE, 'utf8') || '{}'); } catch (e) { return {}; }
+}
+
+app.get('/api/subjects', (req, res) => {
+  const { classInfo } = req.query;
+  const content = readContent();
+
+  if (classInfo && content[classInfo]) {
+    res.json({ ok: true, subjects: content[classInfo] });
+  } else {
+    // If no class or invalid class, return a default or all (for demo maybe just return empty or error, but let's return college as default)
+    res.json({ ok: true, subjects: content['college'] || [] });
+  }
+});
+
+// ---------------- Profile Update ----------------
+app.post('/api/update-profile', (req, res) => {
+  try {
+    const { userId, fullName, email, mobile, classInfo } = req.body;
+    if (!userId) return res.status(400).json({ ok: false, message: 'User ID required' });
+
+    const users = readUsers();
+    const user = users.find(u => String(u.id) === String(userId));
+    if (!user) return res.status(404).json({ ok: false, message: 'User not found' });
+
+    // Update fields if provided
+    if (fullName) user.fullName = fullName;
+    if (email) user.email = email; // In real app: verify new email
+    if (mobile) user.mobile = mobile;
+    if (classInfo) user.classInfo = classInfo;
+
+    writeUsers(users);
+
+    // Return updated user object (without password)
+    res.json({ ok: true, message: 'Profile updated', user: { id: user.id, fullName: user.fullName, email: user.email, mobile: user.mobile, role: user.role, classInfo: user.classInfo, verified: user.verified } });
+  } catch (error) {
+    console.error('Update Profile Error:', error);
+    res.status(500).json({ ok: false, message: 'Server error updating profile' });
+  }
 });
 
 const PORT = process.env.PORT || 4000;

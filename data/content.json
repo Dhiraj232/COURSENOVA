@@ -1,0 +1,270 @@
+{
+    "6": [
+        {
+            "id": "sci6",
+            "name": "Science",
+            "icon": "🔬",
+            "chapters": 12,
+            "description": "Physics, Chemistry, and Biology basics."
+        },
+        {
+            "id": "math6",
+            "name": "Mathematics",
+            "icon": "📐",
+            "chapters": 14,
+            "description": "Numbers, Geometry, and Algebra."
+        },
+        {
+            "id": "eng6",
+            "name": "English",
+            "icon": "📖",
+            "chapters": 10,
+            "description": "Grammar and Literature."
+        },
+        {
+            "id": "sst6",
+            "name": "Social Studies",
+            "icon": "🌍",
+            "chapters": 11,
+            "description": "History, Geography, and Civics."
+        }
+    ],
+    "7": [
+        {
+            "id": "sci7",
+            "name": "Science",
+            "icon": "🔬",
+            "chapters": 13,
+            "description": "Advanced basics of Science."
+        },
+        {
+            "id": "math7",
+            "name": "Mathematics",
+            "icon": "📐",
+            "chapters": 15,
+            "description": "Integers, Fractions, and Data Handling."
+        },
+        {
+            "id": "eng7",
+            "name": "English",
+            "icon": "📖",
+            "chapters": 12,
+            "description": "Advanced Grammar and Creative Writing."
+        },
+        {
+            "id": "sst7",
+            "name": "Social Studies",
+            "icon": "🌍",
+            "chapters": 12,
+            "description": "Our Pasts and Earth."
+        }
+    ],
+    "8": [
+        {
+            "id": "sci8",
+            "name": "Science",
+            "icon": "🔬",
+            "chapters": 15,
+            "description": "Force, Pressure, and Light."
+        },
+        {
+            "id": "math8",
+            "name": "Mathematics",
+            "icon": "📐",
+            "chapters": 16,
+            "description": "Rational Numbers and Algebra."
+        },
+        {
+            "id": "eng8",
+            "name": "English",
+            "icon": "📖",
+            "chapters": 14,
+            "description": "Prose and Poetry."
+        },
+        {
+            "id": "sst8",
+            "name": "Social Science",
+            "icon": "🌍",
+            "chapters": 14,
+            "description": "Resources and Development."
+        }
+    ],
+    "9": [
+        {
+            "id": "sci9",
+            "name": "Science",
+            "icon": "atom",
+            "chapters": 15,
+            "description": "Matter, Atoms, and Motion."
+        },
+        {
+            "id": "math9",
+            "name": "Mathematics",
+            "icon": "calculator",
+            "chapters": 15,
+            "description": "Polynomials and Geometry."
+        },
+        {
+            "id": "eng9",
+            "name": "English",
+            "icon": "book-open",
+            "chapters": 12,
+            "description": "Literature and Writing Skills."
+        },
+        {
+            "id": "sst9",
+            "name": "Social Science",
+            "icon": "globe",
+            "chapters": 16,
+            "description": "Contemporary India and Democracy."
+        }
+    ],
+    "10": [
+        {
+            "id": "sci10",
+            "name": "Science",
+            "icon": "flask",
+            "chapters": 16,
+            "description": "Chemical Reactions, Life Processes, Light."
+        },
+        {
+            "id": "math10",
+            "name": "Mathematics",
+            "icon": "square-root-alt",
+            "chapters": 15,
+            "description": "Real Numbers, Trigonometry, Statistics."
+        },
+        {
+            "id": "eng10",
+            "name": "English",
+            "icon": "feather-alt",
+            "chapters": 14,
+            "description": "First Flight and Footprints without Feet."
+        },
+        {
+            "id": "sst10",
+            "name": "Social Science",
+            "icon": "landmark",
+            "chapters": 18,
+            "description": "Nationalism, Resources, and Power Sharing."
+        }
+    ],
+    "11": [
+        {
+            "id": "phy11",
+            "name": "Physics",
+            "icon": "magnet",
+            "chapters": 15,
+            "description": "Kinematics, Laws of Motion, Thermodynamics."
+        },
+        {
+            "id": "chem11",
+            "name": "Chemistry",
+            "icon": "vial",
+            "chapters": 14,
+            "description": "Atomic Structure, Bonding, States of Matter."
+        },
+        {
+            "id": "math11",
+            "name": "Mathematics",
+            "icon": "infinity",
+            "chapters": 16,
+            "description": "Sets, Relations, Calculus basics."
+        },
+        {
+            "id": "bio11",
+            "name": "Biology",
+            "icon": "dna",
+            "chapters": 22,
+            "description": "Diversity in Living World, Cell Structure."
+        },
+        {
+            "id": "cs11",
+            "name": "Computer Science",
+            "icon": "laptop-code",
+            "chapters": 10,
+            "description": "Python Programming basics."
+        }
+    ],
+    "12": [
+        {
+            "id": "phy12",
+            "name": "Physics",
+            "icon": "bolt",
+            "chapters": 15,
+            "description": "Electrostatics, Magnetism, Optics."
+        },
+        {
+            "id": "chem12",
+            "name": "Chemistry",
+            "icon": "flask-potion",
+            "chapters": 16,
+            "description": "Solutions, Electrochemistry, Organic Chemistry."
+        },
+        {
+            "id": "math12",
+            "name": "Mathematics",
+            "icon": "integral",
+            "chapters": 13,
+            "description": "Relations, Matrices, Integrals, Probability."
+        },
+        {
+            "id": "bio12",
+            "name": "Biology",
+            "icon": "heartbeat",
+            "chapters": 16,
+            "description": "Reproduction, Genetics, Ecology."
+        },
+        {
+            "id": "cs12",
+            "name": "Computer Science",
+            "icon": "code",
+            "chapters": 12,
+            "description": "File Handling, Data Structures, SQL."
+        }
+    ],
+    "college": [
+        {
+            "id": "c_prog",
+            "name": "C Programming",
+            "icon": "terminal",
+            "chapters": 15,
+            "description": "Fundamentals of C, Pointers, and Memory."
+        },
+        {
+            "id": "ds",
+            "name": "Data Structures",
+            "icon": "project-diagram",
+            "chapters": 20,
+            "description": "Arrays, Linked Lists, Trees, Graphs."
+        },
+        {
+            "id": "algo",
+            "name": "Algorithms",
+            "icon": "cogs",
+            "chapters": 18,
+            "description": "Sorting, Searching, Dynamic Programming."
+        },
+        {
+            "id": "web",
+            "name": "Web Development",
+            "icon": "globe-americas",
+            "chapters": 25,
+            "description": "HTML, CSS, JS, React, Node.js."
+        },
+        {
+            "id": "dbms",
+            "name": "DBMS",
+            "icon": "database",
+            "chapters": 12,
+            "description": "SQL, Normalization, Transactions."
+        },
+        {
+            "id": "ai",
+            "name": "Artificial Intelligence",
+            "icon": "robot",
+            "chapters": 15,
+            "description": "ML basics, Neural Networks, NLP."
+        }
+    ]
+}

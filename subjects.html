@@ -1,16 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Subjects - RENVOX</title>
-    
+
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <style>
         * {
             margin: 0;
@@ -35,7 +38,12 @@
             background-color: var(--white);
         }
 
-        h1, h2, h3, h4, h5, h6 {
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
             font-family: 'Poppins', sans-serif;
             font-weight: 700;
         }
@@ -470,6 +478,7 @@
         }
     </style>
 </head>
+
 <body>
     <!-- ==================== NAVBAR ==================== -->
     <nav class="navbar" id="navbar">
@@ -483,6 +492,8 @@
                 <li><a href="practice.html">Practice</a></li>
                 <li><a href="certificates.html">Certificates</a></li>
                 <li><a href="pricing.html">Pricing</a></li>
+                <li><a href="store.html">Store</a></li>
+                <li><a href="Family.html">Family</a></li>
             </ul>
             <div class="nav-buttons" id="navButtons">
                 <!-- Filled by JavaScript -->
@@ -536,7 +547,8 @@
         <div id="loginPrompt" style="display: none;">
             <div class="login-prompt">
                 <h3>🔐 Unlock Full Access</h3>
-                <p>Create a free account to access personalized subjects, track your progress, and get practice questions tailored to your curriculum.</p>
+                <p>Create a free account to access personalized subjects, track your progress, and get practice
+                    questions tailored to your curriculum.</p>
                 <button class="btn-login-prompt" onclick="window.location.href='signup.html'">Sign Up Free</button>
             </div>
         </div>
@@ -608,7 +620,7 @@
         // ==================== SETUP NAVBAR ==================== 
         function setupNavbar() {
             const navButtons = document.getElementById('navButtons');
-            
+
             if (isLoggedIn) {
                 navButtons.innerHTML = `
                     <button class="btn-user">
@@ -630,40 +642,62 @@
         }
 
         // ==================== LOAD SUBJECTS GRID ==================== 
-        function loadSubjectsGrid() {
-            const subjects = allSubjects;
-            
-            const html = subjects.map(s => {
-                const button = isLoggedIn 
-                    ? `<button class="btn-view" onclick="viewSubjectDetail('${s.name}')">View Subject</button>`
-                    : `<button class="btn-view" onclick="viewSubjectDetail('${s.name}')">Preview Subject</button>`;
-                
-                const badge = !isLoggedIn ? '<span style="position: absolute; top: 10px; right: 10px; background: var(--accent-color); color: var(--white); padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.75rem; font-weight: 700;">Preview</span>' : '';
-                
-                return `
-                    <div class="subject-card" onclick="viewSubjectDetail('${s.name}')">
-                        ${badge}
-                        <div class="subject-header">
-                            <div class="subject-icon">${s.icon}</div>
-                            <h3 class="subject-name">${s.name}</h3>
-                        </div>
-                        <p class="subject-info">${s.chapters} chapters • ${s.progress}% complete</p>
-                        <div class="progress-section">
-                            <div class="progress-label">
-                                <span>Progress</span>
-                                <span>${s.progress}%</span>
-                            </div>
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width: ${s.progress}%; background: linear-gradient(90deg, var(--primary-color), #3730a3);"></div>
-                            </div>
-                        </div>
-                        ${isLoggedIn ? `<p class="subject-info" style="margin-top: 1rem;">Accuracy: ${s.accuracy}%</p>` : ''}
-                        ${button}
-                    </div>
-                `;
-            }).join('');
+        async function loadSubjectsGrid() {
+            const userClass = localStorage.getItem('renvox_user') ? JSON.parse(localStorage.getItem('renvox_user')).classInfo : '12';
 
-            document.getElementById('subjectsGrid').innerHTML = html;
+            // Update filter dropdown to match user class if possible
+            const filter = document.getElementById('classFilter');
+            if (filter) filter.value = userClass;
+
+            try {
+                const res = await fetch(`/api/subjects?classInfo=${userClass}`);
+                const data = await res.json();
+                const subjects = data.subjects || [];
+
+                if (subjects.length === 0) {
+                    document.getElementById('subjectsGrid').innerHTML = '<div style="grid-column:1/-1;text-align:center;">No subjects found for this class.</div>';
+                    return;
+                }
+
+                const html = subjects.map(s => {
+                    // Mock progress for now
+                    const progress = 0;
+                    const accuracy = 0;
+
+                    const button = isLoggedIn
+                        ? `<button class="btn-view" onclick="viewSubjectDetail('${s.name}')">View Subject</button>`
+                        : `<button class="btn-view" onclick="viewSubjectDetail('${s.name}')">Preview Subject</button>`;
+
+                    const badge = !isLoggedIn ? '<span style="position: absolute; top: 10px; right: 10px; background: var(--accent-color); color: var(--white); padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.75rem; font-weight: 700;">Preview</span>' : '';
+
+                    return `
+                        <div class="subject-card" onclick="viewSubjectDetail('${s.name}')">
+                            ${badge}
+                            <div class="subject-header">
+                                <div class="subject-icon">${s.icon}</div>
+                                <h3 class="subject-name">${s.name}</h3>
+                            </div>
+                            <p class="subject-info">${s.chapters} chapters • ${s.description}</p>
+                            <div class="progress-section">
+                                <div class="progress-label">
+                                    <span>Progress</span>
+                                    <span>${progress}%</span>
+                                </div>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: ${progress}%; background: linear-gradient(90deg, var(--primary-color), #3730a3);"></div>
+                                </div>
+                            </div>
+                            ${isLoggedIn ? `<p class="subject-info" style="margin-top: 1rem;">Accuracy: ${accuracy}%</p>` : ''}
+                            ${button}
+                        </div>
+                    `;
+                }).join('');
+
+                document.getElementById('subjectsGrid').innerHTML = html;
+            } catch (e) {
+                console.error(e);
+                document.getElementById('subjectsGrid').innerHTML = '<div style="grid-column:1/-1;text-align:center;">Error loading subjects.</div>';
+            }
         }
 
         // ==================== VIEW SUBJECT DETAIL ==================== 
@@ -693,7 +727,7 @@
 
         // ==================== LOAD CONTINUE PRACTICE ==================== 
         function loadContinuePractice() {
-            const lastPractice = { 
+            const lastPractice = {
                 icon: '💻',
                 subject: 'C Programming',
                 topic: 'Pointers & Memory Management',
@@ -855,7 +889,7 @@
         loadWeakAreas();
 
         // ==================== SCROLL EFFECT ==================== 
-        window.addEventListener('scroll', function() {
+        window.addEventListener('scroll', function () {
             const navbar = document.getElementById('navbar');
             if (window.scrollY > 50) {
                 navbar.classList.add('scrolled');

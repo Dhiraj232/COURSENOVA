@@ -28,15 +28,32 @@
 	</style>
 </head>
 <body>
-	<!-- reuse existing site navbar by linking to index.html -->
-	<nav class="navbar">
+	<!-- reusable site navbar -->
+	<nav class="navbar" id="navbar">
 		<div class="nav-container">
 			<a href="index.html" class="logo"><i class="fas fa-book"></i> RENVOX</a>
-			<ul class="nav-menu">
+			<ul class="nav-menu" id="navMenu">
 				<li><a href="index.html">Home</a></li>
+				<li><a href="subjects.html">Subjects</a></li>
+				<li><a href="practice.html">Practice</a></li>
+				<li><a href="certificates.html">Certificates</a></li>
+				<li><a href="pricing.html">Pricing</a></li>
 				<li><a href="store.html">Store</a></li>
 				<li><a href="family.html" class="active">Family</a></li>
 			</ul>
+			<div class="nav-buttons" id="navButtons">
+				<div id="guestButtons">
+					<a href="login.html" class="btn-login">
+						<i class="fas fa-sign-in-alt"></i> Login
+					</a>
+					<a href="signup.html" class="btn-signup">
+						<i class="fas fa-user-plus"></i> Sign Up
+					</a>
+				</div>
+			</div>
+			<button class="menu-toggle" id="menuToggle">
+				<i class="fas fa-bars"></i>
+			</button>
 		</div>
 	</nav>
 

@@ -1,19 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RENVOX - Smart Learning Platform for Indian Students</title>
-    
+
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+
     <!-- Feather Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <!-- External CSS -->
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <!-- ==================== HEADER / NAVBAR ==================== -->
     <nav class="navbar" id="navbar">
@@ -33,21 +37,7 @@
 
             </ul>
             <div class="nav-buttons" id="navButtons">
-                <div id="guestButtons">
-                    <a href="login.html" class="btn-login">
-                        <i class="fas fa-sign-in-alt"></i> Login
-                    </a>
-                    <a href="signup.html" class="btn-signup">
-                        <i class="fas fa-user-plus"></i> Sign Up
-                    </a>
-                </div>
-                <div id="userArea" style="display:none; align-items:center; gap:.6rem;">
-                    <a id="profileLink" href="dashboard.html" style="display:flex;align-items:center;gap:.5rem;text-decoration:none;color:inherit;">
-                        <div id="userAvatar" style="width:36px;height:36px;border-radius:50%;background:var(--primary-color);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.95rem"></div>
-                        <div id="userGreeting" style="font-weight:600;color:var(--primary-color);"></div>
-                    </a>
-                    <button id="logoutBtn" class="btn" style="margin-left:.5rem;">Logout</button>
-                </div>
+                <!-- Buttons or User Dropdown will be injected by navigation.js -->
             </div>
             <button class="menu-toggle" id="menuToggle">
                 <i class="fas fa-bars"></i>
@@ -112,7 +102,7 @@
         </div>
     </section>
 
-  
+
 
     <!-- ==================== CORE FEATURES SECTION ==================== -->
     <section class="features" id="practice">
@@ -206,7 +196,8 @@
             <div class="testimonials-grid">
                 <div class="testimonial-card">
                     <div class="stars">★★★★★</div>
-                    <p class="testimonial-text">"RENVOX helped me understand Data Structures better. The practice questions were excellent!"</p>
+                    <p class="testimonial-text">"RENVOX helped me understand Data Structures better. The practice
+                        questions were excellent!"</p>
                     <div class="testimonial-author">
                         <div class="author-avatar">RK</div>
                         <div class="author-info">
@@ -218,7 +209,8 @@
 
                 <div class="testimonial-card">
                     <div class="stars">★★★★★</div>
-                    <p class="testimonial-text">"The certificate helped me stand out in job interviews. Highly recommended!"</p>
+                    <p class="testimonial-text">"The certificate helped me stand out in job interviews. Highly
+                        recommended!"</p>
                     <div class="testimonial-author">
                         <div class="author-avatar">PA</div>
                         <div class="author-info">
@@ -230,7 +222,8 @@
 
                 <div class="testimonial-card">
                     <div class="stars">★★★★★</div>
-                    <p class="testimonial-text">"Affordable and comprehensive. Much better than expensive coaching classes."</p>
+                    <p class="testimonial-text">"Affordable and comprehensive. Much better than expensive coaching
+                        classes."</p>
                     <div class="testimonial-author">
                         <div class="author-avatar">AJ</div>
                         <div class="author-info">
@@ -243,7 +236,7 @@
         </div>
     </section>
 
-   
+
     <!-- ==================== FOOTER ==================== -->
     <footer class="footer">
         <div class="footer-container">
@@ -291,7 +284,7 @@
         const menuToggle = document.getElementById('menuToggle');
         const navMenu = document.getElementById('navMenu');
 
-        window.addEventListener('scroll', function() {
+        window.addEventListener('scroll', function () {
             if (window.scrollY > 50) {
                 navbar.classList.add('scrolled');
             } else {
@@ -300,19 +293,19 @@
         });
 
         // ==================== MOBILE MENU TOGGLE ====================
-        menuToggle.addEventListener('click', function() {
+        menuToggle.addEventListener('click', function () {
             navMenu.classList.toggle('active');
         });
 
         // Close mobile menu when a link is clicked
         document.querySelectorAll('.nav-menu a').forEach(link => {
-            link.addEventListener('click', function() {
+            link.addEventListener('click', function () {
                 navMenu.classList.remove('active');
             });
         });
 
         // Close mobile menu when clicking outside
-        document.addEventListener('click', function(event) {
+        document.addEventListener('click', function (event) {
             const isClickInsideNav = navbar.contains(event.target);
             if (!isClickInsideNav && navMenu.classList.contains('active')) {
                 navMenu.classList.remove('active');
@@ -325,7 +318,7 @@
                 e.preventDefault();
                 const target = document.querySelector(this.getAttribute('href'));
                 if (target) {
-                    target.scrollIntoView({ 
+                    target.scrollIntoView({
                         behavior: 'smooth',
                         block: 'start'
                     });
@@ -334,10 +327,10 @@
         });
 
         // ==================== ACTIVE NAV LINK ====================
-        window.addEventListener('scroll', function() {
+        window.addEventListener('scroll', function () {
             let current = '';
             const sections = document.querySelectorAll('section[id]');
-            
+
             sections.forEach(section => {
                 const sectionTop = section.offsetTop;
                 const sectionHeight = section.clientHeight;
@@ -355,57 +348,16 @@
         });
 
         // ==================== AUTH / USER UI ====================
-        async function loadUser() {
-            const guestButtons = document.getElementById('guestButtons');
-            const userArea = document.getElementById('userArea');
-            const userGreeting = document.getElementById('userGreeting');
-            const heroTitle = document.getElementById('heroTitle');
+        // The auth UI logic has been moved to navigation.js for consistency
+        // across all pages. The 'loadUser' function in navigation.js now 
+        // handles checking for the user token and rendering the dropdown.
 
-            let user = null;
-            const local = localStorage.getItem('renvox_user');
-            const token = localStorage.getItem('renvox_token');
-            if (local) {
-                try { user = JSON.parse(local); } catch(e){ user = null; }
-            }
-
-            if (!user && token) {
-                try {
-                    const res = await fetch('/api/me', { headers: { 'Authorization': 'Bearer ' + token } });
-                    const data = await res.json();
-                    if (data && data.ok && data.user) {
-                        user = data.user;
-                        localStorage.setItem('renvox_user', JSON.stringify(user));
-                    }
-                } catch (e) { console.error('me fetch failed', e); }
-            }
-
-            if (user) {
-                guestButtons.style.display = 'none';
-                userArea.style.display = 'flex';
-                const firstName = (user.fullName || '').split(' ')[0] || 'User';
-                userGreeting.textContent = firstName;
-                if (heroTitle) heroTitle.textContent = `Welcome back, ${firstName}`;
-                const avatar = document.getElementById('userAvatar');
-                avatar.textContent = (firstName[0] || 'U').toUpperCase();
-                document.getElementById('logoutBtn').addEventListener('click', function() {
-                    localStorage.removeItem('renvox_token');
-                    localStorage.removeItem('renvox_user');
-                    window.location.href = 'login.html';
-                });
-            } else {
-                guestButtons.style.display = 'flex';
-                userArea.style.display = 'none';
-            }
-        }
-
-        // run on load
-        loadUser();
 
         // ==================== ACTIVE NAV LINK ====================
-        window.addEventListener('scroll', function() {
+        window.addEventListener('scroll', function () {
             let current = '';
             const sections = document.querySelectorAll('section[id]');
-            
+
             sections.forEach(section => {
                 const sectionTop = section.offsetTop;
                 const sectionHeight = section.clientHeight;
@@ -427,4 +379,5 @@
     <!-- Navigation System -->
     <script src="navigation.js"></script>
 </body>
+
 </html>

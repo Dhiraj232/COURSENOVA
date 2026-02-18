@@ -1,19 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - RENVOX</title>
-    
+
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <!-- External CSS -->
     <link rel="stylesheet" href="style.css">
-    
+
     <style>
         .dashboard-container {
             max-width: 1400px;
@@ -273,6 +276,7 @@
         }
     </style>
 </head>
+
 <body>
     <!-- ==================== NAVBAR ==================== -->
     <nav class="navbar" id="navbar">
@@ -286,6 +290,8 @@
                 <li><a href="practice.html">Practice</a></li>
                 <li><a href="certificates.html">Certificates</a></li>
                 <li><a href="pricing.html">Pricing</a></li>
+                <li><a href="store.html">Store</a></li>
+                <li><a href="Family.html">Family</a></li>
             </ul>
             <div class="nav-buttons" id="navButtons">
                 <div id="guestButtons">
@@ -297,8 +303,11 @@
                     </a>
                 </div>
                 <div id="userArea" style="display:none; align-items:center; gap:.6rem;">
-                    <a id="profileLink" href="dashboard.html" style="display:flex;align-items:center;gap:.5rem;text-decoration:none;color:inherit;">
-                        <div id="userAvatar" style="width:36px;height:36px;border-radius:50%;background:var(--primary-color);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.95rem"></div>
+                    <a id="profileLink" href="dashboard.html"
+                        style="display:flex;align-items:center;gap:.5rem;text-decoration:none;color:inherit;">
+                        <div id="userAvatar"
+                            style="width:36px;height:36px;border-radius:50%;background:var(--primary-color);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.95rem">
+                        </div>
                         <div id="userGreeting" style="font-weight:600;color:var(--primary-color);"></div>
                     </a>
                     <button id="logoutBtn" class="btn" style="margin-left:.5rem;">Logout</button>
@@ -369,44 +378,9 @@
                     <i class="fas fa-book"></i> Learning Progress
                 </div>
 
-                <div class="progress-item">
-                    <div class="progress-label">
-                        <span>C Programming</span>
-                        <span>65%</span>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: 65%;"></div>
-                    </div>
-                </div>
-
-                <div class="progress-item">
-                    <div class="progress-label">
-                        <span>Data Structures</span>
-                        <span>52%</span>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: 52%;"></div>
-                    </div>
-                </div>
-
-                <div class="progress-item">
-                    <div class="progress-label">
-                        <span>Mathematics</span>
-                        <span>88%</span>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: 88%;"></div>
-                    </div>
-                </div>
-
-                <div class="progress-item">
-                    <div class="progress-label">
-                        <span>Physics</span>
-                        <span>45%</span>
-                    </div>
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width: 45%;"></div>
-                    </div>
+                <div id="learningProgressContainer">
+                    <!-- Loaded via JS -->
+                    <div style="text-align:center; padding: 2rem; color: #6b7280;">Loading your course progress...</div>
                 </div>
 
                 <div class="quick-actions">
@@ -526,7 +500,7 @@
             const local = localStorage.getItem('renvox_user');
             const token = localStorage.getItem('renvox_token');
             if (local) {
-                try { user = JSON.parse(local); } catch(e){ user = null; }
+                try { user = JSON.parse(local); } catch (e) { user = null; }
             }
 
             if (!user && token) {
@@ -546,7 +520,7 @@
                 const firstName = (user.fullName || '').split(' ')[0] || 'User';
                 userGreeting.textContent = firstName;
                 userAvatar.textContent = (firstName[0] || 'U').toUpperCase();
-                logoutBtn.addEventListener('click', () => { localStorage.removeItem('renvox_token'); localStorage.removeItem('renvox_user'); window.location.href='login.html'; });
+                logoutBtn.addEventListener('click', () => { localStorage.removeItem('renvox_token'); localStorage.removeItem('renvox_user'); window.location.href = 'login.html'; });
                 document.getElementById('dashboardUserName').textContent = user.fullName || firstName;
             } else {
                 guestButtons.style.display = 'flex';
@@ -565,7 +539,7 @@
         // Setup navbar
         function setupDashboardNavbar() {
             const navButtons = document.getElementById('navButtons');
-            
+
             if (isLoggedIn) {
                 navButtons.innerHTML = `
                     <button class="btn-user">
@@ -601,6 +575,46 @@
         }
 
         setupDashboardNavbar();
+
+        async function loadDashboardContent() {
+            const local = localStorage.getItem('renvox_user');
+            if (!local) return;
+            const user = JSON.parse(local);
+            const classInfo = user.classInfo || '12'; // Default to 12 if missing
+
+            // Update welcome message with class
+            document.querySelector('.welcome-message').textContent = `Class ${classInfo} • Here's your learning progress`;
+
+            try {
+                const res = await fetch(`/api/subjects?classInfo=${classInfo}`);
+                const data = await res.json();
+
+                if (data.ok && data.subjects) {
+                    const container = document.getElementById('learningProgressContainer');
+                    if (data.subjects.length === 0) {
+                        container.innerHTML = '<p style="padding:1rem">No specific subjects found for your class.</p>';
+                        return;
+                    }
+
+                    container.innerHTML = data.subjects.slice(0, 4).map(sub => `
+                        <div class="progress-item">
+                            <div class="progress-label">
+                                <span>${sub.icon} ${sub.name}</span>
+                                <span>0%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 0%;"></div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (e) {
+                console.error('Failed to load dashboard content', e);
+            }
+        }
+
+        loadDashboardContent();
     </script>
 </body>
+
 </html>

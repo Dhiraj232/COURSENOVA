@@ -20,17 +20,34 @@
 	</style>
 </head>
 <body>
-	<nav class="navbar">
+	<nav class="navbar" id="navbar">
 		<div class="nav-container">
 			<a href="index.html" class="logo"><i class="fas fa-book"></i> RENVOX</a>
-			<ul class="nav-menu">
+			<ul class="nav-menu" id="navMenu">
 				<li><a href="index.html">Home</a></li>
+				<li><a href="subjects.html">Subjects</a></li>
+				<li><a href="practice.html">Practice</a></li>
+				<li><a href="certificates.html">Certificates</a></li>
+				<li><a href="pricing.html">Pricing</a></li>
 				<li><a href="store.html" class="active">Store</a></li>
-				<li><a href="family.html">Family</a></li>
+				<li><a href="Family.html">Family</a></li>
 			</ul>
-			<div style="margin-left:auto; display:flex; gap:.5rem;">
+			<div class="nav-buttons" id="navButtons">
+				<div id="guestButtons">
+					<a href="login.html" class="btn-login">
+						<i class="fas fa-sign-in-alt"></i> Login
+					</a>
+					<a href="signup.html" class="btn-signup">
+						<i class="fas fa-user-plus"></i> Sign Up
+					</a>
+				</div>
+			</div>
+			<div style="margin-left:8px; display:flex; gap:.5rem;">
 				<button class="btn" id="sellYourBookBtn">Sell Your Book</button>
 			</div>
+			<button class="menu-toggle" id="menuToggle">
+				<i class="fas fa-bars"></i>
+			</button>
 		</div>
 	</nav>
 

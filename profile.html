@@ -1,19 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Profile - RENVOX</title>
-    
+
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <!-- External CSS -->
     <link rel="stylesheet" href="style.css">
-    
+
     <style>
         .profile-container {
             max-width: 900px;
@@ -291,6 +294,7 @@
         }
     </style>
 </head>
+
 <body>
     <!-- ==================== NAVBAR ==================== -->
     <nav class="navbar" id="navbar">
@@ -304,6 +308,8 @@
                 <li><a href="practice.html">Practice</a></li>
                 <li><a href="certificates.html">Certificates</a></li>
                 <li><a href="pricing.html">Pricing</a></li>
+                <li><a href="store.html">Store</a></li>
+                <li><a href="Family.html">Family</a></li>
             </ul>
             <div class="nav-buttons" id="navButtons">
                 <!-- Filled by JavaScript -->
@@ -378,12 +384,21 @@
 
                 <div class="form-group-row">
                     <div class="form-group">
-                        <label class="form-label">Phone Number</label>
-                        <input type="tel" class="form-input" value="+91 98765-43210" id="phoneInput">
+                        <label class="form-label">Mobile Number</label>
+                        <input type="tel" class="form-input" id="mobileInput">
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Class</label>
-                        <input type="text" class="form-input" value="XII" id="classInput" disabled>
+                        <label class="form-label">Class / Course</label>
+                        <select class="form-input" id="classInput">
+                            <option value="6">Class 6</option>
+                            <option value="7">Class 7</option>
+                            <option value="8">Class 8</option>
+                            <option value="9">Class 9</option>
+                            <option value="10">Class 10</option>
+                            <option value="11">Class 11</option>
+                            <option value="12">Class 12</option>
+                            <option value="college">College</option>
+                        </select>
                     </div>
                 </div>
 
@@ -460,60 +475,85 @@
     <script src="navigation.js"></script>
 
     <script>
-        /**
-         * ==================== PROFILE PAGE INITIALIZATION ====================
-         * Handle profile page loading and form management
-         */
+        // ==================== PROFILE LOGIC ====================
 
-        const isLoggedIn = localStorage.getItem('renvoxUser') !== null;
-        const userName = localStorage.getItem('userName') || 'User';
-        const userClass = localStorage.getItem('userClass') || 'XII';
+        async function loadProfile() {
+            const local = localStorage.getItem('renvox_user');
+            if (!local) {
+                window.location.href = 'login.html';
+                return;
+            }
 
-        // Setup navbar
-        function setupProfileNavbar() {
-            const navButtons = document.getElementById('navButtons');
-            
-            if (isLoggedIn) {
-                navButtons.innerHTML = `
-                    <button class="btn-user">
-                        <i class="fas fa-user-circle"></i>
-                        <span>${userName}</span>
-                    </button>
-                    <button class="btn-user" style="background-color: #fee2e2; color: #dc2626;" onclick="logout()">Logout</button>
-                `;
-            } else {
-                navButtons.innerHTML = `
-                    <a href="login.html" class="btn-user">Login</a>
-                    <a href="signup.html" class="btn-user" style="background-color: var(--primary-color); color: white;">Sign Up</a>
-                `;
+            const user = JSON.parse(local);
+
+            // Populate Sidebar
+            document.getElementById('profileName').textContent = user.fullName;
+            document.getElementById('profileClass').textContent = user.classInfo ? `Class ${user.classInfo}` : 'Student';
+            document.getElementById('profileEmail').textContent = user.email;
+
+            // Populate Form
+            document.getElementById('firstName').value = user.fullName; // Using firstName input for full name
+            document.getElementById('emailInput').value = user.email;
+            document.getElementById('mobileInput').value = user.mobile || '';
+            document.getElementById('classInput').value = user.classInfo || '12';
+        }
+
+        async function saveProfile() {
+            const local = localStorage.getItem('renvox_user');
+            if (!local) return;
+            const user = JSON.parse(local);
+            const token = localStorage.getItem('renvox_token');
+
+            const fullName = document.getElementById('firstName').value;
+            const email = document.getElementById('emailInput').value;
+            const mobile = document.getElementById('mobileInput').value;
+            const classInfo = document.getElementById('classInput').value;
+            const saveBtn = document.querySelector('.btn-save');
+
+            saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+            saveBtn.disabled = true;
+
+            try {
+                const res = await fetch('/api/update-profile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ userId: user.id, fullName, email, mobile, classInfo })
+                });
+
+                const data = await res.json();
+
+                if (data.ok) {
+                    // Update Local Storage
+                    localStorage.setItem('renvox_user', JSON.stringify(data.user));
+                    alert('✅ Profile updated successfully!');
+                    loadProfile(); // Refresh UI
+                } else {
+                    alert('❌ Failed to update profile: ' + data.message);
+                }
+            } catch (error) {
+                console.error(error);
+                alert('❌ Server error.');
+            } finally {
+                saveBtn.innerHTML = '<i class="fas fa-save"></i> Save Changes';
+                saveBtn.disabled = false;
             }
         }
 
-        // Show content for all users
-        document.getElementById('profileName').textContent = userName;
-        document.getElementById('profileClass').textContent = `Class ${userClass}`;
-
-        // Save profile
-        function saveProfile() {
-            alert('✅ Profile updated successfully!');
-        }
-
-        // Reset profile
         function resetProfile() {
-            location.reload();
+            if (confirm('Discard changes and reload?')) location.reload();
         }
 
-        // Logout function
         function logout() {
-            if (confirm('Logout?')) {
-                localStorage.removeItem('renvoxUser');
-                localStorage.removeItem('userName');
-                localStorage.removeItem('userClass');
-                window.location.reload();
+            if (confirm('Are you sure you want to logout?')) {
+                localStorage.removeItem('renvox_token');
+                localStorage.removeItem('renvox_user');
+                window.location.href = 'index.html';
             }
         }
 
-        setupProfileNavbar();
+        // Init
+        document.addEventListener('DOMContentLoaded', loadProfile);
     </script>
 </body>
+
 </html>
