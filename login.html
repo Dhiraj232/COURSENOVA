@@ -4,362 +4,269 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - RENVOX</title>
+    <title>Sign In - RENVOX</title>
+    <!-- Use Google Fonts for Modern Typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="index.css">
 
-    <!-- Google Fonts -->
-    <link
-        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap"
-        rel="stylesheet">
-
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <!-- External CSS -->
-    <link rel="stylesheet" href="style.css">
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 
     <style>
         body {
-            background: linear-gradient(135deg, #1e3a8a 0%, #3730a3 100%);
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        /* Navbar Overrides Just for this page to float it */
+        .navbar {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            box-shadow: none !important;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+
+        .auth-wrapper {
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 1rem;
+            padding: 2rem;
+            padding-top: 80px;
+            /* Accounts for navbar */
+        }
+
+        .auth-card {
+            display: flex;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            width: 100%;
+            max-width: 1100px;
+            min-height: 650px;
+        }
+
+        .auth-left {
+            flex: 1;
+            padding: 4rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .auth-right {
+            flex: 1;
+            background: linear-gradient(135deg, var(--primary-color) 0%, #3730a3 100%);
+            color: white;
+            padding: 4rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
             position: relative;
             overflow: hidden;
-            font-family: 'Inter', sans-serif;
         }
 
-        /* Ambient Background Shapes */
-        .ambient-shape {
+        /* Some abstract shapes in the background of the right side */
+        .auth-right::before {
+            content: '';
             position: absolute;
-            border-radius: 50%;
-            filter: blur(80px);
-            z-index: 0;
-            opacity: 0.6;
-        }
-
-        .shape-1 {
+            top: -10%;
+            right: -10%;
             width: 400px;
             height: 400px;
-            background: #4f46e5;
-            top: -100px;
-            left: -100px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            filter: blur(40px);
         }
 
-        .shape-2 {
+        .auth-right::after {
+            content: '';
+            position: absolute;
+            bottom: -10%;
+            left: -10%;
             width: 300px;
             height: 300px;
-            background: #ec4899;
-            bottom: -50px;
-            right: -50px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.2);
+            filter: blur(40px);
         }
 
-        .login-card {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(20px);
-            border-radius: 20px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-            width: 100%;
-            max-width: 450px;
-            padding: 2.5rem;
-            position: relative;
-            z-index: 10;
-            border: 1px solid rgba(255, 255, 255, 0.5);
-        }
-
-        .login-header {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-
-        .login-logo {
-            font-size: 2rem;
+        .auth-right h2 {
+            font-size: 2.8rem;
+            margin-bottom: 1.5rem;
             font-weight: 800;
-            color: var(--primary-color, #1e3a8a);
-            margin-bottom: 0.5rem;
-            display: inline-block;
+            line-height: 1.2;
+            z-index: 1;
         }
 
-        .login-subtitle {
+        .auth-right p {
+            font-size: 1.15rem;
+            opacity: 0.9;
+            line-height: 1.6;
+            z-index: 1;
+        }
+
+        .logo-container {
+            margin-bottom: 3rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--primary-color);
+        }
+
+        .logo-container i {
+            font-size: 2.2rem;
+            background: linear-gradient(135deg, var(--primary-color) 0%, #3730a3 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .auth-title {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #111827;
+            margin-bottom: 0.75rem;
+            letter-spacing: -0.025em;
+        }
+
+        .auth-subtitle {
+            color: #6b7280;
+            font-size: 1.05rem;
+            margin-bottom: 3.5rem;
+            max-width: 80%;
+            line-height: 1.5;
+        }
+
+        .google-btn-wrapper {
+            width: 100%;
+            max-width: 320px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+            /* Ensure it floats above */
+        }
+
+        /* Custom styling around the google button to make it pop */
+        .google-btn-wrapper::after {
+            content: '';
+            display: block;
+            height: 1px;
+            background: #e5e7eb;
+            margin: 2.5rem 0;
+            position: relative;
+        }
+
+        .link-toggle {
             color: #6b7280;
             font-size: 0.95rem;
         }
 
-        .form-group {
-            margin-bottom: 1.5rem;
-            position: relative;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            color: #1f2937;
-            font-size: 0.9rem;
-        }
-
-        .input-wrapper {
-            position: relative;
-        }
-
-        .input-wrapper i {
-            position: absolute;
-            left: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #9ca3af;
-            font-size: 1rem;
-            transition: color 0.3s ease;
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 0.9rem 1rem 0.9rem 2.8rem;
-            border: 2px solid #e5e7eb;
-            border-radius: 10px;
-            font-size: 1rem;
-            font-family: 'Inter', sans-serif;
-            transition: all 0.3s ease;
-            background: #f9fafb;
-        }
-
-        .form-control:focus {
-            outline: none;
-            border-color: var(--primary-color, #1e3a8a);
-            background: #fff;
-            box-shadow: 0 0 0 4px rgba(30, 58, 138, 0.1);
-        }
-
-        .form-control:focus+i {
-            color: var(--primary-color, #1e3a8a);
-        }
-
-        .btn-submit {
-            width: 100%;
-            padding: 1rem;
-            background: linear-gradient(135deg, var(--primary-color, #1e3a8a) 0%, #3730a3 100%);
-            color: white;
-            border: none;
-            border-radius: 10px;
-            font-weight: 600;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 6px -1px rgba(30, 58, 138, 0.2);
-        }
-
-        .btn-submit:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 15px -3px rgba(30, 58, 138, 0.3);
-        }
-
-        .btn-submit:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .divider {
-            display: flex;
-            align-items: center;
-            text-align: center;
-            margin: 1.5rem 0;
-            color: #9ca3af;
-        }
-
-        .divider::before,
-        .divider::after {
-            content: '';
-            flex: 1;
-            border-bottom: 1px solid #e5e7eb;
-        }
-
-        .divider span {
-            padding: 0 10px;
-            font-size: 0.85rem;
-            font-weight: 500;
-        }
-
-        .btn-google {
-            width: 100%;
-            padding: 0.9rem;
-            background: white;
-            border: 1px solid #e5e7eb;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.8rem;
-            color: #1f2937;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .btn-google:hover {
-            background: #f9fafb;
-            border-color: #d1d5db;
-        }
-
-        .auth-footer {
-            text-align: center;
-            margin-top: 1.5rem;
-            font-size: 0.9rem;
-            color: #6b7280;
-        }
-
-        .auth-footer a {
-            color: var(--primary-color, #1e3a8a);
+        .link-toggle a {
+            color: var(--primary-color);
+            font-weight: 700;
             text-decoration: none;
-            font-weight: 600;
+            transition: color 0.2s;
         }
 
-        .auth-footer a:hover {
+        .link-toggle a:hover {
+            color: #3730a3;
             text-decoration: underline;
         }
 
-        .alert {
-            padding: 0.8rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-            font-size: 0.9rem;
-            display: none;
-        }
-
-        .alert-error {
-            background-color: #fee2e2;
-            color: #dc2626;
-            border: 1px solid #fecaca;
-        }
-
-        @keyframes shake {
-
-            0%,
-            100% {
-                transform: translateX(0);
+        @media (max-width: 900px) {
+            .auth-card {
+                flex-direction: column;
+                min-height: auto;
+                max-width: 500px;
             }
 
-            20%,
-            60% {
-                transform: translateX(-5px);
+            .auth-right {
+                display: none;
             }
 
-            40%,
-            80% {
-                transform: translateX(5px);
+            .auth-left {
+                padding: 3rem 2rem;
             }
         }
-
-        .shake {
-            animation: shake 0.4s ease-in-out;
         }
     </style>
 </head>
 
 <body>
-
-    <div class="ambient-shape shape-1"></div>
-    <div class="ambient-shape shape-2"></div>
-
-    <div class="login-card">
-        <div class="login-header">
-            <div class="login-logo">
-                <i class="fas fa-book-open"></i> RENVOX
-            </div>
-            <p class="login-subtitle">Welcome back! Please enter your details.</p>
-        </div>
-
-        <div id="errorAlert" class="alert alert-error"></div>
-
-        <form id="loginForm">
-            <div class="form-group">
-                <label for="identifier">Email or Mobile Number</label>
-                <div class="input-wrapper">
-                    <i class="fas fa-envelope"></i>
-                    <input type="text" id="identifier" class="form-control" placeholder="Enter your email or mobile"
-                        required autofocus>
+    <div class="auth-wrapper">
+        <div class="auth-card">
+            <div class="auth-left">
+                <a href="index.html" style="text-decoration:none;">
+                    <div class="logo-container">
+                        <i class="fas fa-book"></i> RENVOX
+                    </div>
+                </a>
+                <h1 class="auth-title">Welcome Back</h1>
+                <p class="auth-subtitle">Sign in securely with Google to continue your professional learning journey.
+                </p>
+                <div class="google-btn-wrapper">
+                    <!-- Google Identity Services Div -->
+                    <div id="g_id_onload"
+                        data-client_id="515938781385-pch5g9vm1ec8tjqeq1au73ni3ov6fepn.apps.googleusercontent.com"
+                        data-context="signin" data-ux_mode="popup" data-callback="handleGoogleLogin"
+                        data-auto_prompt="false"></div>
+                    <div class="g_id_signin" data-type="standard" data-shape="pill" data-theme="outline"
+                        data-text="continue_with" data-size="large" data-logo_alignment="center" data-width="320"></div>
                 </div>
+                <p class="link-toggle">Don't have an account? <a href="signup.html">Create one for free</a></p>
             </div>
-
-            <div class="form-group">
-                <label for="password">Password</label>
-                <div class="input-wrapper">
-                    <i class="fas fa-lock"></i>
-                    <input type="password" id="password" class="form-control" placeholder="••••••••" required>
-                </div>
-                <div style="text-align: right; margin-top: 0.5rem;">
-                    <a href="#"
-                        style="font-size: 0.85rem; color: var(--primary-color, #1e3a8a); text-decoration: none;">Forgot
-                        password?</a>
-                </div>
+            <div class="auth-right">
+                <h2>Unlock Your Potential.</h2>
+                <p>Join thousands of learners achieving their career goals with RENVOX's industry-leading courses and
+                    verified certifications.</p>
             </div>
-
-            <button type="submit" class="btn-submit" id="submitBtn">
-                Sign In <i class="fas fa-arrow-right" style="margin-left: 5px;"></i>
-            </button>
-        </form>
-
-        <div class="divider">
-            <span>OR CONTINUE WITH</span>
-        </div>
-
-        <button class="btn-google">
-            <i class="fab fa-google" style="color: #DB4437;"></i>
-            Google Account
-        </button>
-
-        <div class="auth-footer">
-            Don't have an account? <a href="signup.html">Sign up for free</a>
         </div>
     </div>
-
+    <!-- Navigation JS (for setup Navbar function usually) -->
+    <script src="navigation.js"></script>
     <script>
-        document.getElementById('loginForm').addEventListener('submit', async function (e) {
-            e.preventDefault();
-
-            const identifier = document.getElementById('identifier').value.trim();
-            const password = document.getElementById('password').value;
-            const submitBtn = document.getElementById('submitBtn');
-            const errorAlert = document.getElementById('errorAlert');
-
-            // Reset UI
-            errorAlert.style.display = 'none';
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing in...';
-
+        async function handleGoogleLogin(response) {
             try {
-                const response = await fetch('/api/login', {
+                // Support testing from VS Code Live Server (port 5503)
+                const API_BASE = window.location.port === '5503' ? 'http://localhost:4000' : '';
+
+                // Send standard Google credential JWT to our backend
+                const res = await fetch(`${API_BASE}/api/google-auth`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ identifier, password })
+                    body: JSON.stringify({ credential: response.credential })
                 });
 
-                const data = await response.json();
+                const data = await res.json();
 
-                if (response.ok && data.ok) {
-                    // Success! Store token and user
-                    localStorage.setItem('renvox_token', data.token);
-                    localStorage.setItem('renvox_user', JSON.stringify(data.user));
+                if (data.ok) {
+                    // Set token and user in localStorage as per existing auth logic
+                    localStorage.setItem('renvoxUser', JSON.stringify(data.user));
+                    localStorage.setItem('renvoxToken', data.token);
+                    localStorage.setItem('userName', data.user.fullName);
 
-                    // Redirect
+                    // Redirect back to home
                     window.location.href = 'index.html';
                 } else {
-                    // Error
-                    throw new Error(data.message || 'Login failed');
+                    alert('Login failed: ' + data.message);
                 }
-            } catch (error) {
-                errorAlert.textContent = error.message;
-                errorAlert.style.display = 'block';
-                document.querySelector('.login-card').classList.add('shake');
-                setTimeout(() => document.querySelector('.login-card').classList.remove('shake'), 500);
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = 'Sign In <i class="fas fa-arrow-right" style="margin-left: 5px;"></i>';
+            } catch (err) {
+                console.error(err);
+                alert('A network error occurred connecting to the server.');
             }
-        });
+        }
     </script>
-    <script src="navigation.js"></script>
 </body>
 
 </html>

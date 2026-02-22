@@ -5,246 +5,186 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sign Up - RENVOX</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="index.css">
 
-    <!-- Google Fonts -->
-    <link
-        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap"
-        rel="stylesheet">
-
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <!-- External CSS -->
-    <link rel="stylesheet" href="style.css">
+    <!-- Google Identity Services -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 
     <style>
         body {
-            background: linear-gradient(135deg, #1e3a8a 0%, #3730a3 100%);
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background-color: #f3f4f6;
+            background-image: radial-gradient(#e5e7eb 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .auth-wrapper {
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 2rem 1rem;
-            font-family: 'Inter', sans-serif;
+            padding: 2rem;
+            padding-top: 80px;
         }
 
         .auth-card {
-            background: #ffffff;
-            border-radius: 20px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-            width: 100%;
-            max-width: 900px;
-            display: grid;
-            grid-template-columns: 1fr 1.2fr;
+            display: flex;
+            flex-direction: row-reverse;
+            /* Flip sides for signup vs login! */
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05);
             overflow: hidden;
-            min-height: 600px;
+            width: 100%;
+            max-width: 1100px;
+            min-height: 650px;
         }
 
-        .auth-visual {
-            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
-            padding: 3rem;
+        .auth-left {
+            flex: 1;
+            padding: 4rem;
             display: flex;
             flex-direction: column;
             justify-content: center;
-            color: white;
-            position: relative;
-        }
-
-        .visual-content h2 {
-            font-size: 2.5rem;
-            margin-bottom: 1.5rem;
-            line-height: 1.2;
-        }
-
-        .feature-list {
-            list-style: none;
-            margin-top: 2rem;
-        }
-
-        .feature-list li {
-            margin-bottom: 1.2rem;
-            display: flex;
-            align-items: flex-start;
-            gap: 1rem;
-            font-size: 1.05rem;
-            opacity: 0.9;
-        }
-
-        .feature-list i {
-            background: rgba(255, 255, 255, 0.2);
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            display: flex;
             align-items: center;
-            justify-content: center;
-            font-size: 0.9rem;
-            margin-top: 2px;
-        }
-
-        .auth-form-container {
-            padding: 3rem;
-            overflow-y: auto;
-            max-height: 90vh;
-        }
-
-        .form-header {
-            margin-bottom: 2rem;
-        }
-
-        .form-title {
-            font-size: 1.8rem;
-            color: #1f2937;
-            margin-bottom: 0.5rem;
-        }
-
-        .role-selector {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-            margin-bottom: 2rem;
-        }
-
-        .role-card {
-            border: 2px solid #e5e7eb;
-            border-radius: 12px;
-            padding: 1rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
             text-align: center;
+        }
+
+        .auth-right {
+            flex: 1;
+            background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+            /* Greenish theme for signup */
+            color: white;
+            padding: 4rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .auth-right::before {
+            content: '';
+            position: absolute;
+            top: -10%;
+            right: -10%;
+            width: 400px;
+            height: 400px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            filter: blur(40px);
+        }
+
+        .auth-right::after {
+            content: '';
+            position: absolute;
+            bottom: -10%;
+            left: -10%;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.2);
+            filter: blur(40px);
+        }
+
+        .auth-right h2 {
+            font-size: 2.8rem;
+            margin-bottom: 1.5rem;
+            font-weight: 800;
+            line-height: 1.2;
+            z-index: 1;
+        }
+
+        .auth-right p {
+            font-size: 1.15rem;
+            opacity: 0.9;
+            line-height: 1.6;
+            z-index: 1;
+        }
+
+        .logo-container {
+            margin-bottom: 3rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #10b981;
+        }
+
+        .logo-container i {
+            font-size: 2.2rem;
+            background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .auth-title {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: #111827;
+            margin-bottom: 0.75rem;
+            letter-spacing: -0.025em;
+        }
+
+        .auth-subtitle {
+            color: #6b7280;
+            font-size: 1.05rem;
+            margin-bottom: 3.5rem;
+            max-width: 80%;
+            line-height: 1.5;
+        }
+
+        .google-btn-wrapper {
+            width: 100%;
+            max-width: 320px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 2;
+        }
+
+        .google-btn-wrapper::after {
+            content: '';
+            display: block;
+            height: 1px;
+            background: #e5e7eb;
+            margin: 2.5rem 0;
             position: relative;
         }
 
-        .role-card:hover {
-            border-color: #bfdbfe;
-            background: #f0f9ff;
-        }
-
-        .role-card.active {
-            border-color: var(--primary-color, #1e3a8a);
-            background: #eff6ff;
-        }
-
-        .role-card.active::after {
-            content: '\f00c';
-            font-family: 'Font Awesome 5 Free';
-            font-weight: 900;
-            position: absolute;
-            top: -10px;
-            right: -10px;
-            background: var(--primary-color, #1e3a8a);
-            color: white;
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.8rem;
-        }
-
-        .role-icon {
-            font-size: 1.5rem;
-            margin-bottom: 0.5rem;
+        .link-toggle {
             color: #6b7280;
-        }
-
-        .role-card.active .role-icon {
-            color: var(--primary-color, #1e3a8a);
-        }
-
-        .role-name {
-            font-weight: 600;
-            color: #1f2937;
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-        }
-
-        .form-group {
-            margin-bottom: 1.2rem;
-        }
-
-        .full-width {
-            grid-column: span 2;
-        }
-
-        .form-label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            color: #1f2937;
-            font-size: 0.9rem;
-        }
-
-        .form-control {
-            width: 100%;
-            padding: 0.8rem 1rem;
-            border: 2px solid #e5e7eb;
-            border-radius: 8px;
-            font-family: 'Inter', sans-serif;
-            transition: all 0.3s ease;
             font-size: 0.95rem;
         }
 
-        .form-control:focus {
-            outline: none;
-            border-color: var(--primary-color, #1e3a8a);
-            box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+        .link-toggle a {
+            color: #10b981;
+            font-weight: 700;
+            text-decoration: none;
+            transition: color 0.2s;
         }
 
-        .btn-submit {
-            width: 100%;
-            padding: 1rem;
-            background: var(--primary-color, #1e3a8a);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-top: 1rem;
-        }
-
-        .btn-submit:hover {
-            background-color: #1e2c65;
-            transform: translateY(-2px);
-        }
-
-        .alert {
-            padding: 0.8rem;
-            border-radius: 8px;
-            margin-bottom: 1.5rem;
-            font-size: 0.9rem;
-            display: none;
-        }
-
-        .alert-error {
-            background-color: #fee2e2;
-            color: #dc2626;
-            border: 1px solid #fecaca;
+        .link-toggle a:hover {
+            color: #047857;
+            text-decoration: underline;
         }
 
         @media (max-width: 900px) {
             .auth-card {
-                grid-template-columns: 1fr;
+                flex-direction: column;
+                min-height: auto;
                 max-width: 500px;
             }
 
-            .auth-visual {
+            .auth-right {
                 display: none;
             }
 
-            .form-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .full-width {
-                grid-column: span 1;
+            .auth-left {
+                padding: 3rem 2rem;
             }
         }
     </style>
@@ -252,176 +192,75 @@
 
 <body>
 
-    <div class="auth-card">
-        <!-- Visual Side -->
-        <div class="auth-visual">
-            <div class="visual-content">
-                <h2>Join the<br>Top Learning<br>Platform</h2>
-                <ul class="feature-list">
-                    <li><i class="fas fa-check"></i> Access premium study notes</li>
-                    <li><i class="fas fa-check"></i> Practice with real exam questions</li>
-                    <li><i class="fas fa-check"></i> Earn verified certificates</li>
-                    <li><i class="fas fa-check"></i> Track your performance analytics</li>
-                </ul>
-            </div>
-            <div style="margin-top: auto; font-size: 0.9rem; opacity: 0.8;">
-                Trusted by 10,000+ Students across India
-            </div>
-        </div>
+    <div class="auth-wrapper">
+        <div class="auth-card">
+            <div class="auth-left">
+                <a href="index.html" style="text-decoration:none;">
+                    <div class="logo-container">
+                        <i class="fas fa-book"></i> RENVOX
+                    </div>
+                </a>
 
-        <!-- Form Side -->
-        <div class="auth-form-container">
-            <div class="form-header">
-                <h1 class="form-title">Create Account</h1>
-                <p style="color: #6b7280;">Already have an account? <a href="login.html"
-                        style="color: var(--primary-color, #1e3a8a); font-weight: 600; text-decoration: none;">Login</a>
+                <h1 class="auth-title">Create an Account</h1>
+                <p class="auth-subtitle">Get started with a single click. Join our community using your Google account.
+                </p>
+
+                <div class="google-btn-wrapper">
+                    <!-- Google Identity Services Div -->
+                    <div id="g_id_onload"
+                        data-client_id="515938781385-pch5g9vm1ec8tjqeq1au73ni3ov6fepn.apps.googleusercontent.com"
+                        data-context="signup" data-ux_mode="popup" data-callback="handleGoogleLogin"
+                        data-auto_prompt="false">
+                    </div>
+
+                    <div class="g_id_signin" data-type="standard" data-shape="pill" data-theme="outline"
+                        data-text="signup_with" data-size="large" data-logo_alignment="center" data-width="320">
+                    </div>
+                </div>
+
+                <p class="link-toggle">
+                    Already have an account? <a href="login.html">Sign in here</a>
                 </p>
             </div>
 
-            <div id="errorAlert" class="alert alert-error"></div>
-
-            <form id="signupForm">
-                <label class="form-label">I am a:</label>
-                <div class="role-selector">
-                    <div class="role-card active" onclick="selectRole('student')" id="role-student">
-                        <div class="role-icon"><i class="fas fa-user-graduate"></i></div>
-                        <div class="role-name">Student</div>
-                    </div>
-                    <div class="role-card" onclick="selectRole('coaching')" id="role-coaching">
-                        <div class="role-icon"><i class="fas fa-chalkboard-teacher"></i></div>
-                        <div class="role-name">Teacher / Coaching</div>
-                    </div>
-                </div>
-                <input type="hidden" id="roleInput" value="student">
-
-                <div class="form-group full-width" id="classSelectGroup">
-                    <label class="form-label">Select Class / Course</label>
-                    <select id="classSelect" class="form-control">
-                        <option value="">Select your class...</option>
-                        <option value="6">Class 6</option>
-                        <option value="7">Class 7</option>
-                        <option value="8">Class 8</option>
-                        <option value="9">Class 9</option>
-                        <option value="10">Class 10</option>
-                        <option value="11">Class 11</option>
-                        <option value="12">Class 12</option>
-                        <option value="college">College / Undergraduate</option>
-                    </select>
-                </div>
-
-                <div class="form-grid">
-                    <div class="form-group full-width">
-                        <label class="form-label">Full Name</label>
-                        <input type="text" id="fullName" class="form-control" placeholder="John Doe" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Email Address</label>
-                        <input type="email" id="email" class="form-control" placeholder="john@example.com" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Mobile Number</label>
-                        <input type="tel" id="mobile" class="form-control" placeholder="9876543210" pattern="[0-9]{10}"
-                            required>
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Password</label>
-                        <input type="password" id="password" class="form-control" placeholder="••••••••" required
-                            minlength="6">
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">Confirm Password</label>
-                        <input type="password" id="confirmPassword" class="form-control" placeholder="••••••••"
-                            required>
-                    </div>
-                </div>
-
-                <div class="form-group" style="margin-top: 1rem;">
-                    <label
-                        style="display: flex; gap: 0.5rem; align-items: flex-start; cursor: pointer; font-size: 0.9rem; color: #6b7280;">
-                        <input type="checkbox" required style="margin-top: 3px;">
-                        <span>I allow RenVox to access my location and device information for security purposes and
-                            agree to the Terms of Service.</span>
-                    </label>
-                </div>
-
-                <button type="submit" class="btn-submit" id="submitBtn">Create Account</button>
-            </form>
+            <div class="auth-right">
+                <h2>Start Learning Today.</h2>
+                <p>Gain access to premium certificates, extensive practice questions, and an entire community of
+                    passionate students.</p>
+            </div>
         </div>
     </div>
 
+    <script src="navigation.js"></script>
     <script>
-        function selectRole(role) {
-            document.querySelectorAll('.role-card').forEach(c => c.classList.remove('active'));
-            document.getElementById(`role-${role}`).classList.add('active');
-            document.getElementById('roleInput').value = role;
-        }
-
-        document.getElementById('signupForm').addEventListener('submit', async function (e) {
-            e.preventDefault();
-
-            const fullName = document.getElementById('fullName').value.trim();
-            const email = document.getElementById('email').value.trim();
-            const mobile = document.getElementById('mobile').value.trim();
-            const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
-            const role = document.getElementById('roleInput').value;
-            const alertBox = document.getElementById('errorAlert');
-            const submitBtn = document.getElementById('submitBtn');
-
-            // Client Validation
-            alertBox.style.display = 'none';
-
-            if (password !== confirmPassword) {
-                alertBox.textContent = "Passwords do not match.";
-                alertBox.style.display = 'block';
-                return;
-            }
-
-            const classInfo = document.getElementById('classSelect').value;
-
-            if (role === 'student' && !classInfo) {
-                alertBox.textContent = "Please select your class.";
-                alertBox.style.display = 'block';
-                return;
-            }
-
-            // UI Loading State
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating Account...';
-
+        async function handleGoogleLogin(response) {
             try {
-                const response = await fetch('/api/signup', {
+                // Support testing from VS Code Live Server (port 5503)
+                const API_BASE = window.location.port === '5503' ? 'http://localhost:4000' : '';
+
+                // Send standard Google credential JWT to our backend
+                const res = await fetch(`${API_BASE}/api/google-auth`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ fullName, email, mobile, password, role, classInfo })
+                    body: JSON.stringify({ credential: response.credential })
                 });
+                const data = await res.json();
 
-                const data = await response.json();
+                if (data.ok) {
+                    localStorage.setItem('renvoxUser', JSON.stringify(data.user));
+                    localStorage.setItem('renvoxToken', data.token);
+                    localStorage.setItem('userName', data.user.fullName);
 
-                if (response.ok && data.ok) {
-                    // Success -> Go to OTP
-                    // Store userId temporarily for OTP verification
-                    if (data.userId) {
-                        localStorage.setItem('pendingUserId', data.userId);
-                    }
-                    window.location.href = 'otp.html';
+                    window.location.href = 'index.html';
                 } else {
-                    throw new Error(data.message || 'Signup failed');
+                    alert('Signup failed: ' + data.message);
                 }
-
-            } catch (error) {
-                alertBox.textContent = error.message;
-                alertBox.style.display = 'block';
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'Create Account';
+            } catch (err) {
+                console.error(err);
+                alert('A network error occurred connecting to the server.');
             }
-        });
+        }
     </script>
-    <script src="navigation.js"></script>
 </body>
 
 </html>

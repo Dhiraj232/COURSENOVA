@@ -51,8 +51,8 @@ function setupNavigation() {
         const href = link.getAttribute('href');
 
         // Handle homepage special case
-        if ((href === '#home' || href === '#subjects' || href === '#practice' ||
-            href === '#certificates' || href === '#pricing') && currentPage === 'index') {
+        if ((href === '#home' || href === '#practice' ||
+            href === '#certificates') && currentPage === 'index') {
             // Homepage hash navigation - handle in setupHashNavigation
             return;
         }
@@ -234,10 +234,8 @@ window.addEventListener('load', animatePageEntrance);
 function getPageLinks() {
     return {
         home: 'index.html',
-        subjects: 'subjects.html',
         practice: 'practice.html',
         certificates: 'certificates.html',
-        pricing: 'pricing.html',
         login: 'login.html',
         signup: 'signup.html',
         dashboard: 'dashboard.html',
@@ -308,20 +306,14 @@ document.addEventListener('keydown', function (e) {
  * Handle "Get Started Free" button navigation
  */
 function handleGetStarted() {
-    const isLoggedIn = localStorage.getItem('renvoxUser') !== null;
-
-    if (isLoggedIn) {
-        navigateToPage('dashboard.html');
-    } else {
-        navigateToPage('signup.html');
-    }
+    navigateToPage('certificates.html');
 }
 
 /**
- * Handle "View Courses" button navigation
+ * Handle "View Courses/Certificates" button navigation
  */
 function handleViewCourses() {
-    navigateToPage('subjects.html');
+    navigateToPage('certificates.html');
 }
 
 // ==================== 12. USER DROPDOWN MENU ==================== 

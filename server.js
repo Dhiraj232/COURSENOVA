@@ -4,9 +4,14 @@ const path = require('path');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+const Razorpay = require('razorpay');
+const { OAuth2Client } = require('google-auth-library');
 
 const DATA_FILE = path.join(__dirname, 'data', 'users.json');
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_me';
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '515938781385-pch5g9vm1ec8tjqeq1au73ni3ov6fepn.apps.googleusercontent.com';
+const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 
 function readUsers() {
   try {
@@ -35,6 +40,54 @@ app.use(cors());
 app.use(express.json());
 // Serve frontend static files from project root
 app.use(express.static(path.join(__dirname)));
+
+// Razorpay Instance (Test Keys)
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_TYYvG5LdO0V12j',
+  key_secret: process.env.RAZORPAY_KEY_SECRET || 'tK0lWjAOr3mR0K9uI3uSqkZ1'
+});
+
+// Create Order API
+app.post('/api/create-order', async (req, res) => {
+  try {
+    const { amount, course } = req.body;
+    if (!amount) return res.status(400).json({ ok: false, message: 'Amount is required' });
+
+    const options = {
+      amount: amount * 100, // amount in smallest currency unit (paise)
+      currency: "INR",
+      receipt: `receipt_${Date.now()}`
+    };
+
+    const order = await razorpay.orders.create(options);
+    res.json({ ok: true, orderId: order.id, amount: order.amount, currency: order.currency });
+  } catch (error) {
+    console.error('Razorpay Create Order Error:', error);
+    res.status(500).json({ ok: false, message: 'Failed to create order' });
+  }
+});
+
+// Verify Payment API
+app.post('/api/verify-payment', (req, res) => {
+  const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+
+  const secret = process.env.RAZORPAY_KEY_SECRET || 'tK0lWjAOr3mR0K9uI3uSqkZ1';
+  const body = razorpay_order_id + "|" + razorpay_payment_id;
+
+  const expectedSignature = crypto
+    .createHmac('sha256', secret)
+    .update(body.toString())
+    .digest('hex');
+
+  const isAuthentic = expectedSignature === razorpay_signature;
+
+  if (isAuthentic) {
+    // In a real app, save payment success to database here
+    res.json({ ok: true, message: 'Payment verified successfully' });
+  } else {
+    res.status(400).json({ ok: false, message: 'Invalid payment signature' });
+  }
+});
 
 // Signup
 app.post('/api/signup', async (req, res) => {
@@ -147,6 +200,63 @@ app.get('/api/me', (req, res) => {
     res.json({ ok: true, user: { id: user.id, fullName: user.fullName, email: user.email, mobile: user.mobile, verified: user.verified, role: user.role, college: user.college } });
   } catch (err) {
     return res.status(401).json({ ok: false, message: 'Invalid token' });
+  }
+});
+
+// Google Login/Signup Endpoint
+app.post('/api/google-auth', async (req, res) => {
+  try {
+    const { credential } = req.body;
+    if (!credential) return res.status(400).json({ ok: false, message: 'No credential provided' });
+
+    // In a real live app, verify the token using google-auth-library:
+    const ticket = await googleClient.verifyIdToken({
+      idToken: credential,
+      audience: GOOGLE_CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+
+    // For local dummy testing without a real Client ID, we can decode the JWT locally:
+    // const payload = jwt.decode(credential);
+
+    if (!payload || !payload.email) {
+      return res.status(400).json({ ok: false, message: 'Invalid token payload' });
+    }
+
+    const { email, name, picture } = payload;
+    let users = readUsers();
+    let user = users.find(u => u.email === email);
+
+    if (!user) {
+      // Auto-register new user
+      user = {
+        id: Date.now().toString(),
+        fullName: name,
+        email: email,
+        mobile: '',
+        role: 'student',
+        verified: true, // Google emails are already verified
+        picture: picture,
+      };
+      users.push(user);
+      writeUsers(users);
+      console.log('Created new user via Google:', email);
+    } else {
+      // Optional: Update picture and name if they changed
+      user.fullName = name;
+      user.picture = picture;
+      writeUsers(users);
+    }
+
+    const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
+    res.json({
+      ok: true,
+      token,
+      user: { id: user.id, fullName: user.fullName, email: user.email, role: user.role, picture: user.picture }
+    });
+  } catch (error) {
+    console.error('Google Auth Error:', error);
+    res.status(500).json({ ok: false, message: 'Server error during Google auth' });
   }
 });
 

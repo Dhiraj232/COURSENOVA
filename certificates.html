@@ -1,16 +1,19 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Certificate Courses - RENVOX</title>
-    
+
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
     <style>
         * {
             margin: 0;
@@ -35,7 +38,12 @@
             background-color: var(--white);
         }
 
-        h1, h2, h3, h4, h5, h6 {
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
             font-family: 'Poppins', sans-serif;
             font-weight: 700;
         }
@@ -156,8 +164,8 @@
         /* ==================== CERTIFICATE CARDS ==================== */
         .certificates-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 2rem;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 1.5rem;
             margin-bottom: 3rem;
         }
 
@@ -177,31 +185,31 @@
 
         .cert-card-header {
             background: linear-gradient(135deg, var(--primary-color) 0%, #3730a3 100%);
-            padding: 2rem;
+            padding: 1.25rem;
             color: var(--white);
             text-align: center;
         }
 
         .cert-icon {
-            font-size: 3rem;
-            margin-bottom: 0.5rem;
+            font-size: 2.5rem;
+            margin-bottom: 0.25rem;
         }
 
         .cert-card-title {
-            font-size: 1.4rem;
-            margin-bottom: 0.5rem;
+            font-size: 1.15rem;
+            margin-bottom: 0.25rem;
         }
 
         .cert-card-body {
-            padding: 2rem;
+            padding: 1.25rem;
         }
 
         .cert-info {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1.5rem;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
             border-bottom: 1px solid var(--border-color);
         }
 
@@ -211,36 +219,36 @@
         }
 
         .info-label {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: var(--text-light);
             font-weight: 600;
-            margin-bottom: 0.3rem;
+            margin-bottom: 0.2rem;
         }
 
         .info-value {
-            font-size: 1rem;
+            font-size: 0.9rem;
             color: var(--text-dark);
             font-weight: 600;
         }
 
         .cert-description {
             color: var(--text-light);
-            font-size: 0.95rem;
-            margin-bottom: 1.5rem;
-            line-height: 1.6;
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+            line-height: 1.5;
         }
 
         .cert-highlights {
             list-style: none;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1rem;
         }
 
         .cert-highlights li {
-            padding: 0.5rem 0;
+            padding: 0.25rem 0;
             display: flex;
-            gap: 0.8rem;
+            gap: 0.6rem;
             color: var(--text-dark);
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
 
         .cert-highlights li:before {
@@ -252,26 +260,26 @@
 
         .cert-price {
             background-color: var(--secondary-color);
-            padding: 1.5rem;
+            padding: 1rem;
             border-radius: 6px;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1.25rem;
             text-align: center;
         }
 
         .price-amount {
-            font-size: 2rem;
+            font-size: 1.75rem;
             color: var(--primary-color);
             font-weight: 700;
         }
 
         .price-period {
             color: var(--text-light);
-            font-size: 0.9rem;
+            font-size: 0.8rem;
         }
 
         .btn-enroll {
             width: 100%;
-            padding: 0.95rem;
+            padding: 0.75rem;
             background-color: var(--primary-color);
             color: var(--white);
             border: none;
@@ -279,7 +287,7 @@
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
-            font-size: 1rem;
+            font-size: 0.95rem;
         }
 
         .btn-enroll:hover {
@@ -340,7 +348,10 @@
             }
         }
     </style>
+    <!-- Razorpay SDK -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </head>
+
 <body>
     <!-- ==================== NAVBAR ==================== -->
     <nav class="navbar" id="navbar">
@@ -350,10 +361,8 @@
             </a>
             <ul class="nav-menu">
                 <li><a href="index.html">Home</a></li>
-                <li><a href="subjects.html">Subjects</a></li>
-                <li><a href="practice.html">Practice</a></li>
                 <li><a href="certificates.html" class="active">Certificates</a></li>
-                <li><a href="pricing.html">Pricing</a></li>
+                <li><a href="practice.html">Practice</a></li>
                 <li><a href="store.html">Store</a></li>
                 <li><a href="Family.html">Family</a></li>
             </ul>
@@ -460,7 +469,7 @@
 
         function setupNavbar() {
             const navButtons = document.getElementById('navButtons');
-            
+
             if (isLoggedIn) {
                 navButtons.innerHTML = `
                     <button class="btn-user">
@@ -479,7 +488,7 @@
 
         function renderCertificates() {
             const grid = document.getElementById('certGrid');
-            
+
             const html = certificates.map(cert => `
                 <div class="cert-card">
                     <div class="cert-card-header">
@@ -506,17 +515,11 @@
                             </div>
                         </div>
                         
-                        <p class="cert-description">${cert.description}</p>
-                        
-                        <ul class="cert-highlights">
-                            ${cert.highlights.map(h => `<li>${h}</li>`).join('')}
-                        </ul>
-                        
                         <div class="cert-price">
-                            ${cert.isFree ? 
-                                '<span class="price-amount">FREE</span>' :
-                                `<div class="price-amount">₹${cert.price}</div><div class="price-period">One-time payment</div>`
-                            }
+                            ${cert.isFree ?
+                    '<span class="price-amount">FREE</span>' :
+                    `<div class="price-amount">₹${cert.price}</div><div class="price-period">One-time payment</div>`
+                }
                         </div>
                         
                         <button class="btn-enroll ${cert.isFree ? 'free' : ''}" onclick="enrollCourse('${cert.title}')">
@@ -529,11 +532,86 @@
             grid.innerHTML = html;
         }
 
-        function enrollCourse(courseName) {
+        async function enrollCourse(courseName) {
             if (!isLoggedIn) {
                 window.location.href = 'signup.html';
-            } else {
-                alert(`Enrolled in: ${courseName}\n\nRedirecting to course page...`);
+                return;
+            }
+
+            const course = certificates.find(c => c.title === courseName);
+            if (!course) return;
+
+            if (course.isFree) {
+                // Directly redirect for free courses
+                window.location.href = `course-content.html?course=${encodeURIComponent(courseName)}`;
+                return;
+            }
+
+            try {
+                // 1. Create order on backend
+                const response = await fetch('/api/create-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount: course.price, course: courseName })
+                });
+
+                const orderData = await response.json();
+                if (!orderData.ok) {
+                    alert('Error creating order');
+                    return;
+                }
+
+                // 2. Initialize Razorpay Checkout
+                const options = {
+                    "key": "rzp_test_TYYvG5LdO0V12j", // Test Key
+                    "amount": orderData.amount,
+                    "currency": orderData.currency,
+                    "name": "RENVOX AI",
+                    "description": `Enroll in ${courseName}`,
+                    "order_id": orderData.orderId,
+                    "handler": async function (paymentResponse) {
+                        try {
+                            // 3. Verify Payment
+                            const verifyRes = await fetch('/api/verify-payment', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    razorpay_order_id: paymentResponse.razorpay_order_id,
+                                    razorpay_payment_id: paymentResponse.razorpay_payment_id,
+                                    razorpay_signature: paymentResponse.razorpay_signature
+                                })
+                            });
+                            const verifyData = await verifyRes.json();
+                            if (verifyData.ok) {
+                                // 4. Redirect to Course Content after success
+                                window.location.href = `course-content.html?course=${encodeURIComponent(courseName)}`;
+                            } else {
+                                alert('Payment verification failed');
+                            }
+                        } catch (err) {
+                            console.error(err);
+                            alert('An error occurred during verification.');
+                        }
+                    },
+                    "prefill": {
+                        "name": userName,
+                        "email": "student@example.com",
+                        "contact": "9999999999"
+                    },
+                    "theme": {
+                        "color": "#4f46e5"
+                    }
+                };
+
+                const rzp = new Razorpay(options);
+                rzp.on('payment.failed', function (response) {
+                    alert("Payment Failed: " + response.error.description);
+                });
+                rzp.open();
+
+            } catch (err) {
+                console.error("Payment Error:", err);
+                alert("Error initializing payment. Check console.");
             }
         }
 
@@ -551,4 +629,5 @@
     <!-- Navigation System -->
     <script src="navigation.js"></script>
 </body>
+
 </html>
