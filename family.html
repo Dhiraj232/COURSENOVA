@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,31 +8,126 @@
 	<link rel="stylesheet" href="style.css">
 	<style>
 		/* Minimal page-specific styles */
-		.container { max-width: 960px; margin: 2rem auto; padding: 0 1rem; }
-		.quiz-landing { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start; }
-		.card { background: #fff; border: 1px solid var(--border-color, #e6e6e6); padding: 1.25rem; border-radius: 8px; box-shadow: 0 6px 18px rgba(0,0,0,0.04); }
-		.card h3 { margin: 0 0 .5rem 0; }
-		.card p { margin: 0 0 1rem 0; color: var(--text-light, #666); }
-		.btn-row { display:flex; gap:.5rem; }
-		.quiz-area { margin-top: 1.5rem; }
-		.question { font-weight:600; margin-bottom:.75rem; }
-		.options { list-style:none; padding:0; }
-		.options li { margin-bottom:.5rem; }
-		.option-btn { display:block; width:100%; text-align:left; padding:.6rem .8rem; border-radius:6px; border:1px solid var(--border-color,#ddd); background:#fafafa; cursor:pointer; }
-		.option-btn.selected { background: #dff0d8; border-color:#b2d8a7; }
-		.option-btn.correct { background:#c8f7d4; border-color:#36a84b; }
-		.option-btn.wrong { background:#ffd6d6; border-color:#e06a6a; }
-		.progress { margin: .75rem 0; font-size: .95rem; color:var(--text-light,#666); }
-		.modal { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.4); }
-		.modal-card { background:#fff; padding:1rem 1.25rem; width:360px; border-radius:8px; }
-		.hide { display:none; }
+		.container {
+			max-width: 960px;
+			margin: 2rem auto;
+			padding: 0 1rem;
+		}
+
+		.quiz-landing {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 1rem;
+			align-items: start;
+		}
+
+		.card {
+			background: #fff;
+			border: 1px solid var(--border-color, #e6e6e6);
+			padding: 1.25rem;
+			border-radius: 8px;
+			box-shadow: 0 6px 18px rgba(0, 0, 0, 0.04);
+		}
+
+		.card h3 {
+			margin: 0 0 .5rem 0;
+		}
+
+		.card p {
+			margin: 0 0 1rem 0;
+			color: var(--text-light, #666);
+		}
+
+		.btn-row {
+			display: flex;
+			gap: .5rem;
+		}
+
+		.quiz-area {
+			margin-top: 1.5rem;
+		}
+
+		.question {
+			font-weight: 600;
+			margin-bottom: .75rem;
+		}
+
+		.options {
+			list-style: none;
+			padding: 0;
+		}
+
+		.options li {
+			margin-bottom: .5rem;
+		}
+
+		.option-btn {
+			display: block;
+			width: 100%;
+			text-align: left;
+			padding: .6rem .8rem;
+			border-radius: 6px;
+			border: 1px solid var(--border-color, #ddd);
+			background: #fafafa;
+			cursor: pointer;
+		}
+
+		.option-btn.selected {
+			background: #dff0d8;
+			border-color: #b2d8a7;
+		}
+
+		.option-btn.correct {
+			background: #c8f7d4;
+			border-color: #36a84b;
+		}
+
+		.option-btn.wrong {
+			background: #ffd6d6;
+			border-color: #e06a6a;
+		}
+
+		.progress {
+			margin: .75rem 0;
+			font-size: .95rem;
+			color: var(--text-light, #666);
+		}
+
+		.modal {
+			position: fixed;
+			inset: 0;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			background: rgba(0, 0, 0, 0.4);
+		}
+
+		.modal-card {
+			background: #fff;
+			padding: 1rem 1.25rem;
+			width: 360px;
+			border-radius: 8px;
+		}
+
+		.hide {
+			display: none;
+		}
 	</style>
 </head>
+
 <body>
 	<!-- reusable site navbar -->
 	<nav class="navbar" id="navbar">
 		<div class="nav-container">
-			<a href="index.html" class="logo"><i class="fas fa-book"></i> RENVOX</a>
+			<a href="index.html" class="logo">
+				<i class="fas fa-book"></i> RENVOX
+			</a>
+			<div class="nav-search">
+				<input type="text" id="navbarSearch" placeholder="Search for courses, subjects, or concepts...">
+				<button type="button" onclick="handleNavbarSearch()">
+					<i class="fas fa-search"></i>
+				</button>
+			</div>
 			<ul class="nav-menu" id="navMenu">
 				<li><a href="index.html">Home</a></li>
 				<li><a href="certificates.html">Certificates</a></li>
@@ -42,7 +138,7 @@
 			</ul>
 			<div class="nav-buttons" id="navButtons">
 				<div id="guestButtons">
-					<a href="login.html" class="btn-login">
+					<a href="signup.html" class="btn-login">
 						<i class="fas fa-sign-in-alt"></i> Login
 					</a>
 					<a href="signup.html" class="btn-signup">
@@ -73,7 +169,8 @@
 
 			<div class="card">
 				<h3>PAID QUIZ (Premium)</h3>
-				<p>25–50 high-quality MCQs with challenge, certificate and leaderboard (optional). Unlock with a quick payment.</p>
+				<p>25–50 high-quality MCQs with challenge, certificate and leaderboard (optional). Unlock with a quick
+					payment.</p>
 				<div class="btn-row">
 					<button class="btn-secondary" id="unlockPaidBtn">Unlock Premium Quiz</button>
 				</div>
@@ -120,35 +217,35 @@
 	<script>
 		// Questions for free quiz (10 items)
 		const freeQuestions = [
-			{q: 'Which planet is known as the Red Planet?', options:['Earth','Mars','Jupiter','Venus'], a:1},
-			{q: 'What is H2O commonly known as?', options:['Salt','Water','Oxygen','Hydrogen'], a:1},
-			{q: 'Who wrote the play Romeo and Juliet?', options:['Charles Dickens','William Shakespeare','Leo Tolstoy','Mark Twain'], a:1},
-			{q: 'What is 12 x 8?', options:['96','86','106','112'], a:0},
-			{q: 'Which animal is known as the king of the jungle?', options:['Tiger','Lion','Elephant','Leopard'], a:1},
-			{q: 'Which device is used to measure temperature?', options:['Barometer','Hygrometer','Thermometer','Anemometer'], a:2},
-			{q: 'Which is the largest ocean on Earth?', options:['Atlantic','Indian','Arctic','Pacific'], a:3},
-			{q: 'What color do you get when you mix red and white?', options:['Pink','Purple','Orange','Brown'], a:0},
-			{q: 'How many days are there in a leap year?', options:['365','364','366','360'], a:2},
-			{q: 'Which gas do plants absorb from the atmosphere?', options:['Oxygen','Nitrogen','Carbon Dioxide','Helium'], a:2}
+			{ q: 'Which planet is known as the Red Planet?', options: ['Earth', 'Mars', 'Jupiter', 'Venus'], a: 1 },
+			{ q: 'What is H2O commonly known as?', options: ['Salt', 'Water', 'Oxygen', 'Hydrogen'], a: 1 },
+			{ q: 'Who wrote the play Romeo and Juliet?', options: ['Charles Dickens', 'William Shakespeare', 'Leo Tolstoy', 'Mark Twain'], a: 1 },
+			{ q: 'What is 12 x 8?', options: ['96', '86', '106', '112'], a: 0 },
+			{ q: 'Which animal is known as the king of the jungle?', options: ['Tiger', 'Lion', 'Elephant', 'Leopard'], a: 1 },
+			{ q: 'Which device is used to measure temperature?', options: ['Barometer', 'Hygrometer', 'Thermometer', 'Anemometer'], a: 2 },
+			{ q: 'Which is the largest ocean on Earth?', options: ['Atlantic', 'Indian', 'Arctic', 'Pacific'], a: 3 },
+			{ q: 'What color do you get when you mix red and white?', options: ['Pink', 'Purple', 'Orange', 'Brown'], a: 0 },
+			{ q: 'How many days are there in a leap year?', options: ['365', '364', '366', '360'], a: 2 },
+			{ q: 'Which gas do plants absorb from the atmosphere?', options: ['Oxygen', 'Nitrogen', 'Carbon Dioxide', 'Helium'], a: 2 }
 		];
 
 		// Premium quiz (mock) — we'll use a larger set (here 15) and will repeat if needed
 		const premiumQuestions = [
-			{q:'Which is the smallest prime number?', options:['1','2','3','0'], a:1},
-			{q:'Who discovered penicillin?', options:['Marie Curie','Alexander Fleming','Isaac Newton','Albert Einstein'], a:1},
-			{q:'What is the capital of Australia?', options:['Sydney','Melbourne','Canberra','Perth'], a:2},
-			{q:'The Pythagoras theorem is applicable in which triangle?', options:['Isosceles','Right-angled','Equilateral','Scalene'], a:1},
-			{q:'What is the chemical symbol for gold?', options:['Au','Ag','Gd','Go'], a:0},
-			{q:'Which language is primarily spoken in Brazil?', options:['Spanish','Portuguese','English','French'], a:1},
-			{q:'Which metal is liquid at room temperature?', options:['Mercury','Iron','Gold','Silver'], a:0},
-			{q:'Who painted the Mona Lisa?', options:['Van Gogh','Picasso','Leonardo da Vinci','Rembrandt'], a:2},
-			{q:'Which element has atomic number 1?', options:['Helium','Oxygen','Hydrogen','Nitrogen'], a:2},
-			{q:'Which instrument measures atmospheric pressure?', options:['Thermometer','Barometer','Hygrometer','Seismometer'], a:1},
-			{q:'Which planet has the most moons?', options:['Earth','Jupiter','Mars','Venus'], a:1},
-			{q:'What is the largest organ in the human body?', options:['Liver','Skin','Heart','Lungs'], a:1},
-			{q:'Which is the longest river in the world?', options:['Nile','Amazon','Yangtze','Mississippi'], a:0},
-			{q:'Which unit is used to measure electrical resistance?', options:['Volt','Ohm','Ampere','Watt'], a:1},
-			{q:'Which vitamin is produced when skin is exposed to sunlight?', options:['Vitamin A','Vitamin C','Vitamin D','Vitamin B12'], a:2}
+			{ q: 'Which is the smallest prime number?', options: ['1', '2', '3', '0'], a: 1 },
+			{ q: 'Who discovered penicillin?', options: ['Marie Curie', 'Alexander Fleming', 'Isaac Newton', 'Albert Einstein'], a: 1 },
+			{ q: 'What is the capital of Australia?', options: ['Sydney', 'Melbourne', 'Canberra', 'Perth'], a: 2 },
+			{ q: 'The Pythagoras theorem is applicable in which triangle?', options: ['Isosceles', 'Right-angled', 'Equilateral', 'Scalene'], a: 1 },
+			{ q: 'What is the chemical symbol for gold?', options: ['Au', 'Ag', 'Gd', 'Go'], a: 0 },
+			{ q: 'Which language is primarily spoken in Brazil?', options: ['Spanish', 'Portuguese', 'English', 'French'], a: 1 },
+			{ q: 'Which metal is liquid at room temperature?', options: ['Mercury', 'Iron', 'Gold', 'Silver'], a: 0 },
+			{ q: 'Who painted the Mona Lisa?', options: ['Van Gogh', 'Picasso', 'Leonardo da Vinci', 'Rembrandt'], a: 2 },
+			{ q: 'Which element has atomic number 1?', options: ['Helium', 'Oxygen', 'Hydrogen', 'Nitrogen'], a: 2 },
+			{ q: 'Which instrument measures atmospheric pressure?', options: ['Thermometer', 'Barometer', 'Hygrometer', 'Seismometer'], a: 1 },
+			{ q: 'Which planet has the most moons?', options: ['Earth', 'Jupiter', 'Mars', 'Venus'], a: 1 },
+			{ q: 'What is the largest organ in the human body?', options: ['Liver', 'Skin', 'Heart', 'Lungs'], a: 1 },
+			{ q: 'Which is the longest river in the world?', options: ['Nile', 'Amazon', 'Yangtze', 'Mississippi'], a: 0 },
+			{ q: 'Which unit is used to measure electrical resistance?', options: ['Volt', 'Ohm', 'Ampere', 'Watt'], a: 1 },
+			{ q: 'Which vitamin is produced when skin is exposed to sunlight?', options: ['Vitamin A', 'Vitamin C', 'Vitamin D', 'Vitamin B12'], a: 2 }
 		];
 
 		// App state
@@ -187,7 +284,7 @@
 				currentQuestions = pool.slice(0, target);
 			}
 			currentIndex = 0; score = 0; selectedOptionIndex = null;
-			document.getElementById('quizArea').scrollIntoView({behavior:'smooth'});
+			document.getElementById('quizArea').scrollIntoView({ behavior: 'smooth' });
 			showQuestion();
 			quizCard.classList.remove('hide');
 			resultCard.classList.add('hide');
@@ -195,7 +292,7 @@
 
 		function showQuestion() {
 			const q = currentQuestions[currentIndex];
-			progressText.textContent = `Question ${currentIndex+1} / ${currentQuestions.length}`;
+			progressText.textContent = `Question ${currentIndex + 1} / ${currentQuestions.length}`;
 			questionText.textContent = q.q;
 			optionsList.innerHTML = '';
 			q.options.forEach((opt, idx) => {
@@ -267,4 +364,5 @@
 
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
 </body>
+
 </html>

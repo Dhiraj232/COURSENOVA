@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', function () {
     setupScrollEffects();
     setupHashNavigation();
     setupUserDropdownIfNeeded();
+    setupNavbarSearch();
 });
 
 // ==================== 2. DETECT CURRENT PAGE ====================
@@ -236,7 +237,7 @@ function getPageLinks() {
         home: 'index.html',
         practice: 'practice.html',
         certificates: 'certificates.html',
-        login: 'login.html',
+        login: 'signup.html',
         signup: 'signup.html',
         dashboard: 'dashboard.html',
         profile: 'profile.html',
@@ -316,6 +317,32 @@ function handleViewCourses() {
     navigateToPage('certificates.html');
 }
 
+/**
+ * Setup Navbar Search Input Listener
+ */
+function setupNavbarSearch() {
+    const searchInput = document.getElementById('navbarSearch');
+    if (searchInput) {
+        searchInput.addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                handleNavbarSearch();
+            }
+        });
+    }
+}
+
+/**
+ * Handle Navbar Search Submission
+ */
+function handleNavbarSearch() {
+    const searchInput = document.getElementById('navbarSearch');
+    if (searchInput && searchInput.value.trim() !== '') {
+        const query = encodeURIComponent(searchInput.value.trim());
+        window.location.href = `certificates.html?search=${query}`;
+    }
+}
+
 // ==================== 12. USER DROPDOWN MENU ==================== 
 /**
  * Setup user dropdown menu on navbar
@@ -340,11 +367,11 @@ function setupUserDropdown() {
     if (!user) {
         navButtons.innerHTML = `
             <div id="guestButtons" style="display: flex; gap: 1rem; align-items: center;">
-                <a href="login.html" class="btn-login">
-                    <i class="fas fa-sign-in-alt"></i> Login
+                <a href="signup.html" class="btn-login">
+                    <i class="fas fa-sign-in-alt"></i> Sign In
                 </a>
-                <a href="signup.html" class="btn-signup">
-                    <i class="fas fa-user-plus"></i> Sign Up
+                <a href="#" class="btn-signup" onclick="alert('Renvox App Download will begin shortly!'); return false;">
+                    <i class="fas fa-download"></i> Download App
                 </a>
             </div>
         `;
@@ -446,7 +473,7 @@ function logoutUser(event) {
         localStorage.removeItem('pendingUserId');
 
         // Redirect to login or home
-        window.location.href = 'login.html';
+        window.location.href = 'signup.html';
     }
 }
 
@@ -476,6 +503,7 @@ if (typeof window !== 'undefined') {
     window.navigateToPage = navigateToPage;
     window.handleGetStarted = handleGetStarted;
     window.handleViewCourses = handleViewCourses;
+    window.handleNavbarSearch = handleNavbarSearch;
 
     // Auth Exports
     window.setupUserDropdown = setupUserDropdown;

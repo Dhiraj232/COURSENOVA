@@ -14,134 +14,9 @@
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+    <!-- External CSS -->
+    <link rel="stylesheet" href="style.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --primary-color: #1e3a8a;
-            --secondary-color: #f3f4f6;
-            --accent-color: #10b981;
-            --text-dark: #1f2937;
-            --text-light: #6b7280;
-            --border-color: #e5e7eb;
-            --white: #ffffff;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            line-height: 1.6;
-            color: var(--text-dark);
-            background-color: var(--white);
-        }
-
-        h1,
-        h2,
-        h3,
-        h4,
-        h5,
-        h6 {
-            font-family: 'Poppins', sans-serif;
-            font-weight: 700;
-        }
-
-        /* ==================== NAVBAR ==================== */
-        .navbar {
-            position: sticky;
-            top: 0;
-            background-color: var(--white);
-            border-bottom: 1px solid var(--border-color);
-            z-index: 1000;
-            padding: 0.8rem 2rem;
-            transition: all 0.3s ease;
-        }
-
-        .nav-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 2rem;
-        }
-
-        .logo {
-            font-size: 1.4rem;
-            font-weight: 800;
-            color: var(--primary-color);
-            text-decoration: none;
-            font-family: 'Poppins', sans-serif;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .nav-menu {
-            display: flex;
-            list-style: none;
-            gap: 2.5rem;
-            flex: 1;
-        }
-
-        .nav-menu a {
-            text-decoration: none;
-            color: var(--text-dark);
-            font-weight: 500;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .nav-menu a:after {
-            content: '';
-            position: absolute;
-            bottom: -5px;
-            left: 0;
-            width: 0;
-            height: 2px;
-            background-color: var(--primary-color);
-            transition: width 0.3s ease;
-        }
-
-        .nav-menu a:hover:after,
-        .nav-menu a.active:after {
-            width: 100%;
-        }
-
-        .nav-buttons {
-            display: flex;
-            gap: 1rem;
-        }
-
-        .btn-user {
-            padding: 0.65rem 1.5rem;
-            background-color: var(--secondary-color);
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            color: var(--text-dark);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .btn-user:hover {
-            background-color: var(--primary-color);
-            color: var(--white);
-        }
-
-        /* ==================== CONTAINER ==================== */
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 2rem;
-        }
-
         /* ==================== PAGE HEADER ==================== */
         .page-header {
             background: linear-gradient(135deg, var(--primary-color) 0%, #3730a3 100%);
@@ -304,28 +179,7 @@
             background-color: #059669;
         }
 
-        /* ==================== FOOTER ==================== */
-        .footer {
-            background-color: var(--text-dark);
-            color: var(--white);
-            padding: 3rem 2rem 1rem;
-            margin-top: 3rem;
-        }
-
-        .footer-bottom {
-            max-width: 1200px;
-            margin: 0 auto;
-            border-top: 1px solid #4b5563;
-            padding-top: 2rem;
-            text-align: center;
-            color: #9ca3af;
-        }
-
         @media (max-width: 768px) {
-            .container {
-                padding: 0 1rem;
-            }
-
             .page-header {
                 padding: 2rem 1rem;
                 margin-bottom: 2rem;
@@ -337,10 +191,6 @@
 
             .certificates-grid {
                 grid-template-columns: 1fr;
-            }
-
-            .nav-menu {
-                display: none;
             }
 
             .cert-info {
@@ -359,6 +209,12 @@
             <a href="index.html" class="logo">
                 <i class="fas fa-book"></i> RENVOX
             </a>
+            <div class="nav-search">
+                <input type="text" id="navbarSearch" placeholder="Search for courses, subjects, or concepts...">
+                <button type="button" onclick="handleNavbarSearch()">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
             <ul class="nav-menu">
                 <li><a href="index.html">Home</a></li>
                 <li><a href="certificates.html" class="active">Certificates</a></li>
@@ -480,7 +336,7 @@
                 `;
             } else {
                 navButtons.innerHTML = `
-                    <a href="login.html" class="btn-user">Login</a>
+                    <a href="signup.html" class="btn-user">Login</a>
                     <a href="signup.html" class="btn-user" style="background-color: var(--primary-color); color: white;">Sign Up</a>
                 `;
             }
@@ -489,7 +345,40 @@
         function renderCertificates() {
             const grid = document.getElementById('certGrid');
 
-            const html = certificates.map(cert => `
+            // Get search query from URL if present
+            const urlParams = new URLSearchParams(window.location.search);
+            const searchQuery = urlParams.get('search');
+
+            // Set input value if searched
+            const searchInput = document.getElementById('navbarSearch');
+            if (searchInput && searchQuery) {
+                searchInput.value = searchQuery;
+            }
+
+            // Filter certificates based on search query
+            let filteredCerts = certificates;
+            if (searchQuery) {
+                const query = searchQuery.toLowerCase();
+                filteredCerts = certificates.filter(cert =>
+                    cert.title.toLowerCase().includes(query) ||
+                    cert.description.toLowerCase().includes(query) ||
+                    cert.highlights.some(h => h.toLowerCase().includes(query))
+                );
+            }
+
+            if (filteredCerts.length === 0) {
+                grid.innerHTML = `
+                    <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; background: var(--secondary-color); border-radius: 8px;">
+                        <i class="fas fa-search" style="font-size: 3rem; color: var(--text-light); margin-bottom: 1rem;"></i>
+                        <h2>No courses found</h2>
+                        <p style="color: var(--text-light); margin-top: 0.5rem;">We couldn't find any courses matching "${searchQuery}". Try different keywords.</p>
+                        <button class="btn-primary" style="margin-top: 1.5rem;" onclick="window.location.href='certificates.html'">View All Courses</button>
+                    </div>
+                `;
+                return;
+            }
+
+            const html = filteredCerts.map(cert => `
                 <div class="cert-card">
                     <div class="cert-card-header">
                         <div class="cert-icon">${cert.icon}</div>

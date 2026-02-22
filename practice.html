@@ -1,130 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Practice Dashboard - RENVOX</title>
-    
+
     <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
+
+    <!-- External CSS -->
+    <link rel="stylesheet" href="style.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        :root {
-            --primary-color: #1e3a8a;
-            --secondary-color: #f3f4f6;
-            --accent-color: #10b981;
-            --text-dark: #1f2937;
-            --text-light: #6b7280;
-            --border-color: #e5e7eb;
-            --white: #ffffff;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--secondary-color);
-            color: var(--text-dark);
-        }
-
-        h1, h2, h3, h4, h5, h6 {
-            font-family: 'Poppins', sans-serif;
-            font-weight: 700;
-        }
-
-        /* ==================== NAVBAR ==================== */
-        .navbar {
-            position: sticky;
-            top: 0;
-            background-color: var(--white);
-            border-bottom: 1px solid var(--border-color);
-            z-index: 1000;
-            padding: 0.8rem 2rem;
-            transition: all 0.3s ease;
-        }
-
-        .nav-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 2rem;
-        }
-
-        .logo {
-            font-size: 1.4rem;
-            font-weight: 800;
-            color: var(--primary-color);
-            text-decoration: none;
-            font-family: 'Poppins', sans-serif;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .nav-menu {
-            display: flex;
-            list-style: none;
-            gap: 2.5rem;
-            flex: 1;
-        }
-
-        .nav-menu a {
-            text-decoration: none;
-            color: var(--text-dark);
-            font-weight: 500;
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-        .nav-menu a:after {
-            content: '';
-            position: absolute;
-            bottom: -5px;
-            left: 0;
-            width: 0;
-            height: 2px;
-            background-color: var(--primary-color);
-            transition: width 0.3s ease;
-        }
-
-        .nav-menu a:hover:after,
-        .nav-menu a.active:after {
-            width: 100%;
-        }
-
-        .nav-buttons {
-            display: flex;
-            gap: 1rem;
-        }
-
-        .btn-user {
-            display: flex;
-            align-items: center;
-            gap: 0.8rem;
-            padding: 0.65rem 1.5rem;
-            background-color: var(--secondary-color);
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            color: var(--text-dark);
-        }
-
-        .btn-user:hover {
-            background-color: var(--primary-color);
-            color: var(--white);
-        }
-
         /* ==================== CONTAINER ==================== */
         .container {
             max-width: 1200px;
@@ -671,6 +563,7 @@
         }
     </style>
 </head>
+
 <body>
     <!-- ==================== NAVBAR ==================== -->
     <nav class="navbar" id="navbar">
@@ -678,6 +571,12 @@
             <a href="index.html" class="logo">
                 <i class="fas fa-book"></i> RENVOX
             </a>
+            <div class="nav-search">
+                <input type="text" id="navbarSearch" placeholder="Search for courses, subjects, or concepts...">
+                <button type="button" onclick="handleNavbarSearch()">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
             <ul class="nav-menu" id="navMenu">
                 <li><a href="index.html">Home</a></li>
                 <li><a href="certificates.html">Certificates</a></li>
@@ -733,9 +632,12 @@
                         <div class="option-group">
                             <label>Difficulty Level</label>
                             <div class="difficulty-buttons">
-                                <button class="difficulty-btn easy active" onclick="selectDifficulty(this, 'easy')">Easy</button>
-                                <button class="difficulty-btn" onclick="selectDifficulty(this, 'medium')">Medium</button>
-                                <button class="difficulty-btn hard" onclick="selectDifficulty(this, 'hard')">Hard</button>
+                                <button class="difficulty-btn easy active"
+                                    onclick="selectDifficulty(this, 'easy')">Easy</button>
+                                <button class="difficulty-btn"
+                                    onclick="selectDifficulty(this, 'medium')">Medium</button>
+                                <button class="difficulty-btn hard"
+                                    onclick="selectDifficulty(this, 'hard')">Hard</button>
                             </div>
                         </div>
                     </div>
@@ -767,7 +669,8 @@
                         </div>
                     </div>
                     <div class="card-info">
-                        <div class="info-item"><i class="fas fa-question-circle"></i> <strong>25-30</strong> Questions</div>
+                        <div class="info-item"><i class="fas fa-question-circle"></i> <strong>25-30</strong> Questions
+                        </div>
                         <div class="info-item"><i class="fas fa-clock"></i> <strong>30</strong> Minutes</div>
                     </div>
                     <button class="btn-practice" onclick="startChapterTest()">Start Test</button>
@@ -794,7 +697,8 @@
                     </div>
                     <div class="card-info">
                         <div class="info-item"><i class="fas fa-book"></i> <strong>Real</strong> Exam Format</div>
-                        <div class="info-item"><i class="fas fa-hourglass-end"></i> <strong>90</strong> Minutes Timed</div>
+                        <div class="info-item"><i class="fas fa-hourglass-end"></i> <strong>90</strong> Minutes Timed
+                        </div>
                     </div>
                     <button class="btn-practice" onclick="attemptMockTest()">Attempt Mock Test</button>
                 </div>
@@ -860,4 +764,5 @@
     <!-- Navigation System -->
     <script src="navigation.js"></script>
 </body>
+
 </html>

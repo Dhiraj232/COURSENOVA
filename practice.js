@@ -19,51 +19,51 @@ let selectedDifficulty = 'easy';
 // 📊 SAMPLE DATA - SUBJECTS
 // ==========================================
 const allSubjects = [
-    { 
-        name: 'C Programming', 
-        icon: '💻', 
-        color: '#3b82f6', 
-        progress: 65, 
+    {
+        name: 'C Programming',
+        icon: '💻',
+        color: '#3b82f6',
+        progress: 65,
         accuracy: 78,
         questions: 125
     },
-    { 
-        name: 'Data Structures', 
-        icon: '🔗', 
-        color: '#8b5cf6', 
-        progress: 52, 
+    {
+        name: 'Data Structures',
+        icon: '🔗',
+        color: '#8b5cf6',
+        progress: 52,
         accuracy: 72,
         questions: 98
     },
-    { 
-        name: 'Mathematics', 
-        icon: '📐', 
-        color: '#10b981', 
-        progress: 88, 
+    {
+        name: 'Mathematics',
+        icon: '📐',
+        color: '#10b981',
+        progress: 88,
         accuracy: 85,
         questions: 156
     },
-    { 
-        name: 'Physics', 
-        icon: '⚛️', 
-        color: '#ef4444', 
-        progress: 45, 
+    {
+        name: 'Physics',
+        icon: '⚛️',
+        color: '#ef4444',
+        progress: 45,
         accuracy: 68,
         questions: 142
     },
-    { 
-        name: 'Chemistry', 
-        icon: '🧪', 
-        color: '#f59e0b', 
-        progress: 70, 
+    {
+        name: 'Chemistry',
+        icon: '🧪',
+        color: '#f59e0b',
+        progress: 70,
         accuracy: 80,
         questions: 118
     },
-    { 
-        name: 'DBMS', 
-        icon: '🗄️', 
-        color: '#06b6d4', 
-        progress: 60, 
+    {
+        name: 'DBMS',
+        icon: '🗄️',
+        color: '#06b6d4',
+        progress: 60,
         accuracy: 75,
         questions: 87
     },
@@ -73,37 +73,37 @@ const allSubjects = [
 // 📝 SAMPLE DATA - RECENT ACTIVITY
 // ==========================================
 const recentActivities = [
-    { 
-        icon: '📝', 
-        type: 'Chapter Test', 
-        subject: 'Variables & Data Types', 
-        score: '22/25', 
-        accuracy: '88%', 
-        time: '2 hours ago' 
+    {
+        icon: '📝',
+        type: 'Chapter Test',
+        subject: 'Variables & Data Types',
+        score: '22/25',
+        accuracy: '88%',
+        time: '2 hours ago'
     },
-    { 
-        icon: '🧩', 
-        type: 'Topic Practice', 
-        subject: 'Control Flow', 
-        score: '18/20', 
-        accuracy: '90%', 
-        time: '4 hours ago' 
+    {
+        icon: '🧩',
+        type: 'Topic Practice',
+        subject: 'Control Flow',
+        score: '18/20',
+        accuracy: '90%',
+        time: '4 hours ago'
     },
-    { 
-        icon: '🎯', 
-        type: 'Mock Test', 
-        subject: 'C Programming', 
-        score: '45/50', 
-        accuracy: '90%', 
-        time: 'Yesterday' 
+    {
+        icon: '🎯',
+        type: 'Mock Test',
+        subject: 'C Programming',
+        score: '45/50',
+        accuracy: '90%',
+        time: 'Yesterday'
     },
-    { 
-        icon: '📚', 
-        type: 'Chapter Test', 
-        subject: 'Arrays & Strings', 
-        score: '28/30', 
-        accuracy: '93%', 
-        time: '2 days ago' 
+    {
+        icon: '📚',
+        type: 'Chapter Test',
+        subject: 'Arrays & Strings',
+        score: '28/30',
+        accuracy: '93%',
+        time: '2 days ago'
     },
 ];
 
@@ -120,14 +120,14 @@ const weakAreas = [
 // ==========================================
 // 🎯 INITIALIZATION
 // ==========================================
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Show content for all users
     document.getElementById('practiceContent').style.display = 'block';
     document.getElementById('loginPrompt').style.display = 'none';
-    
+
     // Load all sections
     setupNavbar();
-    
+
     setTimeout(() => {
         loadSubjectsList();
         loadRecentActivity();
@@ -147,7 +147,7 @@ document.addEventListener('DOMContentLoaded', function() {
  */
 function setupNavbar() {
     const navButtons = document.getElementById('navButtons');
-    
+
     if (isLoggedIn) {
         navButtons.innerHTML = `
             <button class="btn-user">
@@ -160,7 +160,7 @@ function setupNavbar() {
         `;
     } else {
         navButtons.innerHTML = `
-            <a href="login.html" class="btn-user">Login</a>
+            <a href="signup.html" class="btn-user">Login</a>
             <a href="signup.html" class="btn-user" style="background-color: var(--primary-color); color: white;">
                 Sign Up
             </a>
@@ -279,7 +279,7 @@ function selectDifficulty(btn, difficulty) {
     });
     btn.classList.add('active');
     selectedDifficulty = difficulty;
-    
+
     // Update question count
     const counts = { easy: 15, medium: 20, hard: 25 };
     const qCount = document.getElementById('topicQCount');
@@ -300,7 +300,7 @@ function startTopicPractice() {
         showAlert('Please select a topic first!');
         return;
     }
-    
+
     showAlert(
         `Starting ${selectedDifficulty.toUpperCase()} practice on: ${topic.value}\n\n` +
         'Redirecting to practice interface...',
@@ -320,7 +320,7 @@ function startChapterTest() {
         showAlert('Please select a chapter first!');
         return;
     }
-    
+
     showAlert(
         `Starting Chapter Test: ${chapter.value}\n\n` +
         '⏱️ 30 minutes | 25-30 Questions\n\n' +
@@ -341,7 +341,7 @@ function attemptMockTest() {
         showAlert('Please select a mock test first!');
         return;
     }
-    
+
     showAlert(
         `Starting Mock Test: ${mock.value}\n\n` +
         '📋 Real Exam Format | ⏱️ 90 Minutes\n\n' +
@@ -430,10 +430,10 @@ function showAlert(message, type = 'info') {
  * Adds shadow and padding change on scroll
  */
 function setupScrollEffects() {
-    window.addEventListener('scroll', function() {
+    window.addEventListener('scroll', function () {
         const navbar = document.getElementById('navbar');
         if (!navbar) return;
-        
+
         if (window.scrollY > 50) {
             navbar.classList.add('scrolled');
         } else {
@@ -450,7 +450,7 @@ function setupScrollEffects() {
  * Handles window resize events
  * Adjusts layout for different screen sizes
  */
-window.addEventListener('resize', function() {
+window.addEventListener('resize', function () {
     // Can add responsive behavior here if needed
 });
 
