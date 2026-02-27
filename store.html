@@ -2,93 +2,794 @@
 <html lang="en">
 
 <head>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>College Store — RENVOX</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Book Exchange — RENVOX Store</title>
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 	<link rel="stylesheet" href="style.css">
 	<style>
-		.container {
-			max-width: 1100px;
-			margin: 2rem auto;
-			padding: 0 1rem;
+		:root {
+			--accent: #4f46e5;
+			--accent2: #7c3aed;
+			--light: #ede9fe;
+			--green: #16a34a;
+			--red: #dc2626;
+			--yellow: #d97706;
+			--card: #fff;
+			--bg: #f4f5fb;
+			--border: #e5e7eb;
+			--txt: #1e1b4b;
+			--sub: #6b7280;
+			--radius: 14px;
+			--shadow: 0 2px 18px rgba(79, 70, 229, .1);
 		}
 
-		.filters {
+		* {
+			box-sizing: border-box;
+			margin: 0;
+			padding: 0;
+		}
+
+		body {
+			background: var(--bg);
+			font-family: 'Poppins', sans-serif;
+			color: var(--txt);
+		}
+
+		/* ── HERO ── */
+		.s-hero {
+			background: linear-gradient(135deg, var(--accent), var(--accent2));
+			padding: 3.5rem 1.5rem 2.5rem;
+			text-align: center;
+			color: #fff;
+		}
+
+		.s-hero h1 {
+			font-size: clamp(1.8rem, 4vw, 2.8rem);
+			font-weight: 800;
+			margin-bottom: .4rem;
+		}
+
+		.s-hero p {
+			opacity: .88;
+			max-width: 540px;
+			margin: .3rem auto 1.5rem;
+		}
+
+		.s-hero-actions {
 			display: flex;
 			gap: .75rem;
+			justify-content: center;
 			flex-wrap: wrap;
-			align-items: center;
-			margin-bottom: 1rem;
 		}
 
-		.filter {
+		/* ── LAYOUT ── */
+		.s-wrap {
+			max-width: 1160px;
+			margin: 2rem auto;
+			padding: 0 1.25rem;
+		}
+
+		/* ── TABS ── */
+		.tabs {
+			display: flex;
+			gap: .4rem;
+			margin-bottom: 1.75rem;
+			background: var(--card);
+			border-radius: 12px;
+			padding: .35rem;
+			box-shadow: var(--shadow);
+		}
+
+		.tab {
+			flex: 1;
+			padding: .65rem;
+			border: none;
+			background: none;
+			border-radius: 9px;
+			font-size: .92rem;
+			font-weight: 600;
+			cursor: pointer;
+			color: var(--sub);
+			transition: all .2s;
+		}
+
+		.tab.active {
+			background: var(--accent);
+			color: #fff;
+		}
+
+		/* ── FILTER BAR ── */
+		.filter-bar {
+			display: flex;
+			flex-wrap: wrap;
+			gap: .75rem;
+			align-items: flex-end;
+			background: var(--card);
+			border-radius: var(--radius);
+			padding: 1rem 1.25rem;
+			box-shadow: var(--shadow);
+			margin-bottom: 1.75rem;
+		}
+
+		.fg {
 			display: flex;
 			flex-direction: column;
+			gap: .28rem;
+			min-width: 130px;
 		}
 
+		.fg label {
+			font-size: .73rem;
+			font-weight: 700;
+			text-transform: uppercase;
+			letter-spacing: .05em;
+			color: var(--sub);
+		}
+
+		.fg input,
+		.fg select {
+			padding: .52rem .75rem;
+			border: 1.5px solid var(--border);
+			border-radius: 8px;
+			font-size: .88rem;
+			outline: none;
+			background: #fafafa;
+			font-family: inherit;
+		}
+
+		.fg input:focus,
+		.fg select:focus {
+			border-color: var(--accent);
+		}
+
+		/* ── GRID ── */
 		.books-grid {
 			display: grid;
-			grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-			gap: 1rem;
+			grid-template-columns: repeat(auto-fill, minmax(252px, 1fr));
+			gap: 1.2rem;
 		}
 
-		.book-card {
-			border: 1px solid var(--border-color, #e6e6e6);
-			padding: .75rem;
-			border-radius: 8px;
-			background: #fff;
+		/* ── BOOK CARD ── */
+		.bcard {
+			background: var(--card);
+			border-radius: var(--radius);
+			box-shadow: var(--shadow);
+			overflow: hidden;
+			display: flex;
+			flex-direction: column;
+			transition: transform .2s, box-shadow .2s;
 		}
 
-		.book-thumb {
-			height: 140px;
-			width: 100%;
-			object-fit: cover;
-			border-radius: 6px;
-			margin-bottom: .5rem;
+		.bcard:hover {
+			transform: translateY(-4px);
+			box-shadow: 0 8px 28px rgba(79, 70, 229, .14);
 		}
 
-		.seller {
-			font-size: .85rem;
-			color: var(--text-light, #666);
-		}
-
-		.sell-btn {
-			margin-left: auto;
-		}
-
-		.modal {
-			position: fixed;
-			inset: 0;
+		.bcard-img {
+			height: 175px;
+			background: var(--light);
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			background: rgba(0, 0, 0, 0.4);
+			overflow: hidden;
+			position: relative;
 		}
 
-		.modal-card {
-			background: #fff;
-			padding: 1rem;
-			width: 420px;
+		.bcard-img img {
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+		}
+
+		.bcard-img .no-img {
+			font-size: 3.5rem;
+		}
+
+		.badge {
+			position: absolute;
+			top: .55rem;
+			right: .55rem;
+			font-size: .7rem;
+			font-weight: 700;
+			padding: .2rem .6rem;
+			border-radius: 20px;
+			color: #fff;
+		}
+
+		.badge-used {
+			background: rgba(107, 114, 128, .75);
+		}
+
+		.badge-new {
+			background: rgba(22, 163, 74, .8);
+		}
+
+		.badge-sold {
+			background: rgba(220, 38, 38, .8);
+		}
+
+		.badge-given {
+			background: rgba(37, 99, 235, .8);
+		}
+
+		.badge-free {
+			background: rgba(79, 70, 229, .8);
+		}
+
+		.bcard-body {
+			padding: .9rem 1rem;
+			flex: 1;
+			display: flex;
+			flex-direction: column;
+			gap: .3rem;
+		}
+
+		.bcard-title {
+			font-weight: 700;
+			font-size: .98rem;
+		}
+
+		.bcard-meta {
+			font-size: .8rem;
+			color: var(--sub);
+		}
+
+		.bcard-price {
+			font-size: 1.12rem;
+			font-weight: 800;
+			color: var(--accent);
+		}
+
+		.bcard-seller {
+			font-size: .78rem;
+			color: var(--sub);
+			display: flex;
+			align-items: center;
+			gap: .3rem;
+		}
+
+		.bcard-footer {
+			padding: .7rem 1rem;
+			border-top: 1px solid var(--border);
+			display: flex;
+			gap: .45rem;
+		}
+
+		.bcard-footer button {
+			flex: 1;
+			padding: .5rem;
 			border-radius: 8px;
+			font-size: .82rem;
+			font-weight: 700;
+			cursor: pointer;
+			border: none;
+			transition: background .2s;
 		}
 
-		.hide {
+		.btn-chat-c {
+			background: var(--light);
+			color: var(--accent);
+		}
+
+		.btn-chat-c:hover {
+			background: #ddd6fe;
+		}
+
+		.btn-own {
+			background: #f3f4f6;
+			color: var(--sub);
+		}
+
+		.btn-own:hover {
+			background: var(--border);
+		}
+
+		.btn-del {
+			background: #fee2e2;
+			color: var(--red);
+			flex: none;
+			width: 38px;
+		}
+
+		.btn-del:hover {
+			background: #fca5a5;
+		}
+
+		/* ── EMPTY / LOADING ── */
+		.state-box {
+			text-align: center;
+			padding: 5rem 2rem;
+		}
+
+		.state-box i {
+			font-size: 3.5rem;
+			color: #c4b5fd;
+			margin-bottom: 1rem;
+			display: block;
+		}
+
+		.state-box h3 {
+			margin-bottom: .4rem;
+		}
+
+		.state-box p {
+			color: var(--sub);
+			font-size: .9rem;
+		}
+
+		.spinner {
+			animation: spin 1s linear infinite;
+		}
+
+		@keyframes spin {
+			to {
+				transform: rotate(360deg);
+			}
+		}
+
+		/* ── MODALS ── */
+		.modal {
+			position: fixed;
+			inset: 0;
+			background: rgba(0, 0, 0, .45);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			z-index: 1000;
+			padding: 1rem;
+			animation: fIn .2s;
+		}
+
+		.modal.hide {
 			display: none;
+		}
+
+		@keyframes fIn {
+			from {
+				opacity: 0
+			}
+		}
+
+		.mbox {
+			background: #fff;
+			border-radius: var(--radius);
+			width: 100%;
+			max-width: 490px;
+			max-height: 92vh;
+			overflow-y: auto;
+			box-shadow: 0 24px 60px rgba(0, 0, 0, .22);
+			animation: sUp .25s;
+		}
+
+		@keyframes sUp {
+			from {
+				transform: translateY(24px);
+				opacity: 0
+			}
+		}
+
+		.mhead {
+			padding: 1.2rem 1.4rem;
+			border-bottom: 1px solid var(--border);
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+		}
+
+		.mhead h3 {
+			font-size: 1.1rem;
+			font-weight: 700;
+		}
+
+		.mclose {
+			background: none;
+			border: none;
+			cursor: pointer;
+			font-size: 1.2rem;
+			color: var(--sub);
+		}
+
+		.mclose:hover {
+			color: var(--red);
+		}
+
+		.mbody {
+			padding: 1.4rem;
+			display: flex;
+			flex-direction: column;
+			gap: .85rem;
+		}
+
+		.mfoot {
+			padding: 1rem 1.4rem;
+			border-top: 1px solid var(--border);
+			display: flex;
+			justify-content: flex-end;
+			gap: .65rem;
+		}
+
+		/* ── FORM FIELDS ── */
+		.fgrp {
+			display: flex;
+			flex-direction: column;
+			gap: .3rem;
+		}
+
+		.fgrp label {
+			font-size: .78rem;
+			font-weight: 700;
+			text-transform: uppercase;
+			letter-spacing: .04em;
+			color: var(--sub);
+		}
+
+		.fgrp input,
+		.fgrp select,
+		.fgrp textarea {
+			padding: .62rem .85rem;
+			border: 1.5px solid var(--border);
+			border-radius: 8px;
+			font-size: .9rem;
+			outline: none;
+			font-family: inherit;
+			transition: border .2s;
+		}
+
+		.fgrp input:focus,
+		.fgrp select:focus,
+		.fgrp textarea:focus {
+			border-color: var(--accent);
+		}
+
+		.row2 {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: .75rem;
+		}
+
+		/* ── UPLOAD ── */
+		.upload-zone {
+			border: 2px dashed var(--accent);
+			background: var(--light);
+			border-radius: 10px;
+			padding: 1.5rem;
+			text-align: center;
+			cursor: pointer;
+			position: relative;
+			transition: background .2s;
+		}
+
+		.upload-zone:hover {
+			background: #ddd6fe;
+		}
+
+		.upload-zone i {
+			font-size: 2rem;
+			color: var(--accent);
+			display: block;
+			margin-bottom: .4rem;
+		}
+
+		.upload-zone p {
+			font-size: .85rem;
+			color: var(--accent);
+			font-weight: 600;
+			margin: 0;
+		}
+
+		.upload-zone input {
+			position: absolute;
+			inset: 0;
+			opacity: 0;
+			cursor: pointer;
+		}
+
+		.preview-img {
+			width: 100%;
+			max-height: 200px;
+			object-fit: cover;
+			border-radius: 8px;
+			border: 1px solid var(--border);
+			display: none;
+			margin-top: .5rem;
+		}
+
+		/* ── BUTTONS ── */
+		.btn {
+			padding: .6rem 1.2rem;
+			border-radius: 8px;
+			border: none;
+			cursor: pointer;
+			font-weight: 700;
+			font-size: .9rem;
+			transition: all .2s;
+			font-family: inherit;
+		}
+
+		.btn-primary {
+			background: var(--accent);
+			color: #fff;
+		}
+
+		.btn-primary:hover:not(:disabled) {
+			background: #4338ca;
+		}
+
+		.btn-primary:disabled {
+			opacity: .55;
+			cursor: not-allowed;
+		}
+
+		.btn-sec {
+			background: #f3f4f6;
+			color: var(--txt);
+			border: 1px solid var(--border);
+		}
+
+		.btn-sec:hover {
+			background: var(--border);
+		}
+
+		.btn-hero {
+			background: #fff;
+			color: var(--accent);
+			font-weight: 800;
+			padding: .72rem 1.7rem;
+			border: none;
+			border-radius: 10px;
+			cursor: pointer;
+			font-size: 1rem;
+			box-shadow: 0 2px 10px rgba(0, 0, 0, .12);
+			transition: all .2s;
+			font-family: inherit;
+		}
+
+		.btn-hero:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 6px 22px rgba(0, 0, 0, .16);
+		}
+
+		/* ── PROFILE STEPS ── */
+		.step-bar {
+			display: flex;
+			align-items: center;
+			gap: .4rem;
+			margin-bottom: 1.2rem;
+		}
+
+		.step-dot {
+			width: 24px;
+			height: 24px;
+			border-radius: 50%;
+			background: var(--border);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: .72rem;
+			font-weight: 700;
+			color: var(--sub);
+			flex-shrink: 0;
+		}
+
+		.step-dot.done {
+			background: var(--accent);
+			color: #fff;
+		}
+
+		.step-line {
+			flex: 1;
+			height: 2px;
+			background: var(--border);
+		}
+
+		.role-cards {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: .85rem;
+		}
+
+		.role-card {
+			border: 2px solid var(--border);
+			border-radius: 12px;
+			padding: 1.2rem .9rem;
+			text-align: center;
+			cursor: pointer;
+			transition: all .2s;
+		}
+
+		.role-card:hover,
+		.role-card.selected {
+			border-color: var(--accent);
+			background: var(--light);
+		}
+
+		.role-card i {
+			font-size: 2.2rem;
+			color: var(--accent);
+			margin-bottom: .5rem;
+			display: block;
+		}
+
+		.role-card h4 {
+			font-size: .9rem;
+			font-weight: 700;
+		}
+
+		.role-card p {
+			font-size: .75rem;
+			color: var(--sub);
+			margin-top: .2rem;
+		}
+
+		/* ── GOOGLE LOGIN ── */
+		.login-card {
+			background: var(--card);
+			border-radius: var(--radius);
+			box-shadow: var(--shadow);
+			max-width: 420px;
+			margin: 4rem auto;
+			padding: 2.5rem 2rem;
+			text-align: center;
+		}
+
+		.login-card i {
+			font-size: 3rem;
+			color: var(--accent);
+			margin-bottom: 1rem;
+			display: block;
+		}
+
+		.login-card h2 {
+			font-size: 1.4rem;
+			font-weight: 800;
+			margin-bottom: .4rem;
+		}
+
+		.login-card p {
+			color: var(--sub);
+			font-size: .9rem;
+			margin-bottom: 1.8rem;
+		}
+
+		/* ── ALERT ── */
+		.alert {
+			padding: .7rem 1rem;
+			border-radius: 8px;
+			font-size: .86rem;
+			font-weight: 600;
+			display: none;
+		}
+
+		.alert.err {
+			background: #fee2e2;
+			color: var(--red);
+			display: block;
+		}
+
+		.alert.ok {
+			background: #dcfce7;
+			color: var(--green);
+			display: block;
+		}
+
+		/* ── TOAST ── */
+		#toast {
+			position: fixed;
+			bottom: 1.5rem;
+			right: 1.5rem;
+			background: #1e1b4b;
+			color: #fff;
+			padding: .85rem 1.4rem;
+			border-radius: 10px;
+			font-size: .88rem;
+			font-weight: 600;
+			box-shadow: 0 4px 20px rgba(0, 0, 0, .2);
+			z-index: 9999;
+			transition: opacity .3s;
+		}
+
+		#toast.hide {
+			opacity: 0;
+			pointer-events: none;
+		}
+
+		/* ── STATUS BADGE ─ */
+		.s-tag {
+			display: inline-block;
+			font-size: .72rem;
+			font-weight: 700;
+			padding: .18rem .55rem;
+			border-radius: 20px;
+			text-transform: uppercase;
+			letter-spacing: .04em;
+		}
+
+		.s-tag.sold {
+			background: #fee2e2;
+			color: var(--red);
+		}
+
+		.s-tag.given {
+			background: #dbeafe;
+			color: #1d4ed8;
+		}
+
+		.s-tag.available {
+			background: #dcfce7;
+			color: var(--green);
+		}
+
+		/* ── CHAT ── */
+		.chat-msgs {
+			height: 230px;
+			overflow-y: auto;
+			border: 1px solid var(--border);
+			border-radius: 8px;
+			padding: .75rem;
+			background: #f9fafb;
+			margin-bottom: .65rem;
+		}
+
+		.chat-msg {
+			margin-bottom: .65rem;
+		}
+
+		.chat-msg .cm-name {
+			font-size: .78rem;
+			font-weight: 700;
+			color: var(--accent);
+		}
+
+		.chat-msg .cm-text {
+			font-size: .86rem;
+			margin: .1rem 0;
+		}
+
+		.chat-msg .cm-time {
+			font-size: .7rem;
+			color: var(--sub);
+		}
+
+		.chat-row {
+			display: flex;
+			gap: .45rem;
+		}
+
+		.chat-row input {
+			flex: 1;
+			padding: .58rem .8rem;
+			border: 1.5px solid var(--border);
+			border-radius: 8px;
+			font-size: .88rem;
+			outline: none;
+		}
+
+		.chat-row input:focus {
+			border-color: var(--accent);
+		}
+
+		@media(max-width:600px) {
+			.row2 {
+				grid-template-columns: 1fr;
+			}
+
+			.role-cards {
+				grid-template-columns: 1fr 1fr;
+			}
 		}
 	</style>
 </head>
 
 <body>
+
+	<!-- NAVBAR -->
 	<nav class="navbar" id="navbar">
 		<div class="nav-container">
-			<a href="index.html" class="logo">
-				<i class="fas fa-book"></i> RENVOX
-			</a>
+			<a href="index.html" class="logo"><i class="fas fa-book"></i> RENVOX</a>
 			<div class="nav-search">
-				<input type="text" id="navbarSearch" placeholder="Search for courses, subjects, or concepts...">
-				<button type="button" onclick="handleNavbarSearch()">
-					<i class="fas fa-search"></i>
-				</button>
+				<input type="text" id="navbarSearch" placeholder="Search courses, subjects…">
+				<button type="button" onclick="handleNavbarSearch()"><i class="fas fa-search"></i></button>
 			</div>
 			<ul class="nav-menu" id="navMenu">
 				<li><a href="index.html">Home</a></li>
@@ -97,258 +798,594 @@
 				<li><a href="store.html" class="active">Store</a></li>
 				<li><a href="Family.html">Family</a></li>
 			</ul>
-			<div class="nav-buttons" id="navButtons">
-				<div id="guestButtons">
-					<a href="signup.html" class="btn-login">
-						<i class="fas fa-sign-in-alt"></i> Login
-					</a>
-					<a href="signup.html" class="btn-signup">
-						<i class="fas fa-user-plus"></i> Sign Up
-					</a>
-				</div>
-			</div>
-			<div style="margin-left:8px; display:flex; gap:.5rem;">
-				<button class="btn" id="sellYourBookBtn">Sell Your Book</button>
-			</div>
-			<button class="menu-toggle" id="menuToggle">
-				<i class="fas fa-bars"></i>
-			</button>
+			<div class="nav-buttons" id="navButtons"></div>
+			<button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
 		</div>
 	</nav>
 
-	<main class="container">
-		<header>
-			<h1>College Store</h1>
-			<p>Buy and sell books, notes and projects within your college community.</p>
-		</header>
+	<!-- HERO -->
+	<div class="s-hero">
+		<h1>📚 Private Book Exchange</h1>
+		<p>Buy &amp; sell textbooks within your own college or school group. Secure, private, no strangers.</p>
+		<div class="s-hero-actions">
+			<button class="btn-hero" id="heroSellBtn" style="display:none" onclick="openSellModal()">
+				<i class="fas fa-plus-circle"></i> Sell Your Book
+			</button>
+		</div>
+	</div>
 
-		<section class="filters">
-			<div class="filter">
-				<label>College</label>
-				<select id="collegeFilter">
-					<option value="">All Colleges</option>
-					<option>ABC College</option>
-					<option>XYZ University</option>
-					<option>Local Engineering College</option>
-				</select>
-			</div>
-			<div class="filter">
-				<label>Course / Branch</label>
-				<select id="courseFilter">
-					<option value="">All</option>
-					<option>Computer Science</option>
-					<option>Mechanical</option>
-					<option>Commerce</option>
-				</select>
-			</div>
-			<div class="filter">
-				<label>Condition</label>
-				<select id="conditionFilter">
-					<option value="">Any</option>
-					<option>New</option>
-					<option>Used</option>
-				</select>
-			</div>
-			<div class="filter">
-				<label>Max Price (₹)</label>
-				<input type="number" id="priceFilter" placeholder="e.g. 300" />
-			</div>
-			<div style="display:flex;align-items:end;gap:.5rem;">
-				<button class="btn-secondary" id="applyFiltersBtn">Apply</button>
-				<button class="btn" id="clearFiltersBtn">Clear</button>
-			</div>
-		</section>
 
-		<section id="booksSection">
-			<div class="books-grid" id="booksGrid"></div>
-		</section>
-	</main>
+	<!-- Store content -->
+	<div class="s-wrap">
+		<div id="storeSection">
+			<!-- Tabs -->
+			<div class="tabs">
+				<button class="tab active" id="tabBrowse" onclick="switchTab('browse')"><i class="fas fa-search"></i>
+					Browse Books</button>
+				<button class="tab" id="tabMine" onclick="switchTab('mine')"><i class="fas fa-book-open"></i> My
+					Listings</button>
+			</div>
 
-	<!-- Sell modal -->
-	<div id="sellModal" class="modal hide">
-		<div class="modal-card">
-			<h3>List a Book for Sale</h3>
-			<div style="display:flex;flex-direction:column;gap:.5rem;margin-top:.5rem;">
-				<input id="bookName" placeholder="Book name" />
-				<input id="bookSubject" placeholder="Subject" />
-				<input id="bookCollege" placeholder="College (auto-fill if logged in)" />
-				<select id="bookCondition">
-					<option>Used</option>
-					<option>New</option>
-				</select>
-				<input id="bookPrice" type="number" placeholder="Price in ₹" />
-				<input id="bookImage" type="file" accept="image/*" />
-				<img id="previewImg" style="max-width:100%; border-radius:6px; display:none;" />
-				<div style="display:flex;justify-content:flex-end;gap:.5rem;">
-					<button class="btn" onclick="closeSellModal()">Cancel</button>
-					<button class="btn-primary" id="listBookBtn">List Book</button>
+			<!-- Browse Tab -->
+			<div id="paneBrowse">
+				<div class="filter-bar">
+					<div class="fg" style="flex:1;min-width:180px;">
+						<label>Search</label>
+						<input id="searchQ" placeholder="Book title or subject…" oninput="localFilter()">
+					</div>
+					<div class="fg">
+						<label>Condition</label>
+						<select id="fCond">
+							<option value="">Any</option>
+							<option>New</option>
+							<option>Used</option>
+						</select>
+					</div>
+					<div class="fg">
+						<label>Max Price (₹)</label>
+						<input type="number" id="fPrice" placeholder="e.g. 300">
+					</div>
+					<div style="display:flex;gap:.5rem;align-items:flex-end">
+						<button class="btn btn-primary" onclick="fetchBooks()"><i class="fas fa-filter"></i>
+							Apply</button>
+						<button class="btn btn-sec" onclick="clearFilters()">Clear</button>
+					</div>
 				</div>
-				<div style="margin-top:.5rem; display:flex; gap:.5rem; justify-content:flex-end;">
-					<button class="btn" id="requestVerificationBtn">Request College Verification</button>
+				<div id="browseContainer">
+					<div class="state-box"><i class="fas fa-spinner spinner"></i>
+						<p>Loading books…</p>
+					</div>
+				</div>
+			</div>
+
+			<!-- My Books Tab -->
+			<div id="paneMine" class="hide">
+				<div style="display:flex;justify-content:flex-end;margin-bottom:1rem;">
+					<button class="btn btn-primary" onclick="openSellModal()"><i class="fas fa-plus"></i> List a
+						Book</button>
+				</div>
+				<div id="mineContainer">
+					<div class="state-box"><i class="fas fa-spinner spinner"></i>
+						<p>Loading your listings…</p>
+					</div>
 				</div>
 			</div>
 		</div>
 	</div>
 
-	<script>
-		// Sample data store (frontend only)
-		const books = [
-			{ id: 1, name: 'Data Structures in C', subject: 'Computer Science', college: 'ABC College', condition: 'Used', price: 150, seller: 'Rohan (Senior)', img: '' },
-			{ id: 2, name: 'Engineering Mathematics', subject: 'Maths', college: 'XYZ University', condition: 'New', price: 300, seller: 'Simran (Senior)', img: '' },
-			{ id: 3, name: 'Microeconomics', subject: 'Economics', college: 'Local Engineering College', condition: 'Used', price: 120, seller: 'Amit (Senior)', img: '' }
-		];
-
-		const booksGrid = document.getElementById('booksGrid');
-		const applyFiltersBtn = document.getElementById('applyFiltersBtn');
-		const clearFiltersBtn = document.getElementById('clearFiltersBtn');
-		const sellYourBookBtn = document.getElementById('sellYourBookBtn');
-		const sellModal = document.getElementById('sellModal');
-		const bookImage = document.getElementById('bookImage');
-		const previewImg = document.getElementById('previewImg');
-
-		function renderBooks(list) {
-			booksGrid.innerHTML = '';
-			list.forEach(b => {
-				const card = document.createElement('div'); card.className = 'book-card';
-				const img = document.createElement('img'); img.className = 'book-thumb';
-				img.src = b.img || 'https://via.placeholder.com/360x180?text=Book+Cover';
-				card.appendChild(img);
-				const h = document.createElement('h4'); h.textContent = b.name; card.appendChild(h);
-				const p = document.createElement('p'); p.textContent = `${b.subject} — ₹${b.price}`; card.appendChild(p);
-				const seller = document.createElement('div'); seller.className = 'seller'; seller.textContent = `Seller: ${b.seller} • ${b.college} • ${b.condition}`; card.appendChild(seller);
-				const actions = document.createElement('div'); actions.style.marginTop = '.75rem';
-				const chatBtn = document.createElement('button'); chatBtn.className = 'btn'; chatBtn.textContent = 'Chat with Seller'; chatBtn.onclick = () => openChat(b.id, b.seller);
-				const buyBtn = document.createElement('button'); buyBtn.className = 'btn-primary'; buyBtn.style.marginLeft = '6px'; buyBtn.textContent = 'Buy Now'; buyBtn.onclick = () => alert('Payment placeholder — integrate UPI/PG here');
-				actions.appendChild(chatBtn); actions.appendChild(buyBtn);
-				card.appendChild(actions);
-				booksGrid.appendChild(card);
-			});
-		}
-
-		function applyFilters() {
-			const college = document.getElementById('collegeFilter').value;
-			const course = document.getElementById('courseFilter').value;
-			const condition = document.getElementById('conditionFilter').value;
-			const maxPrice = Number(document.getElementById('priceFilter').value || 0);
-			let filtered = books.slice();
-			if (college) filtered = filtered.filter(b => b.college === college);
-			if (condition) filtered = filtered.filter(b => b.condition === condition);
-			if (maxPrice) filtered = filtered.filter(b => b.price <= maxPrice);
-			renderBooks(filtered);
-		}
-
-		applyFiltersBtn.addEventListener('click', applyFilters);
-		clearFiltersBtn.addEventListener('click', () => { document.getElementById('collegeFilter').value = ''; document.getElementById('conditionFilter').value = ''; document.getElementById('priceFilter').value = ''; renderBooks(books); });
-
-		// Sell modal logic
-		sellYourBookBtn.addEventListener('click', () => {
-			// auto-fill college from localStorage if available
-			const loggedCollege = localStorage.getItem('userCollege');
-			if (loggedCollege) document.getElementById('bookCollege').value = loggedCollege;
-			sellModal.classList.remove('hide');
-		});
-		function closeSellModal() { sellModal.classList.add('hide'); }
-
-		bookImage.addEventListener('change', (e) => {
-			const file = e.target.files[0];
-			if (!file) return; const reader = new FileReader();
-			reader.onload = function (ev) { previewImg.src = ev.target.result; previewImg.style.display = 'block'; }
-			reader.readAsDataURL(file);
-		});
-
-		document.getElementById('listBookBtn').addEventListener('click', () => {
-			const name = document.getElementById('bookName').value || 'Untitled';
-			const subject = document.getElementById('bookSubject').value || '';
-			const college = document.getElementById('bookCollege').value || 'Unknown College';
-			const condition = document.getElementById('bookCondition').value;
-			const price = Number(document.getElementById('bookPrice').value || 0);
-			const img = previewImg.src || '';
-			const id = Date.now();
-			books.unshift({ id, name, subject, college, condition, price, seller: 'You (Senior)', img });
-			renderBooks(books);
-			closeSellModal();
-			alert('Book listed successfully. Verification pending.');
-		});
-
-		// Request college verification
-		document.getElementById('requestVerificationBtn').addEventListener('click', () => {
-			const user = localStorage.getItem('renvox_user');
-			if (!user) { alert('Please login to request verification'); return; }
-			const parsed = JSON.parse(user);
-			const collegeEmail = document.getElementById('bookCollege').value || parsed.email;
-			fetch('/api/request-verification', {
-				method: 'POST', headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ userId: parsed.id, collegeEmail })
-			}).then(r => r.json()).then(data => {
-				if (data.ok) alert('Verification request sent (mock). Check server console for link.'); else alert(data.message || 'Request failed');
-			}).catch(err => { console.error(err); alert('Server error'); });
-		});
-
-		// initial render
-		renderBooks(books);
-
-		// Chat modal
-		const chatModalHtml = `
-		<div id="chatModal" class="modal hide">
-			<div class="modal-card" style="width:420px;">
-				<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem;">
-					<strong id="chatTitle">Chat</strong>
-					<button class="btn" id="closeChatBtn">Close</button>
+	<!-- ════ PROFILE SETUP MODAL ════ -->
+	<div id="profileModal" class="modal hide">
+		<div class="mbox">
+			<div class="mhead">
+				<h3>👤 Complete Your Profile</h3>
+			</div>
+			<div class="mbody">
+				<div class="step-bar">
+					<div class="step-dot done" id="sd1">1</div>
+					<div class="step-line"></div>
+					<div class="step-dot" id="sd2">2</div>
 				</div>
-				<div id="chatMessages" style="height:260px;overflow:auto;border:1px solid var(--border-color);padding:.6rem;border-radius:6px;background:#fff;margin-bottom:.5rem;"></div>
-				<div style="display:flex;gap:.5rem;">
-					<input id="chatInput" placeholder="Type a message" style="flex:1;padding:.6rem;border:1px solid var(--border-color);border-radius:6px" />
-					<button class="btn-primary" id="sendChatBtn">Send</button>
+
+				<!-- Step 1: Role -->
+				<div id="pStep1">
+					<p style="font-size:.9rem;color:var(--sub);margin-bottom:1rem;">Who are you? This controls which
+						books you can see.</p>
+					<div class="role-cards">
+						<div class="role-card" id="roleCollege" onclick="selectRole('college')">
+							<i class="fas fa-university"></i>
+							<h4>College Student</h4>
+							<p>See books from your college only</p>
+						</div>
+						<div class="role-card" id="roleChild" onclick="selectRole('child')">
+							<i class="fas fa-child"></i>
+							<h4>School Student</h4>
+							<p>See books from the children's group</p>
+						</div>
+					</div>
+					<div class="alert" id="p1Alert" style="margin-top:.75rem;"></div>
+				</div>
+
+				<!-- Step 2 College -->
+				<div id="pStep2College" class="hide">
+					<div class="fgrp">
+						<label>College Name *</label>
+						<input id="pCollege" placeholder="e.g. ABC Engineering College">
+					</div>
+					<div class="row2" style="margin-top:.75rem;">
+						<div class="fgrp">
+							<label>Department *</label>
+							<input id="pDept" placeholder="e.g. Computer Science">
+						</div>
+						<div class="fgrp">
+							<label>Year *</label>
+							<select id="pYear">
+								<option value="">Select year</option>
+								<option>1st Year (Junior)</option>
+								<option>2nd Year</option>
+								<option>3rd Year</option>
+								<option>4th Year (Senior)</option>
+								<option>Postgraduate</option>
+							</select>
+						</div>
+					</div>
+					<div class="alert" id="p2Alert" style="margin-top:.75rem;"></div>
+				</div>
+
+				<!-- Step 2 Child -->
+				<div id="pStep2Child" class="hide">
+					<div class="fgrp">
+						<label>Class / Grade *</label>
+						<select id="pClass">
+							<option value="">Select class</option>
+							<option>Class 1</option>
+							<option>Class 2</option>
+							<option>Class 3</option>
+							<option>Class 4</option>
+							<option>Class 5</option>
+							<option>Class 6</option>
+							<option>Class 7</option>
+							<option>Class 8</option>
+							<option>Class 9</option>
+							<option>Class 10</option>
+							<option>Class 11</option>
+							<option>Class 12</option>
+						</select>
+					</div>
+					<div class="alert" id="p3Alert" style="margin-top:.75rem;"></div>
 				</div>
 			</div>
-		</div>`;
-		document.body.insertAdjacentHTML('beforeend', chatModalHtml);
-		const chatModal = document.getElementById('chatModal');
-		const chatMessages = document.getElementById('chatMessages');
-		const chatTitle = document.getElementById('chatTitle');
-		const chatInput = document.getElementById('chatInput');
-		const sendChatBtn = document.getElementById('sendChatBtn');
-		const closeChatBtn = document.getElementById('closeChatBtn');
-		let currentChatBook = null;
+			<div class="mfoot">
+				<button class="btn btn-sec" id="pBackBtn" onclick="profileBack()" style="display:none">Back</button>
+				<button class="btn btn-primary" id="pNextBtn" onclick="profileNext()">Next <i
+						class="fas fa-arrow-right"></i></button>
+			</div>
+		</div>
+	</div>
 
-		function openChat(bookId, seller) {
-			currentChatBook = bookId;
-			chatTitle.textContent = `Chat — ${seller}`;
-			chatMessages.innerHTML = 'Loading...';
-			chatModal.classList.remove('hide');
-			fetch(`/api/messages?bookId=${bookId}`).then(r => r.json()).then(data => {
-				chatMessages.innerHTML = '';
-				data.forEach(m => {
-					const d = document.createElement('div');
-					d.style.marginBottom = '.5rem';
-					d.innerHTML = `<strong style="font-size:.9rem">${m.from}</strong><div style="font-size:.9rem">${m.text}</div><small style="color:var(--text-light)">${new Date(m.ts).toLocaleString()}</small>`;
-					chatMessages.appendChild(d);
-				});
-				chatMessages.scrollTop = chatMessages.scrollHeight;
-			}).catch(err => { chatMessages.innerHTML = 'Unable to load messages'; console.error(err); });
+	<!-- ════ SELL MODAL ════ -->
+	<div id="sellModal" class="modal hide">
+		<div class="mbox">
+			<div class="mhead">
+				<h3><i class="fas fa-tag" style="color:var(--accent);margin-right:.4rem;"></i> List Book for Sale</h3>
+				<button class="mclose" onclick="closeSellModal()"><i class="fas fa-times"></i></button>
+			</div>
+			<div class="mbody">
+				<div class="alert" id="sellAlert"></div>
+				<div class="fgrp">
+					<label>Book Title *</label>
+					<input id="sTitle" placeholder="e.g. Data Structures in C">
+				</div>
+				<div class="row2">
+					<div class="fgrp">
+						<label>Subject</label>
+						<input id="sSubject" placeholder="e.g. Computer Science">
+					</div>
+					<div class="fgrp">
+						<label>Condition</label>
+						<select id="sCond">
+							<option>Used</option>
+							<option>New</option>
+						</select>
+					</div>
+				</div>
+				<div class="row2">
+					<div class="fgrp">
+						<label>Price (₹)</label>
+						<input id="sPrice" type="number" placeholder="0 = Free">
+					</div>
+					<div class="fgrp">
+						<label>Contact (WhatsApp)</label>
+						<input id="sContact" placeholder="9876543210">
+					</div>
+				</div>
+				<div class="fgrp">
+					<label>Book Photo *</label>
+					<div class="upload-zone">
+						<i class="fas fa-camera"></i>
+						<p>Tap to take or upload a photo</p>
+						<input type="file" id="sImg" accept="image/*" capture="environment"
+							onchange="previewImage(this)">
+					</div>
+					<img id="sPreview" class="preview-img" alt="Preview">
+				</div>
+			</div>
+			<div class="mfoot">
+				<button class="btn btn-sec" onclick="closeSellModal()">Cancel</button>
+				<button class="btn btn-primary" id="sellBtn" onclick="submitBook()"><i class="fas fa-check-circle"></i>
+					List Book</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- ════ CHAT MODAL ════ -->
+	<div id="chatModal" class="modal hide">
+		<div class="mbox">
+			<div class="mhead">
+				<h3 id="chatTitle"><i class="fas fa-comments" style="color:var(--accent);margin-right:.4rem;"></i>Chat
+					with Seller</h3>
+				<button class="mclose" onclick="closeChat()"><i class="fas fa-times"></i></button>
+			</div>
+			<div class="mbody">
+				<div class="chat-msgs" id="chatMsgs">
+					<p style="text-align:center;color:var(--sub);padding-top:3rem;font-size:.85rem;">No messages yet.
+						Say Hello! 👋</p>
+				</div>
+				<div class="chat-row">
+					<input id="chatIn" placeholder="Type a message…" onkeydown="if(event.key==='Enter')sendMsg()">
+					<button class="btn btn-primary" onclick="sendMsg()"><i class="fas fa-paper-plane"></i></button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- STATUS MODAL (for My Books) -->
+	<div id="statusModal" class="modal hide">
+		<div class="mbox" style="max-width:360px;">
+			<div class="mhead">
+				<h3>Update Status</h3><button class="mclose" onclick="closeStatus()"><i
+						class="fas fa-times"></i></button>
+			</div>
+			<div class="mbody">
+				<p style="font-size:.88rem;color:var(--sub);">Change the status of this listing:</p>
+				<div style="display:flex;flex-direction:column;gap:.6rem;margin-top:.5rem;">
+					<button class="btn btn-primary" onclick="setStatus('available')" style="background:var(--green);">✅
+						Mark Available</button>
+					<button class="btn btn-primary" onclick="setStatus('sold')" style="background:var(--red);">🔴 Mark
+						as Sold</button>
+					<button class="btn btn-primary" onclick="setStatus('given')" style="background:#2563eb;">💙 Mark as
+						Given (Free)</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div id="toast" class="hide"></div>
+
+	<script>
+		// ═══════════════════════════════════════════════
+		// STATE
+		// ═══════════════════════════════════════════════
+		// Uses the main site's navbar token — no separate store login needed
+		let storeToken = localStorage.getItem('renvox_token') || '';
+		let storeUser = null;
+		let allBooks = [];
+		let selectedRole = '';
+		let currentTab = 'browse';
+		let chatBookId = null;
+		let chatPoll = null;
+		let statusBookId = null;
+
+		const API = '/api/store';
+
+		// ═══════════════════════════════════════════════
+		// INIT
+		// ═══════════════════════════════════════════════
+		window.addEventListener('load', init);
+
+		async function init() {
+			setupScrollEffect();
+			storeToken = localStorage.getItem('renvox_token') || '';
+			// Always show store — navbar handles sign-in
+			document.getElementById('heroSellBtn').style.display = storeToken ? '' : 'none';
+			fetchBooks(); // loads books (public listings visible to all)
+			if (storeToken) {
+				try {
+					const r = await apiFetch('GET', '/me');
+					if (r.ok) {
+						storeUser = r.user;
+						if (!storeUser.profileComplete) showProfileModal();
+						else document.getElementById('heroSellBtn').style.display = '';
+					}
+				} catch { /* silent — navbar manages auth state */ }
+			}
 		}
 
-		sendChatBtn.addEventListener('click', () => {
-			const text = chatInput.value.trim();
-			if (!text || !currentChatBook) return;
-			const from = (localStorage.getItem('renvox_user') ? JSON.parse(localStorage.getItem('renvox_user')).fullName : 'You');
-			fetch('/api/messages', {
-				method: 'POST', headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ bookId: currentChatBook, from, text })
-			}).then(r => r.json()).then(res => {
-				if (res.ok) {
-					const d = document.createElement('div'); d.style.marginBottom = '.5rem'; d.innerHTML = `<strong>${from}</strong><div>${text}</div>`;
-					chatMessages.appendChild(d);
-					chatInput.value = '';
-					chatMessages.scrollTop = chatMessages.scrollHeight;
-				} else alert(res.message || 'Unable to send');
-			}).catch(err => { console.error(err); alert('Send failed'); });
-		});
+		// ═══════════════════════════════════════════════
+		// PROFILE MODAL
+		// ═══════════════════════════════════════════════
+		function showProfileModal() {
+			selectedRole = '';
+			show('profileModal');
+			hide('pStep2College'); hide('pStep2Child');
+			show('pStep1');
+			document.getElementById('sd1').classList.add('done');
+			document.getElementById('sd2').classList.remove('done');
+			document.getElementById('pBackBtn').style.display = 'none';
+			document.getElementById('pNextBtn').innerHTML = 'Next <i class="fas fa-arrow-right"></i>';
+		}
 
-		closeChatBtn.addEventListener('click', () => { chatModal.classList.add('hide'); currentChatBook = null; chatMessages.innerHTML = ''; });
+		function selectRole(r) {
+			selectedRole = r;
+			document.getElementById('roleCollege').classList.toggle('selected', r === 'college');
+			document.getElementById('roleChild').classList.toggle('selected', r === 'child');
+		}
+
+		function profileBack() {
+			show('pStep1'); hide('pStep2College'); hide('pStep2Child');
+			document.getElementById('sd2').classList.remove('done');
+			document.getElementById('pBackBtn').style.display = 'none';
+			document.getElementById('pNextBtn').innerHTML = 'Next <i class="fas fa-arrow-right"></i>';
+		}
+
+		async function profileNext() {
+			const step2ColVisible = !document.getElementById('pStep2College').classList.contains('hide');
+			const step2ChdVisible = !document.getElementById('pStep2Child').classList.contains('hide');
+
+			if (!step2ColVisible && !step2ChdVisible) {
+				// Step 1 — choose role
+				if (!selectedRole) { setAlert('p1Alert', 'Please select your role.', 'err'); return; }
+				clearAlert('p1Alert');
+				hide('pStep1');
+				document.getElementById('sd2').classList.add('done');
+				document.getElementById('pBackBtn').style.display = '';
+				document.getElementById('pNextBtn').innerHTML = '<i class="fas fa-check-circle"></i> Save Profile';
+				if (selectedRole === 'college') show('pStep2College'); else show('pStep2Child');
+				return;
+			}
+
+			// Step 2 — save
+			const btn = document.getElementById('pNextBtn');
+			btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner spinner"></i>';
+			try {
+				const body = { role: selectedRole };
+				if (selectedRole === 'college') {
+					body.collegeName = val('pCollege'); body.department = val('pDept'); body.year = val('pYear');
+					if (!body.collegeName || !body.department || !body.year) {
+						btn.disabled = false; btn.innerHTML = '<i class="fas fa-check-circle"></i> Save Profile';
+						return setAlert(selectedRole === 'college' ? 'p2Alert' : 'p3Alert', 'All fields are required.', 'err');
+					}
+				} else {
+					body.childClass = val('pClass');
+					if (!body.childClass) {
+						btn.disabled = false; btn.innerHTML = '<i class="fas fa-check-circle"></i> Save Profile';
+						return setAlert('p3Alert', 'Please select your class.', 'err');
+					}
+				}
+				const r = await apiFetch('POST', '/profile', body);
+				if (!r.ok) { setAlert('p2Alert', r.message, 'err'); btn.disabled = false; btn.innerHTML = 'Save'; return; }
+				storeUser = r.user;
+				hide('profileModal');
+				showStore();
+				fetchBooks();
+				toast('Profile saved! Welcome 🎉');
+			} catch { setAlert('p2Alert', 'Server error. Try again.', 'err'); }
+			btn.disabled = false; btn.innerHTML = '<i class="fas fa-check-circle"></i> Save Profile';
+		}
+
+		// ═══════════════════════════════════════════════
+		// STORE DISPLAY
+		// ═══════════════════════════════════════════════
+		function showStore() {
+			hide('loginSection'); show('storeSection');
+			document.getElementById('heroSellBtn').style.display = '';
+		}
+
+		function switchTab(t) {
+			currentTab = t;
+			document.getElementById('tabBrowse').classList.toggle('active', t === 'browse');
+			document.getElementById('tabMine').classList.toggle('active', t === 'mine');
+			if (t === 'browse') { show('paneBrowse'); hide('paneMine'); }
+			else { hide('paneBrowse'); show('paneMine'); fetchMyBooks(); }
+		}
+
+		// ═══════════════════════════════════════════════
+		// FETCH BOOKS
+		// ═══════════════════════════════════════════════
+		async function fetchBooks() {
+			document.getElementById('browseContainer').innerHTML = loadingHTML();
+			const cond = val('fCond'), price = val('fPrice');
+			const params = new URLSearchParams();
+			if (cond) params.append('condition', cond);
+			if (price) params.append('maxPrice', price);
+			try {
+				const r = await apiFetch('GET', '/books' + (params.toString() ? '?' + params : ''));
+				allBooks = r.books || [];
+				localFilter();
+			} catch { document.getElementById('browseContainer').innerHTML = errHTML('Could not load books. Is the server running?'); }
+		}
+
+		function localFilter() {
+			const q = (val('searchQ') || '').toLowerCase();
+			const filtered = q ? allBooks.filter(b => (b.title + ' ' + (b.subject || '')).toLowerCase().includes(q)) : allBooks;
+			renderBrowse(filtered);
+		}
+
+		function clearFilters() {
+			document.getElementById('fCond').value = ''; document.getElementById('fPrice').value = ''; document.getElementById('searchQ').value = '';
+			fetchBooks();
+		}
+
+		function renderBrowse(list) {
+			const c = document.getElementById('browseContainer');
+			if (!list.length) { c.innerHTML = emptyHTML('No books found', 'Try adjusting filters or be the first to list!'); return; }
+			c.innerHTML = ''; const g = document.createElement('div'); g.className = 'books-grid';
+			list.forEach(b => g.appendChild(makeCard(b, false)));
+			c.appendChild(g);
+		}
+
+		async function fetchMyBooks() {
+			document.getElementById('mineContainer').innerHTML = loadingHTML();
+			try {
+				const r = await apiFetch('GET', '/my-books');
+				const books = r.books || [];
+				if (!books.length) { document.getElementById('mineContainer').innerHTML = emptyHTML('No listings yet', 'Click "List a Book" to get started!'); return; }
+				const g = document.createElement('div'); g.className = 'books-grid';
+				books.forEach(b => g.appendChild(makeCard(b, true)));
+				document.getElementById('mineContainer').innerHTML = ''; document.getElementById('mineContainer').appendChild(g);
+			} catch { document.getElementById('mineContainer').innerHTML = errHTML('Could not load your books.'); }
+		}
+
+		// ═══════════════════════════════════════════════
+		// BOOK CARD
+		// ═══════════════════════════════════════════════
+		function makeCard(b, isOwn) {
+			const card = document.createElement('div'); card.className = 'bcard';
+			const condBadge = b.condition === 'New' ? 'badge-new' : 'badge-used';
+			const imgHtml = b.img ? `<img src="${b.img}" alt="${esc(b.title)}" loading="lazy">` : `<div class="no-img">📗</div>`;
+			const statusTag = b.status !== 'available' ? `<span class="s-tag ${b.status}">${b.status}</span>` : '';
+			const priceHtml = b.isFree || b.price === 0 ? `<div class="bcard-price">FREE <span class="badge badge-free" style="position:static;font-size:.7rem;vertical-align:middle;">Free</span></div>` : `<div class="bcard-price">₹${b.price}</div>`;
+			const actionsHtml = isOwn
+				? `<button class="btn-own" onclick="openStatusModal('${b._id}')"><i class="fas fa-pen"></i> Status</button>
+       <button class="btn-del" onclick="deleteBook('${b._id}')" title="Delete"><i class="fas fa-trash"></i></button>`
+				: `<button class="btn-chat-c" onclick="openChat('${b._id}','${esc(b.ownerName)}')"><i class="fas fa-comments"></i> Chat</button>`;
+			card.innerHTML = `
+    <div class="bcard-img">
+      ${imgHtml}
+      <span class="badge ${condBadge}">${b.condition}</span>
+      ${b.status !== 'available' ? `<span class="badge badge-${b.status}" style="top:auto;bottom:.55rem;">${b.status.toUpperCase()}</span>` : ''}
+    </div>
+    <div class="bcard-body">
+      <div class="bcard-title">${esc(b.title)}</div>
+      <div class="bcard-meta">${esc(b.subject || '')}${b.collegeName ? ' • ' + esc(b.collegeName) : ''}</div>
+      ${priceHtml}
+      <div class="bcard-seller"><i class="fas fa-user-circle"></i>${esc(b.ownerName)}${b.contact ? ' • 📞 ' + esc(b.contact) : ''}</div>
+      ${statusTag}
+    </div>
+    <div class="bcard-footer">${actionsHtml}</div>`;
+			return card;
+		}
+
+		// ═══════════════════════════════════════════════
+		// SELL BOOK
+		// ═══════════════════════════════════════════════
+		function openSellModal() {
+			if (!localStorage.getItem('renvox_token')) {
+				return toast('🔒 Please Sign In from the top navbar to sell a book.', true);
+			}
+			show('sellModal'); clearAlert('sellAlert');
+		}
+		function closeSellModal() {
+			hide('sellModal');
+			['sTitle', 'sSubject', 'sPrice', 'sContact'].forEach(id => document.getElementById(id).value = '');
+			document.getElementById('sPreview').style.display = 'none'; document.getElementById('sImg').value = '';
+		}
+
+		function previewImage(inp) {
+			const f = inp.files[0]; if (!f) return;
+			if (f.size > 5 * 1024 * 1024) { setAlert('sellAlert', 'Image must be under 5 MB.', 'err'); inp.value = ''; return; }
+			const r = new FileReader();
+			r.onload = e => { const img = document.getElementById('sPreview'); img.src = e.target.result; img.style.display = 'block'; };
+			r.readAsDataURL(f);
+		}
+
+		async function submitBook() {
+			const title = val('sTitle'), price = val('sPrice') || '0';
+			const img = document.getElementById('sPreview').src;
+			if (!title) return setAlert('sellAlert', 'Book title is required.', 'err');
+			if (!img || !img.startsWith('data:')) return setAlert('sellAlert', 'Please upload a photo of the book.', 'err');
+			const btn = document.getElementById('sellBtn'); btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner spinner"></i> Listing…';
+			try {
+				const r = await apiFetch('POST', '/books', {
+					title, subject: val('sSubject'), condition: val('sCond'),
+					isFree: Number(price) === 0, price: Number(price),
+					contact: val('sContact'), img
+				});
+				if (r.ok) { closeSellModal(); toast('📚 Book listed!'); fetchBooks(); if (currentTab === 'mine') fetchMyBooks(); }
+				else setAlert('sellAlert', r.message || 'Failed.', 'err');
+			} catch { setAlert('sellAlert', 'Server error.', 'err'); }
+			btn.disabled = false; btn.innerHTML = '<i class="fas fa-check-circle"></i> List Book';
+		}
+
+		// ═══════════════════════════════════════════════
+		// DELETE & STATUS
+		// ═══════════════════════════════════════════════
+		async function deleteBook(id) {
+			if (!confirm('Remove this listing permanently?')) return;
+			const r = await apiFetch('DELETE', '/books/' + id);
+			if (r.ok) { toast('Listing removed.'); fetchMyBooks(); fetchBooks(); }
+			else alert(r.message || 'Error');
+		}
+
+		function openStatusModal(id) { statusBookId = id; show('statusModal'); }
+		function closeStatus() { hide('statusModal'); statusBookId = null; }
+		async function setStatus(s) {
+			if (!statusBookId) return;
+			const r = await apiFetch('PATCH', '/books/' + statusBookId + '/status', { status: s });
+			if (r.ok) { toast('Status updated!'); closeStatus(); fetchMyBooks(); fetchBooks(); }
+			else alert(r.message || 'Error');
+		}
+
+		// ═══════════════════════════════════════════════
+		// CHAT
+		// ═══════════════════════════════════════════════
+		function openChat(bookId, seller) {
+			chatBookId = bookId;
+			document.getElementById('chatTitle').innerHTML = `<i class="fas fa-comments" style="color:var(--accent);margin-right:.4rem;"></i>${esc(seller)}`;
+			document.getElementById('chatMsgs').innerHTML = '<p style="text-align:center;color:var(--sub);padding-top:3rem;font-size:.85rem;">Loading…</p>';
+			show('chatModal'); loadMsgs();
+			if (chatPoll) clearInterval(chatPoll);
+			chatPoll = setInterval(loadMsgs, 5000);
+		}
+		function closeChat() { hide('chatModal'); chatBookId = null; if (chatPoll) { clearInterval(chatPoll); chatPoll = null; } }
+
+		async function loadMsgs() {
+			if (!chatBookId) return;
+			try {
+				const r = await fetch('/api/messages?bookId=' + chatBookId);
+				const msgs = await r.json();
+				const c = document.getElementById('chatMsgs');
+				if (!msgs.length) { c.innerHTML = '<p style="text-align:center;color:var(--sub);padding-top:3rem;font-size:.85rem;">No messages yet 👋</p>'; return; }
+				c.innerHTML = '';
+				msgs.forEach(m => { const d = document.createElement('div'); d.className = 'chat-msg'; d.innerHTML = `<div class="cm-name">${esc(m.from)}</div><div class="cm-text">${esc(m.text)}</div><div class="cm-time">${new Date(m.ts).toLocaleString()}</div>`; c.appendChild(d); });
+				c.scrollTop = c.scrollHeight;
+			} catch { }
+		}
+		async function sendMsg() {
+			const inp = document.getElementById('chatIn'), text = inp.value.trim();
+			if (!text || !chatBookId) return;
+			const from = storeUser?.name || 'Anonymous';
+			await fetch('/api/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ bookId: chatBookId, from, text }) });
+			inp.value = ''; loadMsgs();
+		}
+
+		// ═══════════════════════════════════════════════
+		// UTILS
+		// ═══════════════════════════════════════════════
+		async function apiFetch(method, path, body) {
+			// Always use the latest main-site token
+			const token = localStorage.getItem('renvox_token') || '';
+			const opts = { method, headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token } };
+			if (body) opts.body = JSON.stringify(body);
+			const r = await fetch(API + path, opts);
+			return r.json();
+		}
+		function val(id) { return (document.getElementById(id)?.value || '').trim(); }
+		function show(id) { document.getElementById(id).classList.remove('hide'); }
+		function hide(id) { document.getElementById(id).classList.add('hide'); }
+		function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+		function setAlert(id, msg, type) { const el = document.getElementById(id); el.textContent = msg; el.className = 'alert ' + type; }
+		function clearAlert(id) { const el = document.getElementById(id); el.textContent = ''; el.className = 'alert'; }
+		function toast(msg, isErr = false) { const el = document.getElementById('toast'); el.textContent = msg; el.style.background = isErr ? '#dc2626' : '#1e1b4b'; el.classList.remove('hide'); setTimeout(() => el.classList.add('hide'), 3200); }
+		function loadingHTML() { return '<div class="state-box"><i class="fas fa-spinner spinner"></i><p>Loading…</p></div>'; }
+		function emptyHTML(h, p) { return `<div class="state-box"><i class="fas fa-book-open"></i><h3>${h}</h3><p>${p}</p></div>`; }
+		function errHTML(p) { return `<div class="state-box"><i class="fas fa-exclamation-triangle" style="color:#f59e0b;"></i><h3>Something went wrong</h3><p>${p}</p></div>`; }
+
+		function setupScrollEffect() {
+			window.addEventListener('scroll', () => document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 50));
+			document.getElementById('menuToggle').addEventListener('click', () => document.getElementById('navMenu').classList.toggle('active'));
+		}
 	</script>
-
-	<script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+	<script src="navigation.js"></script>
 </body>
 
 </html>

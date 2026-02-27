@@ -7,6 +7,16 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const Razorpay = require('razorpay');
 const { OAuth2Client } = require('google-auth-library');
+const mongoose = require('mongoose');
+
+// ─── Store Router (MongoDB-backed) ───────────────────────────
+const storeRouter = require('./routes/store');
+
+// ─── MongoDB Connection ───────────────────────────────────────
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/renvox';
+mongoose.connect(MONGO_URI)
+  .then(() => console.log('✅ MongoDB connected:', MONGO_URI.split('@').pop() || MONGO_URI))
+  .catch(err => console.error('❌ MongoDB connection error:', err.message, '\n   Set MONGO_URI env var or start MongoDB locally.'));
 
 const DATA_FILE = path.join(__dirname, 'data', 'users.json');
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_me';
@@ -40,6 +50,9 @@ app.use(cors());
 app.use(express.json());
 // Serve frontend static files from project root
 app.use(express.static(path.join(__dirname)));
+
+// ─── Store Routes (Private Book Exchange) ────────────────────
+app.use('/api/store', storeRouter);
 
 // Razorpay Instance (Test Keys)
 const razorpay = new Razorpay({
@@ -368,5 +381,191 @@ app.post('/api/update-profile', (req, res) => {
   }
 });
 
+// ---------------- Books API ----------------
+const BOOKS_FILE = path.join(__dirname, 'data', 'books.json');
+
+function readBooks() {
+  try { return JSON.parse(fs.readFileSync(BOOKS_FILE, 'utf8') || '[]'); } catch (e) { return []; }
+}
+function writeBooks(books) { fs.writeFileSync(BOOKS_FILE, JSON.stringify(books, null, 2), 'utf8'); }
+
+// Get all book listings (with optional filters)
+app.get('/api/books', (req, res) => {
+  let books = readBooks();
+  const { college, condition, maxPrice } = req.query;
+  if (college) books = books.filter(b => b.college === college);
+  if (condition) books = books.filter(b => b.condition === condition);
+  if (maxPrice) books = books.filter(b => b.price <= Number(maxPrice));
+  res.json({ ok: true, books });
+});
+
+// List a new book for sale (requires login token)
+app.post('/api/books', (req, res) => {
+  const auth = req.headers.authorization || '';
+  const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+  if (!token) return res.status(401).json({ ok: false, message: 'Login required to list a book' });
+
+  let userId, userRole;
+  try {
+    const payload = jwt.verify(token, JWT_SECRET);
+    userId = payload.userId;
+    userRole = payload.role;
+  } catch (err) {
+    return res.status(401).json({ ok: false, message: 'Invalid or expired token' });
+  }
+
+  const users = readUsers();
+  const user = users.find(u => String(u.id) === String(userId));
+  if (!user) return res.status(404).json({ ok: false, message: 'User not found' });
+
+  const { name, subject, college, condition, price, img, contact } = req.body;
+  if (!name || !price) return res.status(400).json({ ok: false, message: 'Book name and price are required' });
+
+  const books = readBooks();
+  const book = {
+    id: Date.now().toString(),
+    name,
+    subject: subject || '',
+    college: college || user.college || '',
+    condition: condition || 'Used',
+    price: Number(price) || 0,
+    seller: user.fullName || 'Anonymous',
+    sellerId: user.id,
+    sellerEmail: user.email || '',
+    contact: contact || '',
+    img: img || '',
+    listedAt: new Date().toISOString()
+  };
+  books.unshift(book);
+  writeBooks(books);
+  res.json({ ok: true, message: 'Book listed successfully!', book });
+});
+
+// Delete a book listing (only by the seller)
+app.delete('/api/books/:id', (req, res) => {
+  const auth = req.headers.authorization || '';
+  const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+  if (!token) return res.status(401).json({ ok: false, message: 'Login required' });
+
+  let userId;
+  try { userId = jwt.verify(token, JWT_SECRET).userId; } catch (e) { return res.status(401).json({ ok: false, message: 'Invalid token' }); }
+
+  let books = readBooks();
+  const book = books.find(b => b.id === req.params.id);
+  if (!book) return res.status(404).json({ ok: false, message: 'Book not found' });
+  if (String(book.sellerId) !== String(userId)) return res.status(403).json({ ok: false, message: 'Not your listing' });
+  books = books.filter(b => b.id !== req.params.id);
+  writeBooks(books);
+  res.json({ ok: true, message: 'Book removed' });
+});
+
+// ────────────────────────────────────────────────────────────
+// COURSE PROGRESS & CERTIFICATE SYSTEM
+// ────────────────────────────────────────────────────────────
+const PROGRESS_FILE = path.join(__dirname, 'data', 'progress.json');
+
+function readProgress() {
+  try { return JSON.parse(fs.readFileSync(PROGRESS_FILE, 'utf8') || '[]'); } catch (e) { return []; }
+}
+function writeProgress(data) { fs.writeFileSync(PROGRESS_FILE, JSON.stringify(data, null, 2), 'utf8'); }
+
+// Save video/PDF completion progress
+app.post('/api/course/progress', (req, res) => {
+  const auth = req.headers.authorization || '';
+  const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+  if (!token) return res.status(401).json({ ok: false, message: 'Login required' });
+
+  let userId;
+  try { userId = jwt.verify(token, JWT_SECRET).userId; } catch (e) { return res.status(401).json({ ok: false, message: 'Invalid token' }); }
+
+  const { courseId, videoWatched, pdfRead } = req.body;
+  if (!courseId) return res.status(400).json({ ok: false, message: 'courseId required' });
+
+  const progress = readProgress();
+  let record = progress.find(p => p.userId === userId && p.courseId === courseId);
+  if (!record) {
+    record = { userId, courseId, videoWatched: false, pdfRead: false, testPassed: false, score: 0, certId: null, earnedAt: null };
+    progress.push(record);
+  }
+  if (videoWatched !== undefined) record.videoWatched = videoWatched;
+  if (pdfRead !== undefined) record.pdfRead = pdfRead;
+  writeProgress(progress);
+  res.json({ ok: true, record });
+});
+
+// Get progress for a user+course
+app.get('/api/course/progress', (req, res) => {
+  const auth = req.headers.authorization || '';
+  const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+  if (!token) return res.status(401).json({ ok: false, message: 'Login required' });
+
+  let userId;
+  try { userId = jwt.verify(token, JWT_SECRET).userId; } catch (e) { return res.status(401).json({ ok: false, message: 'Invalid token' }); }
+
+  const { courseId } = req.query;
+  const progress = readProgress();
+  const record = progress.find(p => p.userId === userId && p.courseId === courseId) || {};
+  res.json({ ok: true, record });
+});
+
+// Submit test answers
+app.post('/api/course/submit-test', (req, res) => {
+  const auth = req.headers.authorization || '';
+  const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+  if (!token) return res.status(401).json({ ok: false, message: 'Login required' });
+
+  let userId;
+  try { userId = jwt.verify(token, JWT_SECRET).userId; } catch (e) { return res.status(401).json({ ok: false, message: 'Invalid token' }); }
+
+  const { courseId, answers, correctAnswers } = req.body;
+  if (!courseId || !answers || !correctAnswers) return res.status(400).json({ ok: false, message: 'Missing fields' });
+
+  // Grade the test
+  let correct = 0;
+  answers.forEach((ans, i) => { if (String(ans) === String(correctAnswers[i])) correct++; });
+  const total = correctAnswers.length;
+  const score = Math.round((correct / total) * 100);
+  const passed = score >= 60;
+
+  const progress = readProgress();
+  let record = progress.find(p => p.userId === userId && p.courseId === courseId);
+  if (!record) {
+    record = { userId, courseId, videoWatched: false, pdfRead: false, testPassed: false, score: 0, certId: null, earnedAt: null };
+    progress.push(record);
+  }
+  record.score = score;
+  record.testPassed = passed;
+  if (passed && !record.certId) {
+    record.certId = 'RENV-' + Date.now().toString(36).toUpperCase();
+    record.earnedAt = new Date().toISOString();
+  }
+  writeProgress(progress);
+
+  // Get user info for certificate
+  const users = readUsers();
+  const user = users.find(u => String(u.id) === String(userId));
+
+  res.json({ ok: true, passed, score, correct, total, certId: record.certId, earnedAt: record.earnedAt, userName: user ? user.fullName : 'Student' });
+});
+
+// Get all certificates for a user
+app.get('/api/course/my-certificates', (req, res) => {
+  const auth = req.headers.authorization || '';
+  const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+  if (!token) return res.status(401).json({ ok: false, message: 'Login required' });
+
+  let userId;
+  try { userId = jwt.verify(token, JWT_SECRET).userId; } catch (e) { return res.status(401).json({ ok: false, message: 'Invalid token' }); }
+
+  const progress = readProgress();
+  const certs = progress.filter(p => p.userId === userId && p.testPassed && p.certId);
+
+  const users = readUsers();
+  const user = users.find(u => String(u.id) === String(userId));
+
+  res.json({ ok: true, certificates: certs, userName: user ? user.fullName : 'Student', userEmail: user ? user.email : '' });
+});
+
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => console.log('API listening on port', PORT));
+

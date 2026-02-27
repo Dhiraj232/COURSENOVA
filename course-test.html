@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Final Test – RENVOX AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f8fafc;
+            color: #1e293b;
+        }
+
+        .test-header {
+            background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
+            color: white;
+            padding: 1.25rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .test-header h1 {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .timer-box {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.15);
+            padding: 0.5rem 1rem;
+            border-radius: 99px;
+            font-weight: 700;
+            font-size: 1rem;
+        }
+
+        .timer-box.urgent {
+            background: rgba(239, 68, 68, 0.7);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.7;
+            }
+        }
+
+        .test-progress-bar {
+            height: 4px;
+            background: #e2e8f0;
+        }
+
+        .test-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4f46e5, #10b981);
+            transition: width 0.4s;
+        }
+
+        .test-container {
+            max-width: 780px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+
+        .question-counter {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #94a3b8;
+            margin-bottom: 0.5rem;
+        }
+
+        .question-card {
+            background: white;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            padding: 1.75rem;
+            margin-bottom: 1.25rem;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+        }
+
+        .question-text {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 1.25rem;
+            line-height: 1.5;
+        }
+
+        .options {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        .option-label {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            border-radius: 10px;
+            border: 1.5px solid #e2e8f0;
+            cursor: pointer;
+            font-size: 0.92rem;
+            font-weight: 500;
+            color: #475569;
+            transition: all 0.2s;
+        }
+
+        .option-label:hover {
+            border-color: #a5b4fc;
+            background: #f5f3ff;
+        }
+
+        .option-label input {
+            display: none;
+        }
+
+        .option-label.selected {
+            border-color: #4f46e5;
+            background: #ede9fe;
+            color: #4338ca;
+        }
+
+        .option-letter {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #94a3b8;
+            flex-shrink: 0;
+            transition: all 0.2s;
+        }
+
+        .option-label.selected .option-letter {
+            background: #4f46e5;
+            color: white;
+        }
+
+        /* Result states */
+        .option-label.correct {
+            border-color: #10b981;
+            background: #f0fdf4;
+            color: #15803d;
+            pointer-events: none;
+        }
+
+        .option-label.correct .option-letter {
+            background: #10b981;
+            color: white;
+        }
+
+        .option-label.wrong {
+            border-color: #ef4444;
+            background: #fef2f2;
+            color: #b91c1c;
+            pointer-events: none;
+        }
+
+        .option-label.wrong .option-letter {
+            background: #ef4444;
+            color: white;
+        }
+
+        .navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .nav-btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            border: none;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .nav-btn-prev {
+            background: #f1f5f9;
+            color: #64748b;
+        }
+
+        .nav-btn-prev:hover {
+            background: #e2e8f0;
+        }
+
+        .nav-btn-next {
+            background: #4f46e5;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-btn-next:hover {
+            background: #3730a3;
+        }
+
+        .nav-btn-submit {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 0.75rem 2rem;
+        }
+
+        .nav-btn-submit:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+        }
+
+        .nav-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        .question-dots {
+            display: flex;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .q-dot {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 2px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #94a3b8;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .q-dot.answered {
+            background: #4f46e5;
+            border-color: #4f46e5;
+            color: white;
+        }
+
+        .q-dot.current {
+            border-color: #4f46e5;
+            color: #4f46e5;
+        }
+
+        /* Result overlay */
+        .result-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 999;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            align-items: center;
+            justify-content: center;
+        }
+
+        .result-overlay.show {
+            display: flex;
+        }
+
+        .result-card {
+            background: white;
+            border-radius: 24px;
+            padding: 2.5rem;
+            max-width: 460px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4);
+            animation: pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes pop {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .result-emoji {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .result-title {
+            font-size: 1.6rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+        }
+
+        .result-title.pass {
+            color: #059669;
+        }
+
+        .result-title.fail {
+            color: #dc2626;
+        }
+
+        .result-score {
+            font-size: 3rem;
+            font-weight: 900;
+            margin: 1rem 0;
+        }
+
+        .result-score.pass {
+            color: #10b981;
+        }
+
+        .result-score.fail {
+            color: #f87171;
+        }
+
+        .result-msg {
+            color: #64748b;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-bottom: 1.75rem;
+        }
+
+        .result-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .btn-download {
+            padding: 0.9rem;
+            border-radius: 12px;
+            border: none;
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.25s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+        }
+
+        .btn-download:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-retry {
+            padding: 0.75rem;
+            border-radius: 12px;
+            border: 2px solid #e2e8f0;
+            background: white;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            color: #64748b;
+            transition: all 0.2s;
+        }
+
+        .btn-retry:hover {
+            border-color: #4f46e5;
+            color: #4f46e5;
+        }
+
+        .cert-id {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin-top: 0.75rem;
+            font-family: monospace;
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo"><i class="fas fa-book"></i> RENVOX</a>
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="certificates.html">Certificates</a></li>
+            </ul>
+            <div class="nav-buttons" id="navButtons"></div>
+        </div>
+    </nav>
+
+    <div class="test-header">
+        <h1><i class="fas fa-clipboard-check"></i> Final Test – <span id="headerCourse"></span></h1>
+        <div class="timer-box" id="timerBox">
+            <i class="fas fa-clock"></i>
+            <span id="timerDisplay">30:00</span>
+        </div>
+    </div>
+    <div class="test-progress-bar">
+        <div class="test-progress-fill" id="testProgressFill" style="width:0%"></div>
+    </div>
+
+    <div class="test-container">
+        <div class="question-dots" id="questionDots" style="margin-bottom:1.5rem;"></div>
+        <div class="question-counter" id="questionCounter"></div>
+        <div id="questionArea"></div>
+        <div class="navigation">
+            <button class="nav-btn nav-btn-prev" id="prevBtn" onclick="navigate(-1)"><i class="fas fa-arrow-left"></i>
+                Previous</button>
+            <button class="nav-btn nav-btn-next" id="nextBtn" onclick="navigate(1)">Next <i
+                    class="fas fa-arrow-right"></i></button>
+            <button class="nav-btn nav-btn-submit" id="submitBtn" onclick="submitTest()" style="display:none">
+                <i class="fas fa-paper-plane"></i> Submit Test
+            </button>
+        </div>
+    </div>
+
+    <!-- RESULT OVERLAY -->
+    <div class="result-overlay" id="resultOverlay">
+        <div class="result-card">
+            <div class="result-emoji" id="resultEmoji"></div>
+            <div class="result-title" id="resultTitle"></div>
+            <div class="result-score" id="resultScore"></div>
+            <p class="result-msg" id="resultMsg"></p>
+            <div class="result-actions" id="resultActions"></div>
+            <div class="cert-id" id="certIdDisplay"></div>
+        </div>
+    </div>
+
+    <script src="navigation.js"></script>
+    <script>
+        const API_BASE = (() => {
+            const p = window.location.port;
+            return (p === '5500' || p === '5501' || p === '5502' || p === '5503' || p === '5504' || p === '3000') ? 'http://localhost:4000' : '';
+        })();
+
+        const params = new URLSearchParams(window.location.search);
+        const courseId = params.get('course') || 'Unknown Course';
+        document.getElementById('headerCourse').textContent = courseId;
+
+        function getToken() {
+            return localStorage.getItem('renvox_token') || localStorage.getItem('renvoxToken') || '';
+        }
+
+        // ─── QUESTION BANK ───────────────────────────────────────────
+        const QUESTION_BANKS = {
+            default: [
+                { q: 'What does CPU stand for?', opts: ['Central Processing Unit', 'Central Program Unit', 'Computer Personal Unit', 'Control Processing Unit'], ans: 0 },
+                { q: 'Which data structure operates on LIFO principle?', opts: ['Queue', 'Stack', 'Tree', 'Heap'], ans: 1 },
+                { q: 'What is the time complexity of Binary Search?', opts: ['O(n)', 'O(n²)', 'O(log n)', 'O(1)'], ans: 2 },
+                { q: 'HTML stands for?', opts: ['Hyper Text Markup Language', 'High Text Machine Language', 'Hyper Tabular Markup Language', 'None'], ans: 0 },
+                { q: 'Which keyword is used to define a function in Python?', opts: ['function', 'fun', 'def', 'define'], ans: 2 },
+                { q: 'What symbol is used for comments in Python?', opts: ['//', '/* */', '#', '<!--'], ans: 2 },
+                { q: 'Which is NOT a programming language?', opts: ['Java', 'Python', 'HTML', 'C++'], ans: 2 },
+                { q: 'What does SQL stand for?', opts: ['Structured Query Language', 'Simple Query Language', 'Sequential Query Logic', 'Standard Query Language'], ans: 0 },
+                { q: 'Which sorting algorithm has O(n log n) average complexity?', opts: ['Bubble Sort', 'Selection Sort', 'Merge Sort', 'Insertion Sort'], ans: 2 },
+                { q: 'What does RAM stand for?', opts: ['Read Access Memory', 'Random Access Memory', 'Rapid Access Module', 'Read And Modify'], ans: 1 },
+                { q: 'Which of these is a NoSQL database?', opts: ['MySQL', 'PostgreSQL', 'MongoDB', 'Oracle'], ans: 2 },
+                { q: 'What is the default port for HTTP?', opts: ['21', '443', '80', '8080'], ans: 2 },
+                { q: 'In OOP, what is encapsulation?', opts: ['Inheriting properties', 'Hiding internal state', 'Overriding methods', 'Creating objects'], ans: 1 },
+                { q: 'Which HTML tag creates a hyperlink?', opts: ['<link>', '<href>', '<a>', '<nav>'], ans: 2 },
+                { q: 'What is the purpose of a compiler?', opts: ['Run programs directly', 'Convert source code to machine code', 'Manage memory', 'Debug programs'], ans: 1 },
+            ],
+            'C Programming Fundamentals': [
+                { q: 'Which header file is required for printf in C?', opts: ['stdio.h', 'stdlib.h', 'string.h', 'math.h'], ans: 0 },
+                { q: 'What is the size of int in C (32-bit system)?', opts: ['1 byte', '2 bytes', '4 bytes', '8 bytes'], ans: 2 },
+                { q: 'Which operator is used for pointer dereferencing?', opts: ['&', '*', '->', '.'], ans: 1 },
+                { q: 'What does malloc() do in C?', opts: ['Free memory', 'Allocate static memory', 'Allocate dynamic memory', 'Copy memory'], ans: 2 },
+                { q: 'Which loop is guaranteed to execute at least once?', opts: ['for', 'while', 'do-while', 'All of the above'], ans: 2 },
+                { q: 'What is the return type of main() in C?', opts: ['void', 'int', 'char', 'float'], ans: 1 },
+                { q: 'Which function is used to copy strings in C?', opts: ['strcat()', 'strcpy()', 'strcmp()', 'strlen()'], ans: 1 },
+                { q: 'What is a segmentation fault?', opts: ['Syntax error', 'Invalid memory access', 'Compilation error', 'Stack overflow'], ans: 1 },
+                { q: 'What does the & operator do with variables?', opts: ['Dereferences pointer', 'Gets address of variable', 'Bitwise AND', 'Logical AND'], ans: 1 },
+                { q: 'Which is used to end a switch case?', opts: ['exit', 'stop', 'break', 'end'], ans: 2 },
+                { q: 'Array indices in C start at?', opts: ['1', '0', '-1', 'Any'], ans: 1 },
+                { q: 'What is a null pointer?', opts: ['Pointer to zero', 'Invalid pointer', 'Pointer that points to nothing', 'Dangling pointer'], ans: 2 },
+                { q: 'What keyword defines a constant in C?', opts: ['var', 'let', 'const', '#define can be used'], ans: 3 },
+                { q: 'Which printf format specifier is used for float?', opts: ['%d', '%c', '%f', '%s'], ans: 2 },
+                { q: 'What does sizeof() return?', opts: ['Value of variable', 'Address of variable', 'Size in bytes', 'Number of elements'], ans: 2 },
+            ],
+        };
+
+        function getQuestions() {
+            return (QUESTION_BANKS[courseId] || QUESTION_BANKS['default']).slice(0, 15);
+        }
+
+        const questions = getQuestions();
+        const userAnswers = new Array(questions.length).fill(null);
+        let currentQ = 0;
+        let submitted = false;
+
+        // ─── TIMER ────────────────────────────────────────────────────
+        let timeLeft = 30 * 60;
+        const timerDisplay = document.getElementById('timerDisplay');
+        const timerBox = document.getElementById('timerBox');
+        const timerInterval = setInterval(() => {
+            if (submitted) { clearInterval(timerInterval); return; }
+            timeLeft--;
+            const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+            const s = (timeLeft % 60).toString().padStart(2, '0');
+            timerDisplay.textContent = `${m}:${s}`;
+            if (timeLeft <= 60) timerBox.classList.add('urgent');
+            if (timeLeft <= 0) { clearInterval(timerInterval); submitTest(); }
+        }, 1000);
+
+        // ─── RENDER ───────────────────────────────────────────────────
+        function renderQuestion() {
+            const q = questions[currentQ];
+            const letters = ['A', 'B', 'C', 'D'];
+
+            document.getElementById('questionCounter').textContent = `Question ${currentQ + 1} of ${questions.length}`;
+            document.getElementById('testProgressFill').style.width = ((currentQ + 1) / questions.length * 100) + '%';
+
+            document.getElementById('questionArea').innerHTML = `
+            <div class="question-card">
+                <div class="question-text">${currentQ + 1}. ${q.q}</div>
+                <div class="options">
+                    ${q.opts.map((opt, i) => `
+                        <label class="option-label ${userAnswers[currentQ] === i ? 'selected' : ''}" id="opt-${i}" onclick="selectAnswer(${i})">
+                            <div class="option-letter">${letters[i]}</div>
+                            ${opt}
+                        </label>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+
+            document.getElementById('prevBtn').disabled = currentQ === 0;
+            const isLast = currentQ === questions.length - 1;
+            document.getElementById('nextBtn').style.display = isLast ? 'none' : 'flex';
+            document.getElementById('submitBtn').style.display = isLast ? 'flex' : 'none';
+
+            renderDots();
+        }
+
+        function renderDots() {
+            document.getElementById('questionDots').innerHTML = questions.map((_, i) => `
+            <div class="q-dot ${i === currentQ ? 'current' : ''} ${userAnswers[i] !== null ? 'answered' : ''}" onclick="goTo(${i})">${i + 1}</div>
+        `).join('');
+        }
+
+        function selectAnswer(idx) {
+            if (submitted) return;
+            userAnswers[currentQ] = idx;
+            document.querySelectorAll('.option-label').forEach((el, i) => {
+                el.classList.toggle('selected', i === idx);
+            });
+            renderDots();
+        }
+
+        function navigate(dir) {
+            currentQ = Math.max(0, Math.min(questions.length - 1, currentQ + dir));
+            renderQuestion();
+        }
+
+        function goTo(idx) {
+            currentQ = idx;
+            renderQuestion();
+        }
+
+        // ─── SUBMIT ───────────────────────────────────────────────────
+        async function submitTest() {
+            if (submitted) return;
+            const unanswered = userAnswers.filter(a => a === null).length;
+            if (unanswered > 0 && !confirm(`You have ${unanswered} unanswered question(s). Submit anyway?`)) return;
+            submitted = true;
+            clearInterval(timerInterval);
+
+            const correctAnswers = questions.map(q => q.ans);
+
+            try {
+                const res = await fetch(`${API_BASE}/api/course/submit-test`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
+                    body: JSON.stringify({ courseId, answers: userAnswers, correctAnswers })
+                });
+                const data = await res.json();
+
+                if (data.ok) showResult(data);
+                else showResultLocal(correctAnswers);
+            } catch (e) {
+                showResultLocal(correctAnswers);
+            }
+        }
+
+        function showResultLocal(correctAnswers) {
+            let correct = 0;
+            userAnswers.forEach((ans, i) => { if (ans === correctAnswers[i]) correct++; });
+            const score = Math.round((correct / questions.length) * 100);
+            showResult({ passed: score >= 60, score, correct, total: questions.length, certId: null, userName: 'Student' });
+        }
+
+        function showResult(data) {
+            const { passed, score, correct, total, certId, userName } = data;
+            const overlay = document.getElementById('resultOverlay');
+            overlay.classList.add('show');
+
+            document.getElementById('resultEmoji').textContent = passed ? '🏆' : '😔';
+            document.getElementById('resultTitle').textContent = passed ? 'Congratulations!' : 'Better luck next time!';
+            document.getElementById('resultTitle').className = 'result-title ' + (passed ? 'pass' : 'fail');
+            document.getElementById('resultScore').textContent = score + '%';
+            document.getElementById('resultScore').className = 'result-score ' + (passed ? 'pass' : 'fail');
+            document.getElementById('resultMsg').textContent = passed
+                ? `You answered ${correct} out of ${total} correctly and passed! Your certificate has been earned.`
+                : `You answered ${correct} out of ${total} correctly. You need 60% to pass. Don't give up!`;
+
+            if (certId) {
+                document.getElementById('certIdDisplay').textContent = 'Certificate ID: ' + certId;
+            }
+
+            const actions = document.getElementById('resultActions');
+            if (passed) {
+                actions.innerHTML = `
+                <button class="btn-download" onclick="window.location.href='my-certificates.html'">
+                    <i class="fas fa-download"></i> Download My Certificate
+                </button>
+                <button class="btn-retry" onclick="window.location.href='course-content.html?course=${encodeURIComponent(courseId)}'">
+                    <i class="fas fa-book-open"></i> Back to Course
+                </button>
+            `;
+            } else {
+                actions.innerHTML = `
+                <button class="btn-download" onclick="window.location.reload()" style="background:linear-gradient(135deg,#4f46e5,#3730a3)">
+                    <i class="fas fa-redo"></i> Try Again
+                </button>
+                <button class="btn-retry" onclick="window.location.href='course-content.html?course=${encodeURIComponent(courseId)}'">
+                    <i class="fas fa-arrow-left"></i> Review Material
+                </button>
+            `;
+            }
+        }
+
+        // Init
+        if (!getToken()) { window.location.href = 'signup.html'; }
+        renderQuestion();
+    </script>
+</body>
+
+</html>

@@ -50,5 +50,31 @@
     "verified": true,
     "otp": null,
     "otpExpiry": null
+  },
+  {
+    "id": "1772042425865",
+    "fullName": "Dhiraj Kushwaha",
+    "email": "dhirajkushwaha6857@gmail.com",
+    "mobile": "9098786548",
+    "passwordHash": "$2b$10$moHaNaXwHAxg4g4ZZGmmjOqQTp4wYJbQPvsec.w8XK4mKD4eFiJ3O",
+    "role": "student",
+    "college": "",
+    "classInfo": "",
+    "verified": false,
+    "otp": "409719",
+    "otpExpiry": 1772043189220
+  },
+  {
+    "id": "1772044040598",
+    "fullName": "Dhiraj Kushwaha",
+    "email": "dhirajkumar45710@gmail.com",
+    "mobile": "9098786344",
+    "passwordHash": "$2b$10$IDhUEitY4JwfyiOg2aEBb.xnLEeKbKACNsc96dPlusGt.IqWP.axq",
+    "role": "student",
+    "college": "",
+    "classInfo": "",
+    "verified": false,
+    "otp": "754524",
+    "otpExpiry": 1772044407304
   }
 ]

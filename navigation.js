@@ -417,6 +417,11 @@ function setupUserDropdown() {
                             <i class="fas fa-chart-pie"></i> Analytics
                         </a>
                     </li>
+                    <li class="dropdown-item">
+                        <a href="my-certificates.html" onclick="window.closeUserDropdown()">
+                            <i class="fas fa-trophy"></i> My Certificates
+                        </a>
+                    </li>
                     
                     <li class="dropdown-divider"></li>
                     

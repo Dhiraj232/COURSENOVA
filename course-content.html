@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Content – RENVOX AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f8fafc;
+            color: #1e293b;
+        }
+
+        .page-header {
+            background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
+            color: white;
+            padding: 1.5rem 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .page-header h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+
+        .page-header .back-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: none;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            text-decoration: none;
+        }
+
+        .page-header .back-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        /* Progress bar */
+        .progress-section {
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+
+        .progress-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #64748b;
+            white-space: nowrap;
+        }
+
+        .progress-track {
+            flex: 1;
+            height: 10px;
+            background: #e2e8f0;
+            border-radius: 99px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #4f46e5, #10b981);
+            border-radius: 99px;
+            transition: width 0.5s ease;
+            width: 0%;
+        }
+
+        .progress-pct {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #4f46e5;
+            white-space: nowrap;
+        }
+
+        /* Main layout */
+        .content-layout {
+            display: grid;
+            grid-template-columns: 1fr 320px;
+            gap: 1.5rem;
+            max-width: 1200px;
+            margin: 1.5rem auto;
+            padding: 0 1.5rem;
+        }
+
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: 16px;
+            border: 2px solid #e2e8f0;
+            overflow: hidden;
+            transition: border-color 0.3s;
+            margin-bottom: 1.5rem;
+        }
+
+        .card.completed {
+            border-color: #10b981;
+        }
+
+        .card-header {
+            padding: 1rem 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .card-header-left {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .card-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+
+        .icon-video {
+            background: #ede9fe;
+            color: #7c3aed;
+        }
+
+        .icon-pdf {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .card-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .card-sub {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            margin-top: 2px;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.4rem 0.9rem;
+            border-radius: 99px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: #f1f5f9;
+            color: #64748b;
+            white-space: nowrap;
+            transition: all 0.3s;
+        }
+
+        .status-badge.done {
+            background: #d1fae5;
+            color: #059669;
+        }
+
+        .card-body {
+            padding: 0;
+        }
+
+        /* Video embed */
+        .video-wrapper {
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            overflow: hidden;
+            background: #0f172a;
+        }
+
+        .video-wrapper iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* PDF embed */
+        .pdf-wrapper {
+            height: 420px;
+            background: #475569;
+        }
+
+        .pdf-wrapper iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        .card-footer {
+            padding: 1rem 1.25rem;
+            display: flex;
+            justify-content: flex-end;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .mark-btn {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.65rem 1.25rem;
+            border-radius: 10px;
+            border: none;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.88rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.25s;
+        }
+
+        .mark-btn-video {
+            background: #ede9fe;
+            color: #7c3aed;
+        }
+
+        .mark-btn-video:hover:not(:disabled) {
+            background: #7c3aed;
+            color: white;
+        }
+
+        .mark-btn-pdf {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .mark-btn-pdf:hover:not(:disabled) {
+            background: #dc2626;
+            color: white;
+        }
+
+        .mark-btn.done {
+            background: #d1fae5 !important;
+            color: #059669 !important;
+            cursor: default;
+        }
+
+        .mark-btn:disabled {
+            opacity: 0.7;
+        }
+
+        /* Sidebar */
+        .sidebar-card {
+            background: white;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            padding: 1.5rem;
+            position: sticky;
+            top: 1.5rem;
+        }
+
+        .sidebar-title {
+            font-size: 1rem;
+            font-weight: 700;
+            margin-bottom: 1.25rem;
+            color: #1e293b;
+        }
+
+        .checklist {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            border-radius: 10px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            font-size: 0.88rem;
+            font-weight: 500;
+            color: #475569;
+            transition: all 0.3s;
+        }
+
+        .checklist-item.done {
+            background: #f0fdf4;
+            border-color: #bbf7d0;
+            color: #15803d;
+        }
+
+        .checklist-item .check-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+            background: #e2e8f0;
+            color: #94a3b8;
+            transition: all 0.3s;
+        }
+
+        .checklist-item.done .check-icon {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-take-test {
+            width: 100%;
+            padding: 0.9rem;
+            border-radius: 12px;
+            border: none;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            background: linear-gradient(135deg, #4f46e5, #3730a3);
+            color: white;
+        }
+
+        .btn-take-test:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(79, 70, 229, 0.4);
+        }
+
+        .btn-take-test:disabled {
+            background: #e2e8f0;
+            color: #94a3b8;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .lock-note {
+            text-align: center;
+            font-size: 0.78rem;
+            color: #94a3b8;
+            margin-top: 0.75rem;
+        }
+
+        .course-info {
+            margin-bottom: 1.5rem;
+        }
+
+        .course-info h2 {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: #1e293b;
+            margin-bottom: 0.25rem;
+        }
+
+        .course-info p {
+            font-size: 0.82rem;
+            color: #64748b;
+        }
+
+        .info-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-top: 0.75rem;
+        }
+
+        .info-pill {
+            padding: 0.2rem 0.7rem;
+            background: #ede9fe;
+            color: #7c3aed;
+            border-radius: 99px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        @media (max-width: 900px) {
+            .content-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar-card {
+                position: static;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo"><i class="fas fa-book"></i> RENVOX</a>
+            <div class="nav-search">
+                <input type="text" id="navbarSearch" placeholder="Search...">
+                <button type="button" onclick="handleNavbarSearch()"><i class="fas fa-search"></i></button>
+            </div>
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="certificates.html" class="active">Certificates</a></li>
+                <li><a href="practice.html">Practice</a></li>
+                <li><a href="store.html">Store</a></li>
+                <li><a href="Family.html">Family</a></li>
+            </ul>
+            <div class="nav-buttons" id="navButtons"></div>
+            <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+        </div>
+    </nav>
+
+    <div class="page-header">
+        <a href="certificates.html" class="back-btn"><i class="fas fa-arrow-left"></i> Courses</a>
+        <h1 id="pageTitle">Loading course...</h1>
+    </div>
+
+    <div class="progress-section">
+        <span class="progress-label">Your Progress</span>
+        <div class="progress-track">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <span class="progress-pct" id="progressPct">0%</span>
+    </div>
+
+    <div class="content-layout">
+        <!-- Main content -->
+        <div>
+            <!-- VIDEO CARD -->
+            <div class="card" id="videoCard">
+                <div class="card-header">
+                    <div class="card-header-left">
+                        <div class="card-icon icon-video"><i class="fas fa-play-circle"></i></div>
+                        <div>
+                            <div class="card-title">Course Video Lecture</div>
+                            <div class="card-sub">Watch the full video to unlock the test</div>
+                        </div>
+                    </div>
+                    <div class="status-badge" id="videoStatus"><i class="fas fa-clock"></i> Pending</div>
+                </div>
+                <div class="card-body">
+                    <div class="video-wrapper">
+                        <iframe id="videoFrame" src="https://www.youtube.com/embed/KJgsSFOSQv0?rel=0"
+                            title="Course Video"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowfullscreen>
+                        </iframe>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="mark-btn mark-btn-video" id="markVideoBtn" onclick="markComplete('video')">
+                        <i class="fas fa-check"></i> Mark as Watched
+                    </button>
+                </div>
+            </div>
+
+            <!-- PDF CARD -->
+            <div class="card" id="pdfCard">
+                <div class="card-header">
+                    <div class="card-header-left">
+                        <div class="card-icon icon-pdf"><i class="fas fa-file-pdf"></i></div>
+                        <div>
+                            <div class="card-title">Course Study Material (PDF)</div>
+                            <div class="card-sub">Read through the material before taking the test</div>
+                        </div>
+                    </div>
+                    <div class="status-badge" id="pdfStatus"><i class="fas fa-clock"></i> Pending</div>
+                </div>
+                <div class="card-body">
+                    <div class="pdf-wrapper">
+                        <iframe id="pdfFrame"
+                            src="https://mozilla.github.io/pdf.js/web/viewer.html?file=https://www.africau.edu/images/default/sample.pdf"
+                            title="Course PDF">
+                        </iframe>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="mark-btn mark-btn-pdf" id="markPdfBtn" onclick="markComplete('pdf')">
+                        <i class="fas fa-check"></i> Mark as Read
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div>
+            <div class="sidebar-card">
+                <div class="course-info">
+                    <h2 id="sidebarTitle">Course</h2>
+                    <p id="sidebarDesc">Complete all steps below to earn your certificate.</p>
+                    <div class="info-pills">
+                        <span class="info-pill"><i class="fas fa-clock"></i> 30 min test</span>
+                        <span class="info-pill"><i class="fas fa-question"></i> 15 questions</span>
+                        <span class="info-pill"><i class="fas fa-percent"></i> 60% to pass</span>
+                    </div>
+                </div>
+
+                <div class="sidebar-title">📋 Completion Checklist</div>
+                <ul class="checklist">
+                    <li class="checklist-item" id="check-video">
+                        <span class="check-icon"><i class="fas fa-play"></i></span>
+                        Watch video lecture
+                    </li>
+                    <li class="checklist-item" id="check-pdf">
+                        <span class="check-icon"><i class="fas fa-file-pdf"></i></span>
+                        Read study material
+                    </li>
+                    <li class="checklist-item" id="check-test">
+                        <span class="check-icon"><i class="fas fa-question"></i></span>
+                        Pass the final test
+                    </li>
+                </ul>
+
+                <button class="btn-take-test" id="takeTestBtn" disabled onclick="goToTest()">
+                    <i class="fas fa-lock"></i> Take Final Test
+                </button>
+                <p class="lock-note" id="lockNote">Complete video & PDF to unlock the test</p>
+
+                <div style="margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid #e2e8f0;">
+                    <a href="my-certificates.html"
+                        style="display:flex; align-items:center; gap:0.5rem; color:#4f46e5; font-size:0.85rem; font-weight:600; text-decoration:none;">
+                        <i class="fas fa-trophy"></i> View My Certificates
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="navigation.js"></script>
+    <script>
+        const API_BASE = (() => {
+            const p = window.location.port;
+            return (p === '5500' || p === '5501' || p === '5502' || p === '5503' || p === '5504' || p === '3000')
+                ? 'http://localhost:4000' : '';
+        })();
+
+        const params = new URLSearchParams(window.location.search);
+        const courseId = params.get('course') || 'Unknown Course';
+
+        let videoWatched = false;
+        let pdfRead = false;
+
+        // Course data map (matches certificates.html)
+        const COURSE_DATA = {
+            'C Programming Fundamentals': { video: 'https://www.youtube.com/embed/KJgsSFOSQv0?rel=0', pdf: 'dummy_document.pdf', desc: 'Master C programming from scratch.' },
+            'Data Structures Advanced': { video: 'https://www.youtube.com/embed/RBSGKlAvoiM?rel=0', pdf: 'dummy_document.pdf', desc: 'Deep dive into data structures.' },
+            'Web Development Bootcamp': { video: 'https://www.youtube.com/embed/ysEN5RaKOlA?rel=0', pdf: 'dummy_document.pdf', desc: 'Complete web development course.' },
+            'Python for Data Science': { video: 'https://www.youtube.com/embed/LHBE0usLVCI?rel=0', pdf: 'dummy_document.pdf', desc: 'Learn Python for data science.' },
+            'Database Management Systems': { video: 'https://www.youtube.com/embed/HXV3zeQKqGY?rel=0', pdf: 'dummy_document.pdf', desc: 'Learn DBMS concepts with SQL.' },
+            'Learning Essentials (Free)': { video: 'https://www.youtube.com/embed/PkZNo7MFNFg?rel=0', pdf: 'dummy_document.pdf', desc: 'Start your learning journey here.' },
+        };
+
+        function getToken() {
+            return localStorage.getItem('renvox_token') || localStorage.getItem('renvoxToken') || '';
+        }
+
+        async function init() {
+            // Set course info
+            document.getElementById('pageTitle').textContent = courseId;
+            document.getElementById('sidebarTitle').textContent = courseId;
+            const data = COURSE_DATA[courseId] || COURSE_DATA['Learning Essentials (Free)'];
+            document.getElementById('sidebarDesc').textContent = data.desc;
+            document.getElementById('videoFrame').src = data.video;
+            document.getElementById('pdfFrame').src = data.pdf;
+
+            // Load progress from server (only if logged in)
+            if (getToken()) {
+                try {
+                    const res = await fetch(`${API_BASE}/api/course/progress?courseId=${encodeURIComponent(courseId)}`, {
+                        headers: { 'Authorization': 'Bearer ' + getToken() }
+                    });
+                    const d = await res.json();
+                    if (d.ok && d.record) {
+                        if (d.record.videoWatched) markDone('video', false);
+                        if (d.record.pdfRead) markDone('pdf', false);
+                        if (d.record.testPassed) { markDone('test', false); showTestPassed(); }
+                    }
+                } catch (e) { /* offline fallback */ }
+            }
+        }
+
+        function markDone(type, save = true) {
+            if (type === 'video') {
+                videoWatched = true;
+                document.getElementById('videoCard').classList.add('completed');
+                document.getElementById('videoStatus').innerHTML = '<i class="fas fa-check-circle"></i> Completed';
+                document.getElementById('videoStatus').classList.add('done');
+                document.getElementById('markVideoBtn').innerHTML = '<i class="fas fa-check-circle"></i> Watched ✓';
+                document.getElementById('markVideoBtn').classList.add('done');
+                document.getElementById('markVideoBtn').disabled = true;
+                document.getElementById('check-video').classList.add('done');
+                document.getElementById('check-video').querySelector('.check-icon').innerHTML = '<i class="fas fa-check"></i>';
+            } else if (type === 'pdf') {
+                pdfRead = true;
+                document.getElementById('pdfCard').classList.add('completed');
+                document.getElementById('pdfStatus').innerHTML = '<i class="fas fa-check-circle"></i> Completed';
+                document.getElementById('pdfStatus').classList.add('done');
+                document.getElementById('markPdfBtn').innerHTML = '<i class="fas fa-check-circle"></i> Read ✓';
+                document.getElementById('markPdfBtn').classList.add('done');
+                document.getElementById('markPdfBtn').disabled = true;
+                document.getElementById('check-pdf').classList.add('done');
+                document.getElementById('check-pdf').querySelector('.check-icon').innerHTML = '<i class="fas fa-check"></i>';
+            } else if (type === 'test') {
+                document.getElementById('check-test').classList.add('done');
+                document.getElementById('check-test').querySelector('.check-icon').innerHTML = '<i class="fas fa-check"></i>';
+            }
+            updateProgress(save);
+        }
+
+        function updateProgress(save = true) {
+            let pct = 0;
+            if (videoWatched) pct += 40;
+            if (pdfRead) pct += 40;
+            document.getElementById('progressFill').style.width = pct + '%';
+            document.getElementById('progressPct').textContent = pct + '%';
+
+            const canTest = videoWatched && pdfRead;
+            const testBtn = document.getElementById('takeTestBtn');
+            testBtn.disabled = !canTest;
+            testBtn.innerHTML = canTest
+                ? '<i class="fas fa-arrow-right"></i> Take Final Test'
+                : '<i class="fas fa-lock"></i> Take Final Test';
+            document.getElementById('lockNote').textContent = canTest
+                ? 'You are ready! Click to start the test.'
+                : 'Complete video & PDF to unlock the test';
+
+            if (save) saveProgress();
+        }
+
+        async function saveProgress() {
+            if (!getToken()) return; // only save if logged in
+            try {
+                await fetch(`${API_BASE}/api/course/progress`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
+                    body: JSON.stringify({ courseId, videoWatched, pdfRead })
+                });
+            } catch (e) { /* silent fail */ }
+        }
+
+        function markComplete(type) {
+            if (type === 'video' && !videoWatched) markDone('video');
+            if (type === 'pdf' && !pdfRead) markDone('pdf');
+        }
+
+        function goToTest() {
+            if (!videoWatched || !pdfRead) return;
+            window.location.href = `course-test.html?course=${encodeURIComponent(courseId)}`;
+        }
+
+        function showTestPassed() {
+            document.getElementById('takeTestBtn').innerHTML = '<i class="fas fa-trophy"></i> Test Passed! Download Certificate';
+            document.getElementById('takeTestBtn').disabled = false;
+            document.getElementById('takeTestBtn').onclick = () => window.location.href = 'my-certificates.html';
+            document.getElementById('lockNote').textContent = '🎉 Congratulations! Your certificate is ready.';
+            document.getElementById('progressFill').style.width = '100%';
+            document.getElementById('progressPct').textContent = '100%';
+        }
+
+        init();
+    </script>
+</body>
+
+</html>

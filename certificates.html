@@ -422,10 +422,6 @@
         }
 
         async function enrollCourse(courseName) {
-            if (!isLoggedIn) {
-                window.location.href = 'signup.html';
-                return;
-            }
 
             const course = certificates.find(c => c.title === courseName);
             if (!course) return;

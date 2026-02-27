@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Certificates – RENVOX AI</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cinzel:wght@700&display=swap"
+        rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f8fafc;
+            color: #1e293b;
+        }
+
+        .page-header {
+            background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .page-header h1 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-bottom: 0.4rem;
+        }
+
+        .page-header p {
+            opacity: 0.85;
+            font-size: 0.95rem;
+        }
+
+        .main {
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            background: white;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+
+        .empty-state h2 {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-state p {
+            color: #64748b;
+            margin-bottom: 1.5rem;
+        }
+
+        .btn-go {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            background: #4f46e5;
+            color: white;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 700;
+            transition: all 0.2s;
+        }
+
+        .btn-go:hover {
+            background: #3730a3;
+            transform: translateY(-2px);
+        }
+
+        .certs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .cert-card-wrapper {
+            background: white;
+            border-radius: 16px;
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            transition: box-shadow 0.3s;
+        }
+
+        .cert-card-wrapper:hover {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+        }
+
+        .cert-card-top {
+            background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
+            padding: 1.25rem 1.5rem;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .cert-trophy {
+            font-size: 1.8rem;
+        }
+
+        .cert-card-top h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+        }
+
+        .cert-card-top p {
+            font-size: 0.8rem;
+            opacity: 0.8;
+            margin-top: 2px;
+        }
+
+        .cert-card-body {
+            padding: 1.25rem 1.5rem;
+        }
+
+        .cert-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .cert-meta-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+
+        .cert-meta-row i {
+            width: 16px;
+            color: #4f46e5;
+        }
+
+        .cert-meta-row strong {
+            color: #1e293b;
+        }
+
+        .cert-id-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.3rem 0.8rem;
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            border-radius: 99px;
+            font-family: monospace;
+            font-size: 0.78rem;
+            color: #15803d;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .cert-actions {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .btn-cert-download {
+            flex: 1;
+            padding: 0.7rem;
+            border-radius: 10px;
+            border: none;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.88rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.25s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+        }
+
+        .btn-cert-download:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+        }
+
+        .btn-cert-view {
+            padding: 0.7rem 1rem;
+            border-radius: 10px;
+            border: 1.5px solid #e2e8f0;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.88rem;
+            font-weight: 700;
+            cursor: pointer;
+            color: #64748b;
+            background: white;
+            transition: all 0.2s;
+        }
+
+        .btn-cert-view:hover {
+            border-color: #4f46e5;
+            color: #4f46e5;
+        }
+
+        /* ─── CERTIFICATE PRINT TEMPLATE ─── */
+        #certPrintArea {
+            display: none;
+        }
+
+        @media print {
+            body>*:not(#certPrintArea) {
+                display: none !important;
+            }
+
+            #certPrintArea {
+                display: block !important;
+            }
+
+            @page {
+                size: A4 landscape;
+                margin: 0;
+            }
+        }
+
+        .cert-template {
+            width: 297mm;
+            height: 210mm;
+            background: white;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', sans-serif;
+            padding: 20mm 25mm;
+        }
+
+        .cert-template::before {
+            content: '';
+            position: absolute;
+            inset: 8mm;
+            border: 3px solid #4f46e5;
+            border-radius: 4mm;
+        }
+
+        .cert-template::after {
+            content: '';
+            position: absolute;
+            inset: 10mm;
+            border: 1px solid #a5b4fc;
+            border-radius: 3mm;
+        }
+
+        .cert-logo-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 6mm;
+        }
+
+        .cert-logo-icon {
+            width: 14mm;
+            height: 14mm;
+            background: linear-gradient(135deg, #4f46e5, #10b981);
+            border-radius: 3mm;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cert-logo-icon i {
+            color: white;
+            font-size: 7mm;
+        }
+
+        .cert-org-name {
+            font-size: 6mm;
+            font-weight: 900;
+            color: #1e293b;
+            letter-spacing: -0.02em;
+        }
+
+        .cert-tag {
+            font-size: 2.5mm;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 1.5mm;
+            margin-bottom: 4mm;
+        }
+
+        .cert-main-title {
+            font-size: 9mm;
+            font-weight: 900;
+            color: #1e293b;
+            margin-bottom: 4mm;
+            text-align: center;
+        }
+
+        .cert-presented {
+            font-size: 3.5mm;
+            color: #64748b;
+            margin-bottom: 2mm;
+        }
+
+        .cert-recipient {
+            font-size: 8mm;
+            font-weight: 800;
+            color: #4f46e5;
+            border-bottom: 0.5mm solid #a5b4fc;
+            padding-bottom: 2mm;
+            margin-bottom: 4mm;
+        }
+
+        .cert-course-label {
+            font-size: 3mm;
+            color: #94a3b8;
+            margin-bottom: 2mm;
+            text-transform: uppercase;
+            letter-spacing: 1mm;
+        }
+
+        .cert-course-name {
+            font-size: 5.5mm;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 6mm;
+            text-align: center;
+        }
+
+        .cert-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            width: 100%;
+            margin-top: auto;
+        }
+
+        .cert-footer-col {
+            text-align: center;
+        }
+
+        .cert-sig-line {
+            width: 40mm;
+            height: 0.3mm;
+            background: #1e293b;
+            margin: 0 auto 1mm;
+        }
+
+        .cert-sig-name {
+            font-size: 2.5mm;
+            font-weight: 700;
+            color: #1e293b;
+        }
+
+        .cert-sig-title {
+            font-size: 2mm;
+            color: #94a3b8;
+        }
+
+        .cert-seal {
+            width: 20mm;
+            height: 20mm;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4f46e5, #10b981);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+        }
+
+        .cert-seal i {
+            color: white;
+            font-size: 9mm;
+        }
+
+        .cert-id-bottom {
+            font-size: 2mm;
+            color: #94a3b8;
+            font-family: monospace;
+            margin-top: 1.5mm;
+        }
+
+        .cert-date {
+            font-size: 2.5mm;
+            color: #64748b;
+        }
+
+        @media (max-width: 600px) {
+            .certs-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo"><i class="fas fa-book"></i> RENVOX</a>
+            <div class="nav-search">
+                <input type="text" id="navbarSearch" placeholder="Search...">
+                <button type="button" onclick="handleNavbarSearch()"><i class="fas fa-search"></i></button>
+            </div>
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="certificates.html">Certificates</a></li>
+                <li><a href="practice.html">Practice</a></li>
+                <li><a href="store.html">Store</a></li>
+                <li><a href="Family.html">Family</a></li>
+            </ul>
+            <div class="nav-buttons" id="navButtons"></div>
+            <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+        </div>
+    </nav>
+
+    <div class="page-header">
+        <h1>🏆 My Certificates</h1>
+        <p>Download and share your earned certificates</p>
+    </div>
+
+    <div class="main" id="mainContent">
+        <p style="text-align:center; color:#94a3b8; padding:3rem;">Loading your certificates...</p>
+    </div>
+
+    <!-- Hidden certificate print template -->
+    <div id="certPrintArea">
+        <div class="cert-template" id="certTemplate"></div>
+    </div>
+
+    <script src="navigation.js"></script>
+    <script>
+        const API_BASE = (() => {
+            const p = window.location.port;
+            return (p === '5500' || p === '5501' || p === '5502' || p === '5503' || p === '5504' || p === '3000') ? 'http://localhost:4000' : '';
+        })();
+
+        function getToken() {
+            return localStorage.getItem('renvox_token') || localStorage.getItem('renvoxToken') || '';
+        }
+
+        function getUserName() {
+            try {
+                const u = JSON.parse(localStorage.getItem('renvox_user') || localStorage.getItem('renvoxUser') || '{}');
+                return u.fullName || 'Student';
+            } catch (e) { return 'Student'; }
+        }
+
+        function formatDate(iso) {
+            if (!iso) return 'N/A';
+            return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+        }
+
+        async function loadCertificates() {
+            if (!getToken()) {
+                window.location.href = 'signup.html?returnTo=my-certificates.html';
+                return;
+            }
+
+            try {
+                const res = await fetch(`${API_BASE}/api/course/my-certificates`, {
+                    headers: { 'Authorization': 'Bearer ' + getToken() }
+                });
+                const data = await res.json();
+
+                if (data.ok) {
+                    renderCertificates(data.certificates, data.userName);
+                } else {
+                    showEmpty();
+                }
+            } catch (e) {
+                showEmpty();
+            }
+        }
+
+        function renderCertificates(certs, userName) {
+            const main = document.getElementById('mainContent');
+
+            if (!certs || certs.length === 0) {
+                showEmpty();
+                return;
+            }
+
+            main.innerHTML = `
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1.5rem;">
+                <div>
+                    <h2 style="font-size:1.25rem; font-weight:800;">Welcome, ${userName}!</h2>
+                    <p style="color:#64748b; font-size:0.9rem; margin-top:2px;">You have earned ${certs.length} certificate${certs.length > 1 ? 's' : ''}.</p>
+                </div>
+                <a href="certificates.html" style="display:flex; align-items:center; gap:0.4rem; color:#4f46e5; font-size:0.85rem; font-weight:700; text-decoration:none;">
+                    <i class="fas fa-plus"></i> Earn More
+                </a>
+            </div>
+            <div class="certs-grid" id="certsGrid"></div>
+        `;
+
+            const grid = document.getElementById('certsGrid');
+            grid.innerHTML = certs.map(cert => `
+            <div class="cert-card-wrapper">
+                <div class="cert-card-top">
+                    <div class="cert-trophy">🏆</div>
+                    <div>
+                        <h3>${cert.courseId}</h3>
+                        <p>Certificate of Completion</p>
+                    </div>
+                </div>
+                <div class="cert-card-body">
+                    <div class="cert-id-chip">
+                        <i class="fas fa-shield-halved"></i>
+                        ${cert.certId}
+                    </div>
+                    <div class="cert-meta">
+                        <div class="cert-meta-row">
+                            <i class="fas fa-user"></i>
+                            <span>Awarded to: <strong>${userName}</strong></span>
+                        </div>
+                        <div class="cert-meta-row">
+                            <i class="fas fa-calendar"></i>
+                            <span>Date: <strong>${formatDate(cert.earnedAt)}</strong></span>
+                        </div>
+                        <div class="cert-meta-row">
+                            <i class="fas fa-star"></i>
+                            <span>Score: <strong>${cert.score}%</strong></span>
+                        </div>
+                    </div>
+                    <div class="cert-actions">
+                        <button class="btn-cert-download" onclick="downloadCertificate('${cert.courseId}', '${userName}', '${cert.certId}', '${cert.earnedAt}', ${cert.score})">
+                            <i class="fas fa-download"></i> Download Certificate
+                        </button>
+                        <button class="btn-cert-view" onclick="window.location.href='course-content.html?course=${encodeURIComponent(cert.courseId)}'">
+                            <i class="fas fa-book-open"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+        }
+
+        function showEmpty() {
+            document.getElementById('mainContent').innerHTML = `
+            <div class="empty-state">
+                <div class="empty-icon">🎓</div>
+                <h2>No certificates yet</h2>
+                <p>Enroll in a course, complete the video & PDF, then pass the test to earn your certificate!</p>
+                <a href="certificates.html" class="btn-go"><i class="fas fa-book-open"></i> Browse Courses</a>
+            </div>
+        `;
+        }
+
+        function downloadCertificate(courseId, userName, certId, earnedAt, score) {
+            const date = formatDate(earnedAt);
+
+            document.getElementById('certTemplate').innerHTML = `
+            <div class="cert-logo-row">
+                <div class="cert-logo-icon"><i class="fas fa-book-open"></i></div>
+                <span class="cert-org-name">RENVOX AI</span>
+            </div>
+            <div class="cert-tag">Certificate of Completion</div>
+            <div class="cert-main-title">Certificate of Achievement</div>
+            <div class="cert-presented">This is proudly presented to</div>
+            <div class="cert-recipient">${userName}</div>
+            <div class="cert-course-label">for successfully completing</div>
+            <div class="cert-course-name">${courseId}</div>
+            <div class="cert-footer">
+                <div class="cert-footer-col">
+                    <div class="cert-sig-line"></div>
+                    <div class="cert-sig-name">RENVOX Team</div>
+                    <div class="cert-sig-title">Director of Learning</div>
+                </div>
+                <div class="cert-footer-col">
+                    <div class="cert-seal"><i class="fas fa-certificate"></i></div>
+                    <div class="cert-id-bottom">${certId}</div>
+                    <div class="cert-date">${date}</div>
+                </div>
+                <div class="cert-footer-col">
+                    <div class="cert-sig-line"></div>
+                    <div class="cert-sig-name">Score: ${score}%</div>
+                    <div class="cert-sig-title">Examination Result</div>
+                </div>
+            </div>
+        `;
+
+            window.print();
+        }
+
+        loadCertificates();
+    </script>
+</body>
+
+</html>
