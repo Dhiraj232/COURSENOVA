@@ -13,7 +13,7 @@ const mongoose = require('mongoose');
 const storeRouter = require('./routes/store');
 
 // ─── MongoDB Connection ───────────────────────────────────────
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/renvox';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:3000/renvox';
 mongoose.connect(MONGO_URI)
   .then(() => console.log('✅ MongoDB connected:', MONGO_URI.split('@').pop() || MONGO_URI))
   .catch(err => console.error('❌ MongoDB connection error:', err.message, '\n   Set MONGO_URI env var or start MongoDB locally.'));

@@ -242,7 +242,8 @@ function getPageLinks() {
         dashboard: 'dashboard.html',
         profile: 'profile.html',
         analytics: 'analytics.html',
-        quiz: 'quiz.html'
+        quiz: 'quiz.html',
+        store: 'store.html'
     };
 }
 

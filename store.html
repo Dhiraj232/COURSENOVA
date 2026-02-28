@@ -1,1391 +1,472 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Book Exchange — RENVOX Store</title>
-	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-	<link rel="stylesheet" href="style.css">
-	<style>
-		:root {
-			--accent: #4f46e5;
-			--accent2: #7c3aed;
-			--light: #ede9fe;
-			--green: #16a34a;
-			--red: #dc2626;
-			--yellow: #d97706;
-			--card: #fff;
-			--bg: #f4f5fb;
-			--border: #e5e7eb;
-			--txt: #1e1b4b;
-			--sub: #6b7280;
-			--radius: 14px;
-			--shadow: 0 2px 18px rgba(79, 70, 229, .1);
-		}
-
-		* {
-			box-sizing: border-box;
-			margin: 0;
-			padding: 0;
-		}
-
-		body {
-			background: var(--bg);
-			font-family: 'Poppins', sans-serif;
-			color: var(--txt);
-		}
-
-		/* ── HERO ── */
-		.s-hero {
-			background: linear-gradient(135deg, var(--accent), var(--accent2));
-			padding: 3.5rem 1.5rem 2.5rem;
-			text-align: center;
-			color: #fff;
-		}
-
-		.s-hero h1 {
-			font-size: clamp(1.8rem, 4vw, 2.8rem);
-			font-weight: 800;
-			margin-bottom: .4rem;
-		}
-
-		.s-hero p {
-			opacity: .88;
-			max-width: 540px;
-			margin: .3rem auto 1.5rem;
-		}
-
-		.s-hero-actions {
-			display: flex;
-			gap: .75rem;
-			justify-content: center;
-			flex-wrap: wrap;
-		}
-
-		/* ── LAYOUT ── */
-		.s-wrap {
-			max-width: 1160px;
-			margin: 2rem auto;
-			padding: 0 1.25rem;
-		}
-
-		/* ── TABS ── */
-		.tabs {
-			display: flex;
-			gap: .4rem;
-			margin-bottom: 1.75rem;
-			background: var(--card);
-			border-radius: 12px;
-			padding: .35rem;
-			box-shadow: var(--shadow);
-		}
-
-		.tab {
-			flex: 1;
-			padding: .65rem;
-			border: none;
-			background: none;
-			border-radius: 9px;
-			font-size: .92rem;
-			font-weight: 600;
-			cursor: pointer;
-			color: var(--sub);
-			transition: all .2s;
-		}
-
-		.tab.active {
-			background: var(--accent);
-			color: #fff;
-		}
-
-		/* ── FILTER BAR ── */
-		.filter-bar {
-			display: flex;
-			flex-wrap: wrap;
-			gap: .75rem;
-			align-items: flex-end;
-			background: var(--card);
-			border-radius: var(--radius);
-			padding: 1rem 1.25rem;
-			box-shadow: var(--shadow);
-			margin-bottom: 1.75rem;
-		}
-
-		.fg {
-			display: flex;
-			flex-direction: column;
-			gap: .28rem;
-			min-width: 130px;
-		}
-
-		.fg label {
-			font-size: .73rem;
-			font-weight: 700;
-			text-transform: uppercase;
-			letter-spacing: .05em;
-			color: var(--sub);
-		}
-
-		.fg input,
-		.fg select {
-			padding: .52rem .75rem;
-			border: 1.5px solid var(--border);
-			border-radius: 8px;
-			font-size: .88rem;
-			outline: none;
-			background: #fafafa;
-			font-family: inherit;
-		}
-
-		.fg input:focus,
-		.fg select:focus {
-			border-color: var(--accent);
-		}
-
-		/* ── GRID ── */
-		.books-grid {
-			display: grid;
-			grid-template-columns: repeat(auto-fill, minmax(252px, 1fr));
-			gap: 1.2rem;
-		}
-
-		/* ── BOOK CARD ── */
-		.bcard {
-			background: var(--card);
-			border-radius: var(--radius);
-			box-shadow: var(--shadow);
-			overflow: hidden;
-			display: flex;
-			flex-direction: column;
-			transition: transform .2s, box-shadow .2s;
-		}
-
-		.bcard:hover {
-			transform: translateY(-4px);
-			box-shadow: 0 8px 28px rgba(79, 70, 229, .14);
-		}
-
-		.bcard-img {
-			height: 175px;
-			background: var(--light);
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			overflow: hidden;
-			position: relative;
-		}
-
-		.bcard-img img {
-			width: 100%;
-			height: 100%;
-			object-fit: cover;
-		}
-
-		.bcard-img .no-img {
-			font-size: 3.5rem;
-		}
-
-		.badge {
-			position: absolute;
-			top: .55rem;
-			right: .55rem;
-			font-size: .7rem;
-			font-weight: 700;
-			padding: .2rem .6rem;
-			border-radius: 20px;
-			color: #fff;
-		}
-
-		.badge-used {
-			background: rgba(107, 114, 128, .75);
-		}
-
-		.badge-new {
-			background: rgba(22, 163, 74, .8);
-		}
-
-		.badge-sold {
-			background: rgba(220, 38, 38, .8);
-		}
-
-		.badge-given {
-			background: rgba(37, 99, 235, .8);
-		}
-
-		.badge-free {
-			background: rgba(79, 70, 229, .8);
-		}
-
-		.bcard-body {
-			padding: .9rem 1rem;
-			flex: 1;
-			display: flex;
-			flex-direction: column;
-			gap: .3rem;
-		}
-
-		.bcard-title {
-			font-weight: 700;
-			font-size: .98rem;
-		}
-
-		.bcard-meta {
-			font-size: .8rem;
-			color: var(--sub);
-		}
-
-		.bcard-price {
-			font-size: 1.12rem;
-			font-weight: 800;
-			color: var(--accent);
-		}
-
-		.bcard-seller {
-			font-size: .78rem;
-			color: var(--sub);
-			display: flex;
-			align-items: center;
-			gap: .3rem;
-		}
-
-		.bcard-footer {
-			padding: .7rem 1rem;
-			border-top: 1px solid var(--border);
-			display: flex;
-			gap: .45rem;
-		}
-
-		.bcard-footer button {
-			flex: 1;
-			padding: .5rem;
-			border-radius: 8px;
-			font-size: .82rem;
-			font-weight: 700;
-			cursor: pointer;
-			border: none;
-			transition: background .2s;
-		}
-
-		.btn-chat-c {
-			background: var(--light);
-			color: var(--accent);
-		}
-
-		.btn-chat-c:hover {
-			background: #ddd6fe;
-		}
-
-		.btn-own {
-			background: #f3f4f6;
-			color: var(--sub);
-		}
-
-		.btn-own:hover {
-			background: var(--border);
-		}
-
-		.btn-del {
-			background: #fee2e2;
-			color: var(--red);
-			flex: none;
-			width: 38px;
-		}
-
-		.btn-del:hover {
-			background: #fca5a5;
-		}
-
-		/* ── EMPTY / LOADING ── */
-		.state-box {
-			text-align: center;
-			padding: 5rem 2rem;
-		}
-
-		.state-box i {
-			font-size: 3.5rem;
-			color: #c4b5fd;
-			margin-bottom: 1rem;
-			display: block;
-		}
-
-		.state-box h3 {
-			margin-bottom: .4rem;
-		}
-
-		.state-box p {
-			color: var(--sub);
-			font-size: .9rem;
-		}
-
-		.spinner {
-			animation: spin 1s linear infinite;
-		}
-
-		@keyframes spin {
-			to {
-				transform: rotate(360deg);
-			}
-		}
-
-		/* ── MODALS ── */
-		.modal {
-			position: fixed;
-			inset: 0;
-			background: rgba(0, 0, 0, .45);
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			z-index: 1000;
-			padding: 1rem;
-			animation: fIn .2s;
-		}
-
-		.modal.hide {
-			display: none;
-		}
-
-		@keyframes fIn {
-			from {
-				opacity: 0
-			}
-		}
-
-		.mbox {
-			background: #fff;
-			border-radius: var(--radius);
-			width: 100%;
-			max-width: 490px;
-			max-height: 92vh;
-			overflow-y: auto;
-			box-shadow: 0 24px 60px rgba(0, 0, 0, .22);
-			animation: sUp .25s;
-		}
-
-		@keyframes sUp {
-			from {
-				transform: translateY(24px);
-				opacity: 0
-			}
-		}
-
-		.mhead {
-			padding: 1.2rem 1.4rem;
-			border-bottom: 1px solid var(--border);
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-		}
-
-		.mhead h3 {
-			font-size: 1.1rem;
-			font-weight: 700;
-		}
-
-		.mclose {
-			background: none;
-			border: none;
-			cursor: pointer;
-			font-size: 1.2rem;
-			color: var(--sub);
-		}
-
-		.mclose:hover {
-			color: var(--red);
-		}
-
-		.mbody {
-			padding: 1.4rem;
-			display: flex;
-			flex-direction: column;
-			gap: .85rem;
-		}
-
-		.mfoot {
-			padding: 1rem 1.4rem;
-			border-top: 1px solid var(--border);
-			display: flex;
-			justify-content: flex-end;
-			gap: .65rem;
-		}
-
-		/* ── FORM FIELDS ── */
-		.fgrp {
-			display: flex;
-			flex-direction: column;
-			gap: .3rem;
-		}
-
-		.fgrp label {
-			font-size: .78rem;
-			font-weight: 700;
-			text-transform: uppercase;
-			letter-spacing: .04em;
-			color: var(--sub);
-		}
-
-		.fgrp input,
-		.fgrp select,
-		.fgrp textarea {
-			padding: .62rem .85rem;
-			border: 1.5px solid var(--border);
-			border-radius: 8px;
-			font-size: .9rem;
-			outline: none;
-			font-family: inherit;
-			transition: border .2s;
-		}
-
-		.fgrp input:focus,
-		.fgrp select:focus,
-		.fgrp textarea:focus {
-			border-color: var(--accent);
-		}
-
-		.row2 {
-			display: grid;
-			grid-template-columns: 1fr 1fr;
-			gap: .75rem;
-		}
-
-		/* ── UPLOAD ── */
-		.upload-zone {
-			border: 2px dashed var(--accent);
-			background: var(--light);
-			border-radius: 10px;
-			padding: 1.5rem;
-			text-align: center;
-			cursor: pointer;
-			position: relative;
-			transition: background .2s;
-		}
-
-		.upload-zone:hover {
-			background: #ddd6fe;
-		}
-
-		.upload-zone i {
-			font-size: 2rem;
-			color: var(--accent);
-			display: block;
-			margin-bottom: .4rem;
-		}
-
-		.upload-zone p {
-			font-size: .85rem;
-			color: var(--accent);
-			font-weight: 600;
-			margin: 0;
-		}
-
-		.upload-zone input {
-			position: absolute;
-			inset: 0;
-			opacity: 0;
-			cursor: pointer;
-		}
-
-		.preview-img {
-			width: 100%;
-			max-height: 200px;
-			object-fit: cover;
-			border-radius: 8px;
-			border: 1px solid var(--border);
-			display: none;
-			margin-top: .5rem;
-		}
-
-		/* ── BUTTONS ── */
-		.btn {
-			padding: .6rem 1.2rem;
-			border-radius: 8px;
-			border: none;
-			cursor: pointer;
-			font-weight: 700;
-			font-size: .9rem;
-			transition: all .2s;
-			font-family: inherit;
-		}
-
-		.btn-primary {
-			background: var(--accent);
-			color: #fff;
-		}
-
-		.btn-primary:hover:not(:disabled) {
-			background: #4338ca;
-		}
-
-		.btn-primary:disabled {
-			opacity: .55;
-			cursor: not-allowed;
-		}
-
-		.btn-sec {
-			background: #f3f4f6;
-			color: var(--txt);
-			border: 1px solid var(--border);
-		}
-
-		.btn-sec:hover {
-			background: var(--border);
-		}
-
-		.btn-hero {
-			background: #fff;
-			color: var(--accent);
-			font-weight: 800;
-			padding: .72rem 1.7rem;
-			border: none;
-			border-radius: 10px;
-			cursor: pointer;
-			font-size: 1rem;
-			box-shadow: 0 2px 10px rgba(0, 0, 0, .12);
-			transition: all .2s;
-			font-family: inherit;
-		}
-
-		.btn-hero:hover {
-			transform: translateY(-2px);
-			box-shadow: 0 6px 22px rgba(0, 0, 0, .16);
-		}
-
-		/* ── PROFILE STEPS ── */
-		.step-bar {
-			display: flex;
-			align-items: center;
-			gap: .4rem;
-			margin-bottom: 1.2rem;
-		}
-
-		.step-dot {
-			width: 24px;
-			height: 24px;
-			border-radius: 50%;
-			background: var(--border);
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			font-size: .72rem;
-			font-weight: 700;
-			color: var(--sub);
-			flex-shrink: 0;
-		}
-
-		.step-dot.done {
-			background: var(--accent);
-			color: #fff;
-		}
-
-		.step-line {
-			flex: 1;
-			height: 2px;
-			background: var(--border);
-		}
-
-		.role-cards {
-			display: grid;
-			grid-template-columns: 1fr 1fr;
-			gap: .85rem;
-		}
-
-		.role-card {
-			border: 2px solid var(--border);
-			border-radius: 12px;
-			padding: 1.2rem .9rem;
-			text-align: center;
-			cursor: pointer;
-			transition: all .2s;
-		}
-
-		.role-card:hover,
-		.role-card.selected {
-			border-color: var(--accent);
-			background: var(--light);
-		}
-
-		.role-card i {
-			font-size: 2.2rem;
-			color: var(--accent);
-			margin-bottom: .5rem;
-			display: block;
-		}
-
-		.role-card h4 {
-			font-size: .9rem;
-			font-weight: 700;
-		}
-
-		.role-card p {
-			font-size: .75rem;
-			color: var(--sub);
-			margin-top: .2rem;
-		}
-
-		/* ── GOOGLE LOGIN ── */
-		.login-card {
-			background: var(--card);
-			border-radius: var(--radius);
-			box-shadow: var(--shadow);
-			max-width: 420px;
-			margin: 4rem auto;
-			padding: 2.5rem 2rem;
-			text-align: center;
-		}
-
-		.login-card i {
-			font-size: 3rem;
-			color: var(--accent);
-			margin-bottom: 1rem;
-			display: block;
-		}
-
-		.login-card h2 {
-			font-size: 1.4rem;
-			font-weight: 800;
-			margin-bottom: .4rem;
-		}
-
-		.login-card p {
-			color: var(--sub);
-			font-size: .9rem;
-			margin-bottom: 1.8rem;
-		}
-
-		/* ── ALERT ── */
-		.alert {
-			padding: .7rem 1rem;
-			border-radius: 8px;
-			font-size: .86rem;
-			font-weight: 600;
-			display: none;
-		}
-
-		.alert.err {
-			background: #fee2e2;
-			color: var(--red);
-			display: block;
-		}
-
-		.alert.ok {
-			background: #dcfce7;
-			color: var(--green);
-			display: block;
-		}
-
-		/* ── TOAST ── */
-		#toast {
-			position: fixed;
-			bottom: 1.5rem;
-			right: 1.5rem;
-			background: #1e1b4b;
-			color: #fff;
-			padding: .85rem 1.4rem;
-			border-radius: 10px;
-			font-size: .88rem;
-			font-weight: 600;
-			box-shadow: 0 4px 20px rgba(0, 0, 0, .2);
-			z-index: 9999;
-			transition: opacity .3s;
-		}
-
-		#toast.hide {
-			opacity: 0;
-			pointer-events: none;
-		}
-
-		/* ── STATUS BADGE ─ */
-		.s-tag {
-			display: inline-block;
-			font-size: .72rem;
-			font-weight: 700;
-			padding: .18rem .55rem;
-			border-radius: 20px;
-			text-transform: uppercase;
-			letter-spacing: .04em;
-		}
-
-		.s-tag.sold {
-			background: #fee2e2;
-			color: var(--red);
-		}
-
-		.s-tag.given {
-			background: #dbeafe;
-			color: #1d4ed8;
-		}
-
-		.s-tag.available {
-			background: #dcfce7;
-			color: var(--green);
-		}
-
-		/* ── CHAT ── */
-		.chat-msgs {
-			height: 230px;
-			overflow-y: auto;
-			border: 1px solid var(--border);
-			border-radius: 8px;
-			padding: .75rem;
-			background: #f9fafb;
-			margin-bottom: .65rem;
-		}
-
-		.chat-msg {
-			margin-bottom: .65rem;
-		}
-
-		.chat-msg .cm-name {
-			font-size: .78rem;
-			font-weight: 700;
-			color: var(--accent);
-		}
-
-		.chat-msg .cm-text {
-			font-size: .86rem;
-			margin: .1rem 0;
-		}
-
-		.chat-msg .cm-time {
-			font-size: .7rem;
-			color: var(--sub);
-		}
-
-		.chat-row {
-			display: flex;
-			gap: .45rem;
-		}
-
-		.chat-row input {
-			flex: 1;
-			padding: .58rem .8rem;
-			border: 1.5px solid var(--border);
-			border-radius: 8px;
-			font-size: .88rem;
-			outline: none;
-		}
-
-		.chat-row input:focus {
-			border-color: var(--accent);
-		}
-
-		@media(max-width:600px) {
-			.row2 {
-				grid-template-columns: 1fr;
-			}
-
-			.role-cards {
-				grid-template-columns: 1fr 1fr;
-			}
-		}
-	</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📚 RENVOX Book Store - Buy/Sell Books</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px 0;
+        }
+        .store-container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+        .store-header {
+            background: white; border-radius: 15px; padding: 40px;
+            margin-bottom: 30px; box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .store-header h1 { font-size: 2.5em; color: #1f2937; margin-bottom: 10px; }
+        .store-header p { font-size: 1.1em; color: #6b7280; }
+        .store-controls {
+            display: flex; gap: 15px; margin-top: 25px;
+            justify-content: center; flex-wrap: wrap;
+        }
+        .btn {
+            padding: 12px 30px; border: none; border-radius: 8px;
+            font-size: 1em; font-weight: 600; cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(102,126,234,0.3); }
+        .search-section {
+            background: white; border-radius: 15px; padding: 30px;
+            margin-bottom: 30px; box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+        .search-controls {
+            display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px;
+        }
+        @media (max-width: 768px) {
+            .search-controls { grid-template-columns: 1fr; }
+            .store-header h1 { font-size: 1.8em; }
+        }
+        input, select {
+            padding: 12px; border: 2px solid #e5e7eb; border-radius: 8px;
+            font-size: 1em; font-family: inherit;
+        }
+        input:focus, select:focus {
+            outline: none; border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+        }
+        .books-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 25px; margin-bottom: 30px;
+        }
+        .book-card {
+            background: white; border-radius: 15px; overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08); transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .book-card:hover { transform: translateY(-5px); box-shadow: 0 15px 40px rgba(0,0,0,0.15); }
+        .book-image {
+            width: 100%; height: 200px; background: linear-gradient(135deg, #667eea20 0%, #764ba220 100%);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 3em; overflow: hidden;
+        }
+        .book-image img { width: 100%; height: 100%; object-fit: cover; }
+        .book-info { padding: 20px; }
+        .book-title {
+            font-size: 1.1em; font-weight: 700; color: #1f2937;
+            margin-bottom: 8px; line-height: 1.3;
+        }
+        .book-subject { font-size: 0.9em; color: #6b7280; margin-bottom: 10px; }
+        .book-condition {
+            display: inline-block; background: #fef3c7; color: #92400e;
+            padding: 4px 10px; border-radius: 20px; font-size: 0.85em;
+            font-weight: 600; margin-bottom: 10px;
+        }
+        .book-footer {
+            display: flex; justify-content: space-between; align-items: center;
+            padding-top: 15px; border-top: 1px solid #e5e7eb;
+        }
+        .book-price { font-size: 1.5em; font-weight: 700; color: #10b981; }
+        .book-seller { font-size: 0.85em; color: #6b7280; }
+        .loading { text-align: center; padding: 40px; color: white; font-size: 1.1em; }
+        .empty-state {
+            background: white; border-radius: 15px; padding: 60px 40px;
+            text-align: center; color: #6b7280;
+        }
+        .empty-state h2 { color: #1f2937; margin-bottom: 10px; }
+        .modal {
+            display: none; position: fixed; z-index: 1000;
+            left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        .modal.show {
+            display: flex; align-items: center; justify-content: center;
+        }
+        .modal-content {
+            background: white; padding: 30px; border-radius: 15px;
+            max-width: 500px; width: 90%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .modal-header {
+            font-size: 1.4em; font-weight: 700; margin-bottom: 20px;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .close-btn {
+            font-size: 28px; font-weight: bold; color: #6b7280;
+            cursor: pointer; background: none; border: none;
+        }
+        .seller-info { background: #f3f4f6; padding: 15px; border-radius: 10px; margin-bottom: 15px; }
+        .seller-field { margin-bottom: 10px; font-size: 0.95em; }
+        .seller-label { color: #6b7280; font-weight: 600; }
+        .seller-value { color: #1f2937; margin-top: 5px; }
+        .contact-link { color: #667eea; text-decoration: none; font-weight: 600; }
+        .modal-buttons { display: flex; gap: 10px; margin-top: 25px; }
+        .modal-buttons button {
+            flex: 1; padding: 12px; border: none; border-radius: 8px;
+            font-weight: 600; cursor: pointer; transition: all 0.3s ease;
+        }
+        .btn-close-modal { background: #e5e7eb; color: #1f2937; }
+        .btn-call { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .form-section {
+            background: white; border-radius: 15px; padding: 30px;
+            margin-bottom: 30px; box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            display: none;
+        }
+        .form-section.show { display: block; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label {
+            display: block; margin-bottom: 8px; font-weight: 600; color: #1f2937;
+        }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; }
+        .form-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+        }
+        @media (max-width: 768px) { .form-grid { grid-template-columns: 1fr; } }
+        .image-preview {
+            width: 100%; max-height: 300px; background: #f3f4f6;
+            border-radius: 8px; display: none; object-fit: cover; margin-bottom: 15px;
+        }
+        .image-preview.show { display: block; }
+        .success-message {
+            background: #d1fae5; color: #065f46; padding: 15px;
+            border-radius: 8px; margin-bottom: 20px; display: none;
+        }
+        .success-message.show { display: block; }
+        .stats {
+            display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px;
+        }
+        .stat-card {
+            background: white; padding: 20px; border-radius: 15px;
+            text-align: center; box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        }
+        .stat-number { font-size: 2em; font-weight: 700; color: #667eea; }
+        .stat-label { color: #6b7280; margin-top: 5px; }
+        @media (max-width: 768px) { .stats { grid-template-columns: 1fr; } }
+    </style>
 </head>
-
 <body>
+    <div class="store-container">
+        <div class="store-header">
+            <h1>📚 RENVOX Book Store</h1>
+            <p>Buy and sell books with students near your area - No middlemen, direct contact!</p>
+            <div class="store-controls">
+                <button class="btn btn-primary" onclick="showBrowseBooks()">🔍 Browse Books</button>
+                <button class="btn btn-primary" onclick="showSellForm()">📖 Sell Your Book</button>
+            </div>
+        </div>
 
-	<!-- NAVBAR -->
-	<nav class="navbar" id="navbar">
-		<div class="nav-container">
-			<a href="index.html" class="logo"><i class="fas fa-book"></i> RENVOX</a>
-			<div class="nav-search">
-				<input type="text" id="navbarSearch" placeholder="Search courses, subjects…">
-				<button type="button" onclick="handleNavbarSearch()"><i class="fas fa-search"></i></button>
-			</div>
-			<ul class="nav-menu" id="navMenu">
-				<li><a href="index.html">Home</a></li>
-				<li><a href="certificates.html">Certificates</a></li>
-				<li><a href="practice.html">Practice</a></li>
-				<li><a href="store.html" class="active">Store</a></li>
-				<li><a href="Family.html">Family</a></li>
-			</ul>
-			<div class="nav-buttons" id="navButtons"></div>
-			<button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
-		</div>
-	</nav>
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number" id="totalBooks">0</div>
+                <div class="stat-label">Books Available</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalSellers">0</div>
+                <div class="stat-label">Active Sellers</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="avgPrice">₹0</div>
+                <div class="stat-label">Average Price</div>
+            </div>
+        </div>
 
-	<!-- HERO -->
-	<div class="s-hero">
-		<h1>📚 Private Book Exchange</h1>
-		<p>Buy &amp; sell textbooks within your own college or school group. Secure, private, no strangers.</p>
-		<div class="s-hero-actions">
-			<button class="btn-hero" id="heroSellBtn" style="display:none" onclick="openSellModal()">
-				<i class="fas fa-plus-circle"></i> Sell Your Book
-			</button>
-		</div>
-	</div>
+        <div class="search-section" id="searchSection" style="display: none;">
+            <div class="search-controls">
+                <input type="text" id="searchInput" placeholder="Search by book name...">
+                <select id="conditionFilter">
+                    <option value="">All Conditions</option>
+                    <option value="New">✨ Like New</option>
+                    <option value="Good">👍 Good</option>
+                    <option value="Used">📝 Used</option>
+                    <option value="Old">⚠️ Old</option>
+                </select>
+                <button class="btn btn-primary" onclick="filterBooks()">Search</button>
+            </div>
+        </div>
 
+        <div id="booksContainer" class="books-grid" style="display: none;"></div>
 
-	<!-- Store content -->
-	<div class="s-wrap">
-		<div id="storeSection">
-			<!-- Tabs -->
-			<div class="tabs">
-				<button class="tab active" id="tabBrowse" onclick="switchTab('browse')"><i class="fas fa-search"></i>
-					Browse Books</button>
-				<button class="tab" id="tabMine" onclick="switchTab('mine')"><i class="fas fa-book-open"></i> My
-					Listings</button>
-			</div>
+        <div class="form-section" id="sellForm">
+            <h2 style="margin-bottom: 25px; color: #1f2937;">📖 Sell Your Book</h2>
+            <div class="success-message" id="successMsg">✅ Book posted successfully!</div>
+            <form id="bookForm">
+                <div class="form-group">
+                    <label for="bookTitle">Book Title / Subject *</label>
+                    <input type="text" id="bookTitle" placeholder="e.g., Data Structures" required>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="bookSubject">Subject</label>
+                        <select id="bookSubject">
+                            <option value="">Select</option>
+                            <option value="CS">Computer Science</option>
+                            <option value="Mechanics">Mechanics</option>
+                            <option value="Commerce">Commerce</option>
+                            <option value="Medical">Medical</option>
+                            <option value="Notes">Class Notes</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="bookCondition">Condition *</label>
+                        <select id="bookCondition" required>
+                            <option value="New">✨ Like New</option>
+                            <option value="Good">👍 Good</option>
+                            <option value="Used" selected>📝 Used</option>
+                            <option value="Old">⚠️ Old</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="bookPrice">Price (₹) *</label>
+                        <input type="number" id="bookPrice" placeholder="300" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="bookContact">Contact Number *</label>
+                        <input type="tel" id="bookContact" placeholder="9876543210" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="bookImage">📷 Upload Photo</label>
+                    <input type="file" id="bookImage" accept="image/*" onchange="previewImage()">
+                    <img id="imagePreview" class="image-preview">
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">Publish Now</button>
+                    <button type="button" class="btn btn-primary" style="flex: 1; background: #e5e7eb; color: #1f2937;" onclick="showBrowseBooks()">Cancel</button>
+                </div>
+            </form>
+        </div>
 
-			<!-- Browse Tab -->
-			<div id="paneBrowse">
-				<div class="filter-bar">
-					<div class="fg" style="flex:1;min-width:180px;">
-						<label>Search</label>
-						<input id="searchQ" placeholder="Book title or subject…" oninput="localFilter()">
-					</div>
-					<div class="fg">
-						<label>Condition</label>
-						<select id="fCond">
-							<option value="">Any</option>
-							<option>New</option>
-							<option>Used</option>
-						</select>
-					</div>
-					<div class="fg">
-						<label>Max Price (₹)</label>
-						<input type="number" id="fPrice" placeholder="e.g. 300">
-					</div>
-					<div style="display:flex;gap:.5rem;align-items:flex-end">
-						<button class="btn btn-primary" onclick="fetchBooks()"><i class="fas fa-filter"></i>
-							Apply</button>
-						<button class="btn btn-sec" onclick="clearFilters()">Clear</button>
-					</div>
-				</div>
-				<div id="browseContainer">
-					<div class="state-box"><i class="fas fa-spinner spinner"></i>
-						<p>Loading books…</p>
-					</div>
-				</div>
-			</div>
-
-			<!-- My Books Tab -->
-			<div id="paneMine" class="hide">
-				<div style="display:flex;justify-content:flex-end;margin-bottom:1rem;">
-					<button class="btn btn-primary" onclick="openSellModal()"><i class="fas fa-plus"></i> List a
-						Book</button>
-				</div>
-				<div id="mineContainer">
-					<div class="state-box"><i class="fas fa-spinner spinner"></i>
-						<p>Loading your listings…</p>
-					</div>
-				</div>
-			</div>
-		</div>
-	</div>
-
-	<!-- ════ PROFILE SETUP MODAL ════ -->
-	<div id="profileModal" class="modal hide">
-		<div class="mbox">
-			<div class="mhead">
-				<h3>👤 Complete Your Profile</h3>
-			</div>
-			<div class="mbody">
-				<div class="step-bar">
-					<div class="step-dot done" id="sd1">1</div>
-					<div class="step-line"></div>
-					<div class="step-dot" id="sd2">2</div>
-				</div>
-
-				<!-- Step 1: Role -->
-				<div id="pStep1">
-					<p style="font-size:.9rem;color:var(--sub);margin-bottom:1rem;">Who are you? This controls which
-						books you can see.</p>
-					<div class="role-cards">
-						<div class="role-card" id="roleCollege" onclick="selectRole('college')">
-							<i class="fas fa-university"></i>
-							<h4>College Student</h4>
-							<p>See books from your college only</p>
-						</div>
-						<div class="role-card" id="roleChild" onclick="selectRole('child')">
-							<i class="fas fa-child"></i>
-							<h4>School Student</h4>
-							<p>See books from the children's group</p>
-						</div>
-					</div>
-					<div class="alert" id="p1Alert" style="margin-top:.75rem;"></div>
-				</div>
-
-				<!-- Step 2 College -->
-				<div id="pStep2College" class="hide">
-					<div class="fgrp">
-						<label>College Name *</label>
-						<input id="pCollege" placeholder="e.g. ABC Engineering College">
-					</div>
-					<div class="row2" style="margin-top:.75rem;">
-						<div class="fgrp">
-							<label>Department *</label>
-							<input id="pDept" placeholder="e.g. Computer Science">
-						</div>
-						<div class="fgrp">
-							<label>Year *</label>
-							<select id="pYear">
-								<option value="">Select year</option>
-								<option>1st Year (Junior)</option>
-								<option>2nd Year</option>
-								<option>3rd Year</option>
-								<option>4th Year (Senior)</option>
-								<option>Postgraduate</option>
-							</select>
-						</div>
-					</div>
-					<div class="alert" id="p2Alert" style="margin-top:.75rem;"></div>
-				</div>
-
-				<!-- Step 2 Child -->
-				<div id="pStep2Child" class="hide">
-					<div class="fgrp">
-						<label>Class / Grade *</label>
-						<select id="pClass">
-							<option value="">Select class</option>
-							<option>Class 1</option>
-							<option>Class 2</option>
-							<option>Class 3</option>
-							<option>Class 4</option>
-							<option>Class 5</option>
-							<option>Class 6</option>
-							<option>Class 7</option>
-							<option>Class 8</option>
-							<option>Class 9</option>
-							<option>Class 10</option>
-							<option>Class 11</option>
-							<option>Class 12</option>
-						</select>
-					</div>
-					<div class="alert" id="p3Alert" style="margin-top:.75rem;"></div>
-				</div>
-			</div>
-			<div class="mfoot">
-				<button class="btn btn-sec" id="pBackBtn" onclick="profileBack()" style="display:none">Back</button>
-				<button class="btn btn-primary" id="pNextBtn" onclick="profileNext()">Next <i
-						class="fas fa-arrow-right"></i></button>
-			</div>
-		</div>
-	</div>
-
-	<!-- ════ SELL MODAL ════ -->
-	<div id="sellModal" class="modal hide">
-		<div class="mbox">
-			<div class="mhead">
-				<h3><i class="fas fa-tag" style="color:var(--accent);margin-right:.4rem;"></i> List Book for Sale</h3>
-				<button class="mclose" onclick="closeSellModal()"><i class="fas fa-times"></i></button>
-			</div>
-			<div class="mbody">
-				<div class="alert" id="sellAlert"></div>
-				<div class="fgrp">
-					<label>Book Title *</label>
-					<input id="sTitle" placeholder="e.g. Data Structures in C">
-				</div>
-				<div class="row2">
-					<div class="fgrp">
-						<label>Subject</label>
-						<input id="sSubject" placeholder="e.g. Computer Science">
-					</div>
-					<div class="fgrp">
-						<label>Condition</label>
-						<select id="sCond">
-							<option>Used</option>
-							<option>New</option>
-						</select>
-					</div>
-				</div>
-				<div class="row2">
-					<div class="fgrp">
-						<label>Price (₹)</label>
-						<input id="sPrice" type="number" placeholder="0 = Free">
-					</div>
-					<div class="fgrp">
-						<label>Contact (WhatsApp)</label>
-						<input id="sContact" placeholder="9876543210">
-					</div>
-				</div>
-				<div class="fgrp">
-					<label>Book Photo *</label>
-					<div class="upload-zone">
-						<i class="fas fa-camera"></i>
-						<p>Tap to take or upload a photo</p>
-						<input type="file" id="sImg" accept="image/*" capture="environment"
-							onchange="previewImage(this)">
-					</div>
-					<img id="sPreview" class="preview-img" alt="Preview">
-				</div>
-			</div>
-			<div class="mfoot">
-				<button class="btn btn-sec" onclick="closeSellModal()">Cancel</button>
-				<button class="btn btn-primary" id="sellBtn" onclick="submitBook()"><i class="fas fa-check-circle"></i>
-					List Book</button>
-			</div>
-		</div>
-	</div>
-
-	<!-- ════ CHAT MODAL ════ -->
-	<div id="chatModal" class="modal hide">
-		<div class="mbox">
-			<div class="mhead">
-				<h3 id="chatTitle"><i class="fas fa-comments" style="color:var(--accent);margin-right:.4rem;"></i>Chat
-					with Seller</h3>
-				<button class="mclose" onclick="closeChat()"><i class="fas fa-times"></i></button>
-			</div>
-			<div class="mbody">
-				<div class="chat-msgs" id="chatMsgs">
-					<p style="text-align:center;color:var(--sub);padding-top:3rem;font-size:.85rem;">No messages yet.
-						Say Hello! 👋</p>
-				</div>
-				<div class="chat-row">
-					<input id="chatIn" placeholder="Type a message…" onkeydown="if(event.key==='Enter')sendMsg()">
-					<button class="btn btn-primary" onclick="sendMsg()"><i class="fas fa-paper-plane"></i></button>
-				</div>
-			</div>
-		</div>
-	</div>
-
-	<!-- STATUS MODAL (for My Books) -->
-	<div id="statusModal" class="modal hide">
-		<div class="mbox" style="max-width:360px;">
-			<div class="mhead">
-				<h3>Update Status</h3><button class="mclose" onclick="closeStatus()"><i
-						class="fas fa-times"></i></button>
-			</div>
-			<div class="mbody">
-				<p style="font-size:.88rem;color:var(--sub);">Change the status of this listing:</p>
-				<div style="display:flex;flex-direction:column;gap:.6rem;margin-top:.5rem;">
-					<button class="btn btn-primary" onclick="setStatus('available')" style="background:var(--green);">✅
-						Mark Available</button>
-					<button class="btn btn-primary" onclick="setStatus('sold')" style="background:var(--red);">🔴 Mark
-						as Sold</button>
-					<button class="btn btn-primary" onclick="setStatus('given')" style="background:#2563eb;">💙 Mark as
-						Given (Free)</button>
-				</div>
-			</div>
-		</div>
-	</div>
-
-	<div id="toast" class="hide"></div>
-
-	<script>
-		// ═══════════════════════════════════════════════
-		// STATE
-		// ═══════════════════════════════════════════════
-		// Uses the main site's navbar token — no separate store login needed
-		let storeToken = localStorage.getItem('renvox_token') || '';
-		let storeUser = null;
-		let allBooks = [];
-		let selectedRole = '';
-		let currentTab = 'browse';
-		let chatBookId = null;
-		let chatPoll = null;
-		let statusBookId = null;
-
-		const API = '/api/store';
-
-		// ═══════════════════════════════════════════════
-		// INIT
-		// ═══════════════════════════════════════════════
-		window.addEventListener('load', init);
-
-		async function init() {
-			setupScrollEffect();
-			storeToken = localStorage.getItem('renvox_token') || '';
-			// Always show store — navbar handles sign-in
-			document.getElementById('heroSellBtn').style.display = storeToken ? '' : 'none';
-			fetchBooks(); // loads books (public listings visible to all)
-			if (storeToken) {
-				try {
-					const r = await apiFetch('GET', '/me');
-					if (r.ok) {
-						storeUser = r.user;
-						if (!storeUser.profileComplete) showProfileModal();
-						else document.getElementById('heroSellBtn').style.display = '';
-					}
-				} catch { /* silent — navbar manages auth state */ }
-			}
-		}
-
-		// ═══════════════════════════════════════════════
-		// PROFILE MODAL
-		// ═══════════════════════════════════════════════
-		function showProfileModal() {
-			selectedRole = '';
-			show('profileModal');
-			hide('pStep2College'); hide('pStep2Child');
-			show('pStep1');
-			document.getElementById('sd1').classList.add('done');
-			document.getElementById('sd2').classList.remove('done');
-			document.getElementById('pBackBtn').style.display = 'none';
-			document.getElementById('pNextBtn').innerHTML = 'Next <i class="fas fa-arrow-right"></i>';
-		}
-
-		function selectRole(r) {
-			selectedRole = r;
-			document.getElementById('roleCollege').classList.toggle('selected', r === 'college');
-			document.getElementById('roleChild').classList.toggle('selected', r === 'child');
-		}
-
-		function profileBack() {
-			show('pStep1'); hide('pStep2College'); hide('pStep2Child');
-			document.getElementById('sd2').classList.remove('done');
-			document.getElementById('pBackBtn').style.display = 'none';
-			document.getElementById('pNextBtn').innerHTML = 'Next <i class="fas fa-arrow-right"></i>';
-		}
-
-		async function profileNext() {
-			const step2ColVisible = !document.getElementById('pStep2College').classList.contains('hide');
-			const step2ChdVisible = !document.getElementById('pStep2Child').classList.contains('hide');
-
-			if (!step2ColVisible && !step2ChdVisible) {
-				// Step 1 — choose role
-				if (!selectedRole) { setAlert('p1Alert', 'Please select your role.', 'err'); return; }
-				clearAlert('p1Alert');
-				hide('pStep1');
-				document.getElementById('sd2').classList.add('done');
-				document.getElementById('pBackBtn').style.display = '';
-				document.getElementById('pNextBtn').innerHTML = '<i class="fas fa-check-circle"></i> Save Profile';
-				if (selectedRole === 'college') show('pStep2College'); else show('pStep2Child');
-				return;
-			}
-
-			// Step 2 — save
-			const btn = document.getElementById('pNextBtn');
-			btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner spinner"></i>';
-			try {
-				const body = { role: selectedRole };
-				if (selectedRole === 'college') {
-					body.collegeName = val('pCollege'); body.department = val('pDept'); body.year = val('pYear');
-					if (!body.collegeName || !body.department || !body.year) {
-						btn.disabled = false; btn.innerHTML = '<i class="fas fa-check-circle"></i> Save Profile';
-						return setAlert(selectedRole === 'college' ? 'p2Alert' : 'p3Alert', 'All fields are required.', 'err');
-					}
-				} else {
-					body.childClass = val('pClass');
-					if (!body.childClass) {
-						btn.disabled = false; btn.innerHTML = '<i class="fas fa-check-circle"></i> Save Profile';
-						return setAlert('p3Alert', 'Please select your class.', 'err');
-					}
-				}
-				const r = await apiFetch('POST', '/profile', body);
-				if (!r.ok) { setAlert('p2Alert', r.message, 'err'); btn.disabled = false; btn.innerHTML = 'Save'; return; }
-				storeUser = r.user;
-				hide('profileModal');
-				showStore();
-				fetchBooks();
-				toast('Profile saved! Welcome 🎉');
-			} catch { setAlert('p2Alert', 'Server error. Try again.', 'err'); }
-			btn.disabled = false; btn.innerHTML = '<i class="fas fa-check-circle"></i> Save Profile';
-		}
-
-		// ═══════════════════════════════════════════════
-		// STORE DISPLAY
-		// ═══════════════════════════════════════════════
-		function showStore() {
-			hide('loginSection'); show('storeSection');
-			document.getElementById('heroSellBtn').style.display = '';
-		}
-
-		function switchTab(t) {
-			currentTab = t;
-			document.getElementById('tabBrowse').classList.toggle('active', t === 'browse');
-			document.getElementById('tabMine').classList.toggle('active', t === 'mine');
-			if (t === 'browse') { show('paneBrowse'); hide('paneMine'); }
-			else { hide('paneBrowse'); show('paneMine'); fetchMyBooks(); }
-		}
-
-		// ═══════════════════════════════════════════════
-		// FETCH BOOKS
-		// ═══════════════════════════════════════════════
-		async function fetchBooks() {
-			document.getElementById('browseContainer').innerHTML = loadingHTML();
-			const cond = val('fCond'), price = val('fPrice');
-			const params = new URLSearchParams();
-			if (cond) params.append('condition', cond);
-			if (price) params.append('maxPrice', price);
-			try {
-				const r = await apiFetch('GET', '/books' + (params.toString() ? '?' + params : ''));
-				allBooks = r.books || [];
-				localFilter();
-			} catch { document.getElementById('browseContainer').innerHTML = errHTML('Could not load books. Is the server running?'); }
-		}
-
-		function localFilter() {
-			const q = (val('searchQ') || '').toLowerCase();
-			const filtered = q ? allBooks.filter(b => (b.title + ' ' + (b.subject || '')).toLowerCase().includes(q)) : allBooks;
-			renderBrowse(filtered);
-		}
-
-		function clearFilters() {
-			document.getElementById('fCond').value = ''; document.getElementById('fPrice').value = ''; document.getElementById('searchQ').value = '';
-			fetchBooks();
-		}
-
-		function renderBrowse(list) {
-			const c = document.getElementById('browseContainer');
-			if (!list.length) { c.innerHTML = emptyHTML('No books found', 'Try adjusting filters or be the first to list!'); return; }
-			c.innerHTML = ''; const g = document.createElement('div'); g.className = 'books-grid';
-			list.forEach(b => g.appendChild(makeCard(b, false)));
-			c.appendChild(g);
-		}
-
-		async function fetchMyBooks() {
-			document.getElementById('mineContainer').innerHTML = loadingHTML();
-			try {
-				const r = await apiFetch('GET', '/my-books');
-				const books = r.books || [];
-				if (!books.length) { document.getElementById('mineContainer').innerHTML = emptyHTML('No listings yet', 'Click "List a Book" to get started!'); return; }
-				const g = document.createElement('div'); g.className = 'books-grid';
-				books.forEach(b => g.appendChild(makeCard(b, true)));
-				document.getElementById('mineContainer').innerHTML = ''; document.getElementById('mineContainer').appendChild(g);
-			} catch { document.getElementById('mineContainer').innerHTML = errHTML('Could not load your books.'); }
-		}
-
-		// ═══════════════════════════════════════════════
-		// BOOK CARD
-		// ═══════════════════════════════════════════════
-		function makeCard(b, isOwn) {
-			const card = document.createElement('div'); card.className = 'bcard';
-			const condBadge = b.condition === 'New' ? 'badge-new' : 'badge-used';
-			const imgHtml = b.img ? `<img src="${b.img}" alt="${esc(b.title)}" loading="lazy">` : `<div class="no-img">📗</div>`;
-			const statusTag = b.status !== 'available' ? `<span class="s-tag ${b.status}">${b.status}</span>` : '';
-			const priceHtml = b.isFree || b.price === 0 ? `<div class="bcard-price">FREE <span class="badge badge-free" style="position:static;font-size:.7rem;vertical-align:middle;">Free</span></div>` : `<div class="bcard-price">₹${b.price}</div>`;
-			const actionsHtml = isOwn
-				? `<button class="btn-own" onclick="openStatusModal('${b._id}')"><i class="fas fa-pen"></i> Status</button>
-       <button class="btn-del" onclick="deleteBook('${b._id}')" title="Delete"><i class="fas fa-trash"></i></button>`
-				: `<button class="btn-chat-c" onclick="openChat('${b._id}','${esc(b.ownerName)}')"><i class="fas fa-comments"></i> Chat</button>`;
-			card.innerHTML = `
-    <div class="bcard-img">
-      ${imgHtml}
-      <span class="badge ${condBadge}">${b.condition}</span>
-      ${b.status !== 'available' ? `<span class="badge badge-${b.status}" style="top:auto;bottom:.55rem;">${b.status.toUpperCase()}</span>` : ''}
+        <div id="loading" class="loading" style="display: none;">⏳ Loading books...</div>
+        <div id="emptyState" class="empty-state" style="display: none;">
+            <h2>No books found</h2>
+            <p>Be the first to list a book or check back soon!</p>
+        </div>
     </div>
-    <div class="bcard-body">
-      <div class="bcard-title">${esc(b.title)}</div>
-      <div class="bcard-meta">${esc(b.subject || '')}${b.collegeName ? ' • ' + esc(b.collegeName) : ''}</div>
-      ${priceHtml}
-      <div class="bcard-seller"><i class="fas fa-user-circle"></i>${esc(b.ownerName)}${b.contact ? ' • 📞 ' + esc(b.contact) : ''}</div>
-      ${statusTag}
+
+    <div id="sellerModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <span>📞 Contact Seller</span>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div id="modalBookInfo" class="seller-info" style="background: #fef3c7;"></div>
+            <div class="seller-info">
+                <div class="seller-field">
+                    <span class="seller-label">👤 Seller Name:</span>
+                    <div class="seller-value" id="sellerName">-</div>
+                </div>
+                <div class="seller-field">
+                    <span class="seller-label">📱 Phone:</span>
+                    <div class="seller-value"><a id="sellerPhone" href="#" class="contact-link">-</a></div>
+                </div>
+                <div class="seller-field">
+                    <span class="seller-label">📧 Email:</span>
+                    <div class="seller-value"><a id="sellerEmail" href="#" class="contact-link">-</a></div>
+                </div>
+                <div class="seller-field">
+                    <span class="seller-label">📍 Location:</span>
+                    <div class="seller-value" id="sellerCollege">-</div>
+                </div>
+            </div>
+            <div class="modal-buttons">
+                <button class="modal-buttons btn-close-modal" onclick="closeModal()">Close</button>
+                <button class="modal-buttons btn-call" id="callBtn" onclick="callSeller()">📞 Call Now</button>
+            </div>
+        </div>
     </div>
-    <div class="bcard-footer">${actionsHtml}</div>`;
-			return card;
-		}
 
-		// ═══════════════════════════════════════════════
-		// SELL BOOK
-		// ═══════════════════════════════════════════════
-		function openSellModal() {
-			if (!localStorage.getItem('renvox_token')) {
-				return toast('🔒 Please Sign In from the top navbar to sell a book.', true);
-			}
-			show('sellModal'); clearAlert('sellAlert');
-		}
-		function closeSellModal() {
-			hide('sellModal');
-			['sTitle', 'sSubject', 'sPrice', 'sContact'].forEach(id => document.getElementById(id).value = '');
-			document.getElementById('sPreview').style.display = 'none'; document.getElementById('sImg').value = '';
-		}
+    <script>
+        const API_URL = 'http://localhost:4000/api';
+        let allBooks = [];
+        let currentBook = null;
 
-		function previewImage(inp) {
-			const f = inp.files[0]; if (!f) return;
-			if (f.size > 5 * 1024 * 1024) { setAlert('sellAlert', 'Image must be under 5 MB.', 'err'); inp.value = ''; return; }
-			const r = new FileReader();
-			r.onload = e => { const img = document.getElementById('sPreview'); img.src = e.target.result; img.style.display = 'block'; };
-			r.readAsDataURL(f);
-		}
+        document.addEventListener('DOMContentLoaded', function () {
+            loadBooks();
+            setupFormHandler();
+        });
 
-		async function submitBook() {
-			const title = val('sTitle'), price = val('sPrice') || '0';
-			const img = document.getElementById('sPreview').src;
-			if (!title) return setAlert('sellAlert', 'Book title is required.', 'err');
-			if (!img || !img.startsWith('data:')) return setAlert('sellAlert', 'Please upload a photo of the book.', 'err');
-			const btn = document.getElementById('sellBtn'); btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner spinner"></i> Listing…';
-			try {
-				const r = await apiFetch('POST', '/books', {
-					title, subject: val('sSubject'), condition: val('sCond'),
-					isFree: Number(price) === 0, price: Number(price),
-					contact: val('sContact'), img
-				});
-				if (r.ok) { closeSellModal(); toast('📚 Book listed!'); fetchBooks(); if (currentTab === 'mine') fetchMyBooks(); }
-				else setAlert('sellAlert', r.message || 'Failed.', 'err');
-			} catch { setAlert('sellAlert', 'Server error.', 'err'); }
-			btn.disabled = false; btn.innerHTML = '<i class="fas fa-check-circle"></i> List Book';
-		}
+        async function loadBooks() {
+            document.getElementById('loading').style.display = 'block';
+            try {
+                const res = await fetch(`${API_URL}/books`);
+                const data = await res.json();
+                allBooks = data.books || [];
+                updateStats();
+                displayBooks(allBooks);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('searchSection').style.display = 'block';
+                document.getElementById('booksContainer').style.display = allBooks.length > 0 ? 'grid' : 'none';
+                document.getElementById('emptyState').style.display = allBooks.length === 0 ? 'block' : 'none';
+            } catch (err) {
+                console.error('Error:', err);
+                document.getElementById('loading').innerHTML = '❌ Failed to load books';
+            }
+        }
 
-		// ═══════════════════════════════════════════════
-		// DELETE & STATUS
-		// ═══════════════════════════════════════════════
-		async function deleteBook(id) {
-			if (!confirm('Remove this listing permanently?')) return;
-			const r = await apiFetch('DELETE', '/books/' + id);
-			if (r.ok) { toast('Listing removed.'); fetchMyBooks(); fetchBooks(); }
-			else alert(r.message || 'Error');
-		}
+        function displayBooks(books) {
+            const container = document.getElementById('booksContainer');
+            container.innerHTML = books.map(book => `
+                <div class="book-card" onclick="showSellerModal(this)" data-book='${JSON.stringify(book)}'>
+                    <div class="book-image">${book.img ? `<img src="${book.img}">` : '📚'}</div>
+                    <div class="book-info">
+                        <div class="book-title">${book.name}</div>
+                        <div class="book-subject">${book.subject || 'General'}</div>
+                        <div class="book-condition">${book.condition}</div>
+                        <div class="book-footer">
+                            <div class="book-price">₹${book.price}</div>
+                            <div class="book-seller">${book.seller}</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
 
-		function openStatusModal(id) { statusBookId = id; show('statusModal'); }
-		function closeStatus() { hide('statusModal'); statusBookId = null; }
-		async function setStatus(s) {
-			if (!statusBookId) return;
-			const r = await apiFetch('PATCH', '/books/' + statusBookId + '/status', { status: s });
-			if (r.ok) { toast('Status updated!'); closeStatus(); fetchMyBooks(); fetchBooks(); }
-			else alert(r.message || 'Error');
-		}
+        function filterBooks() {
+            const search = document.getElementById('searchInput').value.toLowerCase();
+            const condition = document.getElementById('conditionFilter').value;
+            const filtered = allBooks.filter(b =>
+                (b.name.toLowerCase().includes(search) || b.subject.toLowerCase().includes(search)) &&
+                (!condition || b.condition === condition)
+            );
+            displayBooks(filtered);
+        }
 
-		// ═══════════════════════════════════════════════
-		// CHAT
-		// ═══════════════════════════════════════════════
-		function openChat(bookId, seller) {
-			chatBookId = bookId;
-			document.getElementById('chatTitle').innerHTML = `<i class="fas fa-comments" style="color:var(--accent);margin-right:.4rem;"></i>${esc(seller)}`;
-			document.getElementById('chatMsgs').innerHTML = '<p style="text-align:center;color:var(--sub);padding-top:3rem;font-size:.85rem;">Loading…</p>';
-			show('chatModal'); loadMsgs();
-			if (chatPoll) clearInterval(chatPoll);
-			chatPoll = setInterval(loadMsgs, 5000);
-		}
-		function closeChat() { hide('chatModal'); chatBookId = null; if (chatPoll) { clearInterval(chatPoll); chatPoll = null; } }
+        function updateStats() {
+            const total = allBooks.length;
+            const sellers = new Set(allBooks.map(b => b.seller)).size;
+            const avgPrice = total > 0 ? Math.round(allBooks.reduce((s, b) => s + b.price, 0) / total) : 0;
+            document.getElementById('totalBooks').textContent = total;
+            document.getElementById('totalSellers').textContent = sellers;
+            document.getElementById('avgPrice').textContent = '₹' + avgPrice;
+        }
 
-		async function loadMsgs() {
-			if (!chatBookId) return;
-			try {
-				const r = await fetch('/api/messages?bookId=' + chatBookId);
-				const msgs = await r.json();
-				const c = document.getElementById('chatMsgs');
-				if (!msgs.length) { c.innerHTML = '<p style="text-align:center;color:var(--sub);padding-top:3rem;font-size:.85rem;">No messages yet 👋</p>'; return; }
-				c.innerHTML = '';
-				msgs.forEach(m => { const d = document.createElement('div'); d.className = 'chat-msg'; d.innerHTML = `<div class="cm-name">${esc(m.from)}</div><div class="cm-text">${esc(m.text)}</div><div class="cm-time">${new Date(m.ts).toLocaleString()}</div>`; c.appendChild(d); });
-				c.scrollTop = c.scrollHeight;
-			} catch { }
-		}
-		async function sendMsg() {
-			const inp = document.getElementById('chatIn'), text = inp.value.trim();
-			if (!text || !chatBookId) return;
-			const from = storeUser?.name || 'Anonymous';
-			await fetch('/api/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ bookId: chatBookId, from, text }) });
-			inp.value = ''; loadMsgs();
-		}
+        function showBrowseBooks() {
+            document.getElementById('sellForm').classList.remove('show');
+            document.getElementById('booksContainer').style.display = 'grid';
+            loadBooks();
+        }
 
-		// ═══════════════════════════════════════════════
-		// UTILS
-		// ═══════════════════════════════════════════════
-		async function apiFetch(method, path, body) {
-			// Always use the latest main-site token
-			const token = localStorage.getItem('renvox_token') || '';
-			const opts = { method, headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token } };
-			if (body) opts.body = JSON.stringify(body);
-			const r = await fetch(API + path, opts);
-			return r.json();
-		}
-		function val(id) { return (document.getElementById(id)?.value || '').trim(); }
-		function show(id) { document.getElementById(id).classList.remove('hide'); }
-		function hide(id) { document.getElementById(id).classList.add('hide'); }
-		function esc(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
-		function setAlert(id, msg, type) { const el = document.getElementById(id); el.textContent = msg; el.className = 'alert ' + type; }
-		function clearAlert(id) { const el = document.getElementById(id); el.textContent = ''; el.className = 'alert'; }
-		function toast(msg, isErr = false) { const el = document.getElementById('toast'); el.textContent = msg; el.style.background = isErr ? '#dc2626' : '#1e1b4b'; el.classList.remove('hide'); setTimeout(() => el.classList.add('hide'), 3200); }
-		function loadingHTML() { return '<div class="state-box"><i class="fas fa-spinner spinner"></i><p>Loading…</p></div>'; }
-		function emptyHTML(h, p) { return `<div class="state-box"><i class="fas fa-book-open"></i><h3>${h}</h3><p>${p}</p></div>`; }
-		function errHTML(p) { return `<div class="state-box"><i class="fas fa-exclamation-triangle" style="color:#f59e0b;"></i><h3>Something went wrong</h3><p>${p}</p></div>`; }
+        function showSellForm() {
+            document.getElementById('sellForm').classList.add('show');
+            document.getElementById('booksContainer').style.display = 'none';
+            document.getElementById('searchSection').style.display = 'none';
+        }
 
-		function setupScrollEffect() {
-			window.addEventListener('scroll', () => document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 50));
-			document.getElementById('menuToggle').addEventListener('click', () => document.getElementById('navMenu').classList.toggle('active'));
-		}
-	</script>
-	<script src="navigation.js"></script>
+        function previewImage() {
+            const file = document.getElementById('bookImage').files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const img = document.getElementById('imagePreview');
+                    img.src = e.target.result;
+                    img.classList.add('show');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function setupFormHandler() {
+            document.getElementById('bookForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const formData = {
+                    name: document.getElementById('bookTitle').value,
+                    subject: document.getElementById('bookSubject').value,
+                    condition: document.getElementById('bookCondition').value,
+                    price: parseInt(document.getElementById('bookPrice').value),
+                    contact: document.getElementById('bookContact').value
+                };
+                const imageInput = document.getElementById('bookImage');
+                if (imageInput.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        formData.img = e.target.result;
+                        submitBook(formData);
+                    };
+                    reader.readAsDataURL(imageInput.files[0]);
+                } else {
+                    submitBook(formData);
+                }
+            });
+        }
+
+        async function submitBook(formData) {
+            try {
+                const res = await fetch(`${API_URL}/books`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    document.getElementById('successMsg').classList.add('show');
+                    document.getElementById('bookForm').reset();
+                    document.getElementById('imagePreview').classList.remove('show');
+                    setTimeout(() => {
+                        document.getElementById('successMsg').classList.remove('show');
+                        showBrowseBooks();
+                    }, 1500);
+                }
+            } catch (err) {
+                alert('Error: ' + err.message);
+            }
+        }
+
+        function showSellerModal(card) {
+            const bookStr = card.getAttribute('data-book');
+            currentBook = JSON.parse(bookStr);
+            document.getElementById('sellerName').textContent = currentBook.seller || 'Seller';
+            document.getElementById('sellerCollege').textContent = currentBook.college || 'Area';
+            if (currentBook.contact) {
+                document.getElementById('sellerPhone').href = `tel:${currentBook.contact}`;
+                document.getElementById('sellerPhone').textContent = currentBook.contact;
+            }
+            if (currentBook.sellerEmail) {
+                document.getElementById('sellerEmail').href = `mailto:${currentBook.sellerEmail}`;
+                document.getElementById('sellerEmail').textContent = currentBook.sellerEmail;
+            }
+            document.getElementById('modalBookInfo').innerHTML = `
+                <strong>${currentBook.name}</strong><br>
+                ${currentBook.subject} - ${currentBook.condition}<br>
+                <strong style="font-size:1.2em; color:#10b981;">₹${currentBook.price}</strong>
+            `;
+            document.getElementById('sellerModal').classList.add('show');
+        }
+
+        function closeModal() {
+            document.getElementById('sellerModal').classList.remove('show');
+        }
+
+        function callSeller() {
+            if (currentBook && currentBook.contact) {
+                window.location.href = `tel:${currentBook.contact}`;
+            }
+        }
+
+        document.getElementById('sellerModal').onclick = function (e) {
+            if (e.target == this) closeModal();
+        };
+
+        setInterval(loadBooks, 30000);
+    </script>
 </body>
-
 </html>
