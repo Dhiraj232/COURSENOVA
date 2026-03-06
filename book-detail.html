@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Details - RENVOX Book Store</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f9fafb; }
+        
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        
+        /* Header */
+        header { background: #667eea; color: white; padding: 15px 0; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        header nav { display: flex; justify-content: space-between; align-items: center; max-width: 1400px; margin: 0 auto; padding: 0 20px; }
+        header h1 { font-size: 24px; font-weight: 600; }
+        header a { color: white; text-decoration: none; margin: 0 15px; }
+        header a:hover { text-decoration: underline; }
+        
+        /* Breadcrumb */
+        .breadcrumb { margin: 20px 0; font-size: 13px; color: #666; }
+        .breadcrumb a { color: #667eea; text-decoration: none; }
+        .breadcrumb a:hover { text-decoration: underline; }
+        
+        /* Main Content */
+        .book-detail { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin: 40px 0; }
+        
+        /* Left: Image Gallery */
+        .image-gallery { }
+        .main-image { width: 100%; height: 500px; background: white; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; }
+        .main-image img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .thumbnails { display: flex; gap: 10px; }
+        .thumbnail { width: 80px; height: 80px; background: white; border: 2px solid #e5e7eb; border-radius: 6px; cursor: pointer; overflow: hidden; }
+        .thumbnail img { width: 100%; height: 100%; object-fit: cover; }
+        .thumbnail.active { border-color: #667eea; }
+        
+        /* Right: Book Info */
+        .book-info { }
+        .book-title { font-size: 28px; font-weight: 700; margin-bottom: 10px; color: #1f2937; }
+        .book-author { font-size: 16px; color: #6b7280; margin-bottom: 20px; }
+        
+        .ratings { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+        .stars { color: #fbbf24; font-size: 16px; }
+        .review-count { color: #6b7280; font-size: 14px; }
+        
+        .pricing { background: #fff; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
+        .price-row { display: flex; align-items: center; gap: 15px; margin-bottom: 10px; }
+        .mrp { color: #9ca3af; font-size: 14px; text-decoration: line-through; }
+        .selling-price { font-size: 28px; font-weight: 700; color: #667eea; }
+        .discount { background: #10b981; color: white; padding: 4px 8px; border-radius: 4px; font-size: 12px; }
+        
+        .stock-status { padding: 10px 0; border-top: 1px solid #e5e7eb; font-size: 14px; }
+        .stock-status.in-stock { color: #10b981; }
+        .stock-status.out-of-stock { color: #ef4444; }
+        
+        /* Action Buttons */
+        .actions { display: flex; gap: 10px; margin-bottom: 30px; }
+        button { padding: 12px 24px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; transition: 0.3s; }
+        .btn-primary { background: #667eea; color: white; flex: 1; }
+        .btn-primary:hover { background: #764ba2; }
+        .btn-secondary { background: white; color: #667eea; border: 2px solid #667eea; flex: 1; }
+        .btn-secondary:hover { background: #f3f4f6; }
+        .btn-icon { background: white; border: 2px solid #e5e7eb; width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        
+        /* Seller Box */
+        .seller-box { background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin-bottom: 30px; }
+        .seller-header { display: flex; align-items: center; gap: 15px; margin-bottom: 15px; }
+        .seller-avatar { width: 50px; height: 50px; background: #667eea; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; }
+        .seller-meta h3 { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+        .seller-meta p { font-size: 12px; color: #6b7280; }
+        
+        .seller-details { padding: 15px 0; border-bottom: 1px solid #e5e7eb; }
+        .detail-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 13px; }
+        .detail-row strong { color: #1f2937; }
+        .detail-row span { color: #6b7280; }
+        
+        .seller-actions { display: flex; gap: 10px; margin-top: 15px; }
+        .seller-actions button { flex: 1; padding: 10px; font-size: 12px; }
+        
+        /* Tabs */
+        .tabs { margin: 40px 0; }
+        .tab-headers { display: flex; gap: 20px; border-bottom: 2px solid #e5e7eb; margin-bottom: 20px; }
+        .tab-header { padding: 15px 0; cursor: pointer; font-weight: 500; color: #6b7280; border-bottom: 3px solid transparent; transition: 0.3s; }
+        .tab-header.active { color: #667eea; border-bottom-color: #667eea; }
+        
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        /* Syllabus/Chapters */
+        .chapter { background: white; border: 1px solid #e5e7eb; border-radius: 6px; padding: 15px; margin-bottom: 10px; }
+        .chapter-title { font-weight: 600; color: #1f2937; margin-bottom: 10px; cursor: pointer; }
+        .chapter-topics { list-style-position: inside; color: #6b7280; font-size: 13px; display: none; }
+        .chapter.expanded .chapter-topics { display: block; }
+        
+        /* Reviews */
+        .review { background: white; border: 1px solid #e5e7eb; border-radius: 6px; padding: 15px; margin-bottom: 15px; }
+        .review-header { display: flex; justify-content: space-between; align-items: start; margin-bottom: 10px; }
+        .review-user { font-weight: 600; }
+        .review-rating { color: #fbbf24; }
+        .review-text { color: #6b7280; font-size: 13px; line-height: 1.6; margin-bottom: 10px; }
+        .review-helpful { font-size: 12px; color: #667eea; cursor: pointer; }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .book-detail { grid-template-columns: 1fr; gap: 20px; }
+            .book-title { font-size: 22px; }
+            .actions { flex-direction: column; }
+            .tab-headers { flex-wrap: wrap; }
+        }
+        
+        /* Loading & Messages */
+        .loading { text-align: center; padding: 40px; color: #6b7280; }
+        .error { background: #fee2e2; color: #991b1b; padding: 15px; border-radius: 6px; margin-bottom: 20px; }
+        .success { background: #dcfce7; color: #166534; padding: 15px; border-radius: 6px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <nav>
+            <h1>📚 RENVOX Book Store</h1>
+            <div>
+                <a href="store.html">← Back to Store</a>
+                <a href="#" id="cart-link">🛒 Cart</a>
+                <a href="#" id="account-link">👤 Account</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container">
+        <!-- Breadcrumb -->
+        <div class="breadcrumb">
+            <a href="store.html">Home</a> / <a href="store.html">Books</a> / <span id="breadcrumb-title">Loading...</span>
+        </div>
+
+        <!-- Messages -->
+        <div id="messages"></div>
+
+        <!-- Main Content -->
+        <div class="book-detail" id="book-detail-container">
+            <!-- Loading State -->
+            <div class="loading">Loading book details...</div>
+        </div>
+    </div>
+
+    <script src="navigation.js"></script>
+    <script>
+        const bookId = new URLSearchParams(window.location.search).get('id');
+
+        if (!bookId) {
+            document.getElementById('book-detail-container').innerHTML = '<p class="error">No book selected. <a href="store.html">Go back to store</a></p>';
+        } else {
+            loadBookDetails();
+        }
+
+        async function loadBookDetails() {
+            try {
+                const response = await fetch(`http://localhost:4000/api/books/${bookId}`);
+                const data = await response.json();
+
+                if (!data.ok || !data.book) {
+                    throw new Error('Book not found');
+                }
+
+                renderBookDetail(data.book);
+                loadReviews();
+            } catch (error) {
+                document.getElementById('book-detail-container').innerHTML = `<p class="error">Error loading book: ${error.message}</p>`;
+            }
+        }
+
+        function renderBookDetail(book) {
+            const mainImage = book.images && book.images.length > 0 ? book.images[0].imageUrl : 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="400"><rect fill="%23ddd" width="300" height="400"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="%23999">No Image</text></svg>';
+            
+            const discount = book.price.discount || 0;
+            const rating = book.reviews?.averageRating || 0;
+            const reviewCount = book.reviews?.totalReviews || 0;
+            const inStock = book.stock?.availableQuantity > 0;
+
+            let html = `
+                <div class="image-gallery">
+                    <div class="main-image">
+                        <img id="main-image" src="${mainImage}" alt="${book.title}">
+                    </div>
+                    <div class="thumbnails" id="thumbnails">
+            `;
+
+            if (book.images && book.images.length > 0) {
+                book.images.forEach((img, idx) => {
+                    html += `<div class="thumbnail ${idx === 0 ? 'active' : ''}" onclick="changeImage('${img.imageUrl}', this)">
+                        <img src="${img.imageUrl}" alt="Image ${idx + 1}">
+                    </div>`;
+                });
+            }
+
+            html += `
+                    </div>
+                </div>
+                <div class="book-info">
+                    <h2 class="book-title">${book.title}</h2>
+                    <p class="book-author">by ${book.author}</p>
+                    
+                    <div class="ratings">
+                        <span class="stars">${rating > 0 ? '⭐'.repeat(Math.round(rating)) : 'No ratings yet'}</span>
+                        <span class="review-count">${rating.toFixed(1)} (${reviewCount} reviews)</span>
+                    </div>
+
+                    <div class="pricing">
+                        <div class="price-row">
+                            <span class="mrp">₹${book.price.mrp}</span>
+                            <span class="selling-price">₹${book.price.sellingPrice}</span>
+                            <span class="discount">${discount}% OFF</span>
+                        </div>
+                        <div class="stock-status ${inStock ? 'in-stock' : 'out-of-stock'}">
+                            ${inStock ? `✓ In Stock (${book.stock.availableQuantity} available)` : '✗ Out of Stock'}
+                        </div>
+                    </div>
+
+                    <div class="actions">
+                        <button class="btn-primary" onclick="addToCart('${book._id}')" ${!inStock ? 'disabled' : ''}>
+                            🛒 ADD TO CART
+                        </button>
+                        <button class="btn-secondary" onclick="buyNow('${book._id}')" ${!inStock ? 'disabled' : ''}>
+                            💳 BUY NOW
+                        </button>
+                        <button class="btn-icon" onclick="toggleWishlist('${book._id}', this)">❤️</button>
+                    </div>
+
+                    ${renderSellerBox(book.seller)}
+
+                    <div style="background: white; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                        <div class="detail-row">
+                            <strong>Edition:</strong> <span>${book.edition || 'Not specified'}</span>
+                        </div>
+                        <div class="detail-row">
+                            <strong>Year:</strong> <span>${book.year || 'Not specified'}</span>
+                        </div>
+                        <div class="detail-row">
+                            <strong>Pages:</strong> <span>${book.pages || 'Not specified'}</span>
+                        </div>
+                        <div class="detail-row">
+                            <strong>Language:</strong> <span>${book.language || 'English'}</span>
+                        </div>
+                        <div class="detail-row">
+                            <strong>Condition:</strong> <span>${book.condition || 'Used'}</span>
+                        </div>
+                        ${book.publishedDetails?.isbn ? `<div class="detail-row"><strong>ISBN:</strong> <span>${book.publishedDetails.isbn}</span></div>` : ''}
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('book-detail-container').innerHTML = html;
+            document.getElementById('breadcrumb-title').textContent = book.title;
+
+            // Add tabs
+            setTimeout(() => {
+                const tabsHtml = `
+                    <div class="tabs">
+                        <div class="tab-headers">
+                            <div class="tab-header active" onclick="switchTab('description')">Description</div>
+                            <div class="tab-header" onclick="switchTab('chapters')">Chapters</div>
+                            <div class="tab-header" onclick="switchTab('reviews')">Reviews (${reviewCount})</div>
+                        </div>
+
+                        <div class="tab-content active" id="description">
+                            <p>${book.description || 'No description available'}</p>
+                        </div>
+
+                        <div class="tab-content" id="chapters">
+                            ${renderChapters(book.syllabus)}
+                        </div>
+
+                        <div class="tab-content" id="reviews">
+                            <div id="reviews-container"></div>
+                        </div>
+                    </div>
+                `;
+
+                document.querySelector('.book-info').parentElement.insertAdjacentHTML('afterend', tabsHtml);
+            }, 0);
+        }
+
+        function renderSellerBox(seller) {
+            return `
+                <div class="seller-box">
+                    <div class="seller-header">
+                        <div class="seller-avatar">${seller.sellerName.charAt(0).toUpperCase()}</div>
+                        <div class="seller-meta">
+                            <h3>${seller.sellerName}</h3>
+                            <p>⭐ Verified Seller</p>
+                        </div>
+                    </div>
+                    <div class="seller-details">
+                        <div class="detail-row">
+                            <strong>Phone:</strong> <span>${seller.contactNumber}</span>
+                        </div>
+                        <div class="detail-row">
+                            <strong>Email:</strong> <span>${seller.email}</span>
+                        </div>
+                        <div class="detail-row">
+                            <strong>Location:</strong> <span>${seller.address?.city || 'Not specified'}</span>
+                        </div>
+                        <div class="detail-row">
+                            <strong>Delivery:</strong> <span>${seller.deliveryDays || 3}-5 days</span>
+                        </div>
+                    </div>
+                    <div class="seller-actions">
+                        <button class="btn-primary" onclick="contactSeller('${seller.sellerId}')">💬 Chat</button>
+                        <button class="btn-secondary" onclick="viewSellerBooks('${seller.sellerId}')">View More</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderChapters(syllabus) {
+            if (!syllabus || !syllabus.chapters || syllabus.chapters.length === 0) {
+                return '<p>No chapters information available</p>';
+            }
+
+            let html = '';
+            syllabus.chapters.forEach((chapter, idx) => {
+                html += `
+                    <div class="chapter" onclick="toggleChapter(this)">
+                        <div class="chapter-title">Chapter ${chapter.chapterNumber}: ${chapter.chapterName}</div>
+                        <ul class="chapter-topics">
+                            ${chapter.topics.map(topic => `<li>${topic}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+            });
+
+            return html;
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab-header').forEach(h => h.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        function toggleChapter(elem) {
+            elem.classList.toggle('expanded');
+        }
+
+        function changeImage(src, thumb) {
+            document.getElementById('main-image').src = src;
+            document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
+            thumb.classList.add('active');
+        }
+
+        async function addToCart(bookId) {
+            try {
+                const response = await fetch('http://localhost:4000/api/cart', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+                    },
+                    body: JSON.stringify({ bookId, quantity: 1 })
+                });
+
+                const data = await response.json();
+
+                if (data.ok) {
+                    showMessage('✓ Added to cart!', 'success');
+                } else {
+                    showMessage('Login required to add to cart', 'error');
+                }
+            } catch (error) {
+                showMessage('Error adding to cart: ' + error.message, 'error');
+            }
+        }
+
+        function buyNow(bookId) {
+            localStorage.setItem('buyNowBookId', bookId);
+            window.location.href = 'cart.html';
+        }
+
+        function toggleWishlist(bookId, btn) {
+            fetch(`http://localhost:4000/api/wishlist/${bookId}`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token') || ''}` }
+            }).then(r => r.json()).then(data => {
+                if (data.ok) {
+                    btn.style.opacity = '1';
+                    showMessage('✓ Added to wishlist', 'success');
+                }
+            });
+        }
+
+        function contactSeller(sellerId) {
+            window.location.href = `chat.html?sellerId=${sellerId}&bookId=${bookId}`;
+        }
+
+        function viewSellerBooks(sellerId) {
+            window.location.href = `store.html?sellerId=${sellerId}`;
+        }
+
+        async function loadReviews() {
+            try {
+                const response = await fetch(`http://localhost:4000/api/reviews/book/${bookId}`);
+                const data = await response.json();
+
+                if (data.ok && data.reviews.length > 0) {
+                    const reviewsHtml = data.reviews.map(review => `
+                        <div class="review">
+                            <div class="review-header">
+                                <span class="review-user">${review.buyerId?.name || 'Anonymous'}</span>
+                                <span class="review-rating">${'⭐'.repeat(review.rating)}</span>
+                            </div>
+                            <h4>${review.title}</h4>
+                            <p class="review-text">${review.comment}</p>
+                            <span class="review-helpful" onclick="markHelpful('${review._id}')">👍 Helpful (${review.helpful})</span>
+                        </div>
+                    `).join('');
+
+                    setTimeout(() => {
+                        const container = document.getElementById('reviews-container');
+                        if (container) container.innerHTML = reviewsHtml;
+                    }, 100);
+                }
+            } catch (error) {
+                console.error('Error loading reviews:', error);
+            }
+        }
+
+        function markHelpful(reviewId) {
+            fetch(`http://localhost:4000/api/reviews/${reviewId}/helpful`, { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.ok) showMessage('✓ Marked as helpful', 'success');
+                });
+        }
+
+        function showMessage(msg, type) {
+            const container = document.getElementById('messages');
+            container.innerHTML = `<div class="${type}">${msg}</div>`;
+            setTimeout(() => { container.innerHTML = ''; }, 3000);
+        }
+
+        // Navigation
+        document.getElementById('cart-link').onclick = (e) => {
+            e.preventDefault();
+            window.location.href = 'cart.html';
+        };
+
+        document.getElementById('account-link').onclick = (e) => {
+            e.preventDefault();
+            if (localStorage.getItem('token')) {
+                window.location.href = 'seller-dashboard.html';
+            } else {
+                window.location.href = 'signup.html';
+            }
+        };
+    </script>
+</body>
+</html>

@@ -583,6 +583,33 @@
         }
 
         async function init() {
+            // Early Redirect Check for Enrollment
+            const token = getToken();
+            if (!token) {
+                alert('Please sign in to access course content.');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            try {
+                // Determine if it's the free course; free course doesn't need purchase verification 
+                // but we should still let them register progress.
+                if (courseId !== 'Learning Essentials (Free)') {
+                    const enrollRes = await fetch(`${API_BASE}/api/course/verify-enrollment?courseId=${encodeURIComponent(courseId)}`, {
+                        headers: { 'Authorization': 'Bearer ' + token }
+                    });
+                    const enrollData = await enrollRes.json();
+
+                    if (!enrollData.ok || !enrollData.isEnrolled) {
+                        alert('You have not enrolled in this course yet. Please purchase it to unlock content.');
+                        window.location.href = 'certificates.html';
+                        return;
+                    }
+                }
+            } catch (err) {
+                console.error('Enrollment Check Error', err);
+            }
+
             // Set course info
             document.getElementById('pageTitle').textContent = courseId;
             document.getElementById('sidebarTitle').textContent = courseId;
@@ -591,20 +618,18 @@
             document.getElementById('videoFrame').src = data.video;
             document.getElementById('pdfFrame').src = data.pdf;
 
-            // Load progress from server (only if logged in)
-            if (getToken()) {
-                try {
-                    const res = await fetch(`${API_BASE}/api/course/progress?courseId=${encodeURIComponent(courseId)}`, {
-                        headers: { 'Authorization': 'Bearer ' + getToken() }
-                    });
-                    const d = await res.json();
-                    if (d.ok && d.record) {
-                        if (d.record.videoWatched) markDone('video', false);
-                        if (d.record.pdfRead) markDone('pdf', false);
-                        if (d.record.testPassed) { markDone('test', false); showTestPassed(); }
-                    }
-                } catch (e) { /* offline fallback */ }
-            }
+            // Load progress from server
+            try {
+                const res = await fetch(`${API_BASE}/api/course/progress?courseId=${encodeURIComponent(courseId)}`, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const d = await res.json();
+                if (d.ok && d.record) {
+                    if (d.record.videoWatched) markDone('video', false);
+                    if (d.record.pdfRead) markDone('pdf', false);
+                    if (d.record.testPassed) { markDone('test', false); showTestPassed(); }
+                }
+            } catch (e) { console.error('Progress load failed', e); }
         }
 
         function markDone(type, save = true) {

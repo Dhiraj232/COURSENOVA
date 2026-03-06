@@ -67,22 +67,8 @@
             </div>
         </div>
         <div class="hero-visual">
-            <div class="dashboard-mockup">
-                <div class="mockup-header">
-                    <div class="mockup-dot"></div>
-                    <div class="mockup-dot"></div>
-                    <div class="mockup-dot"></div>
-                </div>
-                <div class="mockup-line" style="width: 80%;"></div>
-                <div class="mockup-line" style="width: 60%;"></div>
-                <div class="mockup-bar">
-                    <div class="mockup-bar-item"></div>
-                    <div class="mockup-bar-item"></div>
-                    <div class="mockup-bar-item"></div>
-                </div>
-                <div class="mockup-line" style="width: 70%;"></div>
-                <div class="mockup-line" style="width: 50%;"></div>
-            </div>
+            <!-- replaced dashboard mockup with actual students image -->
+            <img src="front.png" alt="Students studying" class="hero-image">
         </div>
     </section>
 
@@ -173,15 +159,8 @@
     <!-- ==================== CERTIFICATE AUTHENTICITY SECTION ==================== -->
     <section class="certificate-section" id="certificates">
         <div class="certificate-mockup">
-            <div class="cert-design">
-                <h3>✓ Certificate</h3>
-                <div class="cert-text">RENVOX</div>
-                <p style="color: var(--text-dark); margin: 1rem 0;">Certificate of Completion</p>
-                <div class="cert-text">ID: RENV-2025-ABC123</div>
-                <div style="margin-top: 1.5rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
-                    <p style="font-size: 0.8rem; color: var(--text-light);">Verified & Authentic</p>
-                </div>
-            </div>
+            <!-- display real certificate image -->
+            <img src="renvox cer.png" alt="Sample RENVOX certificate" class="certificate-image">
         </div>
         <div>
             <h2>Why Our Certificates Matter</h2>
@@ -357,6 +336,41 @@
         // across all pages. The 'loadUser' function in navigation.js now 
         // handles checking for the user token and rendering the dropdown.
 
+
+        // ==================== AUTHENTICATION & REDIRECT HANDLING ====================
+        function handleAuthRedirect() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+            const userStr = urlParams.get('user');
+
+            if (token && userStr) {
+                try {
+                    // Try to parse the user data
+                    const user = JSON.parse(decodeURIComponent(userStr));
+
+                    // Save to local storages
+                    // Both old and new keys for cross-compatibility
+                    localStorage.setItem('renvox_token', token);
+                    localStorage.setItem('renvox_user', JSON.stringify(user));
+                    localStorage.setItem('renvoxToken', token);
+                    localStorage.setItem('renvoxUser', JSON.stringify(user));
+                    localStorage.setItem('userName', user.fullName || user.name || '');
+
+                    // Remove query params from URL without refreshing the page
+                    window.history.replaceState({}, document.title, window.location.pathname);
+
+                    // Reload the user dropdown to show the logged-in user
+                    if (typeof setupUserDropdown === 'function') {
+                        setupUserDropdown();
+                    }
+                } catch (e) {
+                    console.error('Error parsing user data from redirect', e);
+                }
+            }
+        }
+
+        // Call the auth redirect handler when the page loads
+        window.addEventListener('load', handleAuthRedirect);
 
         // ==================== ACTIVE NAV LINK ====================
         window.addEventListener('scroll', function () {

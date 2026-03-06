@@ -426,6 +426,13 @@
             const course = certificates.find(c => c.title === courseName);
             if (!course) return;
 
+            const token = localStorage.getItem('renvox_token') || localStorage.getItem('renvoxToken');
+            if (!token && !course.isFree) {
+                alert("Please log in to enroll.");
+                window.location.href = "index.html";
+                return;
+            }
+
             if (course.isFree) {
                 // Directly redirect for free courses
                 window.location.href = `course-content.html?course=${encodeURIComponent(courseName)}`;
@@ -433,6 +440,18 @@
             }
 
             try {
+                // Check if already enrolled
+                const enrollCheck = await fetch(`${API_BASE}/api/course/verify-enrollment?courseId=${encodeURIComponent(courseName)}`, {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const enrollData = await enrollCheck.json();
+
+                if (enrollData.ok && enrollData.isEnrolled) {
+                    // Already bought! Send straight to content
+                    window.location.href = `course-content.html?course=${encodeURIComponent(courseName)}`;
+                    return;
+                }
+
                 // 1. Create order on backend
                 const response = await fetch('/api/create-order', {
                     method: 'POST',
@@ -459,11 +478,15 @@
                             // 3. Verify Payment
                             const verifyRes = await fetch('/api/verify-payment', {
                                 method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': 'Bearer ' + (localStorage.getItem('renvox_token') || localStorage.getItem('renvoxToken'))
+                                },
                                 body: JSON.stringify({
                                     razorpay_order_id: paymentResponse.razorpay_order_id,
                                     razorpay_payment_id: paymentResponse.razorpay_payment_id,
-                                    razorpay_signature: paymentResponse.razorpay_signature
+                                    razorpay_signature: paymentResponse.razorpay_signature,
+                                    course: courseName
                                 })
                             });
                             const verifyData = await verifyRes.json();

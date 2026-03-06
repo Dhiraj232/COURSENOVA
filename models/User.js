@@ -8,7 +8,7 @@ const UserSchema = new mongoose.Schema({
 
     // Profile setup (filled after first login)
     profileComplete: { type: Boolean, default: false },
-    role: { type: String, enum: ['college', 'child', ''], default: '' },
+    role: { type: String, enum: ['college', 'child', 'student', ''], default: '' },
 
     // College fields
     collegeName: { type: String, default: '' },
@@ -18,6 +18,10 @@ const UserSchema = new mongoose.Schema({
     // Child / School fields
     childClass: { type: String, default: '' }, // e.g. "Class 8", "Grade 5"
 
+    // Array of course titles the user has paid for or enrolled in
+    enrolledCourses: [{ type: String }],
+
+    lastLogin: { type: Date, default: Date.now },
     createdAt: { type: Date, default: Date.now }
 });
 

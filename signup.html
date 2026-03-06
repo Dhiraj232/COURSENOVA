@@ -800,12 +800,6 @@
         <div class="panel-auth">
             <div class="auth-box">
 
-                <!-- TAB SWITCHER -->
-                <div class="auth-tabs">
-                    <button class="auth-tab active" id="tabLogin" onclick="switchTab('login')">Sign In</button>
-                    <button class="auth-tab" id="tabSignup" onclick="switchTab('signup')">Create Account</button>
-                </div>
-
                 <!-- ALERT BOX -->
                 <div class="auth-alert" id="authAlert">
                     <i class="fas fa-circle-exclamation"></i>
@@ -820,7 +814,7 @@
                     </div>
 
                     <!-- Google -->
-                    <button class="google-btn" id="googleSignInBtn" onclick="triggerGoogleSignIn()">
+                    <a class="google-btn" id="googleSignInBtn" href="http://localhost:5000/auth/google">
                         <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path
                                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -836,212 +830,27 @@
                                 fill="#EA4335" />
                         </svg>
                         Continue with Google
-                    </button>
-
-                    <!-- GIS hidden div (backup) -->
-                    <div id="g_id_onload"
-                        data-client_id="1055845988581-g9r85uli987acbrkge3pr1edkr9nk5b0.apps.googleusercontent.com"
-                        data-context="signin" data-ux_mode="popup" data-callback="handleGoogleCallback"
-                        data-auto_prompt="false" style="display:none;">
-                    </div>
-
-                    <div class="divider">or sign in with email</div>
-
-                    <form id="loginForm" onsubmit="handleLogin(event)">
-                        <div class="form-group">
-                            <label class="form-label">Email or Mobile</label>
-                            <div class="input-wrapper">
-                                <i class="fas fa-user input-icon"></i>
-                                <input type="text" id="loginIdentifier" class="form-input"
-                                    placeholder="your@email.com or 9876543210" autocomplete="username" required>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Password</label>
-                            <div class="input-wrapper">
-                                <i class="fas fa-lock input-icon"></i>
-                                <input type="password" id="loginPassword" class="form-input" placeholder="Your password"
-                                    autocomplete="current-password" required>
-                                <button type="button" class="input-toggle"
-                                    onclick="togglePassword('loginPassword', this)">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                            </div>
-                        </div>
-                        <button type="submit" class="btn-submit" id="loginBtn">
-                            <span class="btn-text"><i class="fas fa-arrow-right-to-bracket"></i> Sign In</span>
-                            <span class="btn-spinner"><i class="fas fa-circle-notch spinner-icon"></i> Signing
-                                in...</span>
-                        </button>
-                    </form>
-
-                    <p class="form-footer">
-                        Don't have an account? <a onclick="switchTab('signup')">Create one free</a>
-                    </p>
-                </div>
-
-                <!-- ═══════════ SIGNUP PANEL ═══════════ -->
-                <div class="form-panel" id="panelSignup">
-                    <div class="auth-header">
-                        <h2 class="auth-title">Join RENVOX 🚀</h2>
-                        <p class="auth-subtitle">Create your free account in seconds</p>
-                    </div>
-
-                    <button class="google-btn" onclick="triggerGoogleSignIn()">
-                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path
-                                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                                fill="#4285F4" />
-                            <path
-                                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                                fill="#34A853" />
-                            <path
-                                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                                fill="#FBBC05" />
-                            <path
-                                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                                fill="#EA4335" />
-                        </svg>
-                        Sign up with Google
-                    </button>
-
-                    <div class="divider">or fill in your details</div>
-
-                    <form id="signupForm" onsubmit="handleSignup(event)">
-                        <div class="form-group">
-                            <label class="form-label">Full Name</label>
-                            <div class="input-wrapper">
-                                <i class="fas fa-id-card input-icon"></i>
-                                <input type="text" id="signupName" class="form-input" placeholder="Dhiraj Kumar"
-                                    autocomplete="name" required>
-                            </div>
-                        </div>
-
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.8rem;">
-                            <div class="form-group">
-                                <label class="form-label">Email</label>
-                                <div class="input-wrapper">
-                                    <i class="fas fa-envelope input-icon"></i>
-                                    <input type="email" id="signupEmail" class="form-input" placeholder="you@email.com"
-                                        autocomplete="email" required>
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label class="form-label">Mobile</label>
-                                <div class="input-wrapper">
-                                    <i class="fas fa-phone input-icon"></i>
-                                    <input type="tel" id="signupMobile" class="form-input" placeholder="9876543210"
-                                        autocomplete="tel" required>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label">Password</label>
-                            <div class="input-wrapper">
-                                <i class="fas fa-lock input-icon"></i>
-                                <input type="password" id="signupPassword" class="form-input"
-                                    placeholder="Min. 8 characters" autocomplete="new-password" required
-                                    oninput="checkPasswordStrength(this.value)">
-                                <button type="button" class="input-toggle"
-                                    onclick="togglePassword('signupPassword', this)">
-                                    <i class="fas fa-eye"></i>
-                                </button>
-                            </div>
-                            <div class="strength-bar">
-                                <div class="strength-fill" id="strengthFill"></div>
-                            </div>
-                            <div class="strength-text" id="strengthText"></div>
-                        </div>
-
-                        <button type="submit" class="btn-submit" id="signupBtn">
-                            <span class="btn-text"><i class="fas fa-user-plus"></i> Create Account</span>
-                            <span class="btn-spinner"><i class="fas fa-circle-notch spinner-icon"></i>
-                                Creating...</span>
-                        </button>
-                    </form>
-
-                    <p class="terms-note">
-                        By creating an account you agree to our <a href="#"
-                            style="color:var(--primary-light);text-decoration:none;">Terms</a>
-                        and <a href="#" style="color:var(--primary-light);text-decoration:none;">Privacy Policy</a>
-                    </p>
-
-                    <p class="form-footer">
-                        Already have an account? <a onclick="switchTab('login')">Sign in</a>
-                    </p>
-                </div>
-
-                <!-- ═══════════ OTP VERIFICATION PANEL ═══════════ -->
-                <div class="form-panel" id="panelOtp">
-                    <div class="auth-header">
-                        <h2 class="auth-title">Verify your account ✉️</h2>
-                    </div>
-
-                    <div class="otp-panel active">
-                        <p class="otp-description" id="otpDesc">
-                            We've logged your OTP on the server (check server console). Please enter it below to
-                            activate your account.
-                        </p>
-
-                        <div class="otp-inputs">
-                            <input type="text" maxlength="1" class="otp-digit" id="otp1" oninput="otpInput(this,'otp2')"
-                                onkeydown="otpBack(event,this,'')">
-                            <input type="text" maxlength="1" class="otp-digit" id="otp2" oninput="otpInput(this,'otp3')"
-                                onkeydown="otpBack(event,this,'otp1')">
-                            <input type="text" maxlength="1" class="otp-digit" id="otp3" oninput="otpInput(this,'otp4')"
-                                onkeydown="otpBack(event,this,'otp2')">
-                            <input type="text" maxlength="1" class="otp-digit" id="otp4" oninput="otpInput(this,'otp5')"
-                                onkeydown="otpBack(event,this,'otp3')">
-                            <input type="text" maxlength="1" class="otp-digit" id="otp5" oninput="otpInput(this,'otp6')"
-                                onkeydown="otpBack(event,this,'otp4')">
-                            <input type="text" maxlength="1" class="otp-digit" id="otp6" oninput="otpInput(this,'')"
-                                onkeydown="otpBack(event,this,'otp5')">
-                        </div>
-
-                        <button class="btn-submit" id="verifyOtpBtn" onclick="handleVerifyOtp()">
-                            <span class="btn-text"><i class="fas fa-check-circle"></i> Verify & Sign In</span>
-                            <span class="btn-spinner"><i class="fas fa-circle-notch spinner-icon"></i>
-                                Verifying...</span>
-                        </button>
-
-                        <p class="resend-link" style="margin-top:1.2rem;">
-                            Didn't get it? <button onclick="resendOtp()">Resend OTP</button>
-                        </p>
-                    </div>
+                    </a>
                 </div>
 
             </div>
         </div>
     </div>
 
-    <!-- Hidden GIS trigger button -->
-    <div id="gsiButtonContainer" style="display:none;">
-        <div class="g_id_signin" data-type="standard" data-size="large" data-theme="filled_black"
-            data-text="sign_in_with" data-shape="rectangular" data-logo_alignment="left" data-width="380"
-            id="gsiRenderedBtn">
-        </div>
-    </div>
-
     <script>
         // ─── CONFIG ───────────────────────────────────────────────────
-        const GOOGLE_CLIENT_ID = '1055845988581-g9r85uli987acbrkge3pr1edkr9nk5b0.apps.googleusercontent.com';
         const API_BASE = (() => {
-            const p = window.location.port;
-            return (p === '5500' || p === '5501' || p === '5502' || p === '5503' || p === '5504' || p === '3000')
-                ? 'http://localhost:4000' : '';
+            try {
+                const u = new URL(window.location.origin);
+                u.port = '5000';
+                return u.toString();
+            } catch (e) {
+                // fallback
+                return 'http://localhost:5000';
+            }
         })();
 
-        let pendingUserId = null;
-
-        // ─── TAB SWITCHING ────────────────────────────────────────────
-        function switchTab(tab) {
-            clearAlert();
-            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.form-panel').forEach(p => p.classList.remove('active'));
-            document.getElementById('tab' + (tab === 'login' ? 'Login' : 'Signup')).classList.add('active');
-            document.getElementById('panel' + (tab === 'login' ? 'Login' : 'Signup')).classList.add('active');
-        }
+        console.log('Using API_BASE =', API_BASE);
 
         // ─── ALERTS ───────────────────────────────────────────────────
         function showAlert(msg, type = 'error') {
@@ -1057,323 +866,25 @@
             document.getElementById('authAlert').className = 'auth-alert';
         }
 
-        // ─── PASSWORD TOGGLE ──────────────────────────────────────────
-        function togglePassword(inputId, btn) {
-            const input = document.getElementById(inputId);
-            const icon = btn.querySelector('i');
-            if (input.type === 'password') {
-                input.type = 'text';
-                icon.className = 'fas fa-eye-slash';
-            } else {
-                input.type = 'password';
-                icon.className = 'fas fa-eye';
-            }
-        }
-
-        // ─── PASSWORD STRENGTH ────────────────────────────────────────
-        function checkPasswordStrength(val) {
-            const fill = document.getElementById('strengthFill');
-            const text = document.getElementById('strengthText');
-            let score = 0;
-            if (val.length >= 8) score++;
-            if (/[A-Z]/.test(val)) score++;
-            if (/[0-9]/.test(val)) score++;
-            if (/[^A-Za-z0-9]/.test(val)) score++;
-
-            const levels = [
-                { pct: '0%', color: '', label: '' },
-                { pct: '25%', color: '#ef4444', label: 'Weak' },
-                { pct: '50%', color: '#f97316', label: 'Fair' },
-                { pct: '75%', color: '#eab308', label: 'Good' },
-                { pct: '100%', color: '#22c55e', label: 'Strong 💪' }
-            ];
-
-            const lvl = levels[score];
-            fill.style.width = lvl.pct;
-            fill.style.background = lvl.color;
-            text.textContent = lvl.label;
-        }
-
-        // ─── LOADING STATE ────────────────────────────────────────────
-        function setLoading(btnId, loading) {
-            const btn = document.getElementById(btnId);
-            if (!btn) return;
-            if (loading) {
-                btn.classList.add('loading');
-                btn.disabled = true;
-            } else {
-                btn.classList.remove('loading');
-                btn.disabled = false;
-            }
-        }
-
-        // ─── GOOGLE AUTH ──────────────────────────────────────────────
-        let gsiInitialized = false;
-
-        function triggerGoogleSignIn() {
-            if (typeof google === 'undefined') {
-                showAlert('Google Sign-In is loading. Please try again in a moment.');
-                return;
-            }
-            // Prompt the GIS flow
-            google.accounts.id.initialize({
-                client_id: GOOGLE_CLIENT_ID,
-                callback: handleGoogleCallback,
-                ux_mode: 'popup',
-            });
-            google.accounts.id.prompt((notification) => {
-                if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-                    // Fallback: render explicit button
-                    google.accounts.id.renderButton(
-                        document.getElementById('gsiRenderedBtn'),
-                        { type: 'standard', size: 'large', text: 'continue_with', width: 380 }
-                    );
-                    document.getElementById('gsiButtonContainer').style.display = 'flex';
-                    document.getElementById('gsiButtonContainer').style.justifyContent = 'center';
-                    document.getElementById('gsiButtonContainer').style.marginTop = '1rem';
-                    // move into the current panel
-                    const activePanel = document.querySelector('.form-panel.active');
-                    if (activePanel) activePanel.appendChild(document.getElementById('gsiButtonContainer'));
-                }
-            });
-        }
-
-        async function handleGoogleCallback(response) {
-            clearAlert();
-            if (!response || !response.credential) {
-                showAlert('Google sign-in failed. Please try again.');
-                return;
-            }
+        // ─── INIT AND CHECK SERVER ─────────────────────────────────
+        async function checkServer() {
             try {
-                setLoading('googleSignInBtn', true);
-                const res = await fetch(`${API_BASE}/api/google-auth`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ credential: response.credential })
-                });
-                const data = await res.json();
-
-                if (data.ok) {
-                    saveAndRedirect(data);
-                } else {
-                    showAlert(data.message || 'Google authentication failed.');
-                }
+                const r = await fetch(`${API_BASE}/api/ping`);
+                const j = await r.json();
+                if (!j.ok) throw new Error('ping failed');
+                console.log('Server ping successful');
             } catch (err) {
-                console.error('Google auth error:', err);
-                showAlert('Network error. Make sure your RENVOX server is running on port 4000.');
-            } finally {
-                setLoading('googleSignInBtn', false);
+                console.error('Server ping error', err);
+                showAlert('Cannot reach backend server. Make sure it is running on port 5000.', 'error');
             }
         }
+        checkServer();
 
-        // Also make it the GIS global callback
-        window.handleGoogleCallback = handleGoogleCallback;
-
-        // ─── EMAIL/PASSWORD LOGIN ─────────────────────────────────────
-        async function handleLogin(e) {
-            e.preventDefault();
-            clearAlert();
-
-            const identifier = document.getElementById('loginIdentifier').value.trim();
-            const password = document.getElementById('loginPassword').value;
-
-            if (!identifier || !password) {
-                showAlert('Please fill in all fields.');
-                return;
-            }
-
-            setLoading('loginBtn', true);
-            try {
-                const res = await fetch(`${API_BASE}/api/login`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ identifier, password })
-                });
-                const data = await res.json();
-
-                if (data.ok) {
-                    saveAndRedirect(data);
-                } else if (res.status === 403 && data.userId) {
-                    // Account not verified – send to OTP
-                    pendingUserId = data.userId;
-                    showOtpPanel('Verify your account to continue.');
-                } else {
-                    showAlert(data.message || 'Login failed. Check your credentials.');
-                }
-            } catch (err) {
-                console.error('Login error:', err);
-                showAlert('Network error. Make sure your RENVOX server is running on port 4000.');
-            } finally {
-                setLoading('loginBtn', false);
-            }
-        }
-
-        // ─── SIGNUP ───────────────────────────────────────────────────
-        async function handleSignup(e) {
-            e.preventDefault();
-            clearAlert();
-
-            const fullName = document.getElementById('signupName').value.trim();
-            const email = document.getElementById('signupEmail').value.trim();
-            const mobile = document.getElementById('signupMobile').value.trim();
-            const password = document.getElementById('signupPassword').value;
-
-            if (!fullName || !email || !mobile || !password) {
-                showAlert('Please fill in all fields.');
-                return;
-            }
-            if (password.length < 8) {
-                showAlert('Password must be at least 8 characters.');
-                return;
-            }
-            if (!/^\d{10}$/.test(mobile)) {
-                showAlert('Enter a valid 10-digit mobile number.');
-                return;
-            }
-
-            setLoading('signupBtn', true);
-            try {
-                const res = await fetch(`${API_BASE}/api/signup`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ fullName, email, mobile, password })
-                });
-                const data = await res.json();
-
-                if (data.ok) {
-                    pendingUserId = data.userId;
-                    showOtpPanel(`OTP has been generated for ${email}. Check your server console for the OTP code.`);
-                } else {
-                    showAlert(data.message || 'Signup failed. Please try again.');
-                }
-            } catch (err) {
-                console.error('Signup error:', err);
-                showAlert('Network error. Make sure your RENVOX server is running on port 4000.');
-            } finally {
-                setLoading('signupBtn', false);
-            }
-        }
-
-        // ─── OTP FLOW ─────────────────────────────────────────────────
-        function showOtpPanel(desc) {
-            clearAlert();
-            document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.form-panel').forEach(p => p.classList.remove('active'));
-            document.getElementById('panelOtp').classList.add('active');
-            document.getElementById('otpDesc').textContent = desc;
-            document.getElementById('otp1').focus();
-        }
-
-        function otpInput(el, nextId) {
-            el.value = el.value.replace(/\D/g, '');
-            if (el.value && nextId) document.getElementById(nextId)?.focus();
-            // Auto-submit when last digit entered
-            const code = getOtpCode();
-            if (code.length === 6) handleVerifyOtp();
-        }
-
-        function otpBack(e, el, prevId) {
-            if (e.key === 'Backspace' && !el.value && prevId) {
-                document.getElementById(prevId)?.focus();
-            }
-        }
-
-        function getOtpCode() {
-            return ['otp1', 'otp2', 'otp3', 'otp4', 'otp5', 'otp6'].map(id => document.getElementById(id)?.value || '').join('');
-        }
-
-        async function handleVerifyOtp() {
-            clearAlert();
-            const code = getOtpCode();
-
-            if (code.length < 6) {
-                showAlert('Enter all 6 digits of your OTP.');
-                return;
-            }
-            if (!pendingUserId) {
-                showAlert('Session expired. Please sign up again.');
-                return;
-            }
-
-            setLoading('verifyOtpBtn', true);
-            try {
-                const res = await fetch(`${API_BASE}/api/verify-otp`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId: pendingUserId, code })
-                });
-                const data = await res.json();
-
-                if (data.ok) {
-                    saveAndRedirect(data);
-                } else {
-                    showAlert(data.message || 'Invalid OTP. Please try again.');
-                    // Clear inputs
-                    ['otp1', 'otp2', 'otp3', 'otp4', 'otp5', 'otp6'].forEach(id => { document.getElementById(id).value = ''; });
-                    document.getElementById('otp1').focus();
-                }
-            } catch (err) {
-                showAlert('Network error. Please try again.');
-            } finally {
-                setLoading('verifyOtpBtn', false);
-            }
-        }
-
-        async function resendOtp() {
-            if (!pendingUserId) { showAlert('Session expired. Please sign up again.'); return; }
-            try {
-                const res = await fetch(`${API_BASE}/api/send-otp`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId: pendingUserId })
-                });
-                const data = await res.json();
-                if (data.ok) {
-                    showAlert('OTP resent! Check server console.', 'success');
-                } else {
-                    showAlert(data.message || 'Could not resend OTP.');
-                }
-            } catch (err) {
-                showAlert('Network error.');
-            }
-        }
-
-        // ─── SAVE USER & REDIRECT ─────────────────────────────────────
-        function saveAndRedirect(data) {
-            // Save using BOTH keys for compatibility across all pages
-            localStorage.setItem('renvox_user', JSON.stringify(data.user));
-            localStorage.setItem('renvox_token', data.token);
-            // Legacy keys (used by some pages)
-            localStorage.setItem('renvoxUser', JSON.stringify(data.user));
-            localStorage.setItem('renvoxToken', data.token);
-            localStorage.setItem('userName', data.user.fullName || '');
-
-            // Bounce to wherever they came from, or home
-            const returnTo = new URLSearchParams(window.location.search).get('returnTo') || 'index.html';
-            window.location.href = returnTo;
-        }
-
-        // ─── AUTO-REDIRECT IF ALREADY LOGGED IN ───────────────────────
-        (function checkAlreadyLoggedIn() {
-            const token = localStorage.getItem('renvox_token') || localStorage.getItem('renvoxToken');
-            const user = localStorage.getItem('renvox_user') || localStorage.getItem('renvoxUser');
-            if (token && user) {
-                try {
-                    JSON.parse(user); // valid JSON?
-                    const returnTo = new URLSearchParams(window.location.search).get('returnTo') || 'index.html';
-                    window.location.href = returnTo;
-                } catch (e) { }
-            }
-        })();
-
-        // ─── INIT GIS on window load ──────────────────────────────────
+        // Check for error in URL from backend redirect parsing
         window.addEventListener('load', () => {
-            if (typeof google !== 'undefined') {
-                google.accounts.id.initialize({
-                    client_id: GOOGLE_CLIENT_ID,
-                    callback: handleGoogleCallback,
-                    ux_mode: 'popup',
-                });
+            const params = new URLSearchParams(window.location.search);
+            if (params.get('error') === 'true') {
+                showAlert('Authentication failed. Please try again.');
             }
         });
     </script>

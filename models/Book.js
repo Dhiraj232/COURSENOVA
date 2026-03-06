@@ -1,34 +1,108 @@
 const mongoose = require('mongoose');
 
 const BookSchema = new mongoose.Schema({
+    // Basic Info
     title: { type: String, required: true, trim: true },
-    subject: { type: String, default: '', trim: true },
-    condition: { type: String, enum: ['New', 'Used'], default: 'Used' },
+    author: { type: String, required: true, trim: true },
+    edition: { type: String, default: '' },
+    year: { type: Number },
+    language: { type: String, default: 'English' },
+    pages: { type: Number },
 
-    isFree: { type: Boolean, default: false },
-    price: { type: Number, default: 0 },
+    // Categorization
+    category: { type: String, required: true }, // Engineering/Competitive/School/MBA/Medical/General
+    examType: { type: String, default: '' }, // GATE, ESE, CAT, NEET, etc.
+    collegeRelevance: [String], // [BTech, BCA, MTech]
 
-    // Seller info
-    ownerId: { type: mongoose.Schema.Types.ObjectId, ref: 'StoreUser', required: true },
-    ownerName: { type: String, required: true },
-    ownerEmail: { type: String, default: '' },
-    contact: { type: String, default: '' }, // WhatsApp / phone
+    // Pricing
+    price: {
+        mrp: { type: Number, required: true },
+        sellingPrice: { type: Number, required: true },
+        discount: { type: Number, default: 0 } // calculated as percentage
+    },
 
-    // Visibility: 'college' or 'child'
-    visibilityGroup: { type: String, enum: ['college', 'child'], required: true },
-    collegeName: { type: String, default: '' }, // Only for college group
+    // Images
+    images: [
+        {
+            imageType: { type: String, enum: ['front_cover', 'back_cover', 'inside_page'] },
+            imageUrl: { type: String },
+            uploadedAt: { type: Date, default: Date.now }
+        }
+    ],
 
-    // Lifecycle
-    status: { type: String, enum: ['available', 'sold', 'given'], default: 'available' },
+    // Description
+    description: { type: String, default: '' },
+    
+    // Syllabus & Chapters
+    syllabus: {
+        chapters: [
+            {
+                chapterNumber: Number,
+                chapterName: String,
+                topics: [String]
+            }
+        ]
+    },
 
-    // Photo (stored as base64 data-URI; for prod use cloud storage)
-    img: { type: String, default: '' },
+    // Stock Management
+    stock: {
+        totalQuantity: { type: Number, default: 1 },
+        availableQuantity: { type: Number, default: 1 },
+        reorderLevel: { type: Number, default: 5 }
+    },
 
-    createdAt: { type: Date, default: Date.now }
+    // Seller Information
+    seller: {
+        sellerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Seller', required: true },
+        sellerType: String, // Student/Publisher/Shop
+        sellerName: String,
+        contactNumber: String,
+        email: String,
+        address: {
+            street: String,
+            city: String,
+            state: String,
+            pincode: Number,
+            country: { type: String, default: 'India' }
+        },
+        collegeInstitute: String,
+        returnPolicy: String,
+        deliveryDays: { type: Number, default: 3 }
+    },
+
+    // Reviews
+    reviews: {
+        averageRating: { type: Number, default: 0, min: 0, max: 5 },
+        totalReviews: { type: Number, default: 0 },
+        reviewsList: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Review' }]
+    },
+
+    // Published Details
+    publishedDetails: {
+        publisher: String,
+        isbn: String,
+        printedEdition: String
+    },
+
+    samplePdf: String, // URL to sample
+
+    tags: [String], // For search optimization
+    condition: { type: String, enum: ['New', 'Like New', 'Good', 'Used'], default: 'Used' },
+    status: { type: String, enum: ['active', 'inactive'], default: 'active' },
+
+    // Analytics
+    views: { type: Number, default: 0 },
+    favorites: { type: Number, default: 0 },
+
+    createdAt: { type: Date, default: Date.now },
+    updatedAt: { type: Date, default: Date.now }
 });
 
-// Index for fast role-based queries
-BookSchema.index({ visibilityGroup: 1, collegeName: 1 });
-BookSchema.index({ ownerId: 1 });
+// Indexes for fast queries
+BookSchema.index({ title: 'text', author: 'text', tags: 'text' });
+BookSchema.index({ category: 1, examType: 1 });
+BookSchema.index({ 'seller.sellerId': 1 });
+BookSchema.index({ status: 1 });
+BookSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model('Book', BookSchema);

@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - RENVOX Book Store</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #f9fafb; }
+        
+        .container { max-width: 900px; margin: 0 auto; padding: 20px; }
+        
+        header { background: #667eea; color: white; padding: 15px 0; margin-bottom: 30px; }
+        header h1 { max-width: 900px; margin: 0 auto; padding: 0 20px; font-size: 24px; }
+        
+        .steps { display: flex; justify-content: space-between; margin-bottom: 40px; }
+        .step { flex: 1; text-align: center; padding: 15px; }
+        .step.active { color: #667eea; font-weight: 600; }
+        .step.completed { color: #10b981; }
+        
+        .step-number { display: inline-block; width: 40px; height: 40px; background: #e5e7eb; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
+        .step.active .step-number { background: #667eea; color: white; }
+        .step.completed .step-number { background: #10b981; color: white; }
+        
+        .form-section { background: white; border-radius: 8px; padding: 30px; margin-bottom: 30px; }
+        .form-section h2 { margin-bottom: 20px; font-size: 20px; color: #1f2937; }
+        
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 500; color: #1f2937; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 14px; }
+        .form-group textarea { resize: vertical; min-height: 100px; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); }
+        
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        
+        .hidden { display: none; }
+        
+        .summary-box { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 15px; margin-bottom: 20px; }
+        .summary-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .summary-row:last-child { margin-bottom: 0; }
+        .summary-total { font-weight: 700; color: #667eea; font-size: 18px; }
+        
+        .button-group { display: flex; gap: 10px; margin-top: 30px; }
+        .btn { padding: 12px 24px; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; }
+        .btn-primary { background: #667eea; color: white; flex: 1; }
+        .btn-primary:hover { background: #764ba2; }
+        .btn-primary:disabled { background: #9ca3af; cursor: not-allowed; }
+        .btn-secondary { background: white; color: #667eea; border: 2px solid #667eea; }
+        .btn-secondary:hover { background: #f3f4f6; }
+        
+        .success-message { background: #dcfce7; color: #166534; padding: 15px; border-radius: 6px; margin-bottom: 20px; }
+        .error-message { background: #fee2e2; color: #991b1b; padding: 15px; border-radius: 6px; margin-bottom: 20px; }
+        
+        @media (max-width: 640px) {
+            .form-row { grid-template-columns: 1fr; }
+            .steps { font-size: 12px; padding: 0 10px; }
+            .step-number { width: 30px; height: 30px; font-size: 12px; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🛒 Checkout</h1>
+    </header>
+
+    <div class="container">
+        <!-- Steps -->
+        <div class="steps">
+            <div class="step completed">
+                <div class="step-number">✓</div>
+                <div>Cart</div>
+            </div>
+            <div class="step active">
+                <div class="step-number">2</div>
+                <div>Delivery & Payment</div>
+            </div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <div>Confirmation</div>
+            </div>
+        </div>
+
+        <div id="messages"></div>
+
+        <!-- Delivery Address -->
+        <div class="form-section">
+            <h2>Delivery Address</h2>
+            
+            <div class="form-group">
+                <label>Full Name *</label>
+                <input type="text" id="fullName" placeholder="Your full name">
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Phone Number *</label>
+                    <input type="tel" id="phone" placeholder="10-digit phone number">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="email" placeholder="your@email.com">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Street Address *</label>
+                <input type="text" id="street" placeholder="123 Main Street">
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>City *</label>
+                    <input type="text" id="city" placeholder="Delhi">
+                </div>
+                <div class="form-group">
+                    <label>State *</label>
+                    <input type="text" id="state" placeholder="Delhi">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Pincode *</label>
+                    <input type="text" id="pincode" placeholder="110001">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Landmark / Instructions</label>
+                <textarea id="landmark" placeholder="e.g., Near XYZ, Green gate building..."></textarea>
+            </div>
+        </div>
+
+        <!-- Payment Method -->
+        <div class="form-section">
+            <h2>Payment Method</h2>
+            
+            <div class="form-group">
+                <label><input type="radio" name="payment" value="COD" checked> Cash on Delivery (COD)</label>
+            </div>
+            
+            <div class="form-group">
+                <label><input type="radio" name="payment" value="Razorpay"> Razorpay (Credit/Debit Card, UPI)</label>
+            </div>
+            
+            <div id="razorpay-info" class="hidden">
+                <p style="color: #6b7280; font-size: 13px;">You will be redirected to Razorpay payment gateway</p>
+            </div>
+        </div>
+
+        <!-- Order Summary -->
+        <div class="form-section">
+            <h2>Order Summary</h2>
+            <div id="order-summary" class="summary-box">
+                <div class="summary-row">
+                    <span>Loading order details...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="button-group">
+            <button class="btn btn-secondary" onclick="window.history.back()">Back to Cart</button>
+            <button class="btn btn-primary" id="place-order-btn" onclick="placeOrder()">Place Order</button>
+        </div>
+    </div>
+
+    <script src="navigation.js"></script>
+    <script>
+        let cartData = null;
+        let totalAmount = 0;
+
+        // Load cart and pre-fill user info
+        document.addEventListener('DOMContentLoaded', () => {
+            loadCartSummary();
+            prefillUserInfo();
+
+            // Toggle payment method info
+            document.querySelectorAll('input[name="payment"]').forEach(radio => {
+                radio.addEventListener('change', (e) => {
+                    const razorpayInfo = document.getElementById('razorpay-info');
+                    if (e.target.value === 'Razorpay') {
+                        razorpayInfo.classList.remove('hidden');
+                    } else {
+                        razorpayInfo.classList.add('hidden');
+                    }
+                });
+            });
+        });
+
+        async function loadCartSummary() {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    window.location.href = 'signup.html';
+                    return;
+                }
+
+                const response = await fetch('http://localhost:4000/api/cart', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                const data = await response.json();
+
+                if (!data.ok || !data.cart.items || data.cart.items.length === 0) {
+                    window.location.href = 'cart.html';
+                    return;
+                }
+
+                cartData = data.cart;
+                totalAmount = cartData.totalPrice || 0;
+
+                let summaryHtml = `
+                    <div class="summary-row">
+                        <span>Subtotal</span>
+                        <strong>₹${totalAmount}</strong>
+                    </div>
+                    <div class="summary-row">
+                        <span>Shipping</span>
+                        <strong>${totalAmount > 500 ? 'FREE' : '₹50'}</strong>
+                    </div>
+                    <div class="summary-row" style="border-top: 1px solid #ddd; padding-top: 10px; margin-top: 10px;">
+                        <span class="summary-total">Total Amount</span>
+                        <span class="summary-total">₹${(totalAmount + (totalAmount > 500 ? 0 : 50))}</span>
+                    </div>
+                `;
+
+                document.getElementById('order-summary').innerHTML = summaryHtml;
+            } catch (error) {
+                showMessage('Error loading cart: ' + error.message, 'error');
+            }
+        }
+
+        function prefillUserInfo() {
+            const token = localStorage.getItem('token');
+            if (token) {
+                try {
+                    const decoded = JSON.parse(atob(token.split('.')[1]));
+                    if (decoded.email) {
+                        document.getElementById('email').value = decoded.email;
+                    }
+                } catch (e) {
+                    // Token couldn't be decoded, skip prefill
+                }
+            }
+        }
+
+        async function placeOrder() {
+            // Validate inputs
+            const fullName = document.getElementById('fullName').value;
+            const phone = document.getElementById('phone').value;
+            const street = document.getElementById('street').value;
+            const city = document.getElementById('city').value;
+            const state = document.getElementById('state').value;
+            const pincode = document.getElementById('pincode').value;
+            const paymentMethod = document.querySelector('input[name="payment"]:checked').value;
+
+            if (!fullName || !phone || !street || !city || !state || !pincode) {
+                showMessage('Please fill in all required fields', 'error');
+                return;
+            }
+
+            if (phone.length < 10) {
+                showMessage('Please enter a valid phone number', 'error');
+                return;
+            }
+
+            if (pincode.length < 6) {
+                showMessage('Please enter a valid pincode', 'error');
+                return;
+            }
+
+            // Prepare order data
+            const orderData = {
+                items: cartData.items,
+                delivery: {
+                    recipientName: fullName,
+                    phone: phone,
+                    street: street,
+                    city: city,
+                    state: state,
+                    pincode: parseInt(pincode),
+                    landmark: document.getElementById('landmark').value || ''
+                },
+                paymentMethod: paymentMethod
+            };
+
+            try {
+                const token = localStorage.getItem('token');
+                document.getElementById('place-order-btn').disabled = true;
+                document.getElementById('place-order-btn').textContent = 'Creating Order...';
+
+                const response = await fetch('http://localhost:4000/api/orders', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(orderData)
+                });
+
+                const data = await response.json();
+
+                if (!data.ok) {
+                    throw new Error(data.message);
+                }
+
+                showMessage('✓ Order placed successfully!', 'success');
+
+                // Redirect to order confirmation
+                setTimeout(() => {
+                    window.location.href = `orders.html?orderId=${data.order._id}`;
+                }, 2000);
+
+            } catch (error) {
+                showMessage('Error placing order: ' + error.message, 'error');
+                document.getElementById('place-order-btn').disabled = false;
+                document.getElementById('place-order-btn').textContent = 'Place Order';
+            }
+        }
+
+        function showMessage(msg, type) {
+            const container = document.getElementById('messages');
+            const className = type === 'error' ? 'error-message' : 'success-message';
+            container.innerHTML = `<div class="${className}">${msg}</div>`;
+            window.scrollTo(0, 0);
+        }
+    </script>
+</body>
+</html>

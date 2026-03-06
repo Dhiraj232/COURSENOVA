@@ -7,21 +7,73 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const Razorpay = require('razorpay');
 const { OAuth2Client } = require('google-auth-library');
+const passport = require('passport');
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const mongoose = require('mongoose');
 
-// ─── Store Router (MongoDB-backed) ───────────────────────────
+// Load environment variables
+require('dotenv').config();
+
+// ─── Store & Marketplace Routers (MongoDB-backed) ──────────────
 const storeRouter = require('./routes/store');
+const booksRoutes = require('./routes/booksRoutes');
+const ordersRoutes = require('./routes/ordersRoutes');
+const cartRoutes = require('./routes/cartRoutes');
+const sellersRoutes = require('./routes/sellersRoutes');
+const reviewsRoutes = require('./routes/reviewsRoutes');
+const wishlistRoutes = require('./routes/wishlistRoutes');
+const chatsRoutes = require('./routes/chatsRoutes');
 
 // ─── MongoDB Connection ───────────────────────────────────────
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:3000/renvox';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/renvox-bookstore';
 mongoose.connect(MONGO_URI)
   .then(() => console.log('✅ MongoDB connected:', MONGO_URI.split('@').pop() || MONGO_URI))
   .catch(err => console.error('❌ MongoDB connection error:', err.message, '\n   Set MONGO_URI env var or start MongoDB locally.'));
 
 const DATA_FILE = path.join(__dirname, 'data', 'users.json');
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_me';
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '515938781385-pch5g9vm1ec8tjqeq1au73ni3ov6fepn.apps.googleusercontent.com';
+// Google OAuth client ID used for server‑side token verification.  It
+// can be injected via the GOOGLE_CLIENT_ID environment variable.  If you
+// regenerate the client in Google Cloud Console, update the env var or
+// change the default below.
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID ||
+  '1055845988581-m0ki9b0d30iohsmk70go6fikntg65eac.apps.googleusercontent.com';
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || 'YOUR_GOOGLE_CLIENT_SECRET';
+
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
+const StoreUser = require('./models/User');
+const CourseProgress = require('./models/CourseProgress');
+
+passport.use(new GoogleStrategy({
+  clientID: GOOGLE_CLIENT_ID,
+  clientSecret: GOOGLE_CLIENT_SECRET,
+  callbackURL: "http://localhost:5000/auth/google/callback"
+},
+  async function (accessToken, refreshToken, profile, done) {
+    try {
+      let user = await StoreUser.findOne({ googleId: profile.id });
+      if (!user) {
+        user = new StoreUser({
+          googleId: profile.id,
+          name: profile.displayName,
+          email: profile.emails && profile.emails.length > 0 ? profile.emails[0].value : '',
+          picture: profile.photos && profile.photos.length > 0 ? profile.photos[0].value : '',
+          role: 'college',
+          lastLogin: new Date()
+        });
+        await user.save();
+      } else {
+        user.lastLogin = new Date();
+        user.name = profile.displayName;
+        if (profile.photos && profile.photos.length > 0) user.picture = profile.photos[0].value;
+        await user.save();
+      }
+      return done(null, user);
+    } catch (err) {
+      return done(err, null);
+    }
+  }
+));
 
 function readUsers() {
   try {
@@ -46,10 +98,51 @@ function generateOtp() {
 }
 
 const app = express();
-app.use(cors());
+app.use(cors({
+  origin: [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://localhost:5500',
+    'http://127.0.0.1:5500',
+    'http://localhost:5508',
+    'http://127.0.0.1:5508'
+  ]
+}));
 app.use(express.json());
 // Serve frontend static files from project root
 app.use(express.static(path.join(__dirname)));
+
+app.use(passport.initialize());
+
+// ─── JWT Authentication Middleware ──────────────────────────────
+// Extracts JWT token from Authorization header and attaches user to request
+app.use((req, res, next) => {
+  const authHeader = req.headers.authorization || '';
+  if (authHeader.startsWith('Bearer ')) {
+    const token = authHeader.slice(7);
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET);
+      req.user = {
+        id: decoded.userId || decoded.id,
+        email: decoded.email,
+        name: decoded.name
+      };
+    } catch (err) {
+      // Token is invalid, user will be null for this request
+    }
+  }
+  next();
+});
+
+// ─── Professional Book Store Routes ──────────────────────────────
+// Register all marketplace API routes
+app.use('/api/books', booksRoutes);
+app.use('/api/orders', ordersRoutes);
+app.use('/api/cart', cartRoutes);
+app.use('/api/sellers', sellersRoutes);
+app.use('/api/reviews', reviewsRoutes);
+app.use('/api/wishlist', wishlistRoutes);
+app.use('/api/chats', chatsRoutes);
 
 // ─── Store Routes (Private Book Exchange) ────────────────────
 app.use('/api/store', storeRouter);
@@ -73,16 +166,27 @@ app.post('/api/create-order', async (req, res) => {
     };
 
     const order = await razorpay.orders.create(options);
-    res.json({ ok: true, orderId: order.id, amount: order.amount, currency: order.currency });
+    res.json({ ok: true, orderId: order.id, amount: order.amount, currency: order.currency, course });
   } catch (error) {
     console.error('Razorpay Create Order Error:', error);
     res.status(500).json({ ok: false, message: 'Failed to create order' });
   }
 });
 
-// Verify Payment API
-app.post('/api/verify-payment', (req, res) => {
-  const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+// Verify Payment API and Enroll User
+app.post('/api/verify-payment', async (req, res) => {
+  const auth = req.headers.authorization || '';
+  const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+  if (!token) return res.status(401).json({ ok: false, message: 'Login required' });
+
+  let userId;
+  try {
+    userId = jwt.verify(token, JWT_SECRET).userId;
+  } catch (e) {
+    return res.status(401).json({ ok: false, message: 'Invalid token' });
+  }
+
+  const { razorpay_order_id, razorpay_payment_id, razorpay_signature, course } = req.body;
 
   const secret = process.env.RAZORPAY_KEY_SECRET || 'tK0lWjAOr3mR0K9uI3uSqkZ1';
   const body = razorpay_order_id + "|" + razorpay_payment_id;
@@ -95,188 +199,69 @@ app.post('/api/verify-payment', (req, res) => {
   const isAuthentic = expectedSignature === razorpay_signature;
 
   if (isAuthentic) {
-    // In a real app, save payment success to database here
-    res.json({ ok: true, message: 'Payment verified successfully' });
+    try {
+      if (course) {
+        // Find user and add course to their enrolledCourses if not already there
+        const user = await StoreUser.findById(userId);
+        if (user && !user.enrolledCourses.includes(course)) {
+          user.enrolledCourses.push(course);
+          await user.save();
+          console.log(`Enrolled ${user.email} in ${course}.`);
+        }
+      }
+      res.json({ ok: true, message: 'Payment verified successfully and user enrolled.' });
+    } catch (err) {
+      console.error('Database Error during enrollment:', err);
+      res.status(500).json({ ok: false, message: 'Payment verified, but failed to save enrollment.' });
+    }
   } else {
     res.status(400).json({ ok: false, message: 'Invalid payment signature' });
   }
 });
 
-// Signup
-app.post('/api/signup', async (req, res) => {
-  try {
-    const { fullName, email, mobile, password, role, college, classInfo } = req.body;
-    if (!fullName || !email || !mobile || !password) return res.status(400).json({ ok: false, message: 'Missing required fields' });
+// Google Auth Routes
+app.get('/auth/google',
+  passport.authenticate('google', { scope: ['profile', 'email'], session: false }));
 
-    const existing = findUserByEmailOrMobile(email) || findUserByEmailOrMobile(mobile);
-    if (existing) return res.status(409).json({ ok: false, message: 'User already exists' });
+app.get('/auth/google/callback',
+  passport.authenticate('google', { failureRedirect: '/signup.html?error=true', session: false }),
+  function (req, res) {
+    // Successful authentication, generate JWT
+    const token = jwt.sign({ userId: req.user._id, role: req.user.role }, JWT_SECRET, { expiresIn: '7d' });
 
-    const hash = await bcrypt.hash(password, 10);
-    const users = readUsers();
-    const id = Date.now().toString();
-    const otp = generateOtp();
-    const otpExpiry = Date.now() + 5 * 60 * 1000; // 5 minutes
-
-    const user = {
-      id, fullName, email, mobile, passwordHash: hash, role: role || 'student', college: college || '', classInfo: classInfo || '', verified: false,
-      otp, otpExpiry
+    // Create safe user object to pass to frontend
+    const userSafe = {
+      id: req.user._id,
+      fullName: req.user.name,
+      email: req.user.email,
+      role: req.user.role,
+      picture: req.user.picture
     };
-    users.push(user);
-    writeUsers(users);
+    const userStr = encodeURIComponent(JSON.stringify(userSafe));
 
-    // In real app: send OTP via SMS / email. For demo we log it.
-    console.log('Signup OTP for', email || mobile, otp);
-
-    res.json({ ok: true, message: 'User created. OTP sent.', userId: id });
-  } catch (error) {
-    console.error('Signup Error:', error);
-    res.status(500).json({ ok: false, message: 'Server error during signup' });
-  }
-});
-
-// Send (or resend) OTP
-app.post('/api/send-otp', (req, res) => {
-  try {
-    const { userId } = req.body;
-    if (!userId) return res.status(400).json({ ok: false, message: 'userId required' });
-    const users = readUsers();
-    const user = users.find(u => String(u.id) === String(userId));
-    if (!user) return res.status(404).json({ ok: false, message: 'User not found' });
-    const otp = generateOtp();
-    user.otp = otp;
-    user.otpExpiry = Date.now() + 5 * 60 * 1000;
-    writeUsers(users);
-    console.log('Resent OTP for', user.email || user.mobile, otp);
-    return res.json({ ok: true, message: 'OTP resent' });
-  } catch (error) {
-    console.error('Resend OTP Error:', error);
-    res.status(500).json({ ok: false, message: 'Server error during OTP resend' });
-  }
-});
-
-// Verify OTP
-app.post('/api/verify-otp', (req, res) => {
-  try {
-    const { userId, code } = req.body;
-    if (!userId || !code) return res.status(400).json({ ok: false, message: 'userId and code required' });
-    const users = readUsers();
-    const user = users.find(u => String(u.id) === String(userId));
-    if (!user) return res.status(404).json({ ok: false, message: 'User not found' });
-    if (!user.otp || Date.now() > (user.otpExpiry || 0)) return res.status(400).json({ ok: false, message: 'OTP expired or not set' });
-    if (user.otp !== code) return res.status(400).json({ ok: false, message: 'Invalid OTP' });
-    user.verified = true;
-    user.otp = null; user.otpExpiry = null;
-    writeUsers(users);
-
-    const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ ok: true, message: 'Verified', token, user: { id: user.id, fullName: user.fullName, email: user.email, mobile: user.mobile } });
-  } catch (error) {
-    console.error('Verify OTP Error:', error);
-    res.status(500).json({ ok: false, message: 'Server error during verification' });
-  }
-});
-
-// Login
-app.post('/api/login', async (req, res) => {
-  try {
-    const { identifier, password } = req.body; // identifier = email or mobile
-    if (!identifier || !password) return res.status(400).json({ ok: false, message: 'Missing fields' });
-
-    // Ensure data directory exists
-    if (!fs.existsSync(path.dirname(DATA_FILE))) {
-      fs.mkdirSync(path.dirname(DATA_FILE), { recursive: true });
-    }
-
-    const user = findUserByEmailOrMobile(identifier);
-    if (!user) return res.status(404).json({ ok: false, message: 'User not found' });
-    const match = await bcrypt.compare(password, user.passwordHash || '');
-    if (!match) return res.status(401).json({ ok: false, message: 'Invalid credentials' });
-    if (!user.verified) return res.status(403).json({ ok: false, message: 'Account not verified', userId: user.id });
-    const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ ok: true, token, user: { id: user.id, fullName: user.fullName, email: user.email, mobile: user.mobile } });
-  } catch (error) {
-    console.error('Login Error:', error);
-    res.status(500).json({ ok: false, message: 'Server error during login' });
-  }
-});
+    // Redirect to frontend with token and user object
+    res.redirect(`/index.html?token=${token}&user=${userStr}`);
+  });
 
 // Get current user from token
-app.get('/api/me', (req, res) => {
+app.get('/api/me', async (req, res) => {
   const auth = req.headers.authorization || '';
   const token = auth.startsWith('Bearer ') ? auth.slice(7) : (req.query.token || '');
   if (!token) return res.status(401).json({ ok: false, message: 'Missing token' });
   try {
     const payload = jwt.verify(token, JWT_SECRET);
-    const users = readUsers();
-    const user = users.find(u => String(u.id) === String(payload.userId));
+    const user = await StoreUser.findById(payload.userId);
     if (!user) return res.status(404).json({ ok: false, message: 'User not found' });
-    res.json({ ok: true, user: { id: user.id, fullName: user.fullName, email: user.email, mobile: user.mobile, verified: user.verified, role: user.role, college: user.college } });
+    res.json({ ok: true, user: { id: user._id, fullName: user.name, email: user.email, role: user.role, college: user.collegeName, picture: user.picture } });
   } catch (err) {
     return res.status(401).json({ ok: false, message: 'Invalid token' });
   }
 });
 
-// Google Login/Signup Endpoint
-app.post('/api/google-auth', async (req, res) => {
-  try {
-    const { credential } = req.body;
-    if (!credential) return res.status(400).json({ ok: false, message: 'No credential provided' });
-
-    // In a real live app, verify the token using google-auth-library:
-    const ticket = await googleClient.verifyIdToken({
-      idToken: credential,
-      audience: GOOGLE_CLIENT_ID,
-    });
-    const payload = ticket.getPayload();
-
-    // For local dummy testing without a real Client ID, we can decode the JWT locally:
-    // const payload = jwt.decode(credential);
-
-    if (!payload || !payload.email) {
-      return res.status(400).json({ ok: false, message: 'Invalid token payload' });
-    }
-
-    const { email, name, picture } = payload;
-    let users = readUsers();
-    let user = users.find(u => u.email === email);
-
-    if (!user) {
-      // Auto-register new user
-      user = {
-        id: Date.now().toString(),
-        fullName: name,
-        email: email,
-        mobile: '',
-        role: 'student',
-        verified: true, // Google emails are already verified
-        picture: picture,
-      };
-      users.push(user);
-      writeUsers(users);
-      console.log('Created new user via Google:', email);
-    } else {
-      // Optional: Update picture and name if they changed
-      user.fullName = name;
-      user.picture = picture;
-      writeUsers(users);
-    }
-
-    const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({
-      ok: true,
-      token,
-      user: { id: user.id, fullName: user.fullName, email: user.email, role: user.role, picture: user.picture }
-    });
-  } catch (error) {
-    console.error('Google Auth Error:', error);
-    res.status(500).json({ ok: false, message: 'Server error during Google auth' });
-  }
-});
-
 // Simple endpoint to list users (for dev)
-app.get('/api/users', (req, res) => {
-  const users = readUsers();
-  const safe = users.map(u => ({ id: u.id, fullName: u.fullName, email: u.email, mobile: u.mobile, verified: u.verified, role: u.role }));
+app.get('/api/users', async (req, res) => {
+  const users = await StoreUser.find({});
+  const safe = users.map(u => ({ id: u._id, fullName: u.name, email: u.email, role: u.role, picture: u.picture }));
   res.json(safe);
 });
 
@@ -356,25 +341,25 @@ app.get('/api/subjects', (req, res) => {
 });
 
 // ---------------- Profile Update ----------------
-app.post('/api/update-profile', (req, res) => {
+app.post('/api/update-profile', async (req, res) => {
   try {
-    const { userId, fullName, email, mobile, classInfo } = req.body;
+    const { userId, fullName, email, collegeName, department, year, childClass } = req.body;
     if (!userId) return res.status(400).json({ ok: false, message: 'User ID required' });
 
-    const users = readUsers();
-    const user = users.find(u => String(u.id) === String(userId));
+    const user = await StoreUser.findById(userId);
     if (!user) return res.status(404).json({ ok: false, message: 'User not found' });
 
     // Update fields if provided
-    if (fullName) user.fullName = fullName;
-    if (email) user.email = email; // In real app: verify new email
-    if (mobile) user.mobile = mobile;
-    if (classInfo) user.classInfo = classInfo;
+    if (fullName) user.name = fullName;
+    if (email) user.email = email;
+    if (collegeName) user.collegeName = collegeName;
+    if (department) user.department = department;
+    if (year) user.year = year;
+    if (childClass) user.childClass = childClass;
 
-    writeUsers(users);
+    await user.save();
 
-    // Return updated user object (without password)
-    res.json({ ok: true, message: 'Profile updated', user: { id: user.id, fullName: user.fullName, email: user.email, mobile: user.mobile, role: user.role, classInfo: user.classInfo, verified: user.verified } });
+    res.json({ ok: true, message: 'Profile updated', user: { id: user._id, fullName: user.name, email: user.email, role: user.role, college: user.collegeName } });
   } catch (error) {
     console.error('Update Profile Error:', error);
     res.status(500).json({ ok: false, message: 'Server error updating profile' });
@@ -400,7 +385,7 @@ app.get('/api/books', (req, res) => {
 });
 
 // List a new book for sale (requires login token)
-app.post('/api/books', (req, res) => {
+app.post('/api/books', async (req, res) => {
   const auth = req.headers.authorization || '';
   const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
   if (!token) return res.status(401).json({ ok: false, message: 'Login required to list a book' });
@@ -414,8 +399,7 @@ app.post('/api/books', (req, res) => {
     return res.status(401).json({ ok: false, message: 'Invalid or expired token' });
   }
 
-  const users = readUsers();
-  const user = users.find(u => String(u.id) === String(userId));
+  const user = await StoreUser.findById(userId);
   if (!user) return res.status(404).json({ ok: false, message: 'User not found' });
 
   const { name, subject, college, condition, price, img, contact } = req.body;
@@ -426,11 +410,11 @@ app.post('/api/books', (req, res) => {
     id: Date.now().toString(),
     name,
     subject: subject || '',
-    college: college || user.college || '',
+    college: college || user.collegeName || '',
     condition: condition || 'Used',
     price: Number(price) || 0,
-    seller: user.fullName || 'Anonymous',
-    sellerId: user.id,
+    seller: user.name || 'Anonymous',
+    sellerId: user._id,
     sellerEmail: user.email || '',
     contact: contact || '',
     img: img || '',
@@ -459,18 +443,42 @@ app.delete('/api/books/:id', (req, res) => {
   res.json({ ok: true, message: 'Book removed' });
 });
 
+// simple health check endpoint
+app.get('/api/ping', (req, res) => {
+  res.json({ ok: true, message: 'pong' });
+});
+
 // ────────────────────────────────────────────────────────────
 // COURSE PROGRESS & CERTIFICATE SYSTEM
 // ────────────────────────────────────────────────────────────
-const PROGRESS_FILE = path.join(__dirname, 'data', 'progress.json');
 
-function readProgress() {
-  try { return JSON.parse(fs.readFileSync(PROGRESS_FILE, 'utf8') || '[]'); } catch (e) { return []; }
-}
-function writeProgress(data) { fs.writeFileSync(PROGRESS_FILE, JSON.stringify(data, null, 2), 'utf8'); }
+// Verify if a user is enrolled in a course
+app.get('/api/course/verify-enrollment', async (req, res) => {
+  const auth = req.headers.authorization || '';
+  const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+  if (!token) return res.status(401).json({ ok: false, message: 'Login required' });
+
+  let userId;
+  try { userId = jwt.verify(token, JWT_SECRET).userId; } catch (e) { return res.status(401).json({ ok: false, message: 'Invalid token' }); }
+
+  const { courseId } = req.query;
+  if (!courseId) return res.status(400).json({ ok: false, message: 'courseId required' });
+
+  try {
+    const user = await StoreUser.findById(userId);
+    if (!user) return res.status(404).json({ ok: false, message: 'User not found' });
+
+    // Check if the course is in their enrolledCourses array
+    const isEnrolled = user.enrolledCourses && user.enrolledCourses.includes(courseId);
+
+    res.json({ ok: true, isEnrolled });
+  } catch (err) {
+    res.status(500).json({ ok: false, message: 'Server error verifying enrollment' });
+  }
+});
 
 // Save video/PDF completion progress
-app.post('/api/course/progress', (req, res) => {
+app.post('/api/course/progress', async (req, res) => {
   const auth = req.headers.authorization || '';
   const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
   if (!token) return res.status(401).json({ ok: false, message: 'Login required' });
@@ -481,20 +489,24 @@ app.post('/api/course/progress', (req, res) => {
   const { courseId, videoWatched, pdfRead } = req.body;
   if (!courseId) return res.status(400).json({ ok: false, message: 'courseId required' });
 
-  const progress = readProgress();
-  let record = progress.find(p => p.userId === userId && p.courseId === courseId);
-  if (!record) {
-    record = { userId, courseId, videoWatched: false, pdfRead: false, testPassed: false, score: 0, certId: null, earnedAt: null };
-    progress.push(record);
+  try {
+    let record = await CourseProgress.findOne({ userId, courseId });
+    if (!record) {
+      record = new CourseProgress({ userId, courseId, videoWatched: false, pdfRead: false });
+    }
+    if (videoWatched !== undefined) record.videoWatched = videoWatched;
+    if (pdfRead !== undefined) record.pdfRead = pdfRead;
+
+    record.updatedAt = new Date();
+    await record.save();
+    res.json({ ok: true, record });
+  } catch (err) {
+    res.status(500).json({ ok: false, message: 'Failed to save progress' });
   }
-  if (videoWatched !== undefined) record.videoWatched = videoWatched;
-  if (pdfRead !== undefined) record.pdfRead = pdfRead;
-  writeProgress(progress);
-  res.json({ ok: true, record });
 });
 
 // Get progress for a user+course
-app.get('/api/course/progress', (req, res) => {
+app.get('/api/course/progress', async (req, res) => {
   const auth = req.headers.authorization || '';
   const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
   if (!token) return res.status(401).json({ ok: false, message: 'Login required' });
@@ -503,13 +515,18 @@ app.get('/api/course/progress', (req, res) => {
   try { userId = jwt.verify(token, JWT_SECRET).userId; } catch (e) { return res.status(401).json({ ok: false, message: 'Invalid token' }); }
 
   const { courseId } = req.query;
-  const progress = readProgress();
-  const record = progress.find(p => p.userId === userId && p.courseId === courseId) || {};
-  res.json({ ok: true, record });
+  if (!courseId) return res.status(400).json({ ok: false, message: 'courseId required' });
+
+  try {
+    const record = await CourseProgress.findOne({ userId, courseId });
+    res.json({ ok: true, record: record || {} });
+  } catch (err) {
+    res.status(500).json({ ok: false, message: 'Failed to fetch progress' });
+  }
 });
 
 // Submit test answers
-app.post('/api/course/submit-test', (req, res) => {
+app.post('/api/course/submit-test', async (req, res) => {
   const auth = req.headers.authorization || '';
   const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
   if (!token) return res.status(401).json({ ok: false, message: 'Login required' });
@@ -527,29 +544,37 @@ app.post('/api/course/submit-test', (req, res) => {
   const score = Math.round((correct / total) * 100);
   const passed = score >= 60;
 
-  const progress = readProgress();
-  let record = progress.find(p => p.userId === userId && p.courseId === courseId);
-  if (!record) {
-    record = { userId, courseId, videoWatched: false, pdfRead: false, testPassed: false, score: 0, certId: null, earnedAt: null };
-    progress.push(record);
-  }
-  record.score = score;
-  record.testPassed = passed;
-  if (passed && !record.certId) {
-    record.certId = 'RENV-' + Date.now().toString(36).toUpperCase();
-    record.earnedAt = new Date().toISOString();
-  }
-  writeProgress(progress);
+  try {
+    let record = await CourseProgress.findOne({ userId, courseId });
+    if (!record) {
+      record = new CourseProgress({ userId, courseId, videoWatched: false, pdfRead: false });
+    }
 
-  // Get user info for certificate
-  const users = readUsers();
-  const user = users.find(u => String(u.id) === String(userId));
+    record.score = score;
+    record.testPassed = passed;
 
-  res.json({ ok: true, passed, score, correct, total, certId: record.certId, earnedAt: record.earnedAt, userName: user ? user.fullName : 'Student' });
+    // REQUIRE the student to actually finish the video and PDF before granting a certificate
+    if (passed && !record.certId && record.videoWatched && record.pdfRead) {
+      record.certId = 'RENV-' + Date.now().toString(36).toUpperCase();
+      record.earnedAt = new Date();
+    } else if (passed && (!record.videoWatched || !record.pdfRead)) {
+      return res.status(403).json({ ok: false, message: 'You must complete the Video and PDF before earning a certificate.' });
+    }
+
+    record.updatedAt = new Date();
+    await record.save();
+
+    // Get user info for certificate
+    const user = await StoreUser.findById(userId);
+
+    res.json({ ok: true, passed, score, correct, total, certId: record.certId, earnedAt: record.earnedAt, userName: user ? user.name : 'Student' });
+  } catch (err) {
+    res.status(500).json({ ok: false, message: 'Failed to submit test' });
+  }
 });
 
 // Get all certificates for a user
-app.get('/api/course/my-certificates', (req, res) => {
+app.get('/api/course/my-certificates', async (req, res) => {
   const auth = req.headers.authorization || '';
   const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
   if (!token) return res.status(401).json({ ok: false, message: 'Login required' });
@@ -557,15 +582,16 @@ app.get('/api/course/my-certificates', (req, res) => {
   let userId;
   try { userId = jwt.verify(token, JWT_SECRET).userId; } catch (e) { return res.status(401).json({ ok: false, message: 'Invalid token' }); }
 
-  const progress = readProgress();
-  const certs = progress.filter(p => p.userId === userId && p.testPassed && p.certId);
+  try {
+    const certs = await CourseProgress.find({ userId, testPassed: true, certId: { $ne: null } });
+    const user = await StoreUser.findById(userId);
 
-  const users = readUsers();
-  const user = users.find(u => String(u.id) === String(userId));
-
-  res.json({ ok: true, certificates: certs, userName: user ? user.fullName : 'Student', userEmail: user ? user.email : '' });
+    res.json({ ok: true, certificates: certs, userName: user ? user.name : 'Student', userEmail: user ? user.email : '' });
+  } catch (err) {
+    res.status(500).json({ ok: false, message: 'Failed to fetch certificates' });
+  }
 });
 
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log('API listening on port', PORT));
 

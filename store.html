@@ -165,7 +165,13 @@
 <body>
     <div class="store-container">
         <div class="store-header">
-            <h1>📚 RENVOX Book Store</h1>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h1 style="margin: 0;">📚 RENVOX Book Store</h1>
+                <div style="display: flex; gap: 15px;">
+                    <button class="btn btn-primary" style="padding: 8px 16px; font-size: 0.9em;" onclick="window.location.href='cart.html'">🛒 Cart</button>
+                    <button class="btn btn-primary" style="padding: 8px 16px; font-size: 0.9em;" onclick="goToAccount()">👤 Account</button>
+                </div>
+            </div>
             <p>Buy and sell books with students near your area - No middlemen, direct contact!</p>
             <div class="store-controls">
                 <button class="btn btn-primary" onclick="showBrowseBooks()">🔍 Browse Books</button>
@@ -310,7 +316,14 @@
             try {
                 const res = await fetch(`${API_URL}/books`);
                 const data = await res.json();
-                allBooks = data.books || [];
+                
+                // Handle both old and new API response formats
+                allBooks = data.books || data.data || [];
+                
+                if (!Array.isArray(allBooks)) {
+                    throw new Error('Invalid API response');
+                }
+                
                 updateStats();
                 displayBooks(allBooks);
                 document.getElementById('loading').style.display = 'none';
@@ -319,42 +332,66 @@
                 document.getElementById('emptyState').style.display = allBooks.length === 0 ? 'block' : 'none';
             } catch (err) {
                 console.error('Error:', err);
-                document.getElementById('loading').innerHTML = '❌ Failed to load books';
+                document.getElementById('loading').innerHTML = '❌ Failed to load books. Make sure the server is running on port 4000.';
+                document.getElementById('loading').style.display = 'block';
             }
         }
 
         function displayBooks(books) {
             const container = document.getElementById('booksContainer');
-            container.innerHTML = books.map(book => `
-                <div class="book-card" onclick="showSellerModal(this)" data-book='${JSON.stringify(book)}'>
-                    <div class="book-image">${book.img ? `<img src="${book.img}">` : '📚'}</div>
-                    <div class="book-info">
-                        <div class="book-title">${book.name}</div>
-                        <div class="book-subject">${book.subject || 'General'}</div>
-                        <div class="book-condition">${book.condition}</div>
-                        <div class="book-footer">
-                            <div class="book-price">₹${book.price}</div>
-                            <div class="book-seller">${book.seller}</div>
+            container.innerHTML = books.map(book => {
+                const image = book.images && book.images.length > 0 ? book.images[0].imageUrl : '📚';
+                const discount = book.price?.discount || 0;
+                const title = book.title || book.name || 'Untitled';
+                const author = book.author || 'Unknown Author';
+                const price = book.price?.sellingPrice || book.price || 0;
+                const bookId = book._id || book.id;
+                
+                return `
+                    <div class="book-card" onclick="goToBook('${bookId}')" style="cursor: pointer;">
+                        <div class="book-image" style="position: relative;">
+                            ${typeof image === 'string' && image.startsWith('http') ? `<img src="${image}">` : '📚'}
+                            ${discount > 0 ? `<div style="position: absolute; top: 10px; right: 10px; background: #10b981; color: white; padding: 5px 10px; border-radius: 4px; font-size: 12px; font-weight: 600;">${discount}% OFF</div>` : ''}
+                        </div>
+                        <div class="book-info">
+                            <div class="book-title">${title}</div>
+                            <div class="book-subject">${author}</div>
+                            <div class="book-condition">${book.condition || 'Good'}</div>
+                            ${book.reviews?.averageRating ? `<div style="color: #fbbf24;">⭐ ${book.reviews.averageRating}</div>` : ''}
+                            <div class="book-footer">
+                                <div class="book-price">₹${price}</div>
+                                <div class="book-seller">${book.seller?.sellerName || 'Store'}</div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
+        }
+
+        function goToBook(bookId) {
+            if (bookId) {
+                window.location.href = `book-detail.html?id=${bookId}`;
+            }
         }
 
         function filterBooks() {
             const search = document.getElementById('searchInput').value.toLowerCase();
             const condition = document.getElementById('conditionFilter').value;
-            const filtered = allBooks.filter(b =>
-                (b.name.toLowerCase().includes(search) || b.subject.toLowerCase().includes(search)) &&
-                (!condition || b.condition === condition)
-            );
+            const filtered = allBooks.filter(b => {
+                const title = (b.title || b.name || '').toLowerCase();
+                const author = (b.author || '').toLowerCase();
+                const subject = (b.subject || '').toLowerCase();
+                const searchMatch = title.includes(search) || author.includes(search) || subject.includes(search);
+                const conditionMatch = !condition || b.condition === condition;
+                return searchMatch && conditionMatch;
+            });
             displayBooks(filtered);
         }
 
         function updateStats() {
             const total = allBooks.length;
-            const sellers = new Set(allBooks.map(b => b.seller)).size;
-            const avgPrice = total > 0 ? Math.round(allBooks.reduce((s, b) => s + b.price, 0) / total) : 0;
+            const sellers = new Set(allBooks.map(b => b.seller?.sellerName || b.seller || 'Unknown')).size;
+            const avgPrice = total > 0 ? Math.round(allBooks.reduce((s, b) => s + (b.price?.sellingPrice || b.price || 0), 0) / total) : 0;
             document.getElementById('totalBooks').textContent = total;
             document.getElementById('totalSellers').textContent = sellers;
             document.getElementById('avgPrice').textContent = '₹' + avgPrice;
@@ -465,6 +502,15 @@
         document.getElementById('sellerModal').onclick = function (e) {
             if (e.target == this) closeModal();
         };
+
+        function goToAccount() {
+            const token = localStorage.getItem('token');
+            if (token) {
+                window.location.href = 'orders.html'; // Go to orders/account page
+            } else {
+                window.location.href = 'signup.html'; // Go to signup if not logged in
+            }
+        }
 
         setInterval(loadBooks, 30000);
     </script>
