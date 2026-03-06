@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Courses - RENVOX AI</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-brand">
+                <a href="/">RENVOX AI</a>
+            </div>
+            <ul class="navbar-nav" id="nav-links"></ul>
+        </div>
+    </nav>
+
+    <div class="container mt-2">
+        <h2 class="text-center">My Learning</h2>
+        <div id="msg" class="alert hidden mt-1"></div>
+
+        <div id="my-courses-container" class="courses-grid">
+            <p>Loading your courses...</p>
+        </div>
+    </div>
+
+    <script src="/js/utils.js"></script>
+    <script>
+        if (!isLoggedIn()) window.location.href = '/login.html';
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const container = document.getElementById('my-courses-container');
+            const msgDiv = document.getElementById('msg');
+
+            const res = await apiCall('/users/my-courses');
+
+            if (res.ok) {
+                if (res.data.length === 0) {
+                    container.innerHTML = '<p class="text-center" style="grid-column: 1 / -1;">You have not enrolled in any courses yet.</p>';
+                    return;
+                }
+
+                let html = '';
+                res.data.forEach(enrollment => {
+                    const course = enrollment.courseId;
+                    // Format date DD/MM/YYYY
+                    const date = new Date(enrollment.purchaseDate).toLocaleDateString();
+
+                    html += `
+            <div class="card course-card">
+              <h3>${course.title}</h3>
+              <p>Purchased on: ${date}</p>
+              
+              <div class="mt-2" style="display: flex; flex-direction: column; gap: 10px;">
+                <a href="${course.videoLink}" target="_blank" class="btn btn-primary text-center">Watch Course</a>
+                <button onclick="downloadCertificate('${course._id}')" class="btn btn-success">Download Certificate</button>
+              </div>
+            </div>
+          `;
+                });
+                container.innerHTML = html;
+            } else {
+                container.innerHTML = '';
+                msgDiv.textContent = res.error;
+                msgDiv.className = 'alert alert-error';
+            }
+        });
+
+        async function downloadCertificate(courseId) {
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerText = 'Generating...';
+
+            try {
+                const token = getToken();
+                const response = await fetch(`${API_URL}/users/certificate/${courseId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    const data = await response.json();
+                    throw new Error(data.message || 'Failed to generate certificate');
+                }
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `certificate-${courseId}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                a.remove();
+            } catch (error) {
+                alert(error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerText = 'Download Certificate';
+            }
+        }
+    </script>
+</body>
+
+</html>

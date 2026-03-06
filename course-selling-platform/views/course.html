@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Details - RENVOX AI</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <div class="container">
+            <div class="navbar-brand">
+                <a href="/">RENVOX AI</a>
+            </div>
+            <ul class="navbar-nav" id="nav-links"></ul>
+        </div>
+    </nav>
+
+    <div class="container mt-2">
+        <div id="course-details" class="card">
+            <p>Loading course details...</p>
+        </div>
+    </div>
+
+    <script src="/js/utils.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const courseId = urlParams.get('id');
+            const container = document.getElementById('course-details');
+
+            if (!courseId) {
+                container.innerHTML = '<p>Course not found.</p>';
+                return;
+            }
+
+            const res = await apiCall(`/courses/${courseId}`);
+
+            if (res.ok) {
+                const course = res.data;
+                container.innerHTML = `
+          <h2>${course.title}</h2>
+          <p class="mt-1">${course.description}</p>
+          <div class="price">Price: ₹${course.price}</div>
+          
+          <div class="mt-2">
+            ${isLoggedIn() ?
+                        `<a href="/checkout.html?courseId=${course._id}&courseName=${encodeURIComponent(course.title)}&price=${course.price}" class="btn btn-success">Buy Course</a>` :
+                        `<a href="/login.html" class="btn btn-secondary">Login to Buy</a>`
+                    }
+          </div>
+        `;
+            } else {
+                container.innerHTML = `<p>${res.error}</p>`;
+            }
+        });
+    </script>
+</body>
+
+</html>
