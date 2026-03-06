@@ -4,7 +4,7 @@ const Enrollment = require('../models/Enrollment');
 
 const submitPayment = async (req, res) => {
     try {
-        const { name, email, courseId, courseName } = req.body;
+        const { name, email, courseId, courseName, utr } = req.body;
 
         if (!req.file) {
             return res.status(400).json({ message: 'No screenshot uploaded' });
@@ -16,6 +16,7 @@ const submitPayment = async (req, res) => {
             email,
             courseId,
             courseName,
+            utr,
             screenshot: `/uploads/${req.file.filename}`
         });
 

@@ -440,8 +440,8 @@
             }
 
             try {
-                // Check if already enrolled
-                const enrollCheck = await fetch(`${API_BASE}/api/course/verify-enrollment?courseId=${encodeURIComponent(courseName)}`, {
+                // 1. Check if user is already enrolled
+                const enrollCheck = await fetch(`http://localhost:5000/api/course/verify-enrollment?courseId=${encodeURIComponent(courseName)}`, {
                     headers: { 'Authorization': 'Bearer ' + token }
                 });
                 const enrollData = await enrollCheck.json();
@@ -452,71 +452,8 @@
                     return;
                 }
 
-                // 1. Create order on backend
-                const response = await fetch('/api/create-order', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ amount: course.price, course: courseName })
-                });
-
-                const orderData = await response.json();
-                if (!orderData.ok) {
-                    alert('Error creating order');
-                    return;
-                }
-
-                // 2. Initialize Razorpay Checkout
-                const options = {
-                    "key": "rzp_test_TYYvG5LdO0V12j", // Test Key
-                    "amount": orderData.amount,
-                    "currency": orderData.currency,
-                    "name": "RENVOX AI",
-                    "description": `Enroll in ${courseName}`,
-                    "order_id": orderData.orderId,
-                    "handler": async function (paymentResponse) {
-                        try {
-                            // 3. Verify Payment
-                            const verifyRes = await fetch('/api/verify-payment', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'Authorization': 'Bearer ' + (localStorage.getItem('renvox_token') || localStorage.getItem('renvoxToken'))
-                                },
-                                body: JSON.stringify({
-                                    razorpay_order_id: paymentResponse.razorpay_order_id,
-                                    razorpay_payment_id: paymentResponse.razorpay_payment_id,
-                                    razorpay_signature: paymentResponse.razorpay_signature,
-                                    course: courseName
-                                })
-                            });
-                            const verifyData = await verifyRes.json();
-                            if (verifyData.ok) {
-                                // 4. Redirect to Course Content after success
-                                window.location.href = `course-content.html?course=${encodeURIComponent(courseName)}`;
-                            } else {
-                                alert('Payment verification failed');
-                            }
-                        } catch (err) {
-                            console.error(err);
-                            alert('An error occurred during verification.');
-                        }
-                    },
-                    "prefill": {
-                        "name": userName,
-                        "email": "student@example.com",
-                        "contact": "9999999999"
-                    },
-                    "theme": {
-                        "color": "#4f46e5"
-                    }
-                };
-
-                const rzp = new Razorpay(options);
-                rzp.on('payment.failed', function (response) {
-                    alert("Payment Failed: " + response.error.description);
-                });
-                rzp.open();
-
+                // 2. Redirect to manual UPI payment page
+                window.location.href = `payment.html?course=${encodeURIComponent(courseName)}`;
             } catch (err) {
                 console.error("Payment Error:", err);
                 alert("Error initializing payment. Check console.");

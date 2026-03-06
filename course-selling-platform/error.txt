@@ -1,0 +1,15 @@
+[dotenv@17.3.1] injecting env (2) from .env -- tip: ⚡️ secrets for agents: https://dotenvx.com/as2
+Server running on port 3000
+MongoDB Connection Error: MongoParseError: options usenewurlparser, useunifiedtopology are not supported
+    at parseOptions (C:\Users\dhira\OneDrive\Desktop\RENVOX AI\course-selling-platform\node_modules\mongodb\lib\connection_string.js:272:15)
+    at new MongoClient (C:\Users\dhira\OneDrive\Desktop\RENVOX AI\course-selling-platform\node_modules\mongodb\lib\mongo_client.js:67:61)
+    at NativeConnection.createClient (C:\Users\dhira\OneDrive\Desktop\RENVOX AI\course-selling-platform\node_modules\mongoose\lib\drivers\node-mongodb-native\connection.js:334:14)
+    at NativeConnection.openUri (C:\Users\dhira\OneDrive\Desktop\RENVOX AI\course-selling-platform\node_modules\mongoose\lib\connection.js:1075:34)
+    at Mongoose.connect (C:\Users\dhira\OneDrive\Desktop\RENVOX AI\course-selling-platform\node_modules\mongoose\lib\mongoose.js:471:15)
+    at Object.<anonymous> (C:\Users\dhira\OneDrive\Desktop\RENVOX AI\course-selling-platform\server.js:25:10)
+    at Module._compile (node:internal/modules/cjs/loader:1804:14)
+    at Object..js (node:internal/modules/cjs/loader:1936:10)
+    at Module.load (node:internal/modules/cjs/loader:1525:32)
+    at Module._load (node:internal/modules/cjs/loader:1327:12) {
+  errorLabelSet: Set(0) {}
+}
