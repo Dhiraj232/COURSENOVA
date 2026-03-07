@@ -23,6 +23,14 @@ const sellersRoutes = require('./routes/sellersRoutes');
 const reviewsRoutes = require('./routes/reviewsRoutes');
 const wishlistRoutes = require('./routes/wishlistRoutes');
 const chatsRoutes = require('./routes/chatsRoutes');
+// ─── Used Books Marketplace (simple, no Seller model needed) ─────
+const usedBooksRoutes = require('./routes/usedBooksRoutes');
+
+// ─── Course Platform Routers ──────────────────────────────────────
+const paymentRoutes = require('./routes/paymentRoutes');
+const enrollmentRoutes = require('./routes/enrollmentRoutes');
+const certificateRoutes = require('./routes/certificateRoutes');
+const courseRoutes = require('./routes/courseRoutes');
 
 // ─── MongoDB Connection ───────────────────────────────────────
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/renvox-bookstore';
@@ -147,6 +155,26 @@ app.use('/api/chats', chatsRoutes);
 // ─── Store Routes (Private Book Exchange) ────────────────────
 app.use('/api/store', storeRouter);
 
+// ─── Used Books Marketplace Routes ───────────────────────────
+app.use('/api/used-books', usedBooksRoutes);
+app.use('/uploads/books', express.static(require('path').join(__dirname, 'uploads', 'books')));
+
+// ─── Course Platform Routes ───────────────────────────────────
+app.use('/api/payments', paymentRoutes);
+app.use('/api/enrollments', enrollmentRoutes);
+app.use('/api/certificates', certificateRoutes);
+app.use('/api/course', courseRoutes);     // progress, access-check, submit-test, details
+app.use('/api/my-courses', enrollmentRoutes); // Udemy-style alias → GET /api/my-courses/my-courses
+
+// ─── Admin Panel Routes ───────────────────────────────────────
+const adminRoutes = require('./routes/adminRoutes');
+app.use('/api/admin', adminRoutes);
+
+
+// Serve uploaded screenshots and generated certificates as static files
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/certificates', express.static(path.join(__dirname, 'certificates')));
+
 // Razorpay Instance (Test Keys)
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_TYYvG5LdO0V12j',
@@ -201,14 +229,24 @@ app.post('/api/verify-payment', async (req, res) => {
   if (isAuthentic) {
     try {
       if (course) {
-        // Find user and add course to their enrolledCourses if not already there
+        // 1. Update User.enrolledCourses (legacy quick lookup)
         const user = await StoreUser.findById(userId);
         if (user && !user.enrolledCourses.includes(course)) {
           user.enrolledCourses.push(course);
           await user.save();
-          console.log(`Enrolled ${user.email} in ${course}.`);
         }
+
+        // 2. Create/upsert Enrollment record (permanent DB record used by my-courses.html)
+        const Enrollment = require('./models/Enrollment');
+        await Enrollment.findOneAndUpdate(
+          { userId: String(userId), courseId: course },
+          { userId: String(userId), courseId: course, courseName: course, purchaseDate: new Date() },
+          { upsert: true, new: true }
+        );
+
+        console.log(`Enrolled ${user ? user.email : userId} in "${course}" via Razorpay.`);
       }
+
       res.json({ ok: true, message: 'Payment verified successfully and user enrolled.' });
     } catch (err) {
       console.error('Database Error during enrollment:', err);
@@ -218,6 +256,12 @@ app.post('/api/verify-payment', async (req, res) => {
     res.status(400).json({ ok: false, message: 'Invalid payment signature' });
   }
 });
+
+// ────────────────────────────────────────────────────────────
+// NOTE: Payment routes are now handled by routes/paymentRoutes.js
+// Enrollment routes are handled by routes/enrollmentRoutes.js
+// Certificate routes are handled by routes/certificateRoutes.js
+// ────────────────────────────────────────────────────────────
 
 // Google Auth Routes
 app.get('/auth/google',
@@ -448,149 +492,11 @@ app.get('/api/ping', (req, res) => {
   res.json({ ok: true, message: 'pong' });
 });
 
-// ────────────────────────────────────────────────────────────
-// COURSE PROGRESS & CERTIFICATE SYSTEM
-// ────────────────────────────────────────────────────────────
-
-// Verify if a user is enrolled in a course
-app.get('/api/course/verify-enrollment', async (req, res) => {
-  const auth = req.headers.authorization || '';
-  const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
-  if (!token) return res.status(401).json({ ok: false, message: 'Login required' });
-
-  let userId;
-  try { userId = jwt.verify(token, JWT_SECRET).userId; } catch (e) { return res.status(401).json({ ok: false, message: 'Invalid token' }); }
-
-  const { courseId } = req.query;
-  if (!courseId) return res.status(400).json({ ok: false, message: 'courseId required' });
-
-  try {
-    const user = await StoreUser.findById(userId);
-    if (!user) return res.status(404).json({ ok: false, message: 'User not found' });
-
-    // Check if the course is in their enrolledCourses array
-    const isEnrolled = user.enrolledCourses && user.enrolledCourses.includes(courseId);
-
-    res.json({ ok: true, isEnrolled });
-  } catch (err) {
-    res.status(500).json({ ok: false, message: 'Server error verifying enrollment' });
-  }
-});
-
-// Save video/PDF completion progress
-app.post('/api/course/progress', async (req, res) => {
-  const auth = req.headers.authorization || '';
-  const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
-  if (!token) return res.status(401).json({ ok: false, message: 'Login required' });
-
-  let userId;
-  try { userId = jwt.verify(token, JWT_SECRET).userId; } catch (e) { return res.status(401).json({ ok: false, message: 'Invalid token' }); }
-
-  const { courseId, videoWatched, pdfRead } = req.body;
-  if (!courseId) return res.status(400).json({ ok: false, message: 'courseId required' });
-
-  try {
-    let record = await CourseProgress.findOne({ userId, courseId });
-    if (!record) {
-      record = new CourseProgress({ userId, courseId, videoWatched: false, pdfRead: false });
-    }
-    if (videoWatched !== undefined) record.videoWatched = videoWatched;
-    if (pdfRead !== undefined) record.pdfRead = pdfRead;
-
-    record.updatedAt = new Date();
-    await record.save();
-    res.json({ ok: true, record });
-  } catch (err) {
-    res.status(500).json({ ok: false, message: 'Failed to save progress' });
-  }
-});
-
-// Get progress for a user+course
-app.get('/api/course/progress', async (req, res) => {
-  const auth = req.headers.authorization || '';
-  const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
-  if (!token) return res.status(401).json({ ok: false, message: 'Login required' });
-
-  let userId;
-  try { userId = jwt.verify(token, JWT_SECRET).userId; } catch (e) { return res.status(401).json({ ok: false, message: 'Invalid token' }); }
-
-  const { courseId } = req.query;
-  if (!courseId) return res.status(400).json({ ok: false, message: 'courseId required' });
-
-  try {
-    const record = await CourseProgress.findOne({ userId, courseId });
-    res.json({ ok: true, record: record || {} });
-  } catch (err) {
-    res.status(500).json({ ok: false, message: 'Failed to fetch progress' });
-  }
-});
-
-// Submit test answers
-app.post('/api/course/submit-test', async (req, res) => {
-  const auth = req.headers.authorization || '';
-  const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
-  if (!token) return res.status(401).json({ ok: false, message: 'Login required' });
-
-  let userId;
-  try { userId = jwt.verify(token, JWT_SECRET).userId; } catch (e) { return res.status(401).json({ ok: false, message: 'Invalid token' }); }
-
-  const { courseId, answers, correctAnswers } = req.body;
-  if (!courseId || !answers || !correctAnswers) return res.status(400).json({ ok: false, message: 'Missing fields' });
-
-  // Grade the test
-  let correct = 0;
-  answers.forEach((ans, i) => { if (String(ans) === String(correctAnswers[i])) correct++; });
-  const total = correctAnswers.length;
-  const score = Math.round((correct / total) * 100);
-  const passed = score >= 60;
-
-  try {
-    let record = await CourseProgress.findOne({ userId, courseId });
-    if (!record) {
-      record = new CourseProgress({ userId, courseId, videoWatched: false, pdfRead: false });
-    }
-
-    record.score = score;
-    record.testPassed = passed;
-
-    // REQUIRE the student to actually finish the video and PDF before granting a certificate
-    if (passed && !record.certId && record.videoWatched && record.pdfRead) {
-      record.certId = 'RENV-' + Date.now().toString(36).toUpperCase();
-      record.earnedAt = new Date();
-    } else if (passed && (!record.videoWatched || !record.pdfRead)) {
-      return res.status(403).json({ ok: false, message: 'You must complete the Video and PDF before earning a certificate.' });
-    }
-
-    record.updatedAt = new Date();
-    await record.save();
-
-    // Get user info for certificate
-    const user = await StoreUser.findById(userId);
-
-    res.json({ ok: true, passed, score, correct, total, certId: record.certId, earnedAt: record.earnedAt, userName: user ? user.name : 'Student' });
-  } catch (err) {
-    res.status(500).json({ ok: false, message: 'Failed to submit test' });
-  }
-});
-
-// Get all certificates for a user
-app.get('/api/course/my-certificates', async (req, res) => {
-  const auth = req.headers.authorization || '';
-  const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
-  if (!token) return res.status(401).json({ ok: false, message: 'Login required' });
-
-  let userId;
-  try { userId = jwt.verify(token, JWT_SECRET).userId; } catch (e) { return res.status(401).json({ ok: false, message: 'Invalid token' }); }
-
-  try {
-    const certs = await CourseProgress.find({ userId, testPassed: true, certId: { $ne: null } });
-    const user = await StoreUser.findById(userId);
-
-    res.json({ ok: true, certificates: certs, userName: user ? user.name : 'Student', userEmail: user ? user.email : '' });
-  } catch (err) {
-    res.status(500).json({ ok: false, message: 'Failed to fetch certificates' });
-  }
-});
+// ─────────────────────────────────────────────────────────────────────────────
+// Course progress, verification, test grading, and certificates
+// are now handled by routes/courseRoutes.js (mounted at /api/course)
+// Authentication is handled by middleware/auth.js
+// ─────────────────────────────────────────────────────────────────────────────
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log('API listening on port', PORT));

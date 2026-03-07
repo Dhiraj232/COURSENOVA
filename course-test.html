@@ -7,7 +7,6 @@
     <title>Final Test – RENVOX AI</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
     <style>
         *,
         *::before,
@@ -24,7 +23,7 @@
         }
 
         .test-header {
-            background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
+            background: linear-gradient(135deg, #4f46e5, #3730a3);
             color: white;
             padding: 1.25rem 2rem;
             display: flex;
@@ -131,10 +130,6 @@
             background: #f5f3ff;
         }
 
-        .option-label input {
-            display: none;
-        }
-
         .option-label.selected {
             border-color: #4f46e5;
             background: #ede9fe;
@@ -161,7 +156,6 @@
             color: white;
         }
 
-        /* Result states */
         .option-label.correct {
             border-color: #10b981;
             background: #f0fdf4;
@@ -198,7 +192,7 @@
             padding: 0.75rem 1.5rem;
             border-radius: 10px;
             border: none;
-            font-family: 'Inter', sans-serif;
+            font-family: inherit;
             font-size: 0.9rem;
             font-weight: 700;
             cursor: pointer;
@@ -240,8 +234,6 @@
         .nav-btn:disabled {
             opacity: 0.4;
             cursor: not-allowed;
-            transform: none !important;
-            box-shadow: none !important;
         }
 
         .question-dots {
@@ -366,7 +358,7 @@
             padding: 0.9rem;
             border-radius: 12px;
             border: none;
-            font-family: 'Inter', sans-serif;
+            font-family: inherit;
             font-size: 1rem;
             font-weight: 700;
             cursor: pointer;
@@ -389,7 +381,7 @@
             border-radius: 12px;
             border: 2px solid #e2e8f0;
             background: white;
-            font-family: 'Inter', sans-serif;
+            font-family: inherit;
             font-size: 0.95rem;
             font-weight: 600;
             cursor: pointer;
@@ -408,21 +400,31 @@
             margin-top: 0.75rem;
             font-family: monospace;
         }
+
+        /* Loading */
+        .loading-wrap {
+            text-align: center;
+            padding: 5rem;
+            color: #94a3b8;
+        }
+
+        .loading-wrap i {
+            font-size: 2rem;
+            color: #4f46e5;
+            animation: spin 1s linear infinite;
+            display: block;
+            margin-bottom: 1rem;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
     </style>
 </head>
 
 <body>
-    <nav class="navbar" id="navbar">
-        <div class="nav-container">
-            <a href="index.html" class="logo"><i class="fas fa-book"></i> RENVOX</a>
-            <ul class="nav-menu" id="navMenu">
-                <li><a href="index.html">Home</a></li>
-                <li><a href="certificates.html">Certificates</a></li>
-            </ul>
-            <div class="nav-buttons" id="navButtons"></div>
-        </div>
-    </nav>
-
     <div class="test-header">
         <h1><i class="fas fa-clipboard-check"></i> Final Test – <span id="headerCourse"></span></h1>
         <div class="timer-box" id="timerBox">
@@ -435,17 +437,24 @@
     </div>
 
     <div class="test-container">
-        <div class="question-dots" id="questionDots" style="margin-bottom:1.5rem;"></div>
-        <div class="question-counter" id="questionCounter"></div>
-        <div id="questionArea"></div>
-        <div class="navigation">
-            <button class="nav-btn nav-btn-prev" id="prevBtn" onclick="navigate(-1)"><i class="fas fa-arrow-left"></i>
-                Previous</button>
-            <button class="nav-btn nav-btn-next" id="nextBtn" onclick="navigate(1)">Next <i
-                    class="fas fa-arrow-right"></i></button>
-            <button class="nav-btn nav-btn-submit" id="submitBtn" onclick="submitTest()" style="display:none">
-                <i class="fas fa-paper-plane"></i> Submit Test
-            </button>
+        <div id="loadingWrap" class="loading-wrap">
+            <i class="fas fa-circle-notch"></i>
+            Loading questions...
+        </div>
+
+        <div id="testContent" style="display:none;">
+            <div class="question-dots" id="questionDots" style="margin-bottom:1.5rem;"></div>
+            <div class="question-counter" id="questionCounter"></div>
+            <div id="questionArea"></div>
+            <div class="navigation">
+                <button class="nav-btn nav-btn-prev" id="prevBtn" onclick="navigate(-1)"><i
+                        class="fas fa-arrow-left"></i> Previous</button>
+                <button class="nav-btn nav-btn-next" id="nextBtn" onclick="navigate(1)">Next <i
+                        class="fas fa-arrow-right"></i></button>
+                <button class="nav-btn nav-btn-submit" id="submitBtn" onclick="submitTest()" style="display:none">
+                    <i class="fas fa-paper-plane"></i> Submit Test
+                </button>
+            </div>
         </div>
     </div>
 
@@ -461,13 +470,8 @@
         </div>
     </div>
 
-    <script src="navigation.js"></script>
     <script>
-        const API_BASE = (() => {
-            const p = window.location.port;
-            return (p === '5500' || p === '5501' || p === '5502' || p === '5503' || p === '5504' || p === '3000') ? 'http://localhost:4000' : '';
-        })();
-
+        const API = 'http://localhost:5000';
         const params = new URLSearchParams(window.location.search);
         const courseId = params.get('course') || 'Unknown Course';
         document.getElementById('headerCourse').textContent = courseId;
@@ -476,123 +480,227 @@
             return localStorage.getItem('renvox_token') || localStorage.getItem('renvoxToken') || '';
         }
 
-        // ─── QUESTION BANK ───────────────────────────────────────────
+        // ── Hardcoded fallback question banks ─────────────────────────────────────
         const QUESTION_BANKS = {
             default: [
                 { q: 'What does CPU stand for?', opts: ['Central Processing Unit', 'Central Program Unit', 'Computer Personal Unit', 'Control Processing Unit'], ans: 0 },
                 { q: 'Which data structure operates on LIFO principle?', opts: ['Queue', 'Stack', 'Tree', 'Heap'], ans: 1 },
                 { q: 'What is the time complexity of Binary Search?', opts: ['O(n)', 'O(n²)', 'O(log n)', 'O(1)'], ans: 2 },
                 { q: 'HTML stands for?', opts: ['Hyper Text Markup Language', 'High Text Machine Language', 'Hyper Tabular Markup Language', 'None'], ans: 0 },
-                { q: 'Which keyword is used to define a function in Python?', opts: ['function', 'fun', 'def', 'define'], ans: 2 },
+                { q: 'Which keyword defines a function in Python?', opts: ['function', 'fun', 'def', 'define'], ans: 2 },
                 { q: 'What symbol is used for comments in Python?', opts: ['//', '/* */', '#', '<!--'], ans: 2 },
                 { q: 'Which is NOT a programming language?', opts: ['Java', 'Python', 'HTML', 'C++'], ans: 2 },
                 { q: 'What does SQL stand for?', opts: ['Structured Query Language', 'Simple Query Language', 'Sequential Query Logic', 'Standard Query Language'], ans: 0 },
-                { q: 'Which sorting algorithm has O(n log n) average complexity?', opts: ['Bubble Sort', 'Selection Sort', 'Merge Sort', 'Insertion Sort'], ans: 2 },
+                { q: 'Which sorting has O(n log n) average complexity?', opts: ['Bubble Sort', 'Selection Sort', 'Merge Sort', 'Insertion Sort'], ans: 2 },
                 { q: 'What does RAM stand for?', opts: ['Read Access Memory', 'Random Access Memory', 'Rapid Access Module', 'Read And Modify'], ans: 1 },
-                { q: 'Which of these is a NoSQL database?', opts: ['MySQL', 'PostgreSQL', 'MongoDB', 'Oracle'], ans: 2 },
-                { q: 'What is the default port for HTTP?', opts: ['21', '443', '80', '8080'], ans: 2 },
+                { q: 'Which is a NoSQL database?', opts: ['MySQL', 'PostgreSQL', 'MongoDB', 'Oracle'], ans: 2 },
+                { q: 'Default port for HTTP?', opts: ['21', '443', '80', '8080'], ans: 2 },
                 { q: 'In OOP, what is encapsulation?', opts: ['Inheriting properties', 'Hiding internal state', 'Overriding methods', 'Creating objects'], ans: 1 },
                 { q: 'Which HTML tag creates a hyperlink?', opts: ['<link>', '<href>', '<a>', '<nav>'], ans: 2 },
-                { q: 'What is the purpose of a compiler?', opts: ['Run programs directly', 'Convert source code to machine code', 'Manage memory', 'Debug programs'], ans: 1 },
+                { q: 'Purpose of a compiler?', opts: ['Run programs directly', 'Convert source code to machine code', 'Manage memory', 'Debug programs'], ans: 1 },
             ],
             'C Programming Fundamentals': [
                 { q: 'Which header file is required for printf in C?', opts: ['stdio.h', 'stdlib.h', 'string.h', 'math.h'], ans: 0 },
-                { q: 'What is the size of int in C (32-bit system)?', opts: ['1 byte', '2 bytes', '4 bytes', '8 bytes'], ans: 2 },
-                { q: 'Which operator is used for pointer dereferencing?', opts: ['&', '*', '->', '.'], ans: 1 },
+                { q: 'Size of int in C (32-bit system)?', opts: ['1 byte', '2 bytes', '4 bytes', '8 bytes'], ans: 2 },
+                { q: 'Operator for pointer dereferencing?', opts: ['&', '*', '->', '.'], ans: 1 },
                 { q: 'What does malloc() do in C?', opts: ['Free memory', 'Allocate static memory', 'Allocate dynamic memory', 'Copy memory'], ans: 2 },
                 { q: 'Which loop is guaranteed to execute at least once?', opts: ['for', 'while', 'do-while', 'All of the above'], ans: 2 },
-                { q: 'What is the return type of main() in C?', opts: ['void', 'int', 'char', 'float'], ans: 1 },
-                { q: 'Which function is used to copy strings in C?', opts: ['strcat()', 'strcpy()', 'strcmp()', 'strlen()'], ans: 1 },
+                { q: 'Return type of main() in C?', opts: ['void', 'int', 'char', 'float'], ans: 1 },
+                { q: 'Function to copy strings in C?', opts: ['strcat()', 'strcpy()', 'strcmp()', 'strlen()'], ans: 1 },
                 { q: 'What is a segmentation fault?', opts: ['Syntax error', 'Invalid memory access', 'Compilation error', 'Stack overflow'], ans: 1 },
-                { q: 'What does the & operator do with variables?', opts: ['Dereferences pointer', 'Gets address of variable', 'Bitwise AND', 'Logical AND'], ans: 1 },
-                { q: 'Which is used to end a switch case?', opts: ['exit', 'stop', 'break', 'end'], ans: 2 },
+                { q: 'What does & do with variables?', opts: ['Dereferences pointer', 'Gets address of variable', 'Bitwise AND', 'Logical AND'], ans: 1 },
+                { q: 'Used to end a switch case?', opts: ['exit', 'stop', 'break', 'end'], ans: 2 },
                 { q: 'Array indices in C start at?', opts: ['1', '0', '-1', 'Any'], ans: 1 },
                 { q: 'What is a null pointer?', opts: ['Pointer to zero', 'Invalid pointer', 'Pointer that points to nothing', 'Dangling pointer'], ans: 2 },
-                { q: 'What keyword defines a constant in C?', opts: ['var', 'let', 'const', '#define can be used'], ans: 3 },
-                { q: 'Which printf format specifier is used for float?', opts: ['%d', '%c', '%f', '%s'], ans: 2 },
+                { q: 'Keyword to define a constant in C?', opts: ['var', 'let', 'const', '#define can be used'], ans: 3 },
+                { q: 'printf format specifier for float?', opts: ['%d', '%c', '%f', '%s'], ans: 2 },
                 { q: 'What does sizeof() return?', opts: ['Value of variable', 'Address of variable', 'Size in bytes', 'Number of elements'], ans: 2 },
+            ],
+            'Frontend Developer': [
+                { q: 'Which HTML tag is used for the largest heading?', opts: ['<h6>', '<h1>', '<head>', '<header>'], ans: 1 },
+                { q: 'What does CSS stand for?', opts: ['Computer Style Sheets', 'Cascading Style Sheets', 'Creative Style System', 'Colorful Style Sheets'], ans: 1 },
+                { q: 'Which CSS property changes text color?', opts: ['font-color', 'text-color', 'color', 'foreground'], ans: 2 },
+                { q: 'How do you center a block element with CSS?', opts: ['text-align: center', 'margin: 0 auto', 'align: center', 'position: center'], ans: 1 },
+                { q: 'What does the "display: flex" property do?', opts: ['Hides the element', 'Enables Flexbox layout', 'Makes text flexible', 'Centers the element'], ans: 1 },
+                { q: 'Which JavaScript method selects an element by ID?', opts: ['querySelector()', 'getElementById()', 'getElement()', 'selectId()'], ans: 1 },
+                { q: 'What is the box model in CSS?', opts: ['A 3D model', 'Content, padding, border, margin', 'A CSS framework', 'A grid system'], ans: 1 },
+                { q: 'What does "responsive design" mean?', opts: ['Fast loading websites', 'Design that adapts to screen sizes', 'Websites that respond to clicks', 'A CSS library'], ans: 1 },
+                { q: 'Which HTML element is used to link external CSS?', opts: ['<style>', '<link>', '<css>', '<script>'], ans: 1 },
+                { q: 'What is React primarily used for?', opts: ['Server-side rendering', 'Building user interfaces', 'Database management', 'Network requests'], ans: 1 },
+                { q: 'What does "alt" attribute in <img> do?', opts: ['Sets image size', 'Provides alternative text', 'Links the image', 'Styles the image'], ans: 1 },
+                { q: 'What is the purpose of the <nav> element?', opts: ['Navigation links', 'Create a new page', 'Format text', 'Insert a video'], ans: 0 },
+                { q: 'Which CSS unit is relative to the viewport width?', opts: ['px', 'em', 'vw', 'rem'], ans: 2 },
+                { q: 'What does JavaScript "addEventListener" do?', opts: ['Creates a new element', 'Attaches an event handler', 'Removes an element', 'Adds CSS'], ans: 1 },
+                { q: 'What is a media query used for?', opts: ['Fetching data', 'Applying styles based on screen size', 'Playing media files', 'Creating animations'], ans: 1 },
+            ],
+            'Time Management': [
+                { q: 'What is the Pomodoro Technique?', opts: ['25 min work + 5 min break cycles', 'Working 8 hours straight', 'A task management app', 'A sleep schedule method'], ans: 0 },
+                { q: 'GTD stands for?', opts: ['Get Things Done', 'Getting Things Done', 'Go Toward Dreams', 'Goals That Drive'], ans: 1 },
+                { q: 'What is time-blocking?', opts: ['Blocking social media sites', 'Scheduling specific tasks in calendar slots', 'Setting timers for tasks', 'Blocking distracting thoughts'], ans: 1 },
+                { q: 'The Eisenhower Matrix categorizes tasks by?', opts: ['Cost and time', 'Urgency and importance', 'Difficulty and duration', 'Priority and resources'], ans: 1 },
+                { q: 'What is "eating the frog" in productivity?', opts: ['A healthy breakfast habit', 'Doing the hardest task first', 'A meditation technique', 'Avoiding difficult tasks'], ans: 1 },
+                { q: 'Parkinson\'s Law states that?', opts: ['Work expands to fill the time available', 'Earlier is always better', 'Deadlines reduce quality', 'Multitasking saves time'], ans: 0 },
+                { q: 'What is the 2-minute rule?', opts: ['Take a 2-min break every hour', 'If it takes under 2 mins, do it now', 'Plan 2 days ahead', 'Work in 2-hour blocks'], ans: 1 },
+                { q: 'Which of these is a poor time management habit?', opts: ['Setting deadlines', 'Multitasking constantly', 'Prioritizing tasks', 'Taking regular breaks'], ans: 1 },
+                { q: 'What does "deep work" mean according to Cal Newport?', opts: ['Working late at night', 'Focused, distraction-free work on cognitively demanding tasks', 'Working deep underground', 'Emotional labor'], ans: 1 },
+                { q: 'What is the 80/20 rule (Pareto Principle)?', opts: ['80% of results come from 20% of efforts', '80% of time should be for work', 'Work 80 hours a week', '20% break time is mandatory'], ans: 0 },
+                { q: 'Which tool is commonly used for task management?', opts: ['Photoshop', 'Trello', 'VLC Media Player', 'MS Paint'], ans: 1 },
+                { q: 'What is "procrastination"?', opts: ['Finishing tasks early', 'Avoiding tasks until the last minute', 'Planning tasks carefully', 'Delegating tasks'], ans: 1 },
+                { q: 'What does SMART goal stand for?', opts: ['Simple, Manageable, Achievable, Real, Timed', 'Specific, Measurable, Achievable, Relevant, Time-bound', 'Smart, Modern, Agile, Realistic, True', 'Strategic, Motivated, Attainable, Researched, Tried'], ans: 1 },
+                { q: 'Which practice helps reduce decision fatigue?', opts: ['Making more decisions daily', 'Batching similar tasks together', 'Working without breaks', 'Ignoring low-priority tasks'], ans: 1 },
+                { q: 'What is a "weekly review" in productivity?', opts: ['Watching review videos', 'Assessing goals and planning the upcoming week', 'A performance evaluation', 'Reading weekly news'], ans: 1 },
+            ],
+            'JavaScript Advanced': [
+                { q: 'What is a closure in JavaScript?', opts: ['A function with no return', 'A function that retains access to its outer scope', 'A locked object', 'An error handler'], ans: 1 },
+                { q: 'What does "async/await" simplify?', opts: ['DOM manipulation', 'Working with Promises', 'CSS animations', 'Event listeners'], ans: 1 },
+                { q: 'What does the "this" keyword refer to in an arrow function?', opts: ['The function itself', 'The enclosing lexical context', 'The global object', 'The DOM element'], ans: 1 },
+                { q: 'What is a Promise in JavaScript?', opts: ['A guarantee of no errors', 'An object representing eventual completion/failure of async operation', 'A type of loop', 'A DOM event'], ans: 1 },
+                { q: 'What is the difference between == and ===?', opts: ['No difference', '=== checks value and type, == only value', '== checks type, === only value', 'Both are assignment operators'], ans: 1 },
+                { q: 'What is "hoisting" in JavaScript?', opts: ['Moving elements up the DOM', 'Variable/function declarations moved to top of scope', 'A CSS technique', 'An event bubbling concept'], ans: 1 },
+                { q: 'What does Array.prototype.map() return?', opts: ['The original array', 'A new array with transformed elements', 'An object', 'A boolean'], ans: 1 },
+                { q: 'What is the purpose of the "spread operator" (...)?', opts: ['Multiply values', 'Expand iterables into individual elements', 'Create a new function', 'Delay execution'], ans: 1 },
+                { q: 'What is a "prototype" in JavaScript?', opts: ['The first version of code', 'An object from which others inherit properties', 'A testing environment', 'A class blueprint'], ans: 1 },
+                { q: 'What does "event delegation" mean?', opts: ['Assigning events to each element', 'Using a parent element to handle events from children', 'Delegating tasks to async functions', 'Removing event listeners'], ans: 1 },
+                { q: 'What is the output of typeof null?', opts: ['"null"', '"undefined"', '"object"', '"boolean"'], ans: 2 },
+                { q: 'What is the purpose of "use strict"?', opts: ['Enable dark mode', 'Enforce stricter parsing and error handling', 'Speed up execution', 'Disable console.log'], ans: 1 },
+                { q: 'What does Promise.all() do?', opts: ['Runs promises sequentially', 'Runs all promises in parallel and waits for all to resolve', 'Cancels all promises', 'Returns the first resolved promise'], ans: 1 },
+                { q: 'What is "destructuring" in JavaScript?', opts: ['Breaking the code intentionally', 'Extracting values from arrays/objects into variables', 'Deleting object properties', 'Converting data types'], ans: 1 },
+                { q: 'What is a "generator function"?', opts: ['A function that generates HTML', 'A function that can pause and resume execution', 'A function that creates objects', 'A function without arguments'], ans: 1 },
+            ],
+            'Web Design': [
+                { q: 'What is the primary goal of UI design?', opts: ['Writing code', 'Creating visually appealing and functional interfaces', 'Database management', 'Server configuration'], ans: 1 },
+                { q: 'What does UX stand for?', opts: ['User XML', 'User Experience', 'Unified Extension', 'Universal Exchange'], ans: 1 },
+                { q: 'What is "white space" in design?', opts: ['White-colored background', 'Empty space between design elements', 'A blank page', 'A CSS property'], ans: 1 },
+                { q: 'What is the purpose of a wireframe?', opts: ['A final design', 'A low-fidelity blueprint of a layout', 'An HTML framework', 'A CSS grid system'], ans: 1 },
+                { q: 'What is "color theory"?', opts: ['A theory about printing colors', 'The study of how colors interact and affect perception', 'A CSS color system', 'A photography concept'], ans: 1 },
+                { q: 'Which color model is used for digital screens?', opts: ['CMYK', 'RGB', 'HSL only', 'Pantone'], ans: 1 },
+                { q: 'What is "typography" in web design?', opts: ['Using HTML tables', 'The art of arranging type/fonts', 'Adding images to a layout', 'Writing copy for websites'], ans: 1 },
+                { q: 'What tool is commonly used for UI design and prototyping?', opts: ['Excel', 'Figma', 'VLC', 'Photoshop only'], ans: 1 },
+                { q: 'What is the "F-pattern" in web design?', opts: ['A type of font', 'Users read content in an F-shaped pattern on screens', 'A CSS flexbox pattern', 'A color scheme'], ans: 1 },
+                { q: 'What does "above the fold" mean?', opts: ['Folding paper in design', 'Content visible without scrolling', 'A CSS animation', 'A header design'], ans: 1 },
+                { q: 'What principle does "less is more" represent in design?', opts: ['Minimalism', 'Using fewer colors', 'Reducing page size', 'Removing navigation'], ans: 0 },
+                { q: 'What is a "call to action" (CTA) button?', opts: ['A contact form button', 'A button that encourages users to take a specific action', 'A login button only', 'A navigation link'], ans: 1 },
+                { q: 'What does "contrast" in design achieve?', opts: ['Makes all elements look the same', 'Creates visual hierarchy and improves readability', 'Reduces loading time', 'Adds 3D effects'], ans: 1 },
+                { q: 'What is "responsive design"?', opts: ['Design that responds to hover', 'Layouts that adapt to different screen sizes', 'Fast-loading designs', 'Interactive animations'], ans: 1 },
+                { q: 'What is the purpose of a "grid system" in design?', opts: ['Making dot patterns', 'Organizing content into consistent columns and rows', 'Adding background images', 'Creating tables'], ans: 1 },
+            ],
+            'Communication Skills': [
+                { q: 'What is "active listening"?', opts: ['Listening while multitasking', 'Fully focusing, understanding and responding thoughtfully', 'Listening to music while working', 'Passive hearing'], ans: 1 },
+                { q: 'What does "non-verbal communication" include?', opts: ['Emails and texts', 'Body language, facial expressions and gestures', 'Phone calls', 'Written reports'], ans: 1 },
+                { q: 'What is the purpose of an "elevator pitch"?', opts: ['Explaining lift safety', 'A brief, persuasive speech to spark interest in 60 seconds', 'A long business presentation', 'A job interview format'], ans: 1 },
+                { q: 'What is "assertive communication"?', opts: ['Being aggressive and demanding', 'Expressing thoughts confidently while respecting others', 'Saying yes to everything', 'Avoiding confrontation always'], ans: 1 },
+                { q: 'Which opening is best for a professional email?', opts: ['"Yo, what\'s up"', '"Dear Mr./Ms. [Name],"', '"Hey!!!"', '"To whom it may concern or whatever"'], ans: 1 },
+                { q: 'What does "empathy" in communication mean?', opts: ['Feeling sorry for others', 'Understanding and sharing the feelings of others', 'Agreeing with everything', 'Avoiding difficult conversations'], ans: 1 },
+                { q: 'What is "paraphrasing" in communication?', opts: ['Copying someone\'s words exactly', 'Restating what was said in your own words', 'Interrupting the speaker', 'Changing the topic'], ans: 1 },
+                { q: 'What does body language account for in communication?', opts: ['7% of message', 'Up to 55% of impression', '100% of meaning', 'Only 10% of impact'], ans: 1 },
+                { q: 'What is "constructive feedback"?', opts: ['Only positive comments', 'Specific, actionable suggestions for improvement', 'Harsh criticism', 'Vague advice'], ans: 1 },
+                { q: 'What makes public speaking effective?', opts: ['Speaking very fast', 'Clear structure, eye contact and confident delivery', 'Reading directly from notes', 'Using complex vocabulary only'], ans: 1 },
+                { q: 'What is the purpose of small talk?', opts: ['Wasting time', 'Building rapport and relationships before important discussions', 'Avoiding work topics', 'Gossipping'], ans: 1 },
+                { q: 'What is "tone" in written communication?', opts: ['Volume of text', 'The attitude or feeling conveyed through word choice', 'Font style in emails', 'The subject line'], ans: 1 },
+                { q: 'Which practice improves professional email writing?', opts: ['Using all capitals', 'Being clear, concise and using proper grammar', 'Adding many emojis', 'Writing very long paragraphs'], ans: 1 },
+                { q: 'What is "interpersonal communication"?', opts: ['Communication between companies', 'Communication between individuals', 'Internal thoughts', 'Written communication only'], ans: 1 },
+                { q: 'How should you handle a communication conflict?', opts: ['Ignore it completely', 'Listen, acknowledge perspectives and find common ground', 'Always escalate immediately', 'Argue until you win'], ans: 1 },
             ],
         };
 
-        function getQuestions() {
-            return (QUESTION_BANKS[courseId] || QUESTION_BANKS['default']).slice(0, 15);
-        }
-
-        const questions = getQuestions();
-        const userAnswers = new Array(questions.length).fill(null);
+        let questions = [];
+        let userAnswers = [];
         let currentQ = 0;
         let submitted = false;
-
-        // ─── TIMER ────────────────────────────────────────────────────
+        let timerInterval = null;
         let timeLeft = 30 * 60;
-        const timerDisplay = document.getElementById('timerDisplay');
-        const timerBox = document.getElementById('timerBox');
-        const timerInterval = setInterval(() => {
-            if (submitted) { clearInterval(timerInterval); return; }
-            timeLeft--;
-            const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
-            const s = (timeLeft % 60).toString().padStart(2, '0');
-            timerDisplay.textContent = `${m}:${s}`;
-            if (timeLeft <= 60) timerBox.classList.add('urgent');
-            if (timeLeft <= 0) { clearInterval(timerInterval); submitTest(); }
-        }, 1000);
 
-        // ─── RENDER ───────────────────────────────────────────────────
+        // ── Load questions (DB first, fallback to hardcoded) ──────────────────────
+        async function loadQuestions() {
+            const token = getToken();
+            if (!token) { window.location.href = 'signup.html'; return; }
+
+            try {
+                if (courseId !== 'Learning Essentials (Free)') {
+                    const res = await fetch(`${API}/api/course/details?courseId=${encodeURIComponent(courseId)}`, {
+                        headers: { Authorization: 'Bearer ' + token }
+                    });
+                    const data = await res.json();
+                    if (data.ok && data.course && data.course.quizQuestions && data.course.quizQuestions.length >= 5) {
+                        questions = data.course.quizQuestions.map(q => ({
+                            q: q.question, opts: q.options, ans: q.correctIndex
+                        }));
+                    }
+                }
+            } catch (e) { /* use fallback */ }
+
+            // Fallback to hardcoded
+            if (questions.length === 0) {
+                const bank = QUESTION_BANKS[courseId] || QUESTION_BANKS['default'];
+                questions = bank.slice(0, 15);
+            }
+
+            userAnswers = new Array(questions.length).fill(null);
+
+            document.getElementById('loadingWrap').style.display = 'none';
+            document.getElementById('testContent').style.display = 'block';
+
+            renderQuestion();
+            startTimer();
+        }
+
+        // ── Timer ─────────────────────────────────────────────────────────────────
+        function startTimer() {
+            const display = document.getElementById('timerDisplay');
+            const box = document.getElementById('timerBox');
+            timerInterval = setInterval(() => {
+                if (submitted) { clearInterval(timerInterval); return; }
+                timeLeft--;
+                const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+                const s = (timeLeft % 60).toString().padStart(2, '0');
+                display.textContent = `${m}:${s}`;
+                if (timeLeft <= 60) box.classList.add('urgent');
+                if (timeLeft <= 0) { clearInterval(timerInterval); submitTest(); }
+            }, 1000);
+        }
+
+        // ── Render question ───────────────────────────────────────────────────────
         function renderQuestion() {
             const q = questions[currentQ];
             const letters = ['A', 'B', 'C', 'D'];
-
             document.getElementById('questionCounter').textContent = `Question ${currentQ + 1} of ${questions.length}`;
             document.getElementById('testProgressFill').style.width = ((currentQ + 1) / questions.length * 100) + '%';
-
             document.getElementById('questionArea').innerHTML = `
-            <div class="question-card">
-                <div class="question-text">${currentQ + 1}. ${q.q}</div>
-                <div class="options">
-                    ${q.opts.map((opt, i) => `
-                        <label class="option-label ${userAnswers[currentQ] === i ? 'selected' : ''}" id="opt-${i}" onclick="selectAnswer(${i})">
-                            <div class="option-letter">${letters[i]}</div>
-                            ${opt}
-                        </label>
-                    `).join('')}
-                </div>
-            </div>
-        `;
-
+                <div class="question-card">
+                    <div class="question-text">${currentQ + 1}. ${q.q}</div>
+                    <div class="options">
+                        ${q.opts.map((opt, i) => `
+                            <label class="option-label ${userAnswers[currentQ] === i ? 'selected' : ''}" onclick="selectAnswer(${i})">
+                                <div class="option-letter">${letters[i]}</div>
+                                ${opt}
+                            </label>
+                        `).join('')}
+                    </div>
+                </div>`;
             document.getElementById('prevBtn').disabled = currentQ === 0;
             const isLast = currentQ === questions.length - 1;
             document.getElementById('nextBtn').style.display = isLast ? 'none' : 'flex';
             document.getElementById('submitBtn').style.display = isLast ? 'flex' : 'none';
-
             renderDots();
         }
 
         function renderDots() {
             document.getElementById('questionDots').innerHTML = questions.map((_, i) => `
-            <div class="q-dot ${i === currentQ ? 'current' : ''} ${userAnswers[i] !== null ? 'answered' : ''}" onclick="goTo(${i})">${i + 1}</div>
-        `).join('');
+                <div class="q-dot ${i === currentQ ? 'current' : ''} ${userAnswers[i] !== null ? 'answered' : ''}" onclick="goTo(${i})">${i + 1}</div>
+            `).join('');
         }
 
         function selectAnswer(idx) {
             if (submitted) return;
             userAnswers[currentQ] = idx;
-            document.querySelectorAll('.option-label').forEach((el, i) => {
-                el.classList.toggle('selected', i === idx);
-            });
+            document.querySelectorAll('.option-label').forEach((el, i) => el.classList.toggle('selected', i === idx));
             renderDots();
         }
 
-        function navigate(dir) {
-            currentQ = Math.max(0, Math.min(questions.length - 1, currentQ + dir));
-            renderQuestion();
-        }
+        function navigate(dir) { currentQ = Math.max(0, Math.min(questions.length - 1, currentQ + dir)); renderQuestion(); }
+        function goTo(idx) { currentQ = idx; renderQuestion(); }
 
-        function goTo(idx) {
-            currentQ = idx;
-            renderQuestion();
-        }
-
-        // ─── SUBMIT ───────────────────────────────────────────────────
+        // ── Submit ────────────────────────────────────────────────────────────────
         async function submitTest() {
             if (submitted) return;
             const unanswered = userAnswers.filter(a => a === null).length;
@@ -601,15 +709,15 @@
             clearInterval(timerInterval);
 
             const correctAnswers = questions.map(q => q.ans);
+            const token = getToken();
 
             try {
-                const res = await fetch(`${API_BASE}/api/course/submit-test`, {
+                const res = await fetch(`${API}/api/course/submit-test`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + getToken() },
+                    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
                     body: JSON.stringify({ courseId, answers: userAnswers, correctAnswers })
                 });
                 const data = await res.json();
-
                 if (data.ok) showResult(data);
                 else showResultLocal(correctAnswers);
             } catch (e) {
@@ -625,49 +733,44 @@
         }
 
         function showResult(data) {
-            const { passed, score, correct, total, certId, userName } = data;
+            const { passed, score, correct, total, certId } = data;
             const overlay = document.getElementById('resultOverlay');
             overlay.classList.add('show');
 
             document.getElementById('resultEmoji').textContent = passed ? '🏆' : '😔';
-            document.getElementById('resultTitle').textContent = passed ? 'Congratulations!' : 'Better luck next time!';
+            document.getElementById('resultTitle').textContent = passed ? 'Congratulations!' : 'Better Luck Next Time!';
             document.getElementById('resultTitle').className = 'result-title ' + (passed ? 'pass' : 'fail');
             document.getElementById('resultScore').textContent = score + '%';
             document.getElementById('resultScore').className = 'result-score ' + (passed ? 'pass' : 'fail');
             document.getElementById('resultMsg').textContent = passed
-                ? `You answered ${correct} out of ${total} correctly and passed! Your certificate has been earned.`
-                : `You answered ${correct} out of ${total} correctly. You need 60% to pass. Don't give up!`;
+                ? `You answered ${correct}/${total} correctly and passed! 🎉 Your certificate has been earned.`
+                : `You answered ${correct}/${total} correctly. You need 60% to pass. Keep going!`;
 
-            if (certId) {
-                document.getElementById('certIdDisplay').textContent = 'Certificate ID: ' + certId;
-            }
+            if (certId) document.getElementById('certIdDisplay').textContent = 'Certificate ID: ' + certId;
 
             const actions = document.getElementById('resultActions');
             if (passed) {
                 actions.innerHTML = `
-                <button class="btn-download" onclick="window.location.href='my-certificates.html'">
-                    <i class="fas fa-download"></i> Download My Certificate
-                </button>
-                <button class="btn-retry" onclick="window.location.href='course-content.html?course=${encodeURIComponent(courseId)}'">
-                    <i class="fas fa-book-open"></i> Back to Course
-                </button>
-            `;
+                    <button class="btn-download" onclick="window.location.href='my-certificates.html'">
+                        <i class="fas fa-download"></i> Download My Certificate
+                    </button>
+                    <button class="btn-retry" onclick="window.location.href='course-content.html?course=${encodeURIComponent(courseId)}'">
+                        <i class="fas fa-book-open"></i> Back to Course
+                    </button>`;
             } else {
                 actions.innerHTML = `
-                <button class="btn-download" onclick="window.location.reload()" style="background:linear-gradient(135deg,#4f46e5,#3730a3)">
-                    <i class="fas fa-redo"></i> Try Again
-                </button>
-                <button class="btn-retry" onclick="window.location.href='course-content.html?course=${encodeURIComponent(courseId)}'">
-                    <i class="fas fa-arrow-left"></i> Review Material
-                </button>
-            `;
+                    <button class="btn-download" onclick="window.location.reload()" style="background:linear-gradient(135deg,#4f46e5,#3730a3)">
+                        <i class="fas fa-redo"></i> Try Again
+                    </button>
+                    <button class="btn-retry" onclick="window.location.href='course-content.html?course=${encodeURIComponent(courseId)}'">
+                        <i class="fas fa-arrow-left"></i> Review Material
+                    </button>`;
             }
         }
 
         // Init
-        if (!getToken()) { window.location.href = 'signup.html'; }
-        renderQuestion();
-    </script>
-</body>
+        loadQuestions();
+    </script >
+</body >
 
-</html>
+</html >

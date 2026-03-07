@@ -221,13 +221,12 @@
 
             <div class="upi-details">
                 <h3>Pay using any UPI App</h3>
-                <div class="upi-id">renvox@upi</div>
+                <div class="upi-id" style="font-weight: bold; font-size: 1.4rem;">d.kra@ybl</div>
 
-                <div class="qr-placeholder">
-                    <div>
-                        <i class="fas fa-qrcode" style="font-size: 3rem; margin-bottom: 0.5rem; color: #cbd5e1;"></i>
-                        <p style="font-size: 0.8rem; color: #64748b;">(Add your QR Image here)</p>
-                    </div>
+                <div style="text-align: center; margin: 0 auto; margin-bottom: 1rem;">
+                    <!-- Save your PhonePe QR image as qr-code.jpg in the same folder -->
+                    <img src="qr-code.jpg" alt="PhonePe QR Code"
+                        style="max-width: 220px; border-radius: 12px; border: 2px solid var(--border-color); box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
                 </div>
                 <p style="text-align: center; margin-top: 1rem; font-size: 0.85rem; opacity: 0.8;">
                     Scan to pay using GPay, PhonePe, Paytm, etc.
@@ -290,38 +289,51 @@
         let currentCourseName = "";
         let currentCourseId = "";
 
-        // Function definitions map mock IDs to real course titles based on certificates.html 
-        // Typically, this handles the specific course the user clicked on.
+        // Course catalog — add more courses here as needed
+        const COURSE_CATALOG = [
+            { id: 'c-programming-fundamentals', title: 'C Programming Fundamentals', price: 799 },
+            { id: 'data-structures-advanced', title: 'Data Structures Advanced', price: 1199 },
+            { id: 'web-development-bootcamp', title: 'Web Development Bootcamp', price: 1999 },
+            { id: 'python-for-data-science', title: 'Python for Data Science', price: 999 },
+            { id: 'database-management-systems', title: 'Database Management Systems', price: 599 }
+        ];
+
         document.addEventListener('DOMContentLoaded', () => {
-            // Fill details from URL
             const urlParams = new URLSearchParams(window.location.search);
-            const courseEncodedName = urlParams.get('course');
+            const courseParam = urlParams.get('course'); // can be course title or course id
 
-            // Reconstruct logic from previous certificates page
-            const certificates = [
-                { title: 'C Programming Fundamentals', price: 799 },
-                { title: 'Data Structures Advanced', price: 1199 },
-                { title: 'Web Development Bootcamp', price: 1999 },
-                { title: 'Python for Data Science', price: 999 },
-                { title: 'Database Management Systems', price: 599 }
-            ];
+            if (courseParam) {
+                const decoded = decodeURIComponent(courseParam);
 
-            if (courseEncodedName) {
-                currentCourseName = decodeURIComponent(courseEncodedName);
-                const course = certificates.find(c => c.title === currentCourseName);
+                // Try to find by id first, then by title
+                const found = COURSE_CATALOG.find(c =>
+                    c.id === decoded || c.title.toLowerCase() === decoded.toLowerCase()
+                ) || COURSE_CATALOG.find(c =>
+                    decoded.toLowerCase().includes(c.title.toLowerCase().split(' ')[0].toLowerCase())
+                );
 
-                if (course) {
-                    document.getElementById('displayCourseName').innerText = course.title;
-                    document.getElementById('displayCoursePrice').innerText = `₹${course.price}`;
-
-                    // Since the current Course Model relies on an ID, we assume standard IDs are queried from backend
-                    // MOCK: Generate or pull ID via API. For this assignment, we use name directly.
-                    // We'll create a dummy ID, or typically we'd fetch the course model's real _id.
-                    currentCourseId = '000000000000000000000000'; // Fallback
+                if (found) {
+                    currentCourseName = found.title;
+                    currentCourseId = found.id;
+                    document.getElementById('displayCourseName').innerText = found.title;
+                    document.getElementById('displayCoursePrice').innerText = `₹${found.price}`;
                 } else {
-                    document.getElementById('displayCourseName').innerText = "Course Not Found...";
+                    // Fallback: use raw param as both name and id
+                    currentCourseName = decoded;
+                    currentCourseId = decoded;
+                    document.getElementById('displayCourseName').innerText = decoded;
+                    document.getElementById('displayCoursePrice').innerText = '₹ —';
                 }
+            } else {
+                document.getElementById('displayCourseName').innerText = "No course selected";
             }
+
+            // Pre-fill user info from localStorage if available
+            try {
+                const storedUser = JSON.parse(localStorage.getItem('renvox_user') || '{}');
+                if (storedUser.fullName) document.getElementById('applicantName').value = storedUser.fullName;
+                if (storedUser.email) document.getElementById('applicantEmail').value = storedUser.email;
+            } catch { }
         });
 
         function updateFileName(input) {
@@ -341,52 +353,68 @@
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
             btn.disabled = true;
 
-            const name = document.getElementById('applicantName').value;
-            const email = document.getElementById('applicantEmail').value;
-            const utr = document.getElementById('utrNumber').value;
+            const name = document.getElementById('applicantName').value.trim();
+            const email = document.getElementById('applicantEmail').value.trim();
+            const utr = document.getElementById('utrNumber').value.trim();
             const screenshotInput = document.getElementById('screenshot');
 
-            if (!screenshotInput.files[0]) {
-                alert("Please attach a screenshot.");
+            if (!name || !email || !utr) {
+                alert("Please fill in all fields.");
                 btn.innerHTML = 'Submit Payment Details <i class="fas fa-arrow-right"></i>';
                 btn.disabled = false;
                 return;
             }
 
-            // Create FormData object for multipart/form-data request
+            if (!screenshotInput.files[0]) {
+                alert("Please upload a payment screenshot.");
+                btn.innerHTML = 'Submit Payment Details <i class="fas fa-arrow-right"></i>';
+                btn.disabled = false;
+                return;
+            }
+
+            if (!currentCourseName) {
+                alert("No course selected. Please go back and select a course.");
+                btn.innerHTML = 'Submit Payment Details <i class="fas fa-arrow-right"></i>';
+                btn.disabled = false;
+                return;
+            }
+
             const formData = new FormData();
             formData.append('name', name);
             formData.append('email', email);
-            formData.append('courseId', currentCourseId); // Placeholder ID - backend accepts it 
+            formData.append('courseId', currentCourseId);
             formData.append('courseName', currentCourseName);
             formData.append('utr', utr);
             formData.append('screenshot', screenshotInput.files[0]);
 
             const token = localStorage.getItem('renvox_token') || localStorage.getItem('renvoxToken');
 
+            if (!token) {
+                alert("You need to log in before submitting payment.");
+                window.location.href = 'signup.html?redirect=payment.html' + encodeURIComponent('?course=' + currentCourseName);
+                return;
+            }
+
             try {
                 const response = await fetch('http://localhost:5000/api/payments/submit', {
                     method: 'POST',
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                        // Note: Do NOT set Content-Type header with FormData. Browser sets it automatically with boundary.
-                    },
+                    headers: { 'Authorization': `Bearer ${token}` },
                     body: formData
                 });
 
                 const data = await response.json();
 
-                if (response.ok) {
-                    alert('Payment Details Submitted Successfully! Your enrollment will be active once an admin verifies the payment.');
-                    window.location.href = 'my-courses.html'; // Or dashboard
+                if (response.ok && data.ok) {
+                    alert('✅ Payment submitted! Your enrollment will be active once an admin verifies your payment.');
+                    window.location.href = 'my-courses.html';
                 } else {
-                    alert(`Error: ${data.message || 'Submission failed'}`);
+                    alert(`❌ ${data.message || 'Submission failed. Please try again.'}`);
                     btn.innerHTML = 'Submit Payment Details <i class="fas fa-arrow-right"></i>';
                     btn.disabled = false;
                 }
             } catch (error) {
                 console.error('Submission Error:', error);
-                alert('A network error occurred while submitting payment.');
+                alert('A network error occurred. Make sure the server is running.');
                 btn.innerHTML = 'Submit Payment Details <i class="fas fa-arrow-right"></i>';
                 btn.disabled = false;
             }

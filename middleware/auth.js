@@ -1,0 +1,51 @@
+const jwt = require('jsonwebtoken');
+
+const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_me';
+
+/**
+ * requireAuth — protect any route that needs a logged-in user.
+ * Attaches req.userId and req.user to the request.
+ * Returns 401 if no token or token is invalid/expired.
+ */
+function requireAuth(req, res, next) {
+    const auth = req.headers.authorization || '';
+    const token = auth.startsWith('Bearer ') ? auth.slice(7) : (req.cookies && req.cookies.token ? req.cookies.token : '');
+
+    if (!token) {
+        return res.status(401).json({ ok: false, message: 'Authentication required. Please log in.' });
+    }
+
+    try {
+        const payload = jwt.verify(token, JWT_SECRET);
+        req.userId = payload.userId || payload.id;
+        req.user = payload;
+        next();
+    } catch (err) {
+        if (err.name === 'TokenExpiredError') {
+            return res.status(401).json({ ok: false, message: 'Session expired. Please log in again.' });
+        }
+        return res.status(401).json({ ok: false, message: 'Invalid token. Please log in again.' });
+    }
+}
+
+/**
+ * optionalAuth — attaches user if token present, but does NOT block if missing.
+ * Useful for public routes that show extra info when logged in.
+ */
+function optionalAuth(req, res, next) {
+    const auth = req.headers.authorization || '';
+    const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
+
+    if (token) {
+        try {
+            const payload = jwt.verify(token, JWT_SECRET);
+            req.userId = payload.userId || payload.id;
+            req.user = payload;
+        } catch {
+            // Token invalid — just skip, treat as unauthenticated
+        }
+    }
+    next();
+}
+
+module.exports = { requireAuth, optionalAuth };

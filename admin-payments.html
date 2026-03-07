@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin – Payment Verification | RENVOX AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --border: #334155;
+            --primary: #6366f1;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --text: #e2e8f0;
+            --muted: #94a3b8;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        /* HEADER */
+        .header {
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header .logo {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .header .badge {
+            background: var(--primary);
+            color: #fff;
+            padding: 0.2rem 0.8rem;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 600;
+        }
+
+        /* MAIN */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem;
+        }
+
+        .page-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.4rem;
+        }
+
+        .page-subtitle {
+            color: var(--muted);
+            font-size: 0.9rem;
+            margin-bottom: 2rem;
+        }
+
+        /* STATS */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 1.2rem 1.5rem;
+        }
+
+        .stat-card .num {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .stat-card .label {
+            color: var(--muted);
+            font-size: 0.82rem;
+            margin-top: 0.2rem;
+        }
+
+        .stat-pending .num {
+            color: var(--warning);
+        }
+
+        .stat-approved .num {
+            color: var(--success);
+        }
+
+        .stat-rejected .num {
+            color: var(--danger);
+        }
+
+        .stat-total .num {
+            color: var(--primary);
+        }
+
+        /* FILTERS */
+        .filters {
+            display: flex;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 0.45rem 1.2rem;
+            border-radius: 999px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-family: inherit;
+            transition: all 0.2s;
+        }
+
+        .filter-btn.active,
+        .filter-btn:hover {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: #fff;
+        }
+
+        /* TABLE WRAPPER */
+        .table-wrap {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        th {
+            padding: 1rem 1.2rem;
+            text-align: left;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        td {
+            padding: 1rem 1.2rem;
+            border-top: 1px solid var(--border);
+            font-size: 0.9rem;
+        }
+
+        tr:hover td {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .badge-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 600;
+        }
+
+        .badge-pending {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warning);
+        }
+
+        .badge-approved {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+        }
+
+        .badge-rejected {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--danger);
+        }
+
+        .screenshot-link {
+            color: var(--primary);
+            text-decoration: none;
+            font-size: 0.82rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .screenshot-link:hover {
+            text-decoration: underline;
+        }
+
+        .action-btns {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 0.4rem 1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.82rem;
+            font-weight: 600;
+            font-family: inherit;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .btn-approve {
+            background: var(--success);
+            color: #fff;
+        }
+
+        .btn-approve:hover {
+            background: #059669;
+            transform: translateY(-1px);
+        }
+
+        .btn-reject {
+            background: var(--danger);
+            color: #fff;
+        }
+
+        .btn-reject:hover {
+            background: #dc2626;
+            transform: translateY(-1px);
+        }
+
+        .btn-disabled {
+            background: var(--border);
+            color: var(--muted);
+            cursor: default;
+        }
+
+        /* Empty / loading state */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--muted);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.4;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--success);
+            padding: 1rem 1.5rem;
+            border-radius: 10px;
+            color: var(--text);
+            font-size: 0.9rem;
+            display: none;
+            z-index: 9999;
+            animation: slideIn 0.3s ease;
+        }
+
+        .toast.error {
+            border-left-color: var(--danger);
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            th,
+            td {
+                padding: 0.75rem;
+            }
+
+            th:nth-child(2),
+            td:nth-child(2),
+            th:nth-child(3),
+            td:nth-child(3) {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <div class="logo"><i class="fas fa-shield-alt"></i> RENVOX Admin</div>
+        <span class="badge"><i class="fas fa-lock"></i> Admin Panel</span>
+    </div>
+
+    <div class="container">
+        <div class="page-title">Payment Verification</div>
+        <div class="page-subtitle">Review student UPI payments and approve or reject enrollments.</div>
+
+        <!-- Stats -->
+        <div class="stats">
+            <div class="stat-card stat-total">
+                <div class="num" id="totalCount">–</div>
+                <div class="label">Total Submissions</div>
+            </div>
+            <div class="stat-card stat-pending">
+                <div class="num" id="pendingCount">–</div>
+                <div class="label">Pending Review</div>
+            </div>
+            <div class="stat-card stat-approved">
+                <div class="num" id="approvedCount">–</div>
+                <div class="label">Approved</div>
+            </div>
+            <div class="stat-card stat-rejected">
+                <div class="num" id="rejectedCount">–</div>
+                <div class="label">Rejected</div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filters">
+            <button class="filter-btn active" onclick="filterPayments('all', this)">All</button>
+            <button class="filter-btn" onclick="filterPayments('pending', this)">Pending</button>
+            <button class="filter-btn" onclick="filterPayments('approved', this)">Approved</button>
+            <button class="filter-btn" onclick="filterPayments('rejected', this)">Rejected</button>
+        </div>
+
+        <!-- Table -->
+        <div class="table-wrap">
+            <table id="paymentsTable">
+                <thead>
+                    <tr>
+                        <th>Student</th>
+                        <th>Course</th>
+                        <th>UTR / Txn ID</th>
+                        <th>Screenshot</th>
+                        <th>Date</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Toast notification -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        const API = 'http://localhost:5000';
+        let allPayments = [];
+
+        // ── Load payments ──────────────────────────────────────────────
+        async function loadPayments() {
+            try {
+                const res = await fetch(`${API}/api/payments`);
+                const data = await res.json();
+                if (!data.ok) throw new Error(data.message);
+
+                allPayments = data.data || [];
+                updateStats(allPayments);
+                renderTable(allPayments);
+            } catch (err) {
+                showTableMessage(`<i class="fas fa-exclamation-circle" style="font-size:2rem;color:#ef4444;"></i><br><br>Failed to load payments.<br><small>${err.message}</small>`);
+            }
+        }
+
+        function updateStats(payments) {
+            document.getElementById('totalCount').textContent = payments.length;
+            document.getElementById('pendingCount').textContent = payments.filter(p => p.status === 'pending').length;
+            document.getElementById('approvedCount').textContent = payments.filter(p => p.status === 'approved').length;
+            document.getElementById('rejectedCount').textContent = payments.filter(p => p.status === 'rejected').length;
+        }
+
+        function filterPayments(status, btn) {
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const filtered = status === 'all' ? allPayments : allPayments.filter(p => p.status === status);
+            renderTable(filtered);
+        }
+
+        function renderTable(payments) {
+            const tbody = document.getElementById('tableBody');
+
+            if (payments.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7">
+                <div class="empty-state">
+                    <i class="fas fa-inbox"></i>
+                    <p>No payments found.</p>
+                </div>
+            </td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = payments.map(p => {
+                const date = new Date(p.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+                const statusBadge = `<span class="badge-status badge-${p.status}">${p.status}</span>`;
+
+                let actionBtns = '';
+                if (p.status === 'pending') {
+                    actionBtns = `
+                    <div class="action-btns">
+                        <button class="btn btn-approve" onclick="approvePayment('${p._id}', this)">
+                            <i class="fas fa-check"></i> Approve
+                        </button>
+                        <button class="btn btn-reject" onclick="rejectPayment('${p._id}', this)">
+                            <i class="fas fa-times"></i> Reject
+                        </button>
+                    </div>`;
+                } else {
+                    actionBtns = `<span class="badge-status badge-${p.status}">Done</span>`;
+                }
+
+                return `<tr id="row-${p._id}">
+                <td>
+                    <strong>${escHtml(p.name)}</strong><br>
+                    <small style="color:var(--muted)">${escHtml(p.email)}</small>
+                </td>
+                <td>${escHtml(p.courseName)}</td>
+                <td><code style="font-size:0.8rem;color:var(--primary)">${escHtml(p.utr)}</code></td>
+                <td>
+                    <a href="${API}${p.screenshot}" target="_blank" class="screenshot-link">
+                        <i class="fas fa-image"></i> View
+                    </a>
+                </td>
+                <td style="color:var(--muted);font-size:0.82rem">${date}</td>
+                <td>${statusBadge}</td>
+                <td>${actionBtns}</td>
+            </tr>`;
+            }).join('');
+        }
+
+        // ── Approve ────────────────────────────────────────────────────
+        async function approvePayment(id, btn) {
+            if (!confirm('Approve this payment and enroll the student?')) return;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            try {
+                const res = await fetch(`${API}/api/payments/${id}/approve`, { method: 'POST' });
+                const data = await res.json();
+                if (!data.ok) throw new Error(data.message);
+                showToast('✅ Payment approved & student enrolled!');
+                loadPayments(); // Refresh
+            } catch (err) {
+                showToast('❌ ' + err.message, true);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-check"></i> Approve';
+            }
+        }
+
+        // ── Reject ─────────────────────────────────────────────────────
+        async function rejectPayment(id, btn) {
+            if (!confirm('Reject this payment?')) return;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            try {
+                const res = await fetch(`${API}/api/payments/${id}/reject`, { method: 'POST' });
+                const data = await res.json();
+                if (!data.ok) throw new Error(data.message);
+                showToast('🚫 Payment rejected.', false);
+                loadPayments();
+            } catch (err) {
+                showToast('❌ ' + err.message, true);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-times"></i> Reject';
+            }
+        }
+
+        function showTableMessage(html) {
+            document.getElementById('tableBody').innerHTML = `<tr><td colspan="7"><div class="empty-state">${html}</div></td></tr>`;
+        }
+
+        function showToast(msg, isError = false) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = 'toast' + (isError ? ' error' : '');
+            t.style.display = 'block';
+            setTimeout(() => t.style.display = 'none', 3500);
+        }
+
+        function escHtml(str) {
+            return String(str || '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;');
+        }
+
+        // Init
+        loadPayments();
+        // Auto-refresh every 30 seconds
+        setInterval(loadPayments, 30000);
+    </script>
+</body>
+
+</html>

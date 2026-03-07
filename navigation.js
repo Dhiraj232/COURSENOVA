@@ -405,6 +405,16 @@ function setupUserDropdown() {
                 
                 <ul class="dropdown-items">
                     <li class="dropdown-item">
+                        <a href="my-courses.html" onclick="window.closeUserDropdown()">
+                            <i class="fas fa-book-open"></i> My Courses
+                        </a>
+                    </li>
+                    <li class="dropdown-item">
+                        <a href="my-certificates.html" onclick="window.closeUserDropdown()">
+                            <i class="fas fa-trophy"></i> My Certificates
+                        </a>
+                    </li>
+                    <li class="dropdown-item">
                         <a href="dashboard.html" onclick="window.closeUserDropdown()">
                             <i class="fas fa-columns"></i> Dashboard
                         </a>
@@ -412,16 +422,6 @@ function setupUserDropdown() {
                     <li class="dropdown-item">
                         <a href="profile.html" onclick="window.closeUserDropdown()">
                             <i class="fas fa-user-circle"></i> My Profile
-                        </a>
-                    </li>
-                     <li class="dropdown-item">
-                        <a href="analytics.html" onclick="window.closeUserDropdown()">
-                            <i class="fas fa-chart-pie"></i> Analytics
-                        </a>
-                    </li>
-                    <li class="dropdown-item">
-                        <a href="my-certificates.html" onclick="window.closeUserDropdown()">
-                            <i class="fas fa-trophy"></i> My Certificates
                         </a>
                     </li>
                     
@@ -474,13 +474,18 @@ function logoutUser(event) {
     if (event) event.preventDefault();
 
     if (confirm('Are you sure you want to log out?')) {
-        // Clear all auth data
+        // Clear ALL auth data (both key formats for cross-compatibility)
+        // NOTE: Only auth tokens are cleared. Course enrollments stay in MongoDB
+        // and will be re-fetched when user logs in again.
         localStorage.removeItem('renvox_user');
         localStorage.removeItem('renvox_token');
+        localStorage.removeItem('renvoxUser');
+        localStorage.removeItem('renvoxToken');
+        localStorage.removeItem('userName');
         localStorage.removeItem('pendingUserId');
 
-        // Redirect to login or home
-        window.location.href = 'signup.html';
+        // Redirect to home
+        window.location.href = 'index.html';
     }
 }
 

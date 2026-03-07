@@ -1,0 +1,287 @@
+const express = require('express');
+const router = express.Router();
+const CourseProgress = require('../models/CourseProgress');
+const Enrollment = require('../models/Enrollment');
+const Course = require('../models/Course');
+const User = require('../models/User');
+const { requireAuth } = require('../middleware/auth');
+
+// All routes in this file require authentication
+router.use(requireAuth);
+
+// ── GET /api/course/details ───────────────────────────────────────────────────
+// Returns course lessons + quiz questions for enrolled users
+router.get('/details', async (req, res) => {
+    const { courseId } = req.query;
+    if (!courseId) return res.status(400).json({ ok: false, message: 'courseId is required' });
+
+    try {
+        // Check enrollment
+        const enrollment = await Enrollment.findOne({ userId: req.userId, courseId });
+        if (!enrollment) {
+            const user = await User.findById(req.userId);
+            const legacyEnrolled = user && user.enrolledCourses &&
+                (user.enrolledCourses.includes(courseId) ||
+                    user.enrolledCourses.some(c => c.toLowerCase() === courseId.toLowerCase()));
+            // Allow free course without enrollment check
+            if (!legacyEnrolled && courseId !== 'Learning Essentials (Free)') {
+                return res.status(403).json({ ok: false, message: 'Not enrolled in this course.' });
+            }
+        }
+
+        // Find course by title (since courseId is the course name/title)
+        const course = await Course.findOne({
+            $or: [
+                { title: courseId },
+                { slug: courseId.toLowerCase().replace(/\s+/g, '-') }
+            ]
+        });
+
+        const progress = await CourseProgress.findOne({ userId: req.userId, courseId });
+
+        res.json({
+            ok: true,
+            course: course ? {
+                _id: course._id,
+                title: course.title,
+                slug: course.slug,
+                description: course.description,
+                icon: course.icon,
+                lessons: course.lessons || [],
+                quizQuestions: course.quizQuestions || [],
+                // Legacy fields
+                videoUrl: course.videoUrl,
+                pdfUrl: course.pdfUrl
+            } : null,
+            progress: progress ? {
+                progressPercent: progress.progressPercent,
+                completedLessons: progress.completedLessons,
+                videoWatched: progress.videoWatched,
+                pdfRead: progress.pdfRead,
+                isCompleted: progress.isCompleted,
+                testPassed: progress.testPassed,
+                certId: progress.certId
+            } : null
+        });
+    } catch (err) {
+        console.error('Course details error:', err);
+        res.status(500).json({ ok: false, message: 'Server error fetching course details' });
+    }
+});
+
+// ── GET /api/course/access-check ─────────────────────────────────────────────
+router.get('/access-check', async (req, res) => {
+    const { courseId } = req.query;
+    if (!courseId) return res.status(400).json({ ok: false, message: 'courseId is required' });
+
+    try {
+        const enrollment = await Enrollment.findOne({ userId: req.userId, courseId });
+
+        if (!enrollment) {
+            const user = await User.findById(req.userId);
+            const legacyEnrolled = user && user.enrolledCourses &&
+                (user.enrolledCourses.includes(courseId) || user.enrolledCourses.some(c =>
+                    c.toLowerCase().includes(courseId.toLowerCase()) ||
+                    courseId.toLowerCase().includes(c.toLowerCase())
+                ));
+            if (!legacyEnrolled) {
+                return res.status(403).json({ ok: false, message: 'Course not purchased. Please enroll to access this course.' });
+            }
+        }
+
+        const progress = await CourseProgress.findOne({ userId: req.userId, courseId });
+        res.json({
+            ok: true,
+            enrolled: true,
+            progress: progress ? {
+                progressPercent: progress.progressPercent,
+                isCompleted: progress.isCompleted,
+                completedLessons: progress.completedLessons,
+                completedVideos: progress.completedVideos,
+                completedTests: progress.completedTests,
+                videoWatched: progress.videoWatched,
+                pdfRead: progress.pdfRead,
+                certId: progress.certId
+            } : null
+        });
+    } catch (err) {
+        res.status(500).json({ ok: false, message: 'Server error checking enrollment' });
+    }
+});
+
+// ── GET /api/course/progress ──────────────────────────────────────────────────
+router.get('/progress', async (req, res) => {
+    const { courseId } = req.query;
+    if (!courseId) return res.status(400).json({ ok: false, message: 'courseId is required' });
+
+    try {
+        const record = await CourseProgress.findOne({ userId: req.userId, courseId });
+        res.json({ ok: true, record: record || null });
+    } catch (err) {
+        res.status(500).json({ ok: false, message: 'Failed to fetch progress' });
+    }
+});
+
+// ── POST /api/course/progress ─────────────────────────────────────────────────
+// Body: { courseId, lessonId?, videoId?, testId?, videoWatched?, pdfRead?, totalLessons? }
+router.post('/progress', async (req, res) => {
+    const { courseId, lessonId, videoId, testId, videoWatched, pdfRead, totalLessons, totalVideos = 1, totalTests = 1 } = req.body;
+    if (!courseId) return res.status(400).json({ ok: false, message: 'courseId is required' });
+
+    try {
+        let record = await CourseProgress.findOne({ userId: req.userId, courseId });
+        if (!record) {
+            record = new CourseProgress({ userId: req.userId, courseId });
+        }
+
+        // Per-lesson tracking (new)
+        if (lessonId && !record.completedLessons.includes(lessonId)) {
+            record.completedLessons.push(lessonId);
+        }
+
+        // Legacy granular tracking
+        if (videoId && !record.completedVideos.includes(videoId)) {
+            record.completedVideos.push(videoId);
+        }
+        if (testId && !record.completedTests.includes(testId)) {
+            record.completedTests.push(testId);
+        }
+
+        // Legacy boolean flags
+        if (videoWatched !== undefined) record.videoWatched = videoWatched;
+        if (pdfRead !== undefined) record.pdfRead = pdfRead;
+
+        // Compute progress percent
+        if (totalLessons && totalLessons > 0) {
+            // New multi-lesson formula: lesson completion drives progress (80%), test (20%)
+            const lessonPct = (record.completedLessons.length / totalLessons) * 80;
+            const testPct = record.testPassed ? 20 : 0;
+            record.progressPercent = Math.min(100, Math.round(lessonPct + testPct));
+        } else {
+            // Legacy formula: 50% video + 50% test
+            const videoPct = totalVideos > 0 ? (record.completedVideos.length / totalVideos) * 50 : (record.videoWatched ? 50 : 0);
+            const testPct = totalTests > 0 ? (record.completedTests.length / totalTests) * 50 : (record.pdfRead ? 50 : 0);
+            record.progressPercent = Math.min(100, Math.round(videoPct + testPct));
+        }
+
+        record.updatedAt = new Date();
+        await record.save();
+
+        res.json({ ok: true, record });
+    } catch (err) {
+        console.error('Progress update error:', err);
+        res.status(500).json({ ok: false, message: 'Failed to save progress' });
+    }
+});
+
+// ── POST /api/course/submit-test ──────────────────────────────────────────────
+router.post('/submit-test', async (req, res) => {
+    const { courseId, answers, correctAnswers } = req.body;
+    if (!courseId || !answers) {
+        return res.status(400).json({ ok: false, message: 'courseId and answers are required' });
+    }
+
+    try {
+        // Try to get quiz from DB first
+        let dbCorrectAnswers = correctAnswers;
+        const course = await Course.findOne({
+            $or: [
+                { title: courseId },
+                { slug: courseId.toLowerCase().replace(/\s+/g, '-') }
+            ]
+        });
+        if (course && course.quizQuestions && course.quizQuestions.length > 0) {
+            dbCorrectAnswers = course.quizQuestions.map(q => q.correctIndex);
+        }
+
+        if (!dbCorrectAnswers || dbCorrectAnswers.length === 0) {
+            return res.status(400).json({ ok: false, message: 'No quiz answers available for grading.' });
+        }
+
+        // Grade
+        let correct = 0;
+        answers.forEach((ans, i) => { if (String(ans) === String(dbCorrectAnswers[i])) correct++; });
+        const total = dbCorrectAnswers.length;
+        const score = Math.round((correct / total) * 100);
+        const passed = score >= 60;
+
+        let record = await CourseProgress.findOne({ userId: req.userId, courseId });
+        if (!record) record = new CourseProgress({ userId: req.userId, courseId });
+
+        record.score = score;
+        record.testPassed = passed;
+
+        if (passed) {
+            if (!record.videoWatched && record.completedVideos.length === 0 && record.completedLessons.length === 0) {
+                return res.status(403).json({ ok: false, message: 'Please complete at least one course lesson before taking the test.' });
+            }
+
+            if (!record.certId) {
+                record.certId = 'RENV-' + Date.now().toString(36).toUpperCase();
+                record.earnedAt = new Date();
+            }
+
+            record.isCompleted = true;
+            record.progressPercent = 100;
+        }
+
+        record.updatedAt = new Date();
+        await record.save();
+
+        const user = await User.findById(req.userId);
+        res.json({
+            ok: true,
+            passed, score, correct, total,
+            certId: record.certId,
+            earnedAt: record.earnedAt,
+            userName: user ? user.name : 'Student'
+        });
+    } catch (err) {
+        console.error('Submit test error:', err);
+        res.status(500).json({ ok: false, message: 'Failed to submit test' });
+    }
+});
+
+// ── GET /api/course/verify-enrollment ────────────────────────────────────────
+router.get('/verify-enrollment', async (req, res) => {
+    const { courseId } = req.query;
+    if (!courseId) return res.status(400).json({ ok: false, message: 'courseId required' });
+
+    try {
+        const enrollment = await Enrollment.findOne({ userId: req.userId, courseId });
+        if (enrollment) return res.json({ ok: true, isEnrolled: true });
+
+        const user = await User.findById(req.userId);
+        const isEnrolled = !!(user && user.enrolledCourses &&
+            (user.enrolledCourses.includes(courseId) || user.enrolledCourses.some(c =>
+                c.toLowerCase().includes(courseId.toLowerCase()) ||
+                courseId.toLowerCase().includes(c.toLowerCase())
+            ))
+        );
+        res.json({ ok: true, isEnrolled });
+    } catch (err) {
+        res.status(500).json({ ok: false, message: 'Server error' });
+    }
+});
+
+// ── GET /api/course/my-certificates ──────────────────────────────────────────
+router.get('/my-certificates', async (req, res) => {
+    try {
+        const certs = await CourseProgress.find({
+            userId: req.userId,
+            testPassed: true,
+            certId: { $ne: null }
+        });
+        const user = await User.findById(req.userId);
+        res.json({
+            ok: true,
+            certificates: certs,
+            userName: user ? user.name : 'Student',
+            userEmail: user ? user.email : ''
+        });
+    } catch (err) {
+        res.status(500).json({ ok: false, message: 'Failed to fetch certificates' });
+    }
+});
+
+module.exports = router;

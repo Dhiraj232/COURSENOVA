@@ -4,475 +4,939 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Certificate Courses - RENVOX</title>
-
-    <!-- Google Fonts -->
-    <link
-        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap"
+    <title>Certificate Courses — RENVOX</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
-
-    <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
-    <!-- External CSS -->
     <link rel="stylesheet" href="style.css">
     <style>
-        /* ==================== PAGE HEADER ==================== */
-        .page-header {
-            background: linear-gradient(135deg, var(--primary-color) 0%, #3730a3 100%);
-            color: var(--white);
-            padding: 3rem 2rem;
-            margin-bottom: 3rem;
+        :root {
+            --brand: #4f46e5;
+            --brand2: #818cf8;
+            --green: #10b981;
+            --orange: #f59e0b;
+            --red: #ef4444;
+            --bg: #f5f7ff;
+            --card: #fff;
+            --text: #1e293b;
+            --muted: #64748b;
+            --border: #e2e8f0;
+        }
+
+        body {
+            background: var(--bg);
+            font-family: 'Inter', sans-serif;
+            color: var(--text);
+        }
+
+        /* ── Progress Banner ── */
+        .progress-banner {
+            background: linear-gradient(135deg, #4f46e5, #818cf8);
+            color: white;
+            padding: 14px 20px;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            gap: 40px;
+            font-size: .9rem;
+        }
+
+        .progress-banner.show {
+            display: flex;
+        }
+
+        .pbstat {
             text-align: center;
         }
 
-        .page-header h1 {
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
+        .pbstat strong {
+            font-size: 1.5rem;
+            display: block;
+            font-weight: 800;
         }
 
-        .page-header p {
-            font-size: 1.05rem;
-            opacity: 0.9;
-        }
-
-        /* ==================== CERTIFICATE CARDS ==================== */
-        .certificates-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 3rem;
-        }
-
-        .cert-card {
-            background: var(--white);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
+        /* ── Hero ── */
+        .cert-hero {
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%);
+            padding: 54px 20px 48px;
+            text-align: center;
+            color: white;
+            position: relative;
             overflow: hidden;
-            transition: all 0.3s ease;
         }
 
-        .cert-card:hover {
-            border-color: var(--primary-color);
-            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
-            transform: translateY(-6px);
+        .cert-hero::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M20 20c0 11.046-8.954 20-20 20S-20 31.046-20 20s8.954-20 20-20 20 8.954 20 20zm-40 0c0 11.046-8.954 20-20 20s-20-8.954-20-20 8.954-20 20-20 20 8.954 20 20z'/%3E%3C/g%3E%3C/svg%3E");
         }
 
-        .cert-card-header {
-            background: linear-gradient(135deg, var(--primary-color) 0%, #3730a3 100%);
-            padding: 1.25rem;
-            color: var(--white);
-            text-align: center;
+        .cert-hero h1 {
+            font-size: clamp(1.6rem, 4vw, 2.6rem);
+            font-weight: 800;
+            margin-bottom: 10px;
+            position: relative;
         }
 
-        .cert-icon {
-            font-size: 2.5rem;
-            margin-bottom: 0.25rem;
+        .cert-hero p {
+            font-size: 1.05rem;
+            opacity: .85;
+            position: relative;
         }
 
-        .cert-card-title {
-            font-size: 1.15rem;
-            margin-bottom: 0.25rem;
+        /* ── Filter Bar ── */
+        .filter-bar {
+            background: white;
+            border-bottom: 1px solid var(--border);
+            padding: 14px 20px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            position: sticky;
+            top: 62px;
+            z-index: 50;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, .05);
         }
 
-        .cert-card-body {
-            padding: 1.25rem;
+        .filter-chip {
+            padding: 7px 18px;
+            border-radius: 20px;
+            border: 1.5px solid var(--border);
+            background: white;
+            font-size: .85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all .2s;
+            color: var(--muted);
         }
 
-        .cert-info {
+        .filter-chip.active,
+        .filter-chip:hover {
+            background: var(--brand);
+            border-color: var(--brand);
+            color: white;
+        }
+
+        /* ── Main Grid ── */
+        .certs-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 36px 20px 60px;
+        }
+
+        .certs-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 0.75rem;
-            margin-bottom: 1rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--border-color);
+            grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+            gap: 24px;
         }
 
-        .info-item {
+        /* ── Course Card ── */
+        .course-card {
+            background: var(--card);
+            border-radius: 18px;
+            border: 1.5px solid var(--border);
+            overflow: hidden;
+            transition: all .3s cubic-bezier(.175, .885, .32, 1.275);
+            position: relative;
+        }
+
+        .course-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 20px 48px rgba(79, 70, 229, .14);
+            border-color: var(--brand);
+        }
+
+        .course-card.locked {
+            opacity: .75;
+        }
+
+        /* Card Header */
+        .card-header {
+            padding: 28px 20px 20px;
             display: flex;
             flex-direction: column;
+            align-items: center;
+            position: relative;
         }
 
-        .info-label {
-            font-size: 0.75rem;
-            color: var(--text-light);
-            font-weight: 600;
-            margin-bottom: 0.2rem;
+        .card-header.beginner {
+            background: linear-gradient(135deg, #312e81, #4f46e5);
         }
 
-        .info-value {
-            font-size: 0.9rem;
-            color: var(--text-dark);
-            font-weight: 600;
+        .card-header.intermediate {
+            background: linear-gradient(135deg, #1e3a5f, #2563eb);
         }
 
-        .cert-description {
-            color: var(--text-light);
-            font-size: 0.85rem;
-            margin-bottom: 1rem;
-            line-height: 1.5;
+        .card-header.advanced {
+            background: linear-gradient(135deg, #3b1212, #dc2626);
         }
 
-        .cert-highlights {
-            list-style: none;
-            margin-bottom: 1rem;
+        .card-header.free {
+            background: linear-gradient(135deg, #064e3b, #10b981);
         }
 
-        .cert-highlights li {
-            padding: 0.25rem 0;
-            display: flex;
-            gap: 0.6rem;
-            color: var(--text-dark);
-            font-size: 0.85rem;
+        .course-icon {
+            font-size: 3rem;
+            margin-bottom: 8px;
         }
 
-        .cert-highlights li:before {
-            content: "✓";
-            color: var(--accent-color);
-            font-weight: bold;
-            min-width: 20px;
-        }
-
-        .cert-price {
-            background-color: var(--secondary-color);
-            padding: 1rem;
-            border-radius: 6px;
-            margin-bottom: 1.25rem;
+        .course-title {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: white;
             text-align: center;
+            line-height: 1.35;
+        }
+
+        /* Status Badges */
+        .status-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: .72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+        }
+
+        .badge-locked {
+            background: rgba(0, 0, 0, .35);
+            color: #fff;
+        }
+
+        .badge-enrolled {
+            background: rgba(16, 185, 129, .9);
+            color: #fff;
+        }
+
+        .badge-completed {
+            background: rgba(245, 158, 11, .95);
+            color: #fff;
+        }
+
+        .badge-free {
+            background: rgba(255, 255, 255, .2);
+            color: #fff;
+        }
+
+        /* Card Body */
+        .card-body {
+            padding: 20px;
+        }
+
+        .course-desc {
+            font-size: .85rem;
+            color: var(--muted);
+            line-height: 1.6;
+            margin-bottom: 16px;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            line-clamp: 3;
+        }
+
+        /* Meta row */
+        .course-meta {
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+            margin-bottom: 14px;
+        }
+
+        .meta-tag {
+            font-size: .78rem;
+            color: var(--muted);
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .meta-tag i {
+            color: var(--brand);
+            font-size: .72rem;
+        }
+
+        /* Highlights */
+        .highlights {
+            list-style: none;
+            margin-bottom: 18px;
+        }
+
+        .highlights li {
+            font-size: .82rem;
+            color: var(--text);
+            padding: 3px 0;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .highlights li::before {
+            content: "✓";
+            color: var(--green);
+            font-weight: 800;
+        }
+
+        /* Price block */
+        .price-block {
+            background: var(--bg);
+            border-radius: 10px;
+            padding: 12px 16px;
+            text-align: center;
+            margin-bottom: 16px;
         }
 
         .price-amount {
-            font-size: 1.75rem;
-            color: var(--primary-color);
-            font-weight: 700;
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--brand);
         }
 
-        .price-period {
-            color: var(--text-light);
-            font-size: 0.8rem;
+        .price-note {
+            font-size: .75rem;
+            color: var(--muted);
+        }
+
+        /* Progress bar (inside card) */
+        .progress-wrap {
+            margin-bottom: 14px;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: .78rem;
+            color: var(--muted);
+            margin-bottom: 5px;
+        }
+
+        .progress-bar {
+            height: 7px;
+            background: var(--border);
+            border-radius: 99px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--brand), var(--brand2));
+            border-radius: 99px;
+            transition: width 1s ease;
+        }
+
+        /* Action Buttons */
+        .btn-action {
+            display: block;
+            width: 100%;
+            padding: 13px;
+            border: none;
+            border-radius: 10px;
+            font-size: .95rem;
+            font-weight: 700;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            transition: all .3s;
+            font-family: inherit;
         }
 
         .btn-enroll {
-            width: 100%;
-            padding: 0.75rem;
-            background-color: var(--primary-color);
-            color: var(--white);
-            border: none;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 0.95rem;
+            background: linear-gradient(135deg, var(--brand), var(--brand2));
+            color: white;
         }
 
         .btn-enroll:hover {
-            background-color: #1e2d6f;
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(30, 58, 138, 0.3);
+            box-shadow: 0 8px 24px rgba(79, 70, 229, .35);
         }
 
-        .btn-enroll.free {
-            background-color: var(--accent-color);
+        .btn-free {
+            background: linear-gradient(135deg, var(--green), #34d399);
+            color: white;
         }
 
-        .btn-enroll.free:hover {
-            background-color: #059669;
+        .btn-free:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(16, 185, 129, .35);
         }
 
-        @media (max-width: 768px) {
-            .page-header {
-                padding: 2rem 1rem;
-                margin-bottom: 2rem;
-            }
+        .btn-continue {
+            background: linear-gradient(135deg, #0284c7, #38bdf8);
+            color: white;
+        }
 
-            .page-header h1 {
-                font-size: 1.5rem;
-            }
+        .btn-continue:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(2, 132, 199, .3);
+        }
 
-            .certificates-grid {
-                grid-template-columns: 1fr;
-            }
+        .btn-completed {
+            background: linear-gradient(135deg, var(--orange), #fbbf24);
+            color: white;
+        }
 
-            .cert-info {
-                grid-template-columns: 1fr;
+        .btn-completed:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(245, 158, 11, .3);
+        }
+
+        .btn-locked {
+            background: #e2e8f0;
+            color: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        .btn-cert {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 8px;
+            width: 100%;
+            padding: 10px;
+            background: transparent;
+            border: 1.5px solid var(--orange);
+            border-radius: 10px;
+            color: var(--orange);
+            font-weight: 700;
+            font-size: .88rem;
+            cursor: pointer;
+            transition: all .2s;
+            text-decoration: none;
+            font-family: inherit;
+        }
+
+        .btn-cert:hover {
+            background: var(--orange);
+            color: white;
+        }
+
+        /* Loading skeleton */
+        .skeleton-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+            gap: 24px;
+        }
+
+        .skeleton-card {
+            background: var(--card);
+            border-radius: 18px;
+            overflow: hidden;
+            border: 1.5px solid var(--border);
+        }
+
+        .skel-header {
+            height: 120px;
+            background: linear-gradient(90deg, #e2e8f0 25%, #f0f4f8 50%, #e2e8f0 75%);
+            background-size: 200%;
+            animation: shimmer 1.5s infinite;
+        }
+
+        .skel-body {
+            padding: 20px;
+        }
+
+        .skel-line {
+            height: 12px;
+            border-radius: 6px;
+            background: linear-gradient(90deg, #e2e8f0 25%, #f0f4f8 50%, #e2e8f0 75%);
+            background-size: 200%;
+            animation: shimmer 1.5s infinite;
+            margin-bottom: 10px;
+        }
+
+        .skel-line.short {
+            width: 60%;
+        }
+
+        @keyframes shimmer {
+            to {
+                background-position: -200% center;
             }
+        }
+
+        /* Login CTA */
+        .login-cta {
+            background: linear-gradient(135deg, #1e1b4b, #312e81);
+            color: white;
+            border-radius: 16px;
+            padding: 32px;
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .login-cta h2 {
+            font-size: 1.3rem;
+            margin-bottom: 8px;
+        }
+
+        .login-cta p {
+            opacity: .8;
+            margin-bottom: 20px;
+            font-size: .9rem;
+        }
+
+        .login-cta a {
+            display: inline-block;
+            padding: 12px 32px;
+            background: white;
+            color: var(--brand);
+            border-radius: 10px;
+            font-weight: 700;
+            text-decoration: none;
+            transition: all .25s;
+        }
+
+        .login-cta a:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, .2);
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            padding: 14px 22px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            font-size: .9rem;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, .2);
+            z-index: 9999;
+            display: none;
+        }
+
+        .toast.show {
+            display: block;
+        }
+
+        .toast.success {
+            background: var(--green);
+        }
+
+        .toast.error {
+            background: var(--red);
         }
     </style>
-    <!-- Razorpay SDK -->
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 </head>
 
 <body>
-    <!-- ==================== NAVBAR ==================== -->
+
+    <!-- ═══════════ NAVBAR ═══════════ -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
-            <a href="index.html" class="logo">
-                <i class="fas fa-book"></i> RENVOX
-            </a>
+            <a href="index.html" class="logo"><i class="fas fa-book"></i> RENVOX</a>
             <div class="nav-search">
-                <input type="text" id="navbarSearch" placeholder="Search for courses, subjects, or concepts...">
-                <button type="button" onclick="handleNavbarSearch()">
-                    <i class="fas fa-search"></i>
-                </button>
+                <input type="text" id="navbarSearch" placeholder="Search courses...">
+                <button type="button" onclick="handleNavbarSearch()"><i class="fas fa-search"></i></button>
             </div>
-            <ul class="nav-menu">
+            <ul class="nav-menu" id="navMenu">
                 <li><a href="index.html">Home</a></li>
                 <li><a href="certificates.html" class="active">Certificates</a></li>
                 <li><a href="practice.html">Practice</a></li>
                 <li><a href="store.html">Store</a></li>
-                <li><a href="Family.html">Family</a></li>
+                <li><a href="family.html">Family</a></li>
             </ul>
-            <div class="nav-buttons" id="navButtons">
-                <!-- Filled by JavaScript -->
-            </div>
+            <div class="nav-buttons" id="navButtons"></div>
+            <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
         </div>
     </nav>
 
-    <!-- ==================== PAGE HEADER ==================== -->
-    <div class="page-header">
-        <div class="container">
-            <h1>🎓 Certificate Courses</h1>
-            <p>Structured courses with assignments & verified certificates</p>
-        </div>
+    <!-- ═══════════ PROGRESS BANNER (logged-in users) ═══════════ -->
+    <div class="progress-banner" id="progressBanner">
+        <div class="pbstat"><strong id="pbEnrolled">0</strong> Enrolled</div>
+        <div class="pbstat"><strong id="pbCompleted">0</strong> Completed</div>
+        <div class="pbstat"><strong id="pbCerts">0</strong> Certificates 🏆</div>
+        <a href="my-courses.html"
+            style="background:rgba(255,255,255,.2);color:white;padding:8px 20px;border-radius:20px;font-weight:700;text-decoration:none;font-size:.88rem;">View
+            Dashboard →</a>
     </div>
 
-    <!-- ==================== CERTIFICATES GRID ==================== -->
-    <div class="container">
-        <div class="certificates-grid" id="certGrid">
-            <!-- Filled by JavaScript -->
-        </div>
+    <!-- ═══════════ HERO ═══════════ -->
+    <div class="cert-hero">
+        <h1>🎓 Certificate Courses</h1>
+        <p>Enroll • Learn • Pass the test • Earn your verified certificate</p>
     </div>
 
-    <!-- ==================== FOOTER ==================== -->
-    <footer class="footer">
-        <div class="footer-bottom">
-            <p>&copy; 2025 RENVOX – All rights reserved.</p>
-        </div>
-    </footer>
+    <!-- ═══════════ FILTER BAR ═══════════ -->
+    <div class="filter-bar">
+        <button class="filter-chip active" onclick="filterCards('all', this)">All Courses</button>
+        <button class="filter-chip" onclick="filterCards('free', this)">🆓 Free</button>
+        <button class="filter-chip" onclick="filterCards('Beginner', this)">🌱 Beginner</button>
+        <button class="filter-chip" onclick="filterCards('Intermediate', this)">📈 Intermediate</button>
+        <button class="filter-chip" onclick="filterCards('enrolled', this)">✅ Enrolled</button>
+        <button class="filter-chip" onclick="filterCards('completed', this)">🏆 Completed</button>
+    </div>
 
+    <!-- ═══════════ MAIN CONTENT ═══════════ -->
+    <div class="certs-container">
+        <!-- Login CTA (hidden when logged in) -->
+        <div class="login-cta" id="loginCta" style="display:none;">
+            <h2>🔐 Login to Track Your Progress</h2>
+            <p>Sign in to enroll in courses, track your learning, and download certificates.</p>
+            <a href="signup.html">Login / Sign Up</a>
+        </div>
+
+        <!-- Skeleton loading state -->
+        <div class="skeleton-grid" id="skeletonGrid">
+            ${[...Array(6)].map(() => `
+            <div class="skeleton-card">
+                <div class="skel-header"></div>
+                <div class="skel-body">
+                    <div class="skel-line"></div>
+                    <div class="skel-line short"></div>
+                    <div class="skel-line"></div>
+                </div>
+            </div>`).join('')}
+        </div>
+
+        <!-- Actual grid -->
+        <div class="certs-grid" id="certsGrid" style="display:none;"></div>
+    </div>
+
+    <!-- ═══════════ TOAST ═══════════ -->
+    <div class="toast" id="toast"></div>
+
+    <script src="navigation.js"></script>
     <script>
-        const isLoggedIn = localStorage.getItem('renvoxUser') !== null;
-        const userName = localStorage.getItem('userName') || 'User';
+        const API = 'http://localhost:5000';
+        const token = localStorage.getItem('renvox_token') || localStorage.getItem('renvoxToken') || '';
 
-        const certificates = [
+        // ─── Course Definitions ───────────────────────────────────────────────────
+        const COURSES = [
             {
+                id: 'C Programming Fundamentals',
                 title: 'C Programming Fundamentals',
-                icon: '💻',
-                duration: '4 Weeks',
-                level: 'Beginner',
-                assignments: 8,
-                description: 'Master C programming from scratch with practical assignments and real-world projects.',
+                icon: '💻', level: 'Beginner',
+                duration: '4 Weeks', assignments: 8,
+                description: 'Master C programming from scratch with practical assignments and real-world system programming projects.',
                 highlights: ['8 Assignments', 'Live Projects', '40+ Hours Content', 'Job Ready Skills'],
-                price: 799,
-                isFree: false
+                price: 799, isFree: false
             },
             {
+                id: 'Data Structures Advanced',
                 title: 'Data Structures Advanced',
-                icon: '🔗',
-                duration: '6 Weeks',
-                level: 'Intermediate',
-                assignments: 12,
-                description: 'Deep dive into data structures with interview prep and competitive programming.',
+                icon: '🔗', level: 'Intermediate',
+                duration: '6 Weeks', assignments: 12,
+                description: 'Deep dive into data structures with interview prep, competitive programming challenges and complexity analysis.',
                 highlights: ['12 Assignments', 'Interview Questions', 'Coding Challenges', 'Certificate'],
-                price: 1199,
-                isFree: false
+                price: 1199, isFree: false
             },
             {
+                id: 'Web Development Bootcamp',
                 title: 'Web Development Bootcamp',
-                icon: '🌐',
-                duration: '8 Weeks',
-                level: 'Intermediate',
-                assignments: 10,
-                description: 'Complete web development course covering HTML, CSS, JavaScript, and React.',
+                icon: '🌐', level: 'Intermediate',
+                duration: '8 Weeks', assignments: 10,
+                description: 'Complete full-stack web development covering HTML, CSS, JavaScript, Node.js, and React with real projects.',
                 highlights: ['10 Projects', 'Portfolio Ready', 'Job Support', 'Lifetime Access'],
-                price: 1999,
-                isFree: false
+                price: 1999, isFree: false
             },
             {
+                id: 'Python for Data Science',
                 title: 'Python for Data Science',
-                icon: '🐍',
-                duration: '5 Weeks',
-                level: 'Intermediate',
-                assignments: 7,
-                description: 'Learn Python with NumPy, Pandas, Matplotlib for data science applications.',
+                icon: '🐍', level: 'Intermediate',
+                duration: '5 Weeks', assignments: 7,
+                description: 'Learn Python with NumPy, Pandas, Matplotlib, and Scikit-Learn for real-world data science applications.',
                 highlights: ['7 Projects', 'Real Datasets', 'ML Basics', 'Career Ready'],
-                price: 999,
-                isFree: false
+                price: 999, isFree: false
             },
             {
+                id: 'Database Management Systems',
                 title: 'Database Management Systems',
-                icon: '🗄️',
-                duration: '3 Weeks',
-                level: 'Beginner',
-                assignments: 5,
-                description: 'Learn DBMS concepts with SQL and practical database design projects.',
+                icon: '🗄️', level: 'Beginner',
+                duration: '3 Weeks', assignments: 5,
+                description: 'Master DBMS concepts, SQL queries, database design, normalization and practical database management.',
                 highlights: ['5 Assignments', 'SQL Mastery', 'Database Design', 'Verified Cert'],
-                price: 599,
-                isFree: false
+                price: 599, isFree: false
             },
             {
-                title: 'Learning Essentials (Free)',
-                icon: '📚',
-                duration: '2 Weeks',
-                level: 'Beginner',
-                assignments: 3,
-                description: 'Free beginner course to understand RENVOX platform and learning basics.',
+                id: 'Learning Essentials (Free)',
+                title: 'Learning Essentials',
+                icon: '📚', level: 'Beginner',
+                duration: '2 Weeks', assignments: 3,
+                description: 'Free starter course to understand the RENVOX platform, effective learning basics and study techniques.',
                 highlights: ['3 Assignments', 'Free Access', 'Digital Certificate', 'No Credit Card'],
-                price: 0,
-                isFree: true
+                price: 0, isFree: true
+            },
+            {
+                id: 'Frontend Developer',
+                title: 'Frontend Developer',
+                icon: '🎨', level: 'Intermediate',
+                duration: '6 Weeks', assignments: 10,
+                description: 'Become a job-ready frontend developer. Learn HTML5, CSS3, responsive design, JavaScript DOM, React basics and build stunning UIs.',
+                highlights: ['10 Projects', 'React Basics', 'Responsive Design', 'Portfolio Ready'],
+                price: 1499, isFree: false
+            },
+            {
+                id: 'Time Management',
+                title: 'Time Management',
+                icon: '⏰', level: 'Beginner',
+                duration: '2 Weeks', assignments: 4,
+                description: 'Master productivity techniques used by top performers. Learn Pomodoro, GTD, time-blocking and eliminate procrastination for good.',
+                highlights: ['4 Assignments', 'Productivity Tools', 'Life Skills', 'Digital Certificate'],
+                price: 399, isFree: false
+            },
+            {
+                id: 'JavaScript Advanced',
+                title: 'JavaScript Advanced',
+                icon: '⚡', level: 'Intermediate',
+                duration: '5 Weeks', assignments: 8,
+                description: 'Go beyond the basics. Master closures, async/await, Promises, ES6+, design patterns and how JavaScript works under the hood.',
+                highlights: ['8 Projects', 'ES6+ Mastery', 'Async JS', 'Interview Ready'],
+                price: 999, isFree: false
+            },
+            {
+                id: 'Web Design',
+                title: 'Web Design',
+                icon: '🖌️', level: 'Beginner',
+                duration: '3 Weeks', assignments: 6,
+                description: 'Learn modern UI/UX principles, color theory, typography, Figma wireframing and build beautiful, user-friendly websites from scratch.',
+                highlights: ['6 Assignments', 'Figma Skills', 'UI/UX Basics', 'Design Portfolio'],
+                price: 699, isFree: false
+            },
+            {
+                id: 'Communication Skills',
+                title: 'Communication Skills',
+                icon: '🗣️', level: 'Beginner',
+                duration: '2 Weeks', assignments: 4,
+                description: 'Build confidence in spoken and written English. Learn professional email writing, public speaking, body language and workplace communication.',
+                highlights: ['4 Assignments', 'Mock Interviews', 'Email Writing', 'Career Boost'],
+                price: 499, isFree: false
             }
         ];
 
-        function setupNavbar() {
-            const navButtons = document.getElementById('navButtons');
+        let enrolledIds = [];  // course IDs the user is enrolled in
+        let completedMap = {};  // courseId → { certId, earnedAt }
+        let progressMap = {};  // courseId → progressPercent
 
-            if (isLoggedIn) {
-                navButtons.innerHTML = `
-                    <button class="btn-user">
-                        <i class="fas fa-user-circle"></i>
-                        <span>${userName}</span>
-                    </button>
-                    <button class="btn-user" style="background-color: #fee2e2; color: #dc2626;" onclick="logout()">Logout</button>
-                `;
-            } else {
-                navButtons.innerHTML = `
-                    <a href="signup.html" class="btn-user">Login</a>
-                    <a href="signup.html" class="btn-user" style="background-color: var(--primary-color); color: white;">Sign Up</a>
-                `;
+        // ─── Init ─────────────────────────────────────────────────────────────────
+        document.getElementById('skeletonGrid').innerHTML = COURSES.map(() => `
+        <div class="skeleton-card">
+            <div class="skel-header"></div>
+            <div class="skel-body">
+                <div class="skel-line"></div>
+                <div class="skel-line short"></div>
+                <div class="skel-line"></div>
+                <div class="skel-line short"></div>
+            </div>
+        </div>`).join('');
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            if (!token) {
+                document.getElementById('loginCta').style.display = 'block';
             }
-        }
+            await loadUserStatus();
+            renderCards('all');
+            hideSkeleton();
+        });
 
-        function renderCertificates() {
-            const grid = document.getElementById('certGrid');
-
-            // Get search query from URL if present
-            const urlParams = new URLSearchParams(window.location.search);
-            const searchQuery = urlParams.get('search');
-
-            // Set input value if searched
-            const searchInput = document.getElementById('navbarSearch');
-            if (searchInput && searchQuery) {
-                searchInput.value = searchQuery;
-            }
-
-            // Filter certificates based on search query
-            let filteredCerts = certificates;
-            if (searchQuery) {
-                const query = searchQuery.toLowerCase();
-                filteredCerts = certificates.filter(cert =>
-                    cert.title.toLowerCase().includes(query) ||
-                    cert.description.toLowerCase().includes(query) ||
-                    cert.highlights.some(h => h.toLowerCase().includes(query))
-                );
-            }
-
-            if (filteredCerts.length === 0) {
-                grid.innerHTML = `
-                    <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; background: var(--secondary-color); border-radius: 8px;">
-                        <i class="fas fa-search" style="font-size: 3rem; color: var(--text-light); margin-bottom: 1rem;"></i>
-                        <h2>No courses found</h2>
-                        <p style="color: var(--text-light); margin-top: 0.5rem;">We couldn't find any courses matching "${searchQuery}". Try different keywords.</p>
-                        <button class="btn-primary" style="margin-top: 1.5rem;" onclick="window.location.href='certificates.html'">View All Courses</button>
-                    </div>
-                `;
-                return;
-            }
-
-            const html = filteredCerts.map(cert => `
-                <div class="cert-card">
-                    <div class="cert-card-header">
-                        <div class="cert-icon">${cert.icon}</div>
-                        <h3 class="cert-card-title">${cert.title}</h3>
-                    </div>
-                    <div class="cert-card-body">
-                        <div class="cert-info">
-                            <div class="info-item">
-                                <span class="info-label">⏱️ Duration</span>
-                                <span class="info-value">${cert.duration}</span>
-                            </div>
-                            <div class="info-item">
-                                <span class="info-label">📊 Level</span>
-                                <span class="info-value">${cert.level}</span>
-                            </div>
-                            <div class="info-item">
-                                <span class="info-label">✏️ Assignments</span>
-                                <span class="info-value">${cert.assignments}</span>
-                            </div>
-                            <div class="info-item">
-                                <span class="info-label">🎓 Certification</span>
-                                <span class="info-value">Verified</span>
-                            </div>
-                        </div>
-                        
-                        <div class="cert-price">
-                            ${cert.isFree ?
-                    '<span class="price-amount">FREE</span>' :
-                    `<div class="price-amount">₹${cert.price}</div><div class="price-period">One-time payment</div>`
-                }
-                        </div>
-                        
-                        <button class="btn-enroll ${cert.isFree ? 'free' : ''}" onclick="enrollCourse('${cert.title}')">
-                            ${isLoggedIn ? (cert.isFree ? 'Enroll Free' : 'Enroll Now') : 'Sign Up to Enroll'}
-                        </button>
-                    </div>
-                </div>
-            `).join('');
-
-            grid.innerHTML = html;
-        }
-
-        async function enrollCourse(courseName) {
-
-            const course = certificates.find(c => c.title === courseName);
-            if (!course) return;
-
-            const token = localStorage.getItem('renvox_token') || localStorage.getItem('renvoxToken');
-            if (!token && !course.isFree) {
-                alert("Please log in to enroll.");
-                window.location.href = "index.html";
-                return;
-            }
-
-            if (course.isFree) {
-                // Directly redirect for free courses
-                window.location.href = `course-content.html?course=${encodeURIComponent(courseName)}`;
-                return;
-            }
-
+        // ─── Load all status in one shot ─────────────────────────────────────────
+        async function loadUserStatus() {
+            if (!token) return;
             try {
-                // 1. Check if user is already enrolled
-                const enrollCheck = await fetch(`http://localhost:5000/api/course/verify-enrollment?courseId=${encodeURIComponent(courseName)}`, {
-                    headers: { 'Authorization': 'Bearer ' + token }
+                const [statusRes, progResults] = await Promise.all([
+                    fetch(`${API}/api/enrollments/all-status`, { headers: { Authorization: `Bearer ${token}` } }),
+                    Promise.all(COURSES.map(c =>
+                        fetch(`${API}/api/course/progress?courseId=${encodeURIComponent(c.id)}`, { headers: { Authorization: `Bearer ${token}` } })
+                            .then(r => r.json()).catch(() => ({ ok: false }))
+                    ))
+                ]);
+
+                const status = await statusRes.json();
+                enrolledIds = status.enrolled || [];
+                completedMap = {};
+                (status.completed || []).forEach(c => { completedMap[c.courseId] = c; });
+
+                progressMap = {};
+                COURSES.forEach((c, i) => {
+                    const rec = progResults[i]?.record;
+                    if (rec) progressMap[c.id] = rec.progressPercent || 0;
                 });
-                const enrollData = await enrollCheck.json();
 
-                if (enrollData.ok && enrollData.isEnrolled) {
-                    // Already bought! Send straight to content
-                    window.location.href = `course-content.html?course=${encodeURIComponent(courseName)}`;
-                    return;
-                }
-
-                // 2. Redirect to manual UPI payment page
-                window.location.href = `payment.html?course=${encodeURIComponent(courseName)}`;
+                // Show progress banner
+                const banner = document.getElementById('progressBanner');
+                banner.classList.add('show');
+                document.getElementById('pbEnrolled').textContent = enrolledIds.length;
+                document.getElementById('pbCompleted').textContent = Object.keys(completedMap).length;
+                document.getElementById('pbCerts').textContent = Object.keys(completedMap).length;
             } catch (err) {
-                console.error("Payment Error:", err);
-                alert("Error initializing payment. Check console.");
+                console.warn('Status load:', err);
             }
         }
 
-        function logout() {
-            if (confirm('Logout?')) {
-                localStorage.removeItem('renvoxUser');
-                localStorage.removeItem('userName');
-                window.location.reload();
+        // ─── Render Cards ─────────────────────────────────────────────────────────
+        function renderCards(filter) {
+            const grid = document.getElementById('certsGrid');
+            let courses = COURSES;
+            if (filter === 'free') courses = COURSES.filter(c => c.isFree);
+            if (filter === 'Beginner') courses = COURSES.filter(c => c.level === 'Beginner');
+            if (filter === 'Intermediate') courses = COURSES.filter(c => c.level === 'Intermediate');
+            if (filter === 'enrolled') courses = COURSES.filter(c => isEnrolled(c.id));
+            if (filter === 'completed') courses = COURSES.filter(c => !!completedMap[c.id]);
+
+            if (!courses.length) {
+                grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--muted);">
+                <div style="font-size:3rem;margin-bottom:12px;">📭</div>
+                <h3 style="color:var(--text);margin-bottom:8px;">Nothing here yet</h3>
+                <p>Try enrolling in a course to see it here.</p>
+            </div>`;
+                return;
+            }
+
+            grid.innerHTML = courses.map(c => buildCard(c)).join('');
+        }
+
+        function isEnrolled(id) {
+            return enrolledIds.some(e => e === id || e?.toLowerCase() === id?.toLowerCase());
+        }
+
+        function buildCard(c) {
+            const enrolled = isEnrolled(c.id);
+            const completed = !!completedMap[c.id];
+            const progress = progressMap[c.id] || 0;
+            const headerCls = c.isFree ? 'free' : c.level.toLowerCase();
+
+            // Badge
+            let badge = '';
+            if (completed) badge = `<span class="status-badge badge-completed">✅ Completed</span>`;
+            else if (enrolled) badge = `<span class="status-badge badge-enrolled">📖 Enrolled</span>`;
+            else if (c.isFree) badge = `<span class="status-badge badge-free">🆓 Free</span>`;
+            else badge = `<span class="status-badge badge-locked">🔒 Locked</span>`;
+
+            // Price block
+            const priceHTML = c.isFree
+                ? `<div class="price-block"><div class="price-amount" style="color:var(--green);">FREE</div><div class="price-note">No credit card needed</div></div>`
+                : `<div class="price-block"><div class="price-amount">₹${c.price}</div><div class="price-note">One-time payment</div></div>`;
+
+            // Progress bar (only if enrolled and not completed)
+            const progressHTML = (enrolled && !completed && progress > 0)
+                ? `<div class="progress-wrap">
+                <div class="progress-label"><span>Progress</span><span>${progress}%</span></div>
+                <div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div>
+               </div>`
+                : '';
+
+            // CTA button
+            let btnHTML = '';
+            if (completed) {
+                const cert = completedMap[c.id];
+                btnHTML = `
+                <button class="btn-action btn-completed" onclick="goToCourse('${c.id}')">
+                    🏆 View Course
+                </button>
+                ${cert?.certId ? `<a href="${API}/api/certificates/generate/${cert.certId}" class="btn-cert" download>
+                    <i class="fas fa-download"></i> Download Certificate
+                </a>` : ''}`;
+            } else if (enrolled) {
+                btnHTML = `<a href="course-content.html?course=${encodeURIComponent(c.id)}" class="btn-action btn-continue">
+                <i class="fas fa-play"></i> Continue Learning
+            </a>`;
+            } else if (c.isFree) {
+                btnHTML = `<button class="btn-action btn-free" onclick="enrollFree('${c.id}', '${c.title}', this)">
+                🆓 Enroll Free — Start Now
+            </button>`;
+            } else if (token) {
+                btnHTML = `<button class="btn-action btn-enroll" onclick="enrollPaid('${c.id}')">
+                Enroll Now — ₹${c.price}
+            </button>`;
+            } else {
+                btnHTML = `<button class="btn-action btn-locked" disabled>🔒 Login to Enroll</button>`;
+            }
+
+            return `
+        <div class="course-card ${enrolled ? '' : 'locked'}" data-level="${c.level}" data-free="${c.isFree}" data-enrolled="${enrolled}" data-completed="${completed}" id="card-${c.id.replace(/\s+/g, '_')}">
+            <div class="card-header ${headerCls}">
+                ${badge}
+                <div class="course-icon">${c.icon}</div>
+                <div class="course-title">${c.title}</div>
+            </div>
+            <div class="card-body">
+                <p class="course-desc">${c.description}</p>
+                <div class="course-meta">
+                    <span class="meta-tag"><i class="fas fa-clock"></i> ${c.duration}</span>
+                    <span class="meta-tag"><i class="fas fa-signal"></i> ${c.level}</span>
+                    <span class="meta-tag"><i class="fas fa-tasks"></i> ${c.assignments} Tasks</span>
+                </div>
+                <ul class="highlights">
+                    ${c.highlights.map(h => `<li>${h}</li>`).join('')}
+                </ul>
+                ${priceHTML}
+                ${progressHTML}
+                ${btnHTML}
+            </div>
+        </div>`;
+        }
+
+        // ─── Filter ───────────────────────────────────────────────────────────────
+        function filterCards(type, btn) {
+            document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderCards(type);
+        }
+
+        // ─── Actions ──────────────────────────────────────────────────────────────
+        async function enrollFree(courseId, courseName, btn) {
+            if (!token) { window.location.href = 'signup.html'; return; }
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enrolling...';
+            try {
+                const res = await fetch(`${API}/api/enrollments/enroll-free`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ courseId, courseName })
+                });
+                const data = await res.json();
+                if (!data.ok) throw new Error(data.message);
+                showToast('Enrolled! Redirecting...', 'success');
+                setTimeout(() => { window.location.href = `course-content.html?course=${encodeURIComponent(courseId)}`; }, 1200);
+            } catch (err) {
+                showToast(err.message, 'error');
+                btn.disabled = false;
+                btn.innerHTML = '🆓 Enroll Free — Start Now';
             }
         }
 
-        setupNavbar();
-        renderCertificates();
+        async function enrollPaid(courseId) {
+            if (!token) { window.location.href = 'signup.html'; return; }
+            try {
+                const res = await fetch(`${API}/api/course/verify-enrollment?courseId=${encodeURIComponent(courseId)}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                const data = await res.json();
+                if (data.ok && data.isEnrolled) {
+                    window.location.href = `course-content.html?course=${encodeURIComponent(courseId)}`;
+                } else {
+                    window.location.href = `payment.html?course=${encodeURIComponent(courseId)}`;
+                }
+            } catch (err) {
+                window.location.href = `payment.html?course=${encodeURIComponent(courseId)}`;
+            }
+        }
+
+        function goToCourse(id) {
+            window.location.href = `course-content.html?course=${encodeURIComponent(id)}`;
+        }
+
+        // ─── Helpers ──────────────────────────────────────────────────────────────
+        function hideSkeleton() {
+            document.getElementById('skeletonGrid').style.display = 'none';
+            document.getElementById('certsGrid').style.display = 'grid';
+        }
+
+        function showToast(msg, type = 'success') {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = `toast show ${type}`;
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
     </script>
-    <!-- Navigation System -->
-    <script src="navigation.js"></script>
 </body>
 
 </html>
