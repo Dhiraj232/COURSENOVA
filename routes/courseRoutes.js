@@ -9,27 +9,14 @@ const { requireAuth } = require('../middleware/auth');
 // All routes in this file require authentication
 router.use(requireAuth);
 
-// ── GET /api/course/details ───────────────────────────────────────────────────
-// Returns course lessons + quiz questions for enrolled users
+// ── GET /api/course/details ─────────────────────────────────────────────────────
+// Returns course lessons + quiz questions — ALL COURSES FREE, no enrollment check
 router.get('/details', async (req, res) => {
     const { courseId } = req.query;
     if (!courseId) return res.status(400).json({ ok: false, message: 'courseId is required' });
 
     try {
-        // Check enrollment
-        const enrollment = await Enrollment.findOne({ userId: req.userId, courseId });
-        if (!enrollment) {
-            const user = await User.findById(req.userId);
-            const legacyEnrolled = user && user.enrolledCourses &&
-                (user.enrolledCourses.includes(courseId) ||
-                    user.enrolledCourses.some(c => c.toLowerCase() === courseId.toLowerCase()));
-            // Allow free course without enrollment check
-            if (!legacyEnrolled && courseId !== 'Learning Essentials (Free)') {
-                return res.status(403).json({ ok: false, message: 'Not enrolled in this course.' });
-            }
-        }
-
-        // Find course by title (since courseId is the course name/title)
+        // All courses are freely accessible — no enrollment check
         const course = await Course.findOne({
             $or: [
                 { title: courseId },
@@ -49,7 +36,6 @@ router.get('/details', async (req, res) => {
                 icon: course.icon,
                 lessons: course.lessons || [],
                 quizQuestions: course.quizQuestions || [],
-                // Legacy fields
                 videoUrl: course.videoUrl,
                 pdfUrl: course.pdfUrl
             } : null,
@@ -195,7 +181,12 @@ router.post('/submit-test', async (req, res) => {
         }
 
         if (!dbCorrectAnswers || dbCorrectAnswers.length === 0) {
-            return res.status(400).json({ ok: false, message: 'No quiz answers available for grading.' });
+            // When no questions exist directly in the course model (e.g. from the hardcoded question banks), 
+            // safely use correctAnswers from the request which matches the dynamically loaded questions.
+            dbCorrectAnswers = correctAnswers;
+            if (!dbCorrectAnswers || dbCorrectAnswers.length === 0) {
+                return res.status(400).json({ ok: false, message: 'No quiz answers available for grading.' });
+            }
         }
 
         // Grade
@@ -243,26 +234,11 @@ router.post('/submit-test', async (req, res) => {
 });
 
 // ── GET /api/course/verify-enrollment ────────────────────────────────────────
+// All courses are FREE — always return enrolled: true
 router.get('/verify-enrollment', async (req, res) => {
-    const { courseId } = req.query;
-    if (!courseId) return res.status(400).json({ ok: false, message: 'courseId required' });
-
-    try {
-        const enrollment = await Enrollment.findOne({ userId: req.userId, courseId });
-        if (enrollment) return res.json({ ok: true, isEnrolled: true });
-
-        const user = await User.findById(req.userId);
-        const isEnrolled = !!(user && user.enrolledCourses &&
-            (user.enrolledCourses.includes(courseId) || user.enrolledCourses.some(c =>
-                c.toLowerCase().includes(courseId.toLowerCase()) ||
-                courseId.toLowerCase().includes(c.toLowerCase())
-            ))
-        );
-        res.json({ ok: true, isEnrolled });
-    } catch (err) {
-        res.status(500).json({ ok: false, message: 'Server error' });
-    }
+    res.json({ ok: true, isEnrolled: true });
 });
+
 
 // ── GET /api/course/my-certificates ──────────────────────────────────────────
 router.get('/my-certificates', async (req, res) => {

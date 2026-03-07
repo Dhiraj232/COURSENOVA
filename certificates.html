@@ -568,10 +568,8 @@
     <!-- ═══════════ FILTER BAR ═══════════ -->
     <div class="filter-bar">
         <button class="filter-chip active" onclick="filterCards('all', this)">All Courses</button>
-        <button class="filter-chip" onclick="filterCards('free', this)">🆓 Free</button>
         <button class="filter-chip" onclick="filterCards('Beginner', this)">🌱 Beginner</button>
         <button class="filter-chip" onclick="filterCards('Intermediate', this)">📈 Intermediate</button>
-        <button class="filter-chip" onclick="filterCards('enrolled', this)">✅ Enrolled</button>
         <button class="filter-chip" onclick="filterCards('completed', this)">🏆 Completed</button>
     </div>
 
@@ -798,25 +796,17 @@
         }
 
         function buildCard(c) {
-            const enrolled = isEnrolled(c.id);
             const completed = !!completedMap[c.id];
             const progress = progressMap[c.id] || 0;
-            const headerCls = c.isFree ? 'free' : c.level.toLowerCase();
+            const headerCls = c.level.toLowerCase();
 
-            // Badge
-            let badge = '';
-            if (completed) badge = `<span class="status-badge badge-completed">✅ Completed</span>`;
-            else if (enrolled) badge = `<span class="status-badge badge-enrolled">📖 Enrolled</span>`;
-            else if (c.isFree) badge = `<span class="status-badge badge-free">🆓 Free</span>`;
-            else badge = `<span class="status-badge badge-locked">🔒 Locked</span>`;
+            // Badge — only show Completed when earned
+            let badge = completed
+                ? `<span class="status-badge badge-completed">✅ Completed</span>`
+                : `<span class="status-badge badge-free">🆓 Free</span>`;
 
-            // Price block
-            const priceHTML = c.isFree
-                ? `<div class="price-block"><div class="price-amount" style="color:var(--green);">FREE</div><div class="price-note">No credit card needed</div></div>`
-                : `<div class="price-block"><div class="price-amount">₹${c.price}</div><div class="price-note">One-time payment</div></div>`;
-
-            // Progress bar (only if enrolled and not completed)
-            const progressHTML = (enrolled && !completed && progress > 0)
+            // Progress bar
+            const progressHTML = (!completed && progress > 0)
                 ? `<div class="progress-wrap">
                 <div class="progress-label"><span>Progress</span><span>${progress}%</span></div>
                 <div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div>
@@ -828,30 +818,24 @@
             if (completed) {
                 const cert = completedMap[c.id];
                 btnHTML = `
-                <button class="btn-action btn-completed" onclick="goToCourse('${c.id}')">
-                    🏆 View Course
-                </button>
+                <a href="course-content.html?course=${encodeURIComponent(c.id)}" class="btn-action btn-completed">
+                    🏆 View Course Again
+                </a>
                 ${cert?.certId ? `<a href="${API}/api/certificates/generate/${cert.certId}" class="btn-cert" download>
                     <i class="fas fa-download"></i> Download Certificate
                 </a>` : ''}`;
-            } else if (enrolled) {
+            } else if (progress > 0) {
                 btnHTML = `<a href="course-content.html?course=${encodeURIComponent(c.id)}" class="btn-action btn-continue">
                 <i class="fas fa-play"></i> Continue Learning
             </a>`;
-            } else if (c.isFree) {
-                btnHTML = `<button class="btn-action btn-free" onclick="enrollFree('${c.id}', '${c.title}', this)">
-                🆓 Enroll Free — Start Now
-            </button>`;
-            } else if (token) {
-                btnHTML = `<button class="btn-action btn-enroll" onclick="enrollPaid('${c.id}')">
-                Enroll Now — ₹${c.price}
-            </button>`;
             } else {
-                btnHTML = `<button class="btn-action btn-locked" disabled>🔒 Login to Enroll</button>`;
+                btnHTML = `<a href="course-content.html?course=${encodeURIComponent(c.id)}" class="btn-action btn-free">
+                <i class="fas fa-rocket"></i> Start Course — Free
+            </a>`;
             }
 
             return `
-        <div class="course-card ${enrolled ? '' : 'locked'}" data-level="${c.level}" data-free="${c.isFree}" data-enrolled="${enrolled}" data-completed="${completed}" id="card-${c.id.replace(/\s+/g, '_')}">
+        <div class="course-card" data-level="${c.level}" data-completed="${completed}" id="card-${c.id.replace(/\s+/g, '_')}">
             <div class="card-header ${headerCls}">
                 ${badge}
                 <div class="course-icon">${c.icon}</div>
@@ -867,7 +851,6 @@
                 <ul class="highlights">
                     ${c.highlights.map(h => `<li>${h}</li>`).join('')}
                 </ul>
-                ${priceHTML}
                 ${progressHTML}
                 ${btnHTML}
             </div>
@@ -882,49 +865,6 @@
         }
 
         // ─── Actions ──────────────────────────────────────────────────────────────
-        async function enrollFree(courseId, courseName, btn) {
-            if (!token) { window.location.href = 'signup.html'; return; }
-            btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enrolling...';
-            try {
-                const res = await fetch(`${API}/api/enrollments/enroll-free`, {
-                    method: 'POST',
-                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ courseId, courseName })
-                });
-                const data = await res.json();
-                if (!data.ok) throw new Error(data.message);
-                showToast('Enrolled! Redirecting...', 'success');
-                setTimeout(() => { window.location.href = `course-content.html?course=${encodeURIComponent(courseId)}`; }, 1200);
-            } catch (err) {
-                showToast(err.message, 'error');
-                btn.disabled = false;
-                btn.innerHTML = '🆓 Enroll Free — Start Now';
-            }
-        }
-
-        async function enrollPaid(courseId) {
-            if (!token) { window.location.href = 'signup.html'; return; }
-            try {
-                const res = await fetch(`${API}/api/course/verify-enrollment?courseId=${encodeURIComponent(courseId)}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                const data = await res.json();
-                if (data.ok && data.isEnrolled) {
-                    window.location.href = `course-content.html?course=${encodeURIComponent(courseId)}`;
-                } else {
-                    window.location.href = `payment.html?course=${encodeURIComponent(courseId)}`;
-                }
-            } catch (err) {
-                window.location.href = `payment.html?course=${encodeURIComponent(courseId)}`;
-            }
-        }
-
-        function goToCourse(id) {
-            window.location.href = `course-content.html?course=${encodeURIComponent(id)}`;
-        }
-
-        // ─── Helpers ──────────────────────────────────────────────────────────────
         function hideSkeleton() {
             document.getElementById('skeletonGrid').style.display = 'none';
             document.getElementById('certsGrid').style.display = 'grid';

@@ -165,6 +165,7 @@ app.use('/api/enrollments', enrollmentRoutes);
 app.use('/api/certificates', certificateRoutes);
 app.use('/api/course', courseRoutes);     // progress, access-check, submit-test, details
 app.use('/api/my-courses', enrollmentRoutes); // Udemy-style alias → GET /api/my-courses/my-courses
+app.use('/api/test', require('./routes/testRoutes')); // New test endpoint
 
 // ─── Admin Panel Routes ───────────────────────────────────────
 const adminRoutes = require('./routes/adminRoutes');

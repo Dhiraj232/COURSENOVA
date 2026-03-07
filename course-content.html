@@ -687,20 +687,7 @@
                 return;
             }
 
-            // For paid courses, verify enrollment first
-            if (courseId !== 'Learning Essentials (Free)') {
-                try {
-                    const enrRes = await fetch(`${API}/api/course/verify-enrollment?courseId=${encodeURIComponent(courseId)}`, {
-                        headers: { Authorization: 'Bearer ' + token }
-                    });
-                    const enrData = await enrRes.json();
-                    if (!enrData.ok || !enrData.isEnrolled) {
-                        alert('You are not enrolled in this course. Please purchase it first.');
-                        window.location.href = 'certificates.html';
-                        return;
-                    }
-                } catch (e) { /* allow on network error */ }
-            }
+            // All courses are freely accessible — no enrollment check needed
 
             // Fetch course details + progress from server
             try {
