@@ -397,7 +397,7 @@
     <div class="toast" id="toast"></div>
 
     <script>
-        const API = 'http://localhost:5000';
+        const API = '';
         let allPayments = [];
 
         // ── Load payments ──────────────────────────────────────────────
@@ -469,7 +469,7 @@
                 <td>${escHtml(p.courseName)}</td>
                 <td><code style="font-size:0.8rem;color:var(--primary)">${escHtml(p.utr)}</code></td>
                 <td>
-                    <a href="${API}${p.screenshot}" target="_blank" class="screenshot-link">
+                    <a href="${p.screenshot}" target="_blank" class="screenshot-link">
                         <i class="fas fa-image"></i> View
                     </a>
                 </td>

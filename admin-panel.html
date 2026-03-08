@@ -814,7 +814,7 @@
     <div class="toast" id="toast"></div>
 
     <script>
-        const API = 'http://localhost:5000';
+        const API = '';
         let adminToken = sessionStorage.getItem('renvox_admin_token') || '';
         let allPayments = [];
         let allCourses = [];
@@ -920,7 +920,7 @@
                     <td><strong>${esc(p.name)}</strong><br><small style="color:var(--muted)">${esc(p.email)}</small></td>
                     <td>${esc(p.courseName)}</td>
                     <td><code style="color:var(--primary);font-size:0.8rem">${esc(p.utr)}</code></td>
-                    <td><a href="${API}${p.screenshot}" target="_blank" class="screenshot-link"><i class="fas fa-image"></i> View</a></td>
+                    <td><a href="${p.screenshot}" target="_blank" class="screenshot-link"><i class="fas fa-image"></i> View</a></td>
                     <td style="color:var(--muted);font-size:0.82rem">${date}</td>
                     <td><span class="badge-status badge-${p.status}">${p.status}</span></td>
                     <td>${action}</td>

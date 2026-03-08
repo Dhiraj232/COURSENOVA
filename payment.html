@@ -195,17 +195,22 @@
 </head>
 
 <body>
-    <!-- ==================== NAVBAR ==================== -->
+    <!-- standard navbar -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
             <a href="index.html" class="logo">
-                <i class="fas fa-book"></i> RENVOX
+                <i class="fas fa-brain"></i> RENVOX AI
             </a>
-            <ul class="nav-menu">
+            <ul class="nav-menu" id="navMenu">
                 <li><a href="index.html">Home</a></li>
-                <li><a href="certificates.html">Certificates</a></li>
-                <li><a href="dashboard.html">Dashboard</a></li>
+                <li><a href="certificates.html">Courses</a></li>
+                <li><a href="practice.html">Practice</a></li>
+                <li><a href="store.html">Store</a></li>
+                <li><a href="community.html">Community</a></li>
+                <li><a href="my-certificates.html">Certificates</a></li>
             </ul>
+            <div class="nav-buttons" id="navButtons"></div>
+            <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
         </div>
     </nav>
 
@@ -396,7 +401,7 @@
             }
 
             try {
-                const response = await fetch('http://localhost:5000/api/payments/submit', {
+                const response = await fetch('/api/payments/submit', {
                     method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}` },
                     body: formData

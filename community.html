@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RENVOX Community | Learn Together</title>
+
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- External CSS -->
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        :root {
+            --comm-primary: #6366f1;
+            --comm-secondary: #a855f7;
+            --comm-bg: #f8fafc;
+            --comm-card: #ffffff;
+            --comm-border: #e2e8f0;
+            --comm-text: #1e293b;
+            --comm-text-light: #64748b;
+        }
+
+        body {
+            background: var(--comm-bg);
+            font-family: 'Outfit', sans-serif;
+            color: var(--comm-text);
+        }
+
+        .community-container {
+            max-width: 1400px;
+            margin: 100px auto 40px;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: 240px 1fr 340px;
+            gap: 30px;
+        }
+
+        @media (max-width: 1200px) {
+            .community-container {
+                grid-template-columns: 1fr 340px;
+            }
+
+            .sidebar-left {
+                display: none;
+            }
+        }
+
+        @media (max-width: 900px) {
+            .community-container {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar-right {
+                display: none;
+            }
+        }
+
+        /* Sidebar Left */
+        .sidebar-left nav ul {
+            list-style: none;
+            position: sticky;
+            top: 100px;
+        }
+
+        .sidebar-left li {
+            margin-bottom: 8px;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            text-decoration: none;
+            color: var(--comm-text-light);
+            font-weight: 600;
+            border-radius: 12px;
+            transition: all 0.2s;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            background: white;
+            color: var(--comm-primary);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Main Content */
+        .top-action-bar {
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-comm {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: transform 0.2s;
+        }
+
+        .btn-post {
+            background: var(--comm-primary);
+            color: white;
+        }
+
+        .btn-doubt {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-leader {
+            background: #fbbf24;
+            color: white;
+        }
+
+        .btn-comm:hover {
+            transform: translateY(-2px);
+        }
+
+        /* Post Cards */
+        .post-card {
+            background: white;
+            padding: 25px;
+            border-radius: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--comm-border);
+        }
+
+        .post-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .user-avatar {
+            width: 45px;
+            height: 45px;
+            background: #e2e8f0;
+            border-radius: 50%;
+            overflow: hidden;
+        }
+
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .post-meta h4 {
+            font-size: 1rem;
+            margin-bottom: 2px;
+        }
+
+        .post-meta span {
+            font-size: 0.85rem;
+            color: var(--comm-text-light);
+        }
+
+        .post-content h2 {
+            font-size: 1.4rem;
+            margin-bottom: 15px;
+        }
+
+        .post-content p {
+            color: var(--comm-text-light);
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .post-footer {
+            display: flex;
+            gap: 20px;
+            padding-top: 15px;
+            border-top: 1px solid var(--comm-border);
+        }
+
+        .footer-action {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--comm-text-light);
+            cursor: pointer;
+            font-weight: 600;
+            transition: color 0.2s;
+        }
+
+        .footer-action:hover {
+            color: var(--comm-primary);
+        }
+
+        .footer-action.liked {
+            color: #ef4444;
+        }
+
+        /* Sidebar Right */
+        .sidebar-card {
+            background: white;
+            padding: 24px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .sidebar-card h3 {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .trending-item {
+            padding: 12px 0;
+            border-bottom: 1px solid var(--comm-border);
+        }
+
+        .trending-item:last-child {
+            border: none;
+        }
+
+        .trending-item h5 {
+            font-size: 0.95rem;
+            margin-bottom: 4px;
+        }
+
+        .trending-item span {
+            font-size: 0.8rem;
+            color: var(--comm-text-light);
+        }
+
+        /* Real-time Chat Floating */
+        .chat-widget {
+            position: fixed;
+            bottom: 30px;
+            right: 100px;
+            width: 350px;
+            height: 500px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            display: none;
+            flex-direction: column;
+            z-index: 1000;
+            border: 1px solid var(--comm-border);
+        }
+
+        .chat-widget.active {
+            display: flex;
+        }
+
+        .chat-head {
+            background: var(--comm-primary);
+            padding: 15px 20px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            border-radius: 20px 20px 0 0;
+        }
+
+        .chat-msgs {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8fafc;
+        }
+
+        .chat-input-row {
+            padding: 15px;
+            display: flex;
+            gap: 10px;
+            border-top: 1px solid var(--comm-border);
+        }
+
+        .chat-input-row input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid var(--comm-border);
+            border-radius: 8px;
+            outline: none;
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            width: 500px;
+            max-width: 90%;
+        }
+
+        .modal-content input,
+        .modal-content textarea,
+        .modal-content select {
+            width: 100%;
+            margin-bottom: 15px;
+            padding: 12px;
+            border: 1px solid var(--comm-border);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo">
+                <i class="fas fa-brain"></i> RENVOX AI
+            </a>
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="certificates.html">Courses</a></li>
+                <li><a href="practice.html">Practice</a></li>
+                <li><a href="store.html">Store</a></li>
+                <li><a href="community.html" class="active">Community</a></li>
+                <li><a href="my-certificates.html">Certificates</a></li>
+            </ul>
+            <div class="nav-buttons" id="navButtons"></div>
+            <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+        </div>
+    </nav>
+
+    <div class="community-container">
+        <!-- Left Sidebar: Channels & Navigation -->
+        <aside class="sidebar-left">
+            <nav>
+                <ul>
+                    <li><a href="#" class="nav-link active" onclick="loadSection('feed')"><i class="fas fa-rss"></i>
+                            Post Feed</a></li>
+                    <li><a href="#" class="nav-link" onclick="loadSection('doubts')"><i
+                                class="fas fa-question-circle"></i> Doubt Solved</a></li>
+                    <li><a href="#" class="nav-link" onclick="loadChannels()"><i class="fas fa-comments"></i>
+                            Channels</a></li>
+                    <li><a href="#" class="nav-link" onclick="loadNotifications()"><i class="fas fa-bell"></i>
+                            Notifications <span id="notifBadge"
+                                style="background:red; color:white; border-radius:10px; padding:2px 6px; font-size:10px; display:none;">0</span></a>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Main Feed Area -->
+        <main class="main-content">
+            <div class="top-action-bar">
+                <button class="btn-comm btn-post" onclick="openModal('postModal')">
+                    <i class="fas fa-plus"></i> Create Post
+                </button>
+                <button class="btn-comm btn-doubt" onclick="openModal('doubtModal')">
+                    <i class="fas fa-headset"></i> Ask Doubt
+                </button>
+                <button class="btn-comm btn-leader" onclick="loadSection('leaderboard')">
+                    <i class="fas fa-trophy"></i> Leaderboard
+                </button>
+            </div>
+
+            <div id="communityFeed">
+                <!-- Posts or Doubts rendered here -->
+                <div style="text-align:center; padding: 50px;">
+                    <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #6366f1;"></i>
+                    <p>Loading Community Hub...</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- Right Sidebar: Trends & Leaderboard -->
+        <aside class="sidebar-right">
+            <div class="sidebar-card">
+                <h3><i class="fas fa-fire" style="color:#ef4444"></i> Trending Discussions</h3>
+                <div id="trendingList">
+                    <!-- Filled by JS -->
+                </div>
+            </div>
+
+            <div class="sidebar-card">
+                <h3><i class="fas fa-star" style="color:#fbbf24"></i> Top Contributors</h3>
+                <div id="miniLeaderboard">
+                    <!-- Filled by JS -->
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- AI Floating Widget -->
+    <div class="ai-chat-bubble" onclick="toggleAIChat()"
+        style="position:fixed; bottom:30px; right:30px; width:60px; height:60px; background:var(--comm-primary); border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-size:1.5rem; cursor:pointer; box-shadow:0 8px 16px rgba(0,0,0,0.2); z-index:1001;">
+        <i class="fas fa-robot"></i>
+    </div>
+
+    <div id="aiChatWindow"
+        style="position:fixed; bottom:100px; right:30px; width:360px; height:500px; background:white; border-radius:20px; box-shadow:0 10px 40px rgba(0,0,0,0.15); display:none; flex-direction:column; z-index:2001; overflow:hidden; border:1px solid #e2e8f0;">
+        <div
+            style="padding:20px; background:var(--comm-primary); color:white; font-weight:700; display:flex; justify-content:space-between;">
+            <span>AI Community Assistant</span>
+            <i class="fas fa-times" onclick="toggleAIChat()" style="cursor:pointer"></i>
+        </div>
+        <div id="aiMsgs" style="flex:1; padding:15px; overflow-y:auto; background:#f8fafc;"></div>
+        <div style="padding:15px; border-top:1px solid #e2e8f0; display:flex; gap:10px;">
+            <input type="text" id="aiInput" placeholder="Ask a doubt..." style="flex:1; border:none; outline:none;"
+                onkeypress="if(event.key==='Enter') sendAICommMessage()">
+            <i class="fas fa-paper-plane" style="color:var(--comm-primary); cursor:pointer"
+                onclick="sendAICommMessage()"></i>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="postModal" class="modal">
+        <div class="modal-content">
+            <h3>Create New Post</h3>
+            <input type="text" id="postTitle" placeholder="Post Title">
+            <select id="postCategory">
+                <option value="Programming">Programming</option>
+                <option value="DSA">DSA</option>
+                <option value="Web Dev">Web Dev</option>
+                <option value="AI">AI</option>
+                <option value="Career">Career</option>
+            </select>
+            <textarea id="postContent" placeholder="What's on your mind?" rows="5"></textarea>
+            <div style="display:flex; gap:10px;">
+                <button class="btn-comm btn-post" onclick="submitPost()">Post Now</button>
+                <button class="btn-comm" style="background:#e2e8f0; color:#475569"
+                    onclick="closeModal('postModal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="doubtModal" class="modal">
+        <div class="modal-content">
+            <h3>Ask a Doubt</h3>
+            <textarea id="doubtQuestion" placeholder="Explain your doubt clearly..." rows="4"></textarea>
+            <div style="display:flex; gap:10px;">
+                <button class="btn-comm btn-doubt" onclick="submitDoubt()">Ask Doubt</button>
+                <button class="btn-comm" style="background:#e2e8f0; color:#475569"
+                    onclick="closeModal('doubtModal')">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Community Chat Widget -->
+    <div id="chatWidget" class="chat-widget">
+        <div class="chat-head">
+            <span id="currentChannel"># general-chat</span>
+            <i class="fas fa-times" onclick="document.getElementById('chatWidget').classList.remove('active')"
+                style="cursor:pointer"></i>
+        </div>
+        <div id="chatMsgs" class="chat-msgs"></div>
+        <div class="chat-input-row">
+            <input type="text" id="chatInput" placeholder="Type a message..."
+                onkeypress="if(event.key==='Enter') sendChatMessage()">
+            <button onclick="sendChatMessage()"
+                style="border:none; background:var(--comm-primary); color:white; border-radius:8px; padding:0 15px; cursor:pointer;"><i
+                    class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="navigation.js"></script>
+    <script src="community.js"></script>
+</body>
+
+</html>

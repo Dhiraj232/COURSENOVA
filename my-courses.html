@@ -503,17 +503,22 @@
 
 <body>
 
-    <!-- NAV -->
-    <nav class="nav">
-        <a href="index.html" class="nav-logo"><i class="fas fa-brain"></i> RENVOX AI</a>
-        <div class="nav-links">
-            <a href="index.html">Home</a>
-            <a href="my-courses.html" class="active">My Courses</a>
-            <a href="certificates.html">Certificates</a>
-        </div>
-        <div class="user-chip" id="userChip">
-            <div class="avatar-placeholder" id="userAvatar">?</div>
-            <span id="userName">Loading...</span>
+    <!-- standard navbar -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo">
+                <i class="fas fa-brain"></i> RENVOX AI
+            </a>
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="certificates.html">Courses</a></li>
+                <li><a href="practice.html">Practice</a></li>
+                <li><a href="store.html">Store</a></li>
+                <li><a href="community.html">Community</a></li>
+                <li><a href="my-certificates.html">Certificates</a></li>
+            </ul>
+            <div class="nav-buttons" id="navButtons"></div>
+            <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
         </div>
     </nav>
 
@@ -527,7 +532,6 @@
     <div class="tabs">
         <button class="tab active" onclick="showTab('enrolled', this)">Enrolled</button>
         <button class="tab" onclick="showTab('certs', this)">🏆 My Certificates</button>
-        <button class="tab" onclick="showTab('pending', this)">Pending Payments</button>
     </div>
 
     <!-- ENROLLED COURSES -->
@@ -544,16 +548,6 @@
         </div>
     </div>
 
-    <!-- PENDING PAYMENTS -->
-    <div id="pendingSection" style="display:none">
-        <div class="section-head"><i class="fas fa-clock"></i> Payment Status</div>
-        <div class="pending-list" id="pendingList"></div>
-        <div class="empty" id="pendingEmpty" style="display:none">
-            <i class="fas fa-receipt"></i>
-            <h3>No pending payments</h3>
-            <p>All your payments have been processed.</p>
-        </div>
-    </div>
 
     <!-- MY CERTIFICATES -->
     <div id="certsSection" style="display:none">
@@ -573,8 +567,8 @@
     </div>
 
     <script>
-        const API = 'http://localhost:5000';
-        const token = localStorage.getItem('renvox_token') || localStorage.getItem('renvoxToken');
+        const API = '';
+        const token = localStorage.getItem('renvoxToken') || localStorage.getItem('renvox_token');
 
         // Course icons mapping
         const COURSE_ICONS = {
@@ -676,37 +670,6 @@
             }
         }
 
-        // ── Load pending payments ──────────────────────────────────────
-        async function loadPendingPayments() {
-            try {
-                const res = await fetch(`${API}/api/payments/my`, { headers: { Authorization: `Bearer ${token}` } });
-                const data = await res.json();
-                const payments = data.ok ? data.data.filter(p => p.status !== 'approved') : [];
-                const list = document.getElementById('pendingList');
-
-                if (payments.length === 0) {
-                    document.getElementById('pendingEmpty').style.display = 'block';
-                    return;
-                }
-
-                list.innerHTML = payments.map(p => {
-                    const date = new Date(p.createdAt).toLocaleDateString('en-IN');
-                    return `
-                <div class="pending-card">
-                    <span class="status-badge status-${p.status}">${p.status.toUpperCase()}</span>
-                    <div style="font-weight:600;margin-bottom:0.3rem">${escHtml(p.courseName)}</div>
-                    <div style="color:var(--muted);font-size:0.82rem">
-                        UTR: <code style="color:var(--primary)">${escHtml(p.utr)}</code><br>
-                        Submitted: ${date}
-                    </div>
-                    ${p.status === 'pending' ? `<p style="margin-top:0.75rem;font-size:0.8rem;color:var(--muted)"><i class="fas fa-clock"></i> Awaiting admin verification</p>` : ''}
-                    ${p.status === 'rejected' ? `<p style="margin-top:0.75rem;font-size:0.8rem;color:#ef4444"><i class="fas fa-exclamation-circle"></i> Payment rejected. Contact support.</p>` : ''}
-                </div>`;
-                }).join('');
-            } catch (err) {
-                console.error('Error loading payments:', err);
-            }
-        }
 
         // ── Tab switching ──────────────────────────────────────────────
         function showTab(tab, btn) {
@@ -793,7 +756,6 @@
         // Init
         loadUser();
         loadEnrolledCourses();
-        loadPendingPayments();
     </script>
 </body>
 

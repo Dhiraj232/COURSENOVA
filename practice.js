@@ -1,477 +1,300 @@
 /**
- * RENVOX - Practice Dashboard
- * Manages all practice-related functionality including topic practice, 
- * chapter tests, mock tests, subject filtering, and analytics
- * 
- * @version 1.0.0
- * @author RENVOX Team
+ * RENVOX AI - Practice Hub Logic
+ * Handles MCQ, Coding, Daily Quiz, Leaderboard, and AI Chat Integration
  */
 
 // ==========================================
-// ✅ AUTHENTICATION & USER DATA
+// 🛡️ AUTH & STATE
 // ==========================================
-const isLoggedIn = localStorage.getItem('renvoxUser') !== null;
-const userName = localStorage.getItem('userName') || 'User';
-const userClass = localStorage.getItem('userClass') || '';
-let selectedDifficulty = 'easy';
+const token = localStorage.getItem('renvoxToken') || localStorage.getItem('renvox_token');
+const user = JSON.parse(localStorage.getItem('renvoxUser') || localStorage.getItem('renvox_user') || '{}');
+const isLoggedIn = !!token;
 
-// ==========================================
-// 📊 SAMPLE DATA - SUBJECTS
-// ==========================================
-const allSubjects = [
-    {
-        name: 'C Programming',
-        icon: '💻',
-        color: '#3b82f6',
-        progress: 65,
-        accuracy: 78,
-        questions: 125
-    },
-    {
-        name: 'Data Structures',
-        icon: '🔗',
-        color: '#8b5cf6',
-        progress: 52,
-        accuracy: 72,
-        questions: 98
-    },
-    {
-        name: 'Mathematics',
-        icon: '📐',
-        color: '#10b981',
-        progress: 88,
-        accuracy: 85,
-        questions: 156
-    },
-    {
-        name: 'Physics',
-        icon: '⚛️',
-        color: '#ef4444',
-        progress: 45,
-        accuracy: 68,
-        questions: 142
-    },
-    {
-        name: 'Chemistry',
-        icon: '🧪',
-        color: '#f59e0b',
-        progress: 70,
-        accuracy: 80,
-        questions: 118
-    },
-    {
-        name: 'DBMS',
-        icon: '🗄️',
-        color: '#06b6d4',
-        progress: 60,
-        accuracy: 75,
-        questions: 87
-    },
-];
-
-// ==========================================
-// 📝 SAMPLE DATA - RECENT ACTIVITY
-// ==========================================
-const recentActivities = [
-    {
-        icon: '📝',
-        type: 'Chapter Test',
-        subject: 'Variables & Data Types',
-        score: '22/25',
-        accuracy: '88%',
-        time: '2 hours ago'
-    },
-    {
-        icon: '🧩',
-        type: 'Topic Practice',
-        subject: 'Control Flow',
-        score: '18/20',
-        accuracy: '90%',
-        time: '4 hours ago'
-    },
-    {
-        icon: '🎯',
-        type: 'Mock Test',
-        subject: 'C Programming',
-        score: '45/50',
-        accuracy: '90%',
-        time: 'Yesterday'
-    },
-    {
-        icon: '📚',
-        type: 'Chapter Test',
-        subject: 'Arrays & Strings',
-        score: '28/30',
-        accuracy: '93%',
-        time: '2 days ago'
-    },
-];
-
-// ==========================================
-// ⚠️ SAMPLE DATA - WEAK AREAS
-// ==========================================
-const weakAreas = [
-    { topic: 'Pointers & Memory Management', accuracy: 45 },
-    { topic: 'Dynamic Memory Allocation', accuracy: 52 },
-    { topic: 'File Handling', accuracy: 58 },
-    { topic: 'LinkedLists Implementation', accuracy: 62 },
-];
+let currentQuestions = [];
+let currentIndex = 0;
+let userScore = 0;
+let isDailyQuiz = false;
 
 // ==========================================
 // 🎯 INITIALIZATION
 // ==========================================
-document.addEventListener('DOMContentLoaded', function () {
-    // Show content for all users
-    document.getElementById('practiceContent').style.display = 'block';
-    document.getElementById('loginPrompt').style.display = 'none';
+document.addEventListener('DOMContentLoaded', () => {
+    loadQuestions();
+    loadLeaderboard();
+});
 
-    // Load all sections
-    setupNavbar();
+
+// ==========================================
+// 📑 UI LOGIC (TAB SWITCHING)
+// ==========================================
+function showSection(sectionId, btn) {
+    document.querySelectorAll('.practice-section').forEach(s => s.classList.remove('active'));
+    document.getElementById(sectionId).classList.add('active');
+
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+}
+
+// ==========================================
+// 🧩 MCQ PRACTICE SYSTEM
+// ==========================================
+async function loadQuestions(category = 'All') {
+    const cat = category === 'All' ? document.getElementById('mcqCategory')?.value || 'All' : category;
+    const container = document.getElementById('mcqContainer');
+    if (container) container.innerHTML = '<div class="loader">Fetching questions...</div>';
+
+    try {
+        const res = await fetch(`/api/practice/questions?category=${cat}&limit=10`);
+        const data = await res.json();
+        if (data.ok && data.questions.length > 0) {
+            currentQuestions = data.questions;
+            currentIndex = 0;
+            userScore = 0;
+            isDailyQuiz = false;
+            renderCurrentQuestion();
+        } else {
+            if (container) container.innerHTML = '<div class="error">No questions found for this category.</div>';
+        }
+    } catch (err) {
+        console.error('Fetch error:', err);
+    }
+}
+
+function renderCurrentQuestion() {
+    const container = document.getElementById('mcqContainer');
+    const q = currentQuestions[currentIndex];
+
+    // Update progress bar
+    const prog = document.getElementById('mcqProgress');
+    if (prog) prog.style.width = `${((currentIndex + 1) / currentQuestions.length) * 100}%`;
+
+    container.innerHTML = `
+        <div class="question-card">
+            <div class="test-meta" style="margin-bottom: 10px; font-size: 0.85rem; color: #64748b;">
+                Category: ${q.category} | Difficulty: ${q.difficulty} | Question ${currentIndex + 1}/${currentQuestions.length}
+            </div>
+            <div class="question-text">${q.question}</div>
+            <div class="options-grid">
+                ${q.options.map((opt, i) => `
+                    <button class="option-btn" onclick="checkAnswer('${opt.replace(/'/g, "\\'")}', this)">
+                        ${opt}
+                    </button>
+                `).join('')}
+            </div>
+        </div>
+    `;
+}
+
+function checkAnswer(selected, btn) {
+    const q = currentQuestions[currentIndex];
+    const options = document.querySelectorAll('.option-btn');
+    options.forEach(o => o.disabled = true); // Disable further clicks
+
+    if (selected === q.correctAnswer) {
+        btn.classList.add('correct');
+        userScore++;
+    } else {
+        btn.classList.add('wrong');
+        // highlight correct one
+        options.forEach(o => {
+            if (o.innerText.trim() === q.correctAnswer.trim()) o.classList.add('correct');
+        });
+    }
 
     setTimeout(() => {
-        loadSubjectsList();
-        loadRecentActivity();
-        loadWeakAreas();
-    }, 100);
-
-    // Setup scroll effects
-    setupScrollEffects();
-});
-
-// ==========================================
-// 🔧 SETUP NAVBAR
-// ==========================================
-/**
- * Configures navbar buttons and user information display
- * Shows user button if logged in, otherwise shows login/signup links
- */
-function setupNavbar() {
-    const navButtons = document.getElementById('navButtons');
-
-    if (isLoggedIn) {
-        navButtons.innerHTML = `
-            <button class="btn-user">
-                <i class="fas fa-user-circle"></i>
-                <span>${userName}</span>
-            </button>
-            <button class="btn-user" style="background-color: #fee2e2; color: #dc2626;" onclick="logout()">
-                Logout
-            </button>
-        `;
-    } else {
-        navButtons.innerHTML = `
-            <a href="signup.html" class="btn-user">Login</a>
-            <a href="signup.html" class="btn-user" style="background-color: var(--primary-color); color: white;">
-                Sign Up
-            </a>
-        `;
-    }
-}
-
-// ==========================================
-// 📚 LOAD SUBJECT-WISE PRACTICE LIST
-// ==========================================
-/**
- * Renders auto-filtered subject cards based on user's class
- * Shows progress bar, accuracy %, and practice button for each subject
- */
-function loadSubjectsList() {
-    const html = allSubjects.map(s => `
-        <div class="subject-practice-card">
-            <div class="subject-header">
-                <div class="subject-icon">${s.icon}</div>
-                <div class="subject-name">${s.name}</div>
-            </div>
-            <span class="accuracy-badge">Accuracy: ${s.accuracy}%</span>
-            <div class="progress-section">
-                <div class="progress-label">
-                    <span>Progress</span>
-                    <span>${s.progress}%</span>
-                </div>
-                <div class="progress-bar">
-                    <div class="progress-fill" style="width: ${s.progress}%; background: linear-gradient(90deg, ${s.color}, #10b981);"></div>
-                </div>
-            </div>
-            <button class="btn-practice-now" onclick="practiceSubject('${s.name}')">
-                Practice Now
-            </button>
-        </div>
-    `).join('');
-
-    const container = document.getElementById('subjectsList');
-    if (container) {
-        container.innerHTML = html;
-    }
-}
-
-// ==========================================
-// 📋 LOAD RECENT ACTIVITY
-// ==========================================
-/**
- * Displays list of recent practice attempts
- * Shows: Chapter tests, topic practice, mock tests
- * Helps user with revision and tracking
- */
-function loadRecentActivity() {
-    const html = recentActivities.map((a, index) => `
-        <div class="activity-item" style="animation: slideIn 0.3s ease ${index * 0.1}s backwards;">
-            <div class="activity-icon">${a.icon}</div>
-            <div class="activity-details">
-                <div class="activity-title">${a.type} - ${a.subject}</div>
-                <div class="activity-meta">${a.time}</div>
-            </div>
-            <div class="activity-stat">
-                <div>${a.score}</div>
-                <div class="activity-stat-label">${a.accuracy}</div>
-            </div>
-        </div>
-    `).join('');
-
-    const container = document.getElementById('activityList');
-    if (container) {
-        container.innerHTML = html;
-    }
-}
-
-// ==========================================
-// ⚠️ LOAD WEAK AREAS
-// ==========================================
-/**
- * Shows topics where user needs improvement
- * Compares current accuracy with target (75%)
- * Provides focused practice button for each weak area
- */
-function loadWeakAreas() {
-    const html = weakAreas.map((w, index) => `
-        <div class="weak-area-card" style="animation: slideIn 0.3s ease ${index * 0.1}s backwards;">
-            <div class="weak-area-info">
-                <div class="weak-area-topic">${w.topic}</div>
-                <div class="weak-area-accuracy">
-                    Current Accuracy: <strong>${w.accuracy}%</strong> • Target: 75%
-                </div>
-            </div>
-            <button class="btn-practice-weak" onclick="practiceWeakArea('${w.topic}')">
-                Practice Again
-            </button>
-        </div>
-    `).join('');
-
-    const container = document.getElementById('weakAreasList');
-    if (container) {
-        container.innerHTML = html;
-    }
-}
-
-// ==========================================
-// 🎯 PRACTICE FUNCTIONS
-// ==========================================
-
-/**
- * Handles difficulty level selection
- * Updates visual state and question count
- * 
- * @param {HTMLElement} btn - The clicked button
- * @param {string} difficulty - 'easy', 'medium', or 'hard'
- */
-function selectDifficulty(btn, difficulty) {
-    document.querySelectorAll('.difficulty-btn').forEach(b => {
-        b.classList.remove('active');
-    });
-    btn.classList.add('active');
-    selectedDifficulty = difficulty;
-
-    // Update question count
-    const counts = { easy: 15, medium: 20, hard: 25 };
-    const qCount = document.getElementById('topicQCount');
-    if (qCount) {
-        qCount.textContent = counts[difficulty];
-    }
-}
-
-/**
- * Starts topic-wise practice
- * Validates topic selection before proceeding
- * 
- * @fires Topic practice starts with selected difficulty and topic
- */
-function startTopicPractice() {
-    const topic = document.getElementById('topicSelect');
-    if (!topic || topic.value === 'Select a topic...') {
-        showAlert('Please select a topic first!');
-        return;
-    }
-
-    showAlert(
-        `Starting ${selectedDifficulty.toUpperCase()} practice on: ${topic.value}\n\n` +
-        'Redirecting to practice interface...',
-        'success'
-    );
-}
-
-/**
- * Starts chapter test
- * Validates chapter selection before proceeding
- * 
- * @fires Chapter test interface opens
- */
-function startChapterTest() {
-    const chapter = document.getElementById('chapterSelect');
-    if (!chapter || chapter.value === 'Select a chapter...') {
-        showAlert('Please select a chapter first!');
-        return;
-    }
-
-    showAlert(
-        `Starting Chapter Test: ${chapter.value}\n\n` +
-        '⏱️ 30 minutes | 25-30 Questions\n\n' +
-        'Redirecting to test interface...',
-        'success'
-    );
-}
-
-/**
- * Attempts mock test
- * Validates mock test selection before proceeding
- * 
- * @fires Mock test interface opens with exam format
- */
-function attemptMockTest() {
-    const mock = document.getElementById('mockSelect');
-    if (!mock || mock.value === 'Select a mock test...') {
-        showAlert('Please select a mock test first!');
-        return;
-    }
-
-    showAlert(
-        `Starting Mock Test: ${mock.value}\n\n` +
-        '📋 Real Exam Format | ⏱️ 90 Minutes\n\n' +
-        'Redirecting to test interface...',
-        'success'
-    );
-}
-
-/**
- * Starts subject-wise practice
- * Navigates to subject-specific practice questions
- * 
- * @param {string} subject - Subject name
- */
-function practiceSubject(subject) {
-    showAlert(
-        `Starting practice session for: ${subject}\n\n` +
-        `Total Questions: ${allSubjects.find(s => s.name === subject)?.questions || 50}\n\n` +
-        'Loading practice questions...',
-        'success'
-    );
-}
-
-/**
- * Starts focused practice for weak areas
- * Helps improve accuracy in specific topics
- * 
- * @param {string} topic - Topic name where user needs improvement
- */
-function practiceWeakArea(topic) {
-    showAlert(
-        `Starting focused practice on: ${topic}\n\n` +
-        'These questions are specifically designed to improve your weak areas.\n\n' +
-        'Target Accuracy: 75%',
-        'success'
-    );
-}
-
-/**
- * Opens analytics/performance dashboard
- * Shows detailed statistics and progress tracking
- */
-function viewAnalytics() {
-    showAlert(
-        `Opening Performance Analytics...\n\n` +
-        '📊 View your detailed statistics\n' +
-        '📈 Track improvement trends\n' +
-        '🎯 Analyze weak and strong areas',
-        'success'
-    );
-}
-
-// ==========================================
-// 🔐 AUTHENTICATION
-// ==========================================
-
-/**
- * Logs out current user
- * Clears localStorage and reloads page
- */
-function logout() {
-    if (confirm('Are you sure you want to logout?')) {
-        localStorage.removeItem('renvoxUser');
-        localStorage.removeItem('userName');
-        localStorage.removeItem('userClass');
-        window.location.reload();
-    }
-}
-
-// ==========================================
-// 🎨 UI UTILITIES
-// ==========================================
-
-/**
- * Displays alert message to user
- * 
- * @param {string} message - Alert message text
- * @param {string} type - 'success', 'error', or 'info'
- */
-function showAlert(message, type = 'info') {
-    alert(message);
-}
-
-/**
- * Scroll effects for navbar
- * Adds shadow and padding change on scroll
- */
-function setupScrollEffects() {
-    window.addEventListener('scroll', function () {
-        const navbar = document.getElementById('navbar');
-        if (!navbar) return;
-
-        if (window.scrollY > 50) {
-            navbar.classList.add('scrolled');
+        currentIndex++;
+        if (currentIndex < currentQuestions.length) {
+            renderCurrentQuestion();
         } else {
-            navbar.classList.remove('scrolled');
+            showFinalScore();
         }
-    });
+    }, 1500);
+}
+
+function showFinalScore() {
+    const container = document.getElementById('mcqContainer');
+    const percent = Math.round((userScore / currentQuestions.length) * 100);
+
+    container.innerHTML = `
+        <div class="section-card" style="text-align: center; border: none; box-shadow: none;">
+            <i class="fas fa-trophy" style="font-size: 4rem; color: #fbbf24; margin-bottom: 20px;"></i>
+            <h2>Practice Completed!</h2>
+            <p style="font-size: 1.5rem; margin: 15px 0;">Your Score: <strong>${userScore} / ${currentQuestions.length}</strong> (${percent}%)</p>
+            <div class="progress-bar-container"><div class="progress-bar-fill" style="width: ${percent}%;"></div></div>
+            <button class="btn-run" style="margin-top: 30px;" onclick="loadQuestions()">Restart Practice</button>
+            ${isDailyQuiz ? `<button class="btn-run" style="margin-top: 10px; background: #6366f1;" onclick="submitQuizToLeaderboard()">Submit to Leaderboard</button>` : ''}
+        </div>
+    `;
 }
 
 // ==========================================
-// 📱 RESPONSIVE DESIGN
+// 💻 CODING PRACTICE
 // ==========================================
+async function runCode() {
+    const code = document.getElementById('codeEditor').value;
+    const resultDiv = document.getElementById('runResult');
 
-/**
- * Handles window resize events
- * Adjusts layout for different screen sizes
- */
-window.addEventListener('resize', function () {
-    // Can add responsive behavior here if needed
-});
-
-// ==========================================
-// 🔄 EXPORT FOR EXTERNAL USE (if needed)
-// ==========================================
-
-// Example: window.practiceAPI = { startTopicPractice, startChapterTest, attemptMockTest }
-
-// Add animation keyframes
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes slideIn {
-        from {
-            opacity: 0;
-            transform: translateY(10px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+    if (!isLoggedIn) {
+        alert('Please login to submit code solutions.');
+        return;
     }
-`;
-document.head.appendChild(style);
+
+    if (!code || code.length < 10) {
+        resultDiv.innerHTML = '<span style="color:red">Code is too short!</span>';
+        return;
+    }
+
+    resultDiv.innerHTML = 'Running...';
+
+    try {
+        const res = await fetch('/api/practice/submit-code', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ problemId: 'placeholder', code })
+        });
+        const data = await res.json();
+
+        if (data.ok) {
+            resultDiv.innerHTML = `<span style="color:#10b981; font-weight:700;"><i class="fas fa-check-circle"></i> ${data.message}</span>`;
+            confettiEffect();
+        } else {
+            resultDiv.innerHTML = `<span style="color:#ef4444">${data.message}</span>`;
+        }
+    } catch (err) {
+        resultDiv.innerHTML = '<span style="color:red">Server error.</span>';
+    }
+}
+
+function confettiEffect() {
+    // Simple visual feedback
+    console.log("Success! Happy Coding!");
+}
+
+// ==========================================
+// 🎯 DAILY QUIZ & LEADERBOARD
+// ==========================================
+async function startDailyQuiz() {
+    if (!isLoggedIn) {
+        alert('Daily Quiz requires login to track your rank!');
+        window.location.href = 'signup.html';
+        return;
+    }
+
+    const container = document.getElementById('dailyQuizContainer');
+    container.innerHTML = '<div class="loader">Loading Daily 5 Questions...</div>';
+
+    try {
+        const res = await fetch('/api/practice/daily-quiz');
+        const data = await res.json();
+        if (data.ok) {
+            currentQuestions = data.questions;
+            currentIndex = 0;
+            userScore = 0;
+            isDailyQuiz = true;
+
+            // Re-use MCQ renderer but inject it into quiz section
+            const mcqTarget = document.getElementById('mcqContainer');
+            document.getElementById('mcq-section').classList.add('active');
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelector('[onclick*="mcq-section"]').classList.add('active');
+
+            renderCurrentQuestion();
+        }
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+async function submitQuizToLeaderboard() {
+    try {
+        const res = await fetch('/api/practice/submit-quiz', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ score: userScore })
+        });
+        const data = await res.json();
+        if (data.ok) {
+            alert('Score submitted! Check your rank on the leaderboard.');
+            loadLeaderboard();
+            showSection('quiz-section', document.querySelector('[onclick*="quiz-section"]'));
+        }
+    } catch (err) {
+        console.error(err);
+    }
+}
+
+async function loadLeaderboard() {
+    const tbody = document.getElementById('leaderboardBody');
+    if (!tbody) return;
+
+    try {
+        const res = await fetch('/api/practice/leaderboard');
+        const data = await res.json();
+        if (data.ok && data.entries.length > 0) {
+            tbody.innerHTML = data.entries.map((e, i) => `
+                <tr>
+                    <td class="rank rank-${i + 1}">${i + 1}</td>
+                    <td>${e.username}</td>
+                    <td><strong>${e.score}</strong></td>
+                </tr>
+            `).join('');
+        } else {
+            tbody.innerHTML = '<tr><td colspan="3">No entries yet today. Be the first!</td></tr>';
+        }
+    } catch (err) {
+        tbody.innerHTML = '<tr><td colspan="3">Failed to load leaderboard.</td></tr>';
+    }
+}
+
+// ==========================================
+// 🤖 AI DOUBT SOLVER
+// ==========================================
+function toggleAIChat() {
+    document.getElementById('aiChatWindow').classList.toggle('active');
+}
+
+async function sendAIMessage() {
+    const input = document.getElementById('chatInput');
+    const msg = input.value.trim();
+    if (!msg) return;
+
+    appendMessage(msg, 'user');
+    input.value = '';
+
+    const typingMsg = appendMessage('Typing...', 'bot');
+
+    try {
+        const res = await fetch('/api/ai/ai-chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: msg })
+        });
+        const data = await res.json();
+
+        typingMsg.remove();
+        if (data.ok) {
+            appendMessage(data.reply, 'bot');
+        } else {
+            appendMessage('Sorry, I am having trouble connecting.', 'bot');
+        }
+    } catch (err) {
+        typingMsg.remove();
+        appendMessage('Error contacting AI.', 'bot');
+    }
+}
+
+function appendMessage(text, side) {
+    const chatMsgs = document.getElementById('chatMsgs');
+    const div = document.createElement('div');
+    div.className = `msg ${side}`;
+    div.innerText = text;
+    chatMsgs.appendChild(div);
+    chatMsgs.scrollTop = chatMsgs.scrollHeight;
+    return div;
+}

@@ -229,7 +229,9 @@
         }
 
         /* ── Main Content ── */
-        .store-main {}
+        .store-main {
+            display: block;
+        }
 
         /* ── Tabs ── */
         .store-tabs {
@@ -395,6 +397,7 @@
             margin-bottom: 4px;
             line-height: 1.3;
             display: -webkit-box;
+            line-clamp: 2;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
@@ -841,10 +844,11 @@
             </div>
             <ul class="nav-menu" id="navMenu">
                 <li><a href="index.html">Home</a></li>
-                <li><a href="certificates.html">Certificates</a></li>
+                <li><a href="certificates.html">Courses</a></li>
                 <li><a href="practice.html">Practice</a></li>
                 <li><a href="store.html" class="active">Store</a></li>
-                <li><a href="family.html">Family</a></li>
+                <li><a href="community.html">Community</a></li>
+                <li><a href="my-certificates.html">Certificates</a></li>
             </ul>
             <div class="nav-buttons" id="navButtons"></div>
             <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
@@ -1449,6 +1453,7 @@
             setTimeout(() => t.classList.remove('show'), 3000);
         }
     </script>
+    <script src="navigation.js"></script>
 </body>
 
 </html>

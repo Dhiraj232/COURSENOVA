@@ -814,7 +814,7 @@
                     </div>
 
                     <!-- Google -->
-                    <a class="google-btn" id="googleSignInBtn" href="http://localhost:5000/auth/google">
+                    <a class="google-btn" id="googleSignInBtn" href="/auth/google">
                         <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                             <path
                                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -839,16 +839,7 @@
 
     <script>
         // ─── CONFIG ───────────────────────────────────────────────────
-        const API_BASE = (() => {
-            try {
-                const u = new URL(window.location.origin);
-                u.port = '5000';
-                return u.toString();
-            } catch (e) {
-                // fallback
-                return 'http://localhost:5000';
-            }
-        })();
+        const API_BASE = '';
 
         console.log('Using API_BASE =', API_BASE);
 

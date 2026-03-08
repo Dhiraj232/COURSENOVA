@@ -32,6 +32,10 @@ const enrollmentRoutes = require('./routes/enrollmentRoutes');
 const certificateRoutes = require('./routes/certificateRoutes');
 const courseRoutes = require('./routes/courseRoutes');
 
+// ─── Community Routers (New) ──────────────────────────────────────
+const communityRoutes = require('./routes/community');
+const communityAiRoutes = require('./routes/communityAI');
+
 // ─── MongoDB Connection ───────────────────────────────────────
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/renvox-bookstore';
 mongoose.connect(MONGO_URI)
@@ -39,38 +43,37 @@ mongoose.connect(MONGO_URI)
   .catch(err => console.error('❌ MongoDB connection error:', err.message, '\n   Set MONGO_URI env var or start MongoDB locally.'));
 
 const DATA_FILE = path.join(__dirname, 'data', 'users.json');
-const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_me';
-// Google OAuth client ID used for server‑side token verification.  It
-// can be injected via the GOOGLE_CLIENT_ID environment variable.  If you
-// regenerate the client in Google Cloud Console, update the env var or
-// change the default below.
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID ||
-  '1055845988581-m0ki9b0d30iohsmk70go6fikntg65eac.apps.googleusercontent.com';
-const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || 'YOUR_GOOGLE_CLIENT_SECRET';
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+const JWT_SECRET = process.env.JWT_SECRET;
 
-const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 const StoreUser = require('./models/User');
 const CourseProgress = require('./models/CourseProgress');
 
 passport.use(new GoogleStrategy({
   clientID: GOOGLE_CLIENT_ID,
   clientSecret: GOOGLE_CLIENT_SECRET,
-  callbackURL: "http://localhost:5000/auth/google/callback"
+  callbackURL: "/auth/google/callback" // Relative path is safer if domain changes
 },
   async function (accessToken, refreshToken, profile, done) {
     try {
+      console.log('Google Profile:', profile.emails[0].value);
       let user = await StoreUser.findOne({ googleId: profile.id });
+
       if (!user) {
+        // Create new user if not exists
         user = new StoreUser({
           googleId: profile.id,
           name: profile.displayName,
           email: profile.emails && profile.emails.length > 0 ? profile.emails[0].value : '',
           picture: profile.photos && profile.photos.length > 0 ? profile.photos[0].value : '',
-          role: 'college',
+          role: 'student',
           lastLogin: new Date()
         });
         await user.save();
+        console.log('New user created via Google:', user.email);
       } else {
+        // Update last login and profile info
         user.lastLogin = new Date();
         user.name = profile.displayName;
         if (profile.photos && profile.photos.length > 0) user.picture = profile.photos[0].value;
@@ -78,6 +81,7 @@ passport.use(new GoogleStrategy({
       }
       return done(null, user);
     } catch (err) {
+      console.error('Google Strategy Error:', err);
       return done(err, null);
     }
   }
@@ -166,6 +170,19 @@ app.use('/api/certificates', certificateRoutes);
 app.use('/api/course', courseRoutes);     // progress, access-check, submit-test, details
 app.use('/api/my-courses', enrollmentRoutes); // Udemy-style alias → GET /api/my-courses/my-courses
 app.use('/api/test', require('./routes/testRoutes')); // New test endpoint
+
+// ─── Practice & AI Routes (New) ──────────────────────────────
+app.use('/api/practice', require('./routes/practice'));
+app.use('/api/ai', require('./routes/ai'));
+
+// ─── Authentication Routes ───────────────────────────
+const authRoutes = require('./routes/auth');
+app.use('/auth', authRoutes);
+app.use('/api', authRoutes); // also mount under /api for /api/me consistency
+
+// ─── Community Routes ───────────────────────────────────────
+app.use('/api/community', communityRoutes);
+app.use('/api/community-ai', communityAiRoutes);
 
 // ─── Admin Panel Routes ───────────────────────────────────────
 const adminRoutes = require('./routes/adminRoutes');
@@ -264,44 +281,8 @@ app.post('/api/verify-payment', async (req, res) => {
 // Certificate routes are handled by routes/certificateRoutes.js
 // ────────────────────────────────────────────────────────────
 
-// Google Auth Routes
-app.get('/auth/google',
-  passport.authenticate('google', { scope: ['profile', 'email'], session: false }));
-
-app.get('/auth/google/callback',
-  passport.authenticate('google', { failureRedirect: '/signup.html?error=true', session: false }),
-  function (req, res) {
-    // Successful authentication, generate JWT
-    const token = jwt.sign({ userId: req.user._id, role: req.user.role }, JWT_SECRET, { expiresIn: '7d' });
-
-    // Create safe user object to pass to frontend
-    const userSafe = {
-      id: req.user._id,
-      fullName: req.user.name,
-      email: req.user.email,
-      role: req.user.role,
-      picture: req.user.picture
-    };
-    const userStr = encodeURIComponent(JSON.stringify(userSafe));
-
-    // Redirect to frontend with token and user object
-    res.redirect(`/index.html?token=${token}&user=${userStr}`);
-  });
-
-// Get current user from token
-app.get('/api/me', async (req, res) => {
-  const auth = req.headers.authorization || '';
-  const token = auth.startsWith('Bearer ') ? auth.slice(7) : (req.query.token || '');
-  if (!token) return res.status(401).json({ ok: false, message: 'Missing token' });
-  try {
-    const payload = jwt.verify(token, JWT_SECRET);
-    const user = await StoreUser.findById(payload.userId);
-    if (!user) return res.status(404).json({ ok: false, message: 'User not found' });
-    res.json({ ok: true, user: { id: user._id, fullName: user.name, email: user.email, role: user.role, college: user.collegeName, picture: user.picture } });
-  } catch (err) {
-    return res.status(401).json({ ok: false, message: 'Invalid token' });
-  }
-});
+// Google Auth Routes (Moved to routes/auth.js)
+// Get current user (Moved to routes/auth.js)
 
 // Simple endpoint to list users (for dev)
 app.get('/api/users', async (req, res) => {
@@ -500,5 +481,32 @@ app.get('/api/ping', (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log('API listening on port', PORT));
+const server = require('http').createServer(app);
+const io = require('socket.io')(server, {
+  cors: {
+    origin: ["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:5500", "http://127.0.0.1:5500"],
+    methods: ["GET", "POST"]
+  }
+});
+
+// Community Chat Logic (Socket.io)
+io.on('connection', (socket) => {
+  console.log('User connected to chat');
+
+  socket.on('join-room', (room) => {
+    socket.join(room);
+    console.log(`User joined channel: ${room}`);
+  });
+
+  socket.on('send-message', (data) => {
+    // data: { room, sender, text, avatar, ts }
+    io.to(data.room).emit('receive-message', data);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('User disconnected');
+  });
+});
+
+server.listen(PORT, () => console.log('RENVOX Community API & Chat listening on port', PORT));
 

@@ -437,10 +437,11 @@
             </div>
             <ul class="nav-menu" id="navMenu">
                 <li><a href="index.html">Home</a></li>
-                <li><a href="certificates.html">Certificates</a></li>
+                <li><a href="certificates.html">Courses</a></li>
                 <li><a href="practice.html">Practice</a></li>
                 <li><a href="store.html" class="active">Store</a></li>
-                <li><a href="family.html">Family</a></li>
+                <li><a href="community.html">Community</a></li>
+                <li><a href="my-certificates.html">Certificates</a></li>
             </ul>
             <div class="nav-buttons" id="navButtons"></div>
             <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
@@ -473,9 +474,9 @@
     <!-- ═══════════════ SCRIPTS ═══════════════ -->
     <script src="navigation.js"></script>
     <script>
-        const API = 'http://localhost:5000/api/used-books';
-        const MSGS_API = 'http://localhost:5000/api/messages';
-        const IMG_BASE = 'http://localhost:5000/uploads/books/';
+        const API = '/api/used-books';
+        const MSGS_API = '/api/messages';
+        const IMG_BASE = '/uploads/books/';
         const bookId = new URLSearchParams(window.location.search).get('id');
 
         if (!bookId) {
