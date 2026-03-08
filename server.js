@@ -202,20 +202,19 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Serve frontend static files with Caching for better performance
-app.use(express.static(path.join(__dirname), {
+// Serve frontend static files from the specialized 'public' directory
+app.use(express.static(path.join(__dirname, 'public'), {
   maxAge: '1y',
   setHeaders: (res, path) => {
     if (path.endsWith('.html')) {
-      // Don't cache HTML files so users always get the latest version
       res.setHeader('Cache-Control', 'no-cache');
     }
   }
 }));
 
-// Route for /dashboard
-app.get('/dashboard', (req, res) => {
-  res.sendFile(path.join(__dirname, 'dashboard.html'));
+// Main entry point
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // ─── JWT Authentication Middleware ──────────────────────────────
@@ -613,11 +612,17 @@ app.get('/api/ping', (req, res) => {
 
 // ─── Global Error Handling Middleware ───
 // This MUST be the last middleware in the chain
-app.all('*', (req, res, next) => {
-  next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
+// API-specific 404 handler
+app.all('/api/*', (req, res, next) => {
+  next(new AppError(`API endpoint ${req.originalUrl} not found!`, 404));
 });
 
 app.use(globalErrorHandler);
+
+// Catch-all route to serve the SPA (Standard Render/Deployment practice)
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 const PORT = process.env.PORT || 5000;
 const server = require('http').createServer(app);
