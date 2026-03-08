@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Certificate | RENVOX AI</title>
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --primary-light: #818cf8;
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .verify-container {
+            width: 100%;
+            max-width: 500px;
+            background: var(--surface);
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .logo-area {
+            margin-bottom: 30px;
+        }
+
+        .brand-name {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            letter-spacing: -0.5px;
+        }
+
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        p.subtitle {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-muted);
+        }
+
+        input {
+            width: 100%;
+            padding: 14px 18px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            font-family: inherit;
+            font-size: 1rem;
+            transition: all 0.2s;
+            outline: none;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+        }
+
+        .btn-verify {
+            width: 100%;
+            background: var(--primary);
+            color: white;
+            padding: 14px;
+            border-radius: 12px;
+            border: none;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-verify:hover {
+            background: #4338ca;
+            transform: translateY(-1px);
+        }
+
+        .result-area {
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 1px dashed var(--border);
+            display: none;
+        }
+
+        .result-card {
+            background: #f1f5f9;
+            padding: 24px;
+            border-radius: 16px;
+            text-align: left;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .result-card.valid::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--success);
+        }
+
+        .status-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .status-icon {
+            font-size: 1.25rem;
+        }
+
+        .status-text {
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .valid .status-text {
+            color: var(--success);
+        }
+
+        .invalid .status-text {
+            color: var(--danger);
+        }
+
+        .detail-row {
+            margin-bottom: 15px;
+        }
+
+        .detail-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            font-weight: 700;
+            margin-bottom: 2px;
+        }
+
+        .detail-value {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .btn-back {
+            margin-top: 25px;
+            display: inline-block;
+            color: var(--primary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        /* Animation */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate {
+            animation: fadeIn 0.4s ease forwards;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="verify-container">
+        <div class="logo-area">
+            <span class="brand-name">RENVOX AI</span>
+        </div>
+        <h1>Certificate Verification</h1>
+        <p class="subtitle">Enter the unique Certificate ID to verify its authenticity.</p>
+
+        <form id="verifyForm">
+            <div class="input-group">
+                <label for="certId">Certificate ID</label>
+                <input type="text" id="certId" placeholder="e.g. RENV-J72B-9M21" required>
+            </div>
+            <button type="submit" class="btn-verify" id="verifyBtn">
+                <span class="btn-text">Verify Authenticity</span>
+                <div class="spinner" id="btnSpinner"></div>
+            </button>
+        </form>
+
+        <div id="resultArea" class="result-area animate">
+            <!-- Results will be injected here -->
+        </div>
+
+        <a href="index.html" class="btn-back">
+            <i class="fas fa-arrow-left"></i> Back to Homepage
+        </a>
+    </div>
+
+    <script>
+        document.getElementById('verifyForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const certId = document.getElementById('certId').value.trim();
+            const resultArea = document.getElementById('resultArea');
+            const btn = document.getElementById('verifyBtn');
+            const spinner = document.getElementById('btnSpinner');
+            const btnText = btn.querySelector('.btn-text');
+
+            if (!certId) return;
+
+            // UI Feedback
+            btn.disabled = true;
+            spinner.style.display = 'block';
+            btnText.style.opacity = '0.5';
+            resultArea.style.display = 'none';
+
+            try {
+                const response = await fetch(`/api/certificates/verify/${encodeURIComponent(certId)}`);
+                const data = await response.json();
+
+                resultArea.style.display = 'block';
+
+                if (data.ok) {
+                    const date = new Date(data.certificate.issueDate).toLocaleDateString('en-IN', {
+                        day: 'numeric', month: 'long', year: 'numeric'
+                    });
+
+                    resultArea.innerHTML = `
+                        <div class="result-card valid">
+                            <div class="status-header">
+                                <i class="fas fa-check-circle status-icon" style="color:var(--success)"></i>
+                                <span class="status-text">Verified Certificate</span>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Student Name</div>
+                                <div class="detail-value">${data.certificate.studentName}</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Course Completed</div>
+                                <div class="detail-value">${data.certificate.courseName}</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Issue Date</div>
+                                <div class="detail-value">${date}</div>
+                            </div>
+                            <div class="detail-row">
+                                <div class="detail-label">Certificate ID</div>
+                                <div class="detail-value" style="font-family:monospace; color:var(--primary)">${data.certificate.certId}</div>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    resultArea.innerHTML = `
+                        <div class="result-card invalid" style="background:#fff1f2; color:#be123c; border:1px solid #fecdd3;">
+                            <div class="status-header">
+                                <i class="fas fa-times-circle status-icon"></i>
+                                <span class="status-text">Invalid Certificate</span>
+                            </div>
+                            <p style="font-size:0.9rem;">The ID you entered could not be verified. Please check for typos or ensure the certificate was issued by RENVOX AI.</p>
+                        </div>
+                    `;
+                }
+            } catch (err) {
+                alert('Verification service is temporarily unavailable. Please try again later.');
+            } finally {
+                btn.disabled = false;
+                spinner.style.display = 'none';
+                btnText.style.opacity = '1';
+            }
+        });
+
+        // Auto-fill from URL if present
+        const urlParams = new URLSearchParams(window.location.search);
+        const urlCertId = urlParams.get('id');
+        if (urlCertId) {
+            document.getElementById('certId').value = urlCertId;
+            document.getElementById('verifyBtn').click();
+        }
+    </script>
+</body>
+
+</html>

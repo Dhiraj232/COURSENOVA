@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel | RENVOX AI</title>
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="admin.css">
+</head>
+
+<body class="admin-body">
+    <div class="admin-wrapper">
+        <!-- Sidebar -->
+        <aside class="admin-sidebar">
+            <div class="sidebar-header">
+                <img src="logo%20renvox.png" alt="RENVOX" class="sidebar-logo">
+                <span class="logo-text">RENVOX AI</span>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-view="dashboard">
+                    <i class="fas fa-th-large"></i> Dashboard
+                </a>
+                <a href="#" class="nav-item" data-view="courses">
+                    <i class="fas fa-book"></i> Courses
+                </a>
+                <a href="#" class="nav-item" data-view="questions">
+                    <i class="fas fa-question-circle"></i> Questions
+                </a>
+                <a href="#" class="nav-item" data-view="users">
+                    <i class="fas fa-users"></i> Users
+                </a>
+                <a href="#" class="nav-item" data-view="certificates">
+                    <i class="fas fa-award"></i> Certificates
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <a href="dashboard.html" class="back-link">
+                    <i class="fas fa-arrow-left"></i> User Dashboard
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="admin-main">
+            <header class="main-header">
+                <h1 id="view-title">Dashboard Overview</h1>
+                <div class="header-actions">
+                    <span class="admin-badge">Admin Mode</span>
+                </div>
+            </header>
+
+            <div id="content-area" class="content-area">
+                <!-- Views will be injected here by admin.js -->
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <p>Loading administrative data...</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modals -->
+    <div id="modal-container" class="modal-overlay"></div>
+
+    <script src="admin.js"></script>
+</body>
+
+</html>

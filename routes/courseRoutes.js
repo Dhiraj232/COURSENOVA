@@ -4,6 +4,8 @@ const CourseProgress = require('../models/CourseProgress');
 const Enrollment = require('../models/Enrollment');
 const Course = require('../models/Course');
 const User = require('../models/User');
+const Activity = require('../models/Activity');
+const TestResult = require('../models/TestResult');
 const { requireAuth } = require('../middleware/auth');
 
 // All routes in this file require authentication
@@ -123,6 +125,16 @@ router.post('/progress', async (req, res) => {
         // Per-lesson tracking (new)
         if (lessonId && !record.completedLessons.includes(lessonId)) {
             record.completedLessons.push(lessonId);
+            const course = await Course.findOne({
+                $or: [{ title: courseId }, { slug: courseId.toLowerCase().replace(/\s+/g, '-') }]
+            });
+            await Activity.create({
+                userId: req.userId,
+                type: 'lesson_completed',
+                title: lessonId,
+                courseId: courseId,
+                courseName: course ? course.title : courseId
+            });
         }
 
         // Legacy granular tracking
@@ -218,6 +230,43 @@ router.post('/submit-test', async (req, res) => {
 
         record.updatedAt = new Date();
         await record.save();
+
+        // ── DASHBOARD LOGGING ──
+        try {
+            const TestResult = require('../models/TestResult');
+            const Activity = require('../models/Activity');
+
+            await TestResult.create({
+                userId: req.userId,
+                courseId,
+                courseName: course ? course.title : courseId,
+                score,
+                passed,
+                totalQuestions: total,
+                correctQuestions: correct
+            });
+
+            await Activity.create({
+                userId: req.userId,
+                type: (score >= 60) ? 'test_passed' : 'test_failed',
+                title: `Final Test: ${course ? course.title : courseId}`,
+                courseId,
+                courseName: course ? course.title : courseId,
+                score
+            });
+
+            if (score >= 60) {
+                await Activity.create({
+                    userId: req.userId,
+                    type: 'certificate_earned',
+                    title: `Certificate: ${course ? course.title : courseId}`,
+                    courseId,
+                    courseName: course ? course.title : courseId
+                });
+            }
+        } catch (logErr) {
+            console.error('Logging Error:', logErr);
+        }
 
         const user = await User.findById(req.userId);
         res.json({

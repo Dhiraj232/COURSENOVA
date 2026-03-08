@@ -292,6 +292,11 @@ async function sendAICommMessage() {
     appendAIMessage(text, 'user');
     input.value = '';
 
+    const typing = document.createElement('div');
+    typing.style.cssText = 'background:white; border:1px solid #e2e8f0; padding:10px; border-radius:12px; max-width:100px; font-size:12px; margin-bottom:10px; color:#94a3b8; font-style:italic;';
+    typing.innerText = 'AI is thinking...';
+    document.getElementById('aiMsgs').appendChild(typing);
+
     try {
         const res = await fetch('/api/community-ai/ai-chat', {
             method: 'POST',
@@ -299,8 +304,12 @@ async function sendAICommMessage() {
             body: JSON.stringify({ message: text })
         });
         const data = await res.json();
+        typing.remove();
         if (data.ok) appendAIMessage(data.reply, 'bot');
-    } catch (e) { console.error(e); }
+    } catch (e) {
+        typing.remove();
+        console.error(e);
+    }
 }
 
 function appendAIMessage(text, side) {

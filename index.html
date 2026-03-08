@@ -4,27 +4,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RENVOX - Smart Learning Platform for Indian Students</title>
+    <title>RENVOX AI | Smart Learning Platform for Indian Students</title>
 
-    <!-- Google Fonts -->
+    <!-- Primary Meta Tags -->
+    <meta name="title" content="RENVOX AI | Smart Learning Platform for Indian Students">
+    <meta name="description"
+        content="RENVOX AI is India's premium EdTech platform offering syllabus-based notes, practice tests, and verified certificates for college students. Start learning for free today!">
+    <meta name="keywords"
+        content="EdTech, Online Learning, Indian Students, College Notes, Practice Tests, MCQs, Verified Certificates, RENVOX AI, Skill Development">
+    <meta name="author" content="RENVOX AI Team">
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://renvox-ai.com/">
+    <meta property="og:title" content="RENVOX AI | Smart Learning Platform for Indian Students">
+    <meta property="og:description"
+        content="Unlock your academic potential with RENVOX AI. Detailed subject notes, exam-focused practice tests, and career-boosting certificates.">
+    <meta property="og:image" content="https://renvox-ai.com/assets/og-banner.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://renvox-ai.com/">
+    <meta property="twitter:title" content="RENVOX AI | Smart Learning Platform for Indian Students">
+    <meta property="twitter:description"
+        content="Step into the future of learning with RENVOX AI. Syllabus-aligned courses and verified certificates for modern students.">
+    <meta property="twitter:image" content="https://renvox-ai.com/assets/og-banner.png">
+
+    <!-- Performance Preconnects -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <!-- Google Fonts with display:swap for faster FCP -->
     <link
         href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
 
     <!-- Feather Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+        media="print" onload="this.media='all'">
 
     <!-- External CSS -->
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="navigation.css">
+
+    <!-- Deferred Scripts to avoid render blocking -->
+    <script src="navigation.js" defer></script>
+    <script src="analytics.js" defer></script>
 </head>
 
 <body>
     <!-- ==================== HEADER / NAVBAR ==================== -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
-            <a href="index.html" class="logo">
-                <i class="fas fa-book"></i> RENVOX
-            </a>
+            <a href="index.html" class="logo"><img src="logo%20renvox.png" alt="RENVOX"> RENVOX</a>
 
             <div class="nav-search">
                 <input type="text" id="navbarSearch" placeholder="Search for courses, subjects, or concepts...">
@@ -36,9 +68,9 @@
             <ul class="nav-menu" id="navMenu">
                 <li><a href="index.html">Home</a></li>
                 <li><a href="certificates.html">Courses</a></li>
-                <li><a href="practice.html">Practice</a></li>
-                <li><a href="store.html">Store</a></li>
+                <li><a href="testing-center.html">Practice</a></li>
                 <li><a href="community.html">Community</a></li>
+                <li><a href="store.html">Store</a></li>
             </ul>
             <div class="nav-buttons" id="navButtons">
                 <!-- Buttons or User Dropdown will be injected by navigation.js -->
@@ -227,7 +259,7 @@
                 <h4>Product</h4>
                 <ul>
                     <li><a href="#practice">Practice</a></li>
-                    <li><a href="#certificates">Certificates</a></li>
+                    <li><a href="verify-certificate.html">Verify Certificate</a></li>
                 </ul>
             </div>
             <div class="footer-column">
@@ -241,8 +273,8 @@
             <div class="footer-column">
                 <h4>Legal</h4>
                 <ul>
-                    <li><a href="#">Privacy Policy</a></li>
-                    <li><a href="#">Terms of Service</a></li>
+                    <li><a href="privacy-policy.html">Privacy Policy</a></li>
+                    <li><a href="terms-and-conditions.html">Terms of Service</a></li>
                     <li><a href="#">Cookie Policy</a></li>
                 </ul>
             </div>
@@ -261,140 +293,21 @@
     </footer>
 
     <script>
-        // ==================== NAVBAR SCROLL EFFECT ====================
-        const navbar = document.getElementById('navbar');
-        const menuToggle = document.getElementById('menuToggle');
-        const navMenu = document.getElementById('navMenu');
-
-        window.addEventListener('scroll', function () {
-            if (window.scrollY > 50) {
-                navbar.classList.add('scrolled');
+        // ==================== CTA HANDLERS ====================
+        function handleGetStarted() {
+            const token = localStorage.getItem('renvoxToken') || localStorage.getItem('renvox_token');
+            if (token) {
+                window.location.href = 'dashboard.html';
             } else {
-                navbar.classList.remove('scrolled');
-            }
-        });
-
-        // ==================== MOBILE MENU TOGGLE ====================
-        menuToggle.addEventListener('click', function () {
-            navMenu.classList.toggle('active');
-        });
-
-        // Close mobile menu when a link is clicked
-        document.querySelectorAll('.nav-menu a').forEach(link => {
-            link.addEventListener('click', function () {
-                navMenu.classList.remove('active');
-            });
-        });
-
-        // Close mobile menu when clicking outside
-        document.addEventListener('click', function (event) {
-            const isClickInsideNav = navbar.contains(event.target);
-            if (!isClickInsideNav && navMenu.classList.contains('active')) {
-                navMenu.classList.remove('active');
-            }
-        });
-
-        // ==================== SMOOTH SCROLLING ====================
-        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-            anchor.addEventListener('click', function (e) {
-                e.preventDefault();
-                const target = document.querySelector(this.getAttribute('href'));
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                }
-            });
-        });
-
-        // ==================== ACTIVE NAV LINK ====================
-        window.addEventListener('scroll', function () {
-            let current = '';
-            const sections = document.querySelectorAll('section[id]');
-
-            sections.forEach(section => {
-                const sectionTop = section.offsetTop;
-                const sectionHeight = section.clientHeight;
-                if (scrollY >= (sectionTop - 200)) {
-                    current = section.getAttribute('id');
-                }
-            });
-
-            document.querySelectorAll('.nav-menu a').forEach(link => {
-                link.classList.remove('active');
-                if (link.getAttribute('href').slice(1) === current) {
-                    link.classList.add('active');
-                }
-            });
-        });
-
-        // ==================== AUTH / USER UI ====================
-        // The auth UI logic has been moved to navigation.js for consistency
-        // across all pages. The 'loadUser' function in navigation.js now 
-        // handles checking for the user token and rendering the dropdown.
-
-
-        // ==================== AUTHENTICATION & REDIRECT HANDLING ====================
-        function handleAuthRedirect() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const token = urlParams.get('token');
-            const userStr = urlParams.get('user');
-
-            if (token && userStr) {
-                try {
-                    // Try to parse the user data
-                    const user = JSON.parse(decodeURIComponent(userStr));
-
-                    // Save to local storages
-                    // Both old and new keys for cross-compatibility
-                    localStorage.setItem('renvox_token', token);
-                    localStorage.setItem('renvox_user', JSON.stringify(user));
-                    localStorage.setItem('renvoxToken', token);
-                    localStorage.setItem('renvoxUser', JSON.stringify(user));
-                    localStorage.setItem('userName', user.fullName || user.name || '');
-
-                    // Remove query params from URL without refreshing the page
-                    window.history.replaceState({}, document.title, window.location.pathname);
-
-                    // Reload the user dropdown to show the logged-in user
-                    if (typeof setupUserDropdown === 'function') {
-                        setupUserDropdown();
-                    }
-                } catch (e) {
-                    console.error('Error parsing user data from redirect', e);
-                }
+                document.getElementById('practice').scrollIntoView({ behavior: 'smooth' });
+                alert('Welcome! Please use the login button in the navigation to get started.');
             }
         }
 
-        // Call the auth redirect handler when the page loads
-        window.addEventListener('load', handleAuthRedirect);
-
-        // ==================== ACTIVE NAV LINK ====================
-        window.addEventListener('scroll', function () {
-            let current = '';
-            const sections = document.querySelectorAll('section[id]');
-
-            sections.forEach(section => {
-                const sectionTop = section.offsetTop;
-                const sectionHeight = section.clientHeight;
-                if (scrollY >= (sectionTop - 200)) {
-                    current = section.getAttribute('id');
-                }
-            });
-
-            document.querySelectorAll('.nav-menu a').forEach(link => {
-                link.classList.remove('active');
-                if (link.getAttribute('href').slice(1) === current) {
-                    link.classList.add('active');
-                }
-            });
-        });
+        function handleViewCourses() {
+            window.location.href = 'certificates.html';
+        }
     </script>
-
-    <!-- ==================== EXTERNAL JAVASCRIPT FILES ==================== -->
-    <!-- Navigation System -->
-    <script src="navigation.js"></script>
 </body>
 
 </html>

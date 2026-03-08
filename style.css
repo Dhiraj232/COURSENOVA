@@ -1351,148 +1351,160 @@ h6 {
 }
 
 /* ==================== RESPONSIVE DESIGN ==================== */
-@media (max-width: 768px) {
+@media (max-width: 900px) {
     .navbar {
         padding: 0.8rem 1rem;
-    }
-
-    .nav-container {
-        gap: 1rem;
     }
 
     .logo {
         font-size: 1.3rem;
     }
+}
 
-    .logo i {
-        font-size: 1.1rem;
-    }
 
-    .nav-menu {
-        position: fixed;
-        left: 0;
-        top: 70px;
-        flex-direction: column;
-        background-color: var(--white);
-        width: 100%;
-        text-align: center;
-        list-style: none;
-        gap: 1.5rem;
-        padding: 2rem 1rem;
-        border-bottom: 1px solid var(--border-color);
-        display: none;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        z-index: 999;
-    }
+/* Global Responsive Utilities moved here or into media queries below */
 
-    .nav-menu.active {
-        display: flex;
-    }
 
-    .nav-menu a {
-        font-size: 1rem;
-    }
+/* ==================== TOUCH & GLOBAL RESPONSIVENESS ==================== */
+html {
+    scroll-behavior: smooth;
+    overflow-x: hidden;
+}
 
-    .nav-buttons {
-        flex-direction: column;
-        gap: 0.8rem;
-        width: 100%;
-    }
+img,
+video {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
 
-    .btn-login,
-    .btn-signup {
-        width: 100%;
-        justify-content: center;
-        padding: 0.8rem 1rem;
-    }
+input,
+button,
+select,
+textarea {
+    font-size: 16px !important;
+    /* Prevents iOS auto-zoom on focus */
+    touch-action: manipulation;
+}
 
-    .menu-toggle {
-        display: block;
-        order: 3;
-    }
+/* Touch-friendly targets */
+.btn-primary,
+.btn-secondary,
+.btn-login,
+.btn-signup,
+.nav-menu a {
+    min-height: 44px;
+    /* Apple/Google recommended minimum */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* ==================== UPDATED MEDIA QUERIES ==================== */
+
+/* 1200px Breakpoint (Desktop/Large Tablets) */
+@media (max-width: 1200px) {
 
     .hero,
     .problem-solution,
-    .certificate-section {
-        grid-template-columns: 1fr;
+    .features-container,
+    .popular-courses,
+    .how-it-works {
+        max-width: 95%;
+        padding: 3rem 1.5rem;
+    }
+
+    .hero {
         gap: 2rem;
+    }
+
+    .hero-content h1 {
+        font-size: 2.5rem;
+    }
+}
+
+/* 768px Breakpoint (Tablets/Mobile) */
+@media (max-width: 768px) {
+    .hero {
+        grid-template-columns: 1fr;
+        text-align: center;
+        padding: 3rem 1rem;
     }
 
     .hero-content h1 {
         font-size: 2rem;
     }
 
-    .nav-menu {
-        gap: 1rem;
-        font-size: 0.85rem;
-    }
-
-    .nav-buttons {
-        gap: 0.5rem;
+    .value-points li {
+        justify-content: center;
     }
 
     .hero-buttons {
         flex-direction: column;
+        align-items: center;
     }
 
-    .btn-primary,
-    .btn-secondary {
+    .hero-buttons .btn-primary,
+    .hero-buttons .btn-secondary {
         width: 100%;
+        max-width: 320px;
     }
 
-    .features-grid,
-    .courses-grid,
-    .testimonials-grid,
-    .pricing-grid {
+    .hero-visual {
+        order: -1;
+        /* Image first on mobile hero */
+        margin-bottom: 2rem;
+    }
+
+    .problem-solution {
         grid-template-columns: 1fr;
+        padding: 2rem 1rem;
+    }
+
+    .features-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .steps-container {
+        grid-template-columns: 1fr;
+        gap: 2rem;
     }
 
     .section-title {
         font-size: 1.8rem;
+        margin-bottom: 2rem;
     }
 
-    .steps-container {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    .final-cta-buttons {
-        flex-direction: column;
-    }
-
-    .btn-cta-primary,
-    .btn-cta-secondary {
-        width: 100%;
+    /* Course Cards Fluidity */
+    .courses-grid,
+    .certificates-grid {
+        grid-template-columns: 1fr;
+        max-width: 480px;
+        margin: 0 auto;
     }
 
     .footer-container {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: 1fr;
+        text-align: center;
+        gap: 2.5rem;
     }
 }
 
+/* 480px Breakpoint (Small Phones) */
 @media (max-width: 480px) {
-    .navbar {
-        padding: 0.8rem 0.5rem;
-    }
-
-    .nav-container {
-        gap: 0.5rem;
-    }
-
-    .logo {
-        font-size: 1.1rem;
-    }
-
-    .logo i {
-        font-size: 1rem;
-    }
-
-    .btn-login i,
-    .btn-signup i {
-        display: none;
-    }
-
     .hero-content h1 {
-        font-size: 1.5rem;
+        font-size: 1.75rem;
+    }
+
+    .hero-content p {
+        font-size: 0.95rem;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+        padding: 0.7rem 1.2rem;
+        font-size: 0.9rem;
     }
 
     .section-title {
@@ -1501,22 +1513,11 @@ h6 {
 
     .trust-container {
         grid-template-columns: 1fr;
+        gap: 1.5rem;
     }
 
-    .steps-container {
-        grid-template-columns: 1fr;
-    }
-
-    .final-cta h2 {
-        font-size: 1.5rem;
-    }
-
-    .pricing-grid,
-    .courses-grid {
-        grid-template-columns: 1fr;
-    }
-
-    .footer-container {
-        grid-template-columns: 1fr;
+    .trust-item {
+        flex-direction: column;
+        text-align: center;
     }
 }

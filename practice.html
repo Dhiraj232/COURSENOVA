@@ -437,15 +437,15 @@
             color: #64748b;
         }
     </style>
+    <link rel="stylesheet" href="navigation.css">
+    <script src="navigation.js"></script>
 </head>
 
-<body>
+<body class="dark-theme">
     <!-- Navbar -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
-            <a href="index.html" class="logo">
-                <img src="logo renvox.png" height="40px" width="40px"> RENVOX
-            </a>
+            <a href="index.html" class="logo"><img src="logo%20renvox.png" alt="RENVOX"> RENVOX</a>
 
             <div class="nav-search">
                 <input type="text" id="navbarSearch" placeholder="Search for courses, subjects, or concepts...">
@@ -457,9 +457,9 @@
             <ul class="nav-menu" id="navMenu">
                 <li><a href="index.html">Home</a></li>
                 <li><a href="certificates.html">Courses</a></li>
-                <li><a href="practice.html" class="active">Practice</a></li>
-                <li><a href="store.html">Store</a></li>
+                <li><a href="testing-center.html" class="active">Practice</a></li>
                 <li><a href="community.html">Community</a></li>
+                <li><a href="store.html">Store</a></li>
             </ul>
             <div class="nav-buttons" id="navButtons"></div>
             <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
@@ -474,6 +474,13 @@
         </section>
 
         <div class="main-layout">
+            <div style="grid-column: 1 / -1; margin-bottom: 5px;">
+                <a href="dashboard.html"
+                    style="text-decoration: none; color: #64748b; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: 0.3s;"
+                    onmouseover="this.style.color='#6366f1'" onmouseout="this.style.color='#64748b'">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
             <aside class="practice-tabs">
                 <button class="tab-btn active" onclick="showSection('mcq-section', this)"><i class="fas fa-list-ul"></i>
                     MCQ Practice</button>
@@ -600,7 +607,7 @@
 
     <!-- Scripts -->
     <script src="practice.js"></script>
-    <script src="navigation.js"></script>
+
 </body>
 
 </html>

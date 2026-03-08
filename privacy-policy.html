@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy | RENVOX AI</title>
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- External CSS -->
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="navigation.css">
+    <script src="navigation.js"></script>
+    <style>
+        :root {
+            --surface: #ffffff;
+            --bg: #f8fafc;
+            --primary: #6366f1;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            line-height: 1.7;
+            margin: 0;
+            padding: 0;
+        }
+
+        .policy-container {
+            max-width: 900px;
+            margin: 60px auto;
+            padding: 40px;
+            background: var(--surface);
+            border-radius: 24px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border);
+        }
+
+        .policy-header {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+
+        .policy-header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--text-main);
+            margin-bottom: 10px;
+        }
+
+        .policy-header p {
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .policy-section {
+            margin-bottom: 40px;
+        }
+
+        .policy-section h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .policy-section h2 i {
+            font-size: 1.2rem;
+            opacity: 0.8;
+        }
+
+        .policy-section p,
+        .policy-section ul {
+            font-size: 1.05rem;
+            color: #334155;
+        }
+
+        .policy-section ul {
+            padding-left: 20px;
+            list-style-type: none;
+        }
+
+        .policy-section ul li {
+            position: relative;
+            margin-bottom: 12px;
+            padding-left: 25px;
+        }
+
+        .policy-section ul li::before {
+            content: "\f058";
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            position: absolute;
+            left: 0;
+            color: var(--primary);
+            opacity: 0.7;
+        }
+
+        .highlight-box {
+            background: #f1f5f9;
+            padding: 25px;
+            border-radius: 16px;
+            border-left: 4px solid var(--primary);
+            margin: 25px 0;
+        }
+
+        .policy-footer {
+            margin-top: 60px;
+            padding-top: 30px;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .btn-back {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 700;
+            margin-bottom: 30px;
+            transition: transform 0.2s;
+        }
+
+        .btn-back:hover {
+            transform: translateX(-5px);
+        }
+
+        @media (max-width: 768px) {
+            .policy-container {
+                margin: 20px;
+                padding: 25px;
+                border-radius: 16px;
+            }
+
+            .policy-header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo"><img src="logo%20renvox.png" alt="RENVOX"> RENVOX</a>
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="certificates.html">Courses</a></li>
+                <li><a href="testing-center.html">Practice</a></li>
+                <li><a href="community.html">Community</a></li>
+                <li><a href="store.html">Store</a></li>
+            </ul>
+            <div class="nav-buttons" id="navButtons"></div>
+            <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+        </div>
+    </nav>
+
+    <div class="policy-container">
+        <a href="index.html" class="btn-back"><i class="fas fa-arrow-left"></i> Back to Home</a>
+
+        <header class="policy-header">
+            <h1>Privacy Policy</h1>
+            <p>Last Updated: March 09, 2026</p>
+        </header>
+
+        <section class="policy-section">
+            <p>At <strong>RENVOX AI</strong>, we prioritize the privacy and security of our students. This Privacy
+                Policy describes how we collect, use, and protect your information when you use our educational
+                platform.</p>
+        </section>
+
+        <section class="policy-section">
+            <h2><i class="fas fa-database"></i> 1. What Data We Collect</h2>
+            <p>We collect information to provide a personalized learning experience. This includes:</p>
+            <ul>
+                <li><strong>Identification Data</strong>: Name, email address, and profile picture (via Google Sign-In).
+                </li>
+                <li><strong>Academic Information</strong>: College name, branch, and current year of study.</li>
+                <li><strong>Learning Progress</strong>: Course enrollments, lesson completion status, quiz scores, and
+                    earned certificates.</li>
+                <li><strong>Technical Data</strong>: Device information, browser type, and interaction logs.</li>
+            </ul>
+        </section>
+
+        <section class="policy-section">
+            <h2><i class="fas fa-cogs"></i> 2. How We Use Your Data</h2>
+            <p>The information we collect is used for the following purposes:</p>
+            <ul>
+                <li>To provide and maintain our educational services.</li>
+                <li>To track your learning progress and generate certificates in your name.</li>
+                <li>To provide performance analytics and "weak topic" insights in your dashboard.</li>
+                <li>To enhance platform security and prevent unauthorized access.</li>
+                <li>To communicate important updates and educational content.</li>
+            </ul>
+        </section>
+
+        <section class="policy-section">
+            <h2><i class="fab fa-google"></i> 3. Google Login Usage</h2>
+            <p>RENVOX AI uses Google OAuth 2.0 to simplify the login process. When you choose to "Continue with Google":
+            </p>
+            <div class="highlight-box">
+                <p>We only access your <strong>public profile information</strong> (name and picture) and
+                    <strong>primary email address</strong>. We never access your contacts, files, or any other private
+                    data from your Google account.</p>
+            </div>
+            <p>Authentication tokens are stored securely in your browser's local storage to keep you logged in between
+                sessions.</p>
+        </section>
+
+        <section class="policy-section">
+            <h2><i class="fas fa-shield-alt"></i> 4. Security & Protection</h2>
+            <p>We implement industry-standard security measures to protect your data:</p>
+            <ul>
+                <li><strong>SSL/TLS Encryption</strong>: All data transmitted between your device and our servers is
+                    encrypted.</li>
+                <li><strong>Secure Storage</strong>: Sensitive user information is stored in secured, MongoDB-backed
+                    databases.</li>
+                <li><strong>Zero Password Storage</strong>: Since we use Google Auth, we do not store your passwords on
+                    our servers.</li>
+            </ul>
+        </section>
+
+        <section class="policy-section">
+            <h2><i class="fas fa-cookie-bite"></i> 5. Cookies & Tracking</h2>
+            <p>We use cookies and local storage tokens for:</p>
+            <ul>
+                <li><strong>Authentication</strong>: To recognize you and maintain your secure session.</li>
+                <li><strong>User Preferences</strong>: To remember settings like dark mode or your chosen college.</li>
+                <li><strong>Analytics</strong>: To understand platform usage and improve our learning modules.</li>
+            </ul>
+        </section>
+
+        <section class="policy-section">
+            <h2><i class="fas fa-user-check"></i> 6. Your Rights</h2>
+            <p>As a student on RENVOX AI, you have the right to:</p>
+            <ul>
+                <li>View the personal information we hold about you via your <strong>Profile Settings</strong>.</li>
+                <li>Update your academic details at any time.</li>
+                <li>Request the deletion of your account and all associated learning data.</li>
+            </ul>
+        </section>
+
+        <section class="policy-section">
+            <h2><i class="fas fa-envelope"></i> 7. Contact Us</h2>
+            <p>If you have any questions about this Privacy Policy or how your data is handled, please contact our
+                privacy team:</p>
+            <div class="highlight-box" style="text-align: center;">
+                <p><strong>Email:</strong> support@renvox.ai</p>
+                <p><strong>Address:</strong> Tech Hub, Sector 62, Noida, India</p>
+            </div>
+        </section>
+
+        <footer class="policy-footer">
+            <p>&copy; 2026 RENVOX AI. All rights reserved.</p>
+            <p>Empowering the next generation of Indian engineers with smart learning.</p>
+        </footer>
+    </div>
+
+    <!-- Initialization -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof setupUserDropdown === 'function') setupUserDropdown();
+        });
+    </script>
+</body>
+
+</html>

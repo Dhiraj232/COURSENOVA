@@ -126,4 +126,30 @@ router.get('/my', async (req, res) => {
     }
 });
 
+// ── GET /api/certificates/verify/:certId ──────────────────────────────────────
+// Public endpoint to verify a certificate ID
+router.get('/verify/:certId', async (req, res) => {
+    try {
+        const { certId } = req.params;
+        const record = await CourseProgress.findOne({ certId, testPassed: true })
+            .populate('userId', 'name');
+
+        if (!record) {
+            return res.status(404).json({ ok: false, message: 'Certificate ID is invalid or not found in our records.' });
+        }
+
+        res.json({
+            ok: true,
+            certificate: {
+                studentName: record.userId ? record.userId.name : 'Unknown Student',
+                courseName: record.courseId,
+                issueDate: record.earnedAt || record.updatedAt,
+                certId: record.certId
+            }
+        });
+    } catch (err) {
+        res.status(500).json({ ok: false, message: 'Server error during verification.' });
+    }
+});
+
 module.exports = router;

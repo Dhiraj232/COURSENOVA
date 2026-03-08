@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile | RENVOX AI</title>
+
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- External CSS -->
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="navigation.css">
+    <link rel="stylesheet" href="profile.css">
+</head>
+
+<body class="profile-body">
+    <!-- Navbar -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo"><img src="logo%20renvox.png" alt="RENVOX"> RENVOX</a>
+
+            <div class="nav-search">
+                <input type="text" id="navbarSearch" placeholder="Search for courses, subjects, or concepts...">
+                <button type="button" onclick="handleNavbarSearch()">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+
+            <ul class="nav-menu" id="navMenu">
+                <!-- Injected by navigation.js -->
+            </ul>
+            <div class="nav-buttons" id="navButtons"></div>
+            <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+        </div>
+    </nav>
+
+    <div class="profile-main-container">
+        <!-- Sidebar Navigation -->
+        <aside class="profile-sidebar">
+            <div class="sidebar-user-card glass">
+                <div class="profile-avatar-wrapper">
+                    <img id="profilePicLarge" src="https://ui-avatars.com/api/?name=User" alt="Avatar">
+                    <button class="btn-avatar-edit" onclick="document.getElementById('avatarUploader').click()">
+                        <i class="fas fa-camera"></i>
+                    </button>
+                    <input type="file" id="avatarUploader" style="display: none" accept="image/*">
+                </div>
+                <h3 id="userNameTitle">RenVox User</h3>
+                <p id="userEmailTitle">user@email.com</p>
+                <div class="joined-at">Member since <span id="joinedDateDisplay">2025</span></div>
+            </div>
+
+            <nav class="profile-tabs">
+                <button class="tab-btn active" data-tab="personal-info"><i class="fas fa-user"></i> Personal
+                    Info</button>
+                <button class="tab-btn" data-tab="my-courses"><i class="fas fa-book-reader"></i> My Courses</button>
+                <button class="tab-btn" data-tab="payment-history"><i class="fas fa-history"></i> Payment
+                    History</button>
+                <button class="tab-btn" data-tab="my-certificates"><i class="fas fa-award"></i> Certificates</button>
+                <button class="tab-btn" data-tab="learning-analytics"><i class="fas fa-chart-pie"></i>
+                    Analytics</button>
+            </nav>
+
+            <!-- Added Sidebar Logout for consistency -->
+            <div class="sidebar-footer"
+                style="margin-top: auto; padding: 20px 0; border-top: 1px solid rgba(0,0,0,0.05);">
+                <button class="logout-sidebar-btn" onclick="window.logoutUser(event)"
+                    style="width: 100%; padding: 12px; border: none; border-radius: 12px; background: #fee2e2; color: #ef4444; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer; transition: all 0.3s ease;">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Content Panel -->
+        <section class="profile-content-panel">
+
+            <!-- 1. Personal Info Tab -->
+            <div id="personal-info" class="profile-section active">
+                <div class="section-card glass">
+                    <div class="card-header">
+                        <h2>Personal Information</h2>
+                        <button class="btn-edit" id="toggleEdit" onclick="toggleProfileEdit()">Edit Profile</button>
+                    </div>
+                    <form id="profileForm" class="profile-grid-form">
+                        <div class="form-group">
+                            <label>Full Name</label>
+                            <input type="text" id="profileName" value="RenVox User" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label>Email Address</label>
+                            <input type="email" id="profileEmail" value="user@email.com" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label>College / University</label>
+                            <input type="text" id="profileCollege" placeholder="Add College Name" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label>Department</label>
+                            <input type="text" id="profileDept" placeholder="e.g. CSE" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label>Year of Study</label>
+                            <input type="text" id="profileYear" placeholder="e.g. 3rd Year" disabled>
+                        </div>
+                        <div class="form-group">
+                            <label>Joined On</label>
+                            <input type="text" id="profileJoinDate" value="Jan 2025" disabled>
+                        </div>
+                        <div class="form-actions" id="editActions" style="display: none">
+                            <button type="submit" class="btn-save">Save Changes</button>
+                            <button type="button" class="btn-cancel" onclick="toggleProfileEdit()">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- 2. My Courses Tab -->
+            <div id="my-courses" class="profile-section">
+                <div class="section-card glass">
+                    <div class="card-header">
+                        <h2>My Enrolled Courses</h2>
+                    </div>
+                    <div class="courses-scroll-grid" id="userCoursesContainer">
+                        <!-- Fetched from API -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Payment History Tab -->
+            <div id="payment-history" class="profile-section">
+                <div class="section-card glass">
+                    <div class="card-header">
+                        <h2>Payment History</h2>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="payment-table">
+                            <thead>
+                                <tr>
+                                    <th>Item Name</th>
+                                    <th>Amount</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="paymentHistoryBody">
+                                <!-- Fetched from API -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Certificates Tab -->
+            <div id="my-certificates" class="profile-section">
+                <div class="section-card glass">
+                    <div class="card-header">
+                        <h2>Earned Certificates</h2>
+                    </div>
+                    <div class="certificates-grid" id="certificatesContainer">
+                        <!-- Fetched from API -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 5. Analytics Tab -->
+            <div id="learning-analytics" class="profile-section">
+                <div class="section-card glass">
+                    <div class="card-header">
+                        <h2>Learning Analytics</h2>
+                    </div>
+                    <div class="analytics-overview">
+                        <div class="stat-mini">
+                            <h4 id="statTotalCourses">0</h4>
+                            <p>Enrolled</p>
+                        </div>
+                        <div class="stat-mini">
+                            <h4 id="statCompletedCourses">0</h4>
+                            <p>Completed</p>
+                        </div>
+                        <div class="stat-mini">
+                            <h4 id="statCerts">0</h4>
+                            <p>Certificates</p>
+                        </div>
+                        <div class="stat-mini">
+                            <h4 id="statScore">0%</h4>
+                            <p>Avg. Score</p>
+                        </div>
+                    </div>
+                    <div class="charts-row">
+                        <div class="chart-box">
+                            <canvas id="progressRadar"></canvas>
+                        </div>
+                        <div class="chart-box">
+                            <canvas id="studyTimeChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+    </div>
+
+    <!-- Scripts -->
+    <script src="navigation.js"></script>
+    <script src="profile.js"></script>
+</body>
+
+</html>

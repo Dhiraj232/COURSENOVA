@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testing Center | RENVOX AI</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="navigation.css">
+    <style>
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --primary-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            background: #f1f5f9;
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .test-hub-hero {
+            background: var(--primary-gradient);
+            padding: 80px 20px;
+            text-align: center;
+            color: white;
+            border-bottom-left-radius: 50px;
+            border-bottom-right-radius: 50px;
+        }
+
+        .main-container {
+            max-width: 1200px;
+            margin: -60px auto 100px;
+            padding: 0 20px;
+        }
+
+        .cat-selection-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+            margin-bottom: 50px;
+        }
+
+        .category-group {
+            background: white;
+            padding: 30px;
+            border-radius: 30px;
+            box-shadow: var(--card-shadow);
+        }
+
+        .category-group h2 {
+            margin-bottom: 25px;
+            font-weight: 800;
+            color: #1e293b;
+            border-left: 5px solid #6366f1;
+            padding-left: 15px;
+        }
+
+        .sub-cat-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        .sub-cat-card {
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 15px;
+            cursor: pointer;
+            text-align: center;
+            border: 2px solid transparent;
+            transition: 0.3s;
+        }
+
+        .sub-cat-card:hover {
+            border-color: #6366f1;
+            transform: translateY(-3px);
+            background: #f1f5f9;
+        }
+
+        .sub-cat-card i {
+            font-size: 1.5rem;
+            color: #6366f1;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .sub-cat-card span {
+            font-weight: 700;
+            font-size: 0.95rem;
+        }
+
+        .pack-section-title {
+            margin: 60px 0 30px;
+            font-weight: 800;
+            font-size: 1.8rem;
+        }
+
+        .packs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .test-pack-card {
+            background: white;
+            border-radius: 25px;
+            overflow: hidden;
+            box-shadow: var(--card-shadow);
+            border: 1px solid #e2e8f0;
+        }
+
+        .pack-img {
+            height: 160px;
+            background: #e2e8f0;
+            width: 100%;
+            position: relative;
+        }
+
+        .pack-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .pack-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(0, 0, 0, 0.6);
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+        }
+
+        .pack-body {
+            padding: 25px;
+        }
+
+        .pack-body h3 {
+            font-weight: 800;
+            font-size: 1.25rem;
+            margin-bottom: 10px;
+        }
+
+        .pack-meta {
+            display: flex;
+            gap: 15px;
+            color: #64748b;
+            font-size: 0.85rem;
+            margin-bottom: 20px;
+        }
+
+        .pack-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid #f1f5f9;
+            padding-top: 20px;
+        }
+
+        .pack-price {
+            font-weight: 800;
+            color: #059669;
+            font-size: 1.1rem;
+        }
+
+        .btn-unlock {
+            padding: 10px 20px;
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .btn-free {
+            background: #10b981;
+        }
+
+        /* Responsiveness Breakpoints */
+        @media (max-width: 1200px) {
+            .main-container {
+                max-width: 95%;
+            }
+
+            .cat-selection-grid {
+                gap: 20px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .test-hub-hero {
+                padding: 60px 15px;
+                border-bottom-left-radius: 30px;
+                border-bottom-right-radius: 30px;
+            }
+
+            .test-hub-hero h1 {
+                font-size: 1.8rem;
+            }
+
+            .cat-selection-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .sub-cat-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 12px;
+            }
+
+            .category-group {
+                padding: 20px;
+            }
+
+            .main-container {
+                margin-top: -40px;
+            }
+
+            .pack-section-title {
+                font-size: 1.5rem;
+                margin: 40px 0 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .test-hub-hero h1 {
+                font-size: 1.5rem;
+            }
+
+            .sub-cat-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .sub-cat-card {
+                padding: 15px;
+                display: flex;
+                align-items: center;
+                gap: 15px;
+                text-align: left;
+            }
+
+            .sub-cat-card i {
+                margin-bottom: 0;
+                font-size: 1.2rem;
+            }
+
+            .packs-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo"><img src="logo%20renvox.png" alt="RENVOX"> RENVOX</a>
+
+            <div class="nav-search">
+                <input type="text" id="navbarSearch" placeholder="Search for courses, subjects, or concepts...">
+                <button type="button" onclick="handleNavbarSearch()">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="certificates.html">Courses</a></li>
+                <li><a href="testing-center.html" class="active">Practice</a></li>
+                <li><a href="community.html">Community</a></li>
+                <li><a href="store.html">Store</a></li>
+            </ul>
+            <div class="nav-buttons" id="navButtons"></div>
+            <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+        </div>
+    </nav>
+
+    <div class="test-hub-hero">
+        <h1>RENVOX Testing Center</h1>
+        <p>Premium Practice Questions & Full-Length Mock Tests for All Students</p>
+    </div>
+
+    <main class="main-container">
+        <!-- Back Button -->
+        <div style="margin-bottom: 25px;">
+            <a href="dashboard.html"
+                style="text-decoration: none; color: #64748b; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: 0.3s;"
+                onmouseover="this.style.color='#6366f1'" onmouseout="this.style.color='#64748b'">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </a>
+        </div>
+
+        <!-- 1. Category Selection -->
+        <div class="cat-selection-grid">
+            <div class="category-group">
+                <h2>School Classes</h2>
+                <div class="sub-cat-grid" id="schoolCats">
+                    <!-- Dynamic -->
+                </div>
+            </div>
+            <div class="category-group">
+                <h2>Competitive Exams</h2>
+                <div class="sub-cat-grid" id="competitiveCats">
+                    <!-- Dynamic -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. Subjects Modal/Selection (Hidden initially) -->
+        <div id="subjectPanel"
+            style="display: none; background: white; padding: 40px; border-radius: 30px; box-shadow: var(--card-shadow); margin-bottom: 50px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+                <h2 id="selectedCatTitle" style="margin: 0;">Subjects for JEE Main</h2>
+                <button onclick="document.getElementById('subjectPanel').style.display='none'"
+                    style="border: none; background: #fee2e2; color: #ef4444; width:40px; height:40px; border-radius:50%; cursor:pointer;">&times;</button>
+            </div>
+            <div class="sub-cat-grid" id="subjectGrid">
+                <!-- Dynamic -->
+            </div>
+        </div>
+
+        <!-- 3. Mock Test Series Section -->
+        <h2 class="pack-section-title">Premium Mock Test Series</h2>
+        <div class="packs-grid" id="testPacks">
+            <!-- Dynamic -->
+        </div>
+    </main>
+
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script src="navigation.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            loadCategories();
+            loadMockPacks();
+        });
+
+        async function loadCategories() {
+            try {
+                const res = await fetch('/api/mocktest/categories');
+                const data = await res.json();
+                if (data.ok) {
+                    const schoolContainer = document.getElementById('schoolCats');
+                    const compContainer = document.getElementById('competitiveCats');
+
+                    data.categories["School Classes"].forEach(cat => {
+                        schoolContainer.innerHTML += `
+                            <div class="sub-cat-card" onclick="showSubjects('${cat}')">
+                                <i class="fas fa-graduation-cap"></i>
+                                <span>${cat}</span>
+                            </div>
+                        `;
+                    });
+
+                    data.categories["Competitive Exams"].forEach(cat => {
+                        compContainer.innerHTML += `
+                            <div class="sub-cat-card" onclick="showSubjects('${cat}')">
+                                <i class="fas fa-bullseye"></i>
+                                <span>${cat}</span>
+                            </div>
+                        `;
+                    });
+
+                    window.subjects = data.subjects;
+                }
+            } catch (err) { console.error('Categories load error:', err); }
+        }
+
+        function showSubjects(cat) {
+            const panel = document.getElementById('subjectPanel');
+            const title = document.getElementById('selectedCatTitle');
+            const grid = document.getElementById('subjectGrid');
+
+            title.innerText = `Choose Subject: ${cat}`;
+            grid.innerHTML = '';
+
+            const subs = window.subjects[cat] || [];
+            subs.forEach(sub => {
+                grid.innerHTML += `
+                    <div class="sub-cat-card" onclick="startPractice('${cat}', '${sub}')">
+                        <i class="fas fa-book"></i>
+                        <span>${sub}</span>
+                    </div>
+                `;
+            });
+
+            panel.style.display = 'block';
+            panel.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        async function loadMockPacks() {
+            const container = document.getElementById('testPacks');
+            try {
+                const res = await fetch('/api/mocktest/packs');
+                const data = await res.json();
+                if (data.ok) {
+                    container.innerHTML = data.packs.map(pack => `
+                        <div class="test-pack-card">
+                            <div class="pack-img">
+                                <img src="${pack.thumbnail}" alt="Thumbnail">
+                                <span class="pack-badge">${pack.category}</span>
+                            </div>
+                            <div class="pack-body">
+                                <h3>${pack.title}</h3>
+                                <div class="pack-meta">
+                                    <span><i class="fas fa-file-alt"></i> ${pack.totalTests} Mock Tests</span>
+                                    <span><i class="fas fa-users"></i> ${Math.floor(Math.random() * 2000) + 500}+ Tried</span>
+                                </div>
+                                <div class="pack-footer">
+                                    <span class="pack-price">${pack.isFree ? 'FREE' : '₹' + pack.price}</span>
+                                    <button class="btn-unlock ${pack.isFree ? 'btn-free' : ''}" onclick="openPack('${pack.id}')">
+                                        ${pack.isFree ? 'Start Now' : 'Unlock Series'}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                }
+            } catch (err) { console.error('Packs load error:', err); }
+        }
+
+        function startPractice(cat, sub) {
+            window.location.href = `quiz-engine.html?category=${encodeURIComponent(cat)}&subject=${encodeURIComponent(sub)}&mode=practice`;
+        }
+
+        async function openPack(packId) {
+            const token = localStorage.getItem('renvox_token') || localStorage.getItem('renvoxToken');
+            if (!token) {
+                alert('Please login to access mock tests.');
+                window.location.href = 'index.html#login';
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/mocktest/packs/${packId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+
+                if (data.ok) {
+                    if (data.locked) {
+                        initiatePurchase(data.pack);
+                    } else {
+                        window.location.href = `quiz-engine.html?packId=${packId}&mode=mock`;
+                    }
+                }
+            } catch (err) { console.error('Pack open error:', err); }
+        }
+
+        async function initiatePurchase(pack) {
+            const token = localStorage.getItem('renvox_token') || localStorage.getItem('renvoxToken');
+
+            try {
+                const res = await fetch('/api/create-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ amount: pack.price, courseId: pack.id })
+                });
+                const orderData = await res.json();
+
+                if (!orderData.ok) throw new Error(orderData.message);
+
+                const options = {
+                    key: "rzp_test_YourKey", // Logic matches server.js keys
+                    amount: orderData.order.amount,
+                    currency: "INR",
+                    name: "RENVOX AI",
+                    description: `Unlock ${pack.title}`,
+                    order_id: orderData.order.id,
+                    handler: async function (response) {
+                        const verifyRes = await fetch('/api/verify-payment', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                            body: JSON.stringify({
+                                ...response,
+                                course: pack.id,
+                                amount: pack.price
+                            })
+                        });
+                        const verifyData = await verifyRes.json();
+                        if (verifyData.ok) {
+                            alert('Success! Redirecting to test...');
+                            window.location.href = `quiz-engine.html?packId=${pack.id}&mode=mock`;
+                        }
+                    },
+                    theme: { color: "#6366f1" }
+                };
+
+                const rzp = new Razorpay(options);
+                rzp.open();
+            } catch (err) { alert('Purchase error: ' + err.message); }
+        }
+    </script>
+</body>
+
+</html>

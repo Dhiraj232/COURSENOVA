@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Result | RENVOX AI</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="navigation.css">
+    <script src="navigation.js"></script>
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            --secondary-gradient: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+        }
+
+        body {
+            background: #f8fafc;
+            font-family: 'Outfit', sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+
+        .results-page-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            min-height: calc(100vh - 80px);
+        }
+
+        .result-card {
+            background: white;
+            padding: 60px;
+            border-radius: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .score-circle {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            background: var(--primary-gradient);
+            color: white;
+            margin: 0 auto 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 15px 35px rgba(99, 102, 241, 0.3);
+        }
+
+        .score-circle h1 {
+            font-size: 3.5rem;
+            margin: 0;
+            line-height: 1;
+        }
+
+        .score-circle span {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .result-stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin-bottom: 40px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-item h3 {
+            font-size: 1.5rem;
+            font-weight: 800;
+            margin: 0;
+            color: #1e293b;
+        }
+
+        .stat-item p {
+            font-size: 0.85rem;
+            color: #64748b;
+            margin-top: 5px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .result-badge {
+            display: inline-block;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: 800;
+            font-size: 0.9rem;
+            margin-bottom: 30px;
+        }
+
+        .badge-pass {
+            background: #dcfce7;
+            color: #15803d;
+        }
+
+        .badge-fail {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .result-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .btn-action {
+            padding: 15px;
+            border-radius: 12px;
+            border: none;
+            font-weight: 800;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 1rem;
+            transition: 0.3s;
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #475569;
+        }
+
+        .btn-action:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 768px) {
+            .result-card {
+                padding: 40px 25px;
+                border-radius: 30px;
+            }
+
+            .score-circle {
+                width: 150px;
+                height: 150px;
+            }
+
+            .score-circle h1 {
+                font-size: 2.8rem;
+            }
+
+            .result-stats {
+                gap: 20px;
+            }
+
+            .stat-item h3 {
+                font-size: 1.2rem;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .result-stats {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .result-actions {
+                grid-template-columns: 1fr;
+            }
+
+            .btn-action {
+                padding: 12px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Platform Navbar -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo"><img src="logo%20renvox.png" alt="RENVOX"> RENVOX</a>
+            <div class="nav-search">
+                <input type="text" id="navbarSearch" placeholder="Search for courses, subjects...">
+                <button type="button" onclick="handleNavbarSearch()"><i class="fas fa-search"></i></button>
+            </div>
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="certificates.html">Courses</a></li>
+                <li><a href="testing-center.html" class="active">Practice</a></li>
+                <li><a href="community.html">Community</a></li>
+                <li><a href="store.html">Store</a></li>
+            </ul>
+            <div class="nav-buttons" id="navButtons"></div>
+            <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+        </div>
+    </nav>
+
+    <div class="results-page-container">
+        <div class="result-card">
+            <div class="result-badge" id="passBadge">PASSED</div>
+            <div class="score-circle">
+                <h1 id="scoreDisplay">0</h1>
+                <span id="totalDisplay">out of 20</span>
+            </div>
+
+            <div class="result-stats">
+                <div class="stat-item">
+                    <h3 id="accuracyDisplay">0%</h3>
+                    <p>Accuracy</p>
+                </div>
+                <div class="stat-item">
+                    <h3 id="correctDisplay">0</h3>
+                    <p>Correct</p>
+                </div>
+                <div class="stat-item">
+                    <h3 id="incorrectDisplay">0</h3>
+                    <p>Wrong</p>
+                </div>
+            </div>
+
+            <div class="result-actions">
+                <a href="testing-center.html" class="btn-action btn-secondary"><i class="fas fa-arrow-left"></i> Back to
+                    Hub</a>
+                <a href="dashboard.html" class="btn-action btn-primary">My Dashboard</a>
+            </div>
+        </div>
+
+        <script>
+            const urlParams = new URLSearchParams(window.location.search);
+            const correct = parseInt(urlParams.get('correct')) || 0;
+            const total = parseInt(urlParams.get('total')) || 0;
+            const mode = urlParams.get('mode') || 'practice';
+            const courseId = urlParams.get('course');
+
+            document.getElementById('scoreDisplay').innerText = correct;
+            document.getElementById('totalDisplay').innerText = `out of ${total}`;
+            document.getElementById('correctDisplay').innerText = correct;
+            document.getElementById('incorrectDisplay').innerText = total - correct;
+
+            const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
+            document.getElementById('accuracyDisplay').innerText = `${accuracy}%`;
+
+            // Adjust Back Button if from Course
+            if (courseId) {
+                const backBtn = document.querySelector('.btn-secondary');
+                backBtn.href = `course-content.html?course=${encodeURIComponent(courseId)}`;
+                backBtn.innerHTML = `<i class="fas fa-arrow-left"></i> Back to Course`;
+            }
+
+            const badge = document.getElementById('passBadge');
+            const passCriteria = courseId ? 60 : 40; // Course tests need 60%, practice 40%
+
+            if (accuracy >= passCriteria) {
+                badge.innerText = 'PASSED';
+                badge.className = 'result-badge badge-pass';
+            } else {
+                badge.innerText = 'FAILED';
+                badge.className = 'result-badge badge-fail';
+            }
+        </script>
+    </div><!-- end results-page-container -->
+</body>
+
+</html>

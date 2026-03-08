@@ -96,6 +96,16 @@ router.post('/submit-quiz', requireAuth, async (req, res) => {
         });
 
         await entry.save();
+
+        // ── DASHBOARD LOGGING ──
+        const Activity = require('../models/Activity');
+        await Activity.create({
+            userId: req.userId,
+            type: 'quiz_completed',
+            title: 'Daily Quiz',
+            score
+        });
+
         res.json({ ok: true, message: 'Quiz score submitted!' });
     } catch (err) {
         console.error('Leaderboard error:', err);

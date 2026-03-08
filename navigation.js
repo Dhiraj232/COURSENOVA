@@ -12,13 +12,15 @@
  * @version 1.0.0
  */
 
-// ==================== 1. NAVIGATION INITIALIZATION ====================
+// Run immediately on script load to capture OAuth params before page scripts run
+handleAuthRedirect();
+
 document.addEventListener('DOMContentLoaded', function () {
     setupNavigation();
     setupMobileMenu();
     setupScrollEffects();
     setupHashNavigation();
-    setupUserDropdownIfNeeded();
+    setupUserDropdown(); // Fixed function name
     setupNavbarSearch();
 });
 
@@ -45,9 +47,9 @@ function setupNavigation() {
     const links = [
         { name: 'Home', href: 'index.html', key: 'home' },
         { name: 'Courses', href: 'certificates.html', key: 'courses' },
-        { name: 'Practice', href: 'practice.html', key: 'practice' },
-        { name: 'Store', href: 'store.html', key: 'store' },
-        { name: 'Community', href: 'community.html', key: 'community' }
+        { name: 'Practice', href: 'testing-center.html', key: 'practice' },
+        { name: 'Community', href: 'community.html', key: 'community' },
+        { name: 'Store', href: 'store.html', key: 'store' }
     ];
 
     const currentPage = getCurrentPage();
@@ -56,7 +58,6 @@ function setupNavigation() {
     navMenu.innerHTML = links.map(link => {
         let isActive = (link.href === currentPage + '.html') || (link.href === 'index.html' && currentPage === 'index');
         // Specific active rules
-        if (currentPage === 'certificates' && link.href === 'certificates.html') isActive = true;
         if (currentPage === 'my-certificates' && link.href === 'my-certificates.html') isActive = true;
 
         return `<li><a href="${link.href}" class="${isActive ? 'active' : ''}">${link.name}</a></li>`;
@@ -221,6 +222,65 @@ function setupScrollEffects() {
 function animatePageEntrance() {
     document.body.style.opacity = '1';
     document.body.style.transition = 'opacity 0.5s ease';
+}
+
+/**
+ * ─── OAuth Redirect Handler ───────────────────────────────────────────
+ * Checks the URL for 'token' and 'user' parameters, common after 
+ * Google OAuth redirects. Saves them to localStorage and sweeps the URL.
+ */
+function handleAuthRedirect() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    const userStr = urlParams.get('user');
+    const logout = urlParams.get('logout');
+
+    // Handle logout success message
+    if (logout === 'true' || logout === 'success') {
+        const logoutToast = document.createElement('div');
+        logoutToast.style.cssText = `
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+            background: #10b981; color: white; padding: 12px 24px; border-radius: 99px;
+            z-index: 10000; font-family: 'Outfit', sans-serif; font-weight: 600;
+            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3); animation: slideDown 0.5s ease;
+        `;
+        logoutToast.innerHTML = '<i class="fas fa-check-circle"></i> Logged out successfully';
+        document.body.appendChild(logoutToast);
+
+        // Add animation style
+        const style = document.createElement('style');
+        style.textContent = '@keyframes slideDown { from { transform: translate(-50%, -50px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }';
+        document.head.appendChild(style);
+
+        setTimeout(() => {
+            logoutToast.style.opacity = '0';
+            logoutToast.style.transition = 'opacity 0.5s ease';
+            setTimeout(() => logoutToast.remove(), 500);
+        }, 4000);
+
+        // Clean URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+        return;
+    }
+
+    if (token && userStr) {
+        try {
+            // Force save to localStorage
+            localStorage.setItem('renvoxToken', token);
+            localStorage.setItem('renvox_token', token);
+            localStorage.setItem('renvoxUser', userStr);
+            localStorage.setItem('renvox_user', userStr);
+
+            // Clean up the URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+            console.log('✅ Authentication session established');
+
+            // Trigger UI update
+            if (typeof setupUserDropdown === 'function') setupUserDropdown();
+        } catch (error) {
+            console.error('❌ Redirect Auth Error:', error);
+        }
+    }
 }
 
 // Call animation on load
@@ -417,13 +477,18 @@ function setupUserDropdown() {
                 
                 <ul class="dropdown-items">
                     <li class="dropdown-item">
-                        <a href="certificates.html" onclick="window.closeUserDropdown()">
-                            <i class="fas fa-graduation-cap"></i> Courses
+                        <a href="dashboard.html" onclick="window.closeUserDropdown()">
+                            <i class="fas fa-th-large"></i> Dashboard
                         </a>
                     </li>
                     <li class="dropdown-item">
-                        <a href="community.html" onclick="window.closeUserDropdown()">
-                            <i class="fas fa-users"></i> Community
+                        <a href="testing-center.html" onclick="window.closeUserDropdown()">
+                            <i class="fas fa-edit"></i> Practice & Mock Tests
+                        </a>
+                    </li>
+                    <li class="dropdown-item">
+                        <a href="profile.html" onclick="window.closeUserDropdown()">
+                            <i class="fas fa-user-circle"></i> My Profile
                         </a>
                     </li>
                     <li class="dropdown-item">
@@ -437,13 +502,8 @@ function setupUserDropdown() {
                         </a>
                     </li>
                     <li class="dropdown-item">
-                        <a href="dashboard.html" onclick="window.closeUserDropdown()">
-                            <i class="fas fa-columns"></i> Dashboard
-                        </a>
-                    </li>
-                    <li class="dropdown-item">
-                        <a href="profile.html" onclick="window.closeUserDropdown()">
-                            <i class="fas fa-user-circle"></i> My Profile
+                        <a href="community.html" onclick="window.closeUserDropdown()">
+                            <i class="fas fa-users"></i> Community
                         </a>
                     </li>
                     
@@ -490,25 +550,76 @@ function closeUserDropdown() {
 }
 
 /**
- * Logout user
+ * Logout user - Multi-layered cleanup (Server + Client)
  */
-function logoutUser(event) {
-    if (event) event.preventDefault();
-
-    if (confirm('Are you sure you want to log out?')) {
-        // Clear ALL auth data (both key formats for cross-compatibility)
-        // NOTE: Only auth tokens are cleared. Course enrollments stay in MongoDB
-        // and will be re-fetched when user logs in again.
-        localStorage.removeItem('renvox_user');
-        localStorage.removeItem('renvox_token');
-        localStorage.removeItem('renvoxUser');
-        localStorage.removeItem('renvoxToken');
-        localStorage.removeItem('userName');
-        localStorage.removeItem('pendingUserId');
-
-        // Redirect to home
-        window.location.href = 'index.html';
+async function logoutUser(event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
     }
+
+    // 1. Premium Confirmation
+    const confirmLogout = confirm("Are you sure you want to logout from RENVOX AI?");
+    if (!confirmLogout) return;
+
+    // 2. Visual "Logging Out" Overlay
+    const overlay = document.createElement('div');
+    overlay.id = 'logoutOverlay';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(15, 23, 42, 0.95);
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        z-index: 100000; color: white; font-family: 'Outfit', sans-serif;
+        backdrop-filter: blur(8px); transition: opacity 0.5s ease;
+    `;
+    overlay.innerHTML = `
+        <div class="loader" style="width: 48px; height: 48px; border: 4px solid #f3f3f3; border-top: 4px solid #6366f1; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+        <h2 style="margin-top: 24px; font-weight: 700; letter-spacing: -0.02em;">Logging out safely...</h2>
+        <p style="color: #94a3b8; margin-top: 8px;">Cleaning up your secure session</p>
+        <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+    `;
+    document.body.appendChild(overlay);
+
+    try {
+        // 3. Notify backend (with timeout)
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2500);
+
+        await fetch('/auth/logout', {
+            signal: controller.signal,
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('renvox_token') || localStorage.getItem('renvoxToken')}` }
+        }).catch(() => console.warn('Server logout skipped or failed'));
+
+        clearTimeout(timeoutId);
+
+        // 4. Forcefully Disable Google Auto-Select (GSI)
+        // This stops Google from automatically showing your account name after logout
+        if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+            google.accounts.id.disableAutoSelect();
+        }
+    } catch (e) {
+        console.warn('Silent logout error', e);
+    }
+
+    // 5. Forceful Local Cleanup (Clear everything to be safe)
+    const keys = [
+        'renvox_user', 'renvox_token', 'renvoxUser', 'renvoxToken',
+        'userName', 'pendingUserId', 'auth_token', 'user', 'renvox_streak'
+    ];
+    keys.forEach(k => localStorage.removeItem(k));
+
+    // As a final safety net, wipe all storage
+    localStorage.clear();
+    sessionStorage.clear();
+
+    // 6. Finalize UI
+    if (typeof closeUserDropdown === 'function') closeUserDropdown();
+
+    // Small delay to ensure all cleanup operations are finalized
+    setTimeout(() => {
+        window.location.href = 'index.html?logout=true';
+    }, 1200);
 }
 
 // Close dropdown when clicking outside
@@ -544,10 +655,5 @@ if (typeof window !== 'undefined') {
     window.toggleUserDropdown = toggleUserDropdown;
     window.closeUserDropdown = closeUserDropdown;
     window.logoutUser = logoutUser;
-
-    // Initialize on load
-    document.addEventListener('DOMContentLoaded', () => {
-        setupUserDropdown();
-    });
 }
 console.log('✅ Navigation system initialized');

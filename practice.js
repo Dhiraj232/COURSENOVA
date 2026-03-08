@@ -82,8 +82,31 @@ function renderCurrentQuestion() {
                 `).join('')}
             </div>
         </div>
+        <div class="practice-controls" style="display: flex; gap: 15px; margin-top: 15px;">
+            <button class="btn-run" style="background: #e2e8f0; color: #475569; display: ${currentIndex === 0 ? 'none' : 'flex'};" onclick="goPrevious()">
+                <i class="fas fa-arrow-left"></i> Previous
+            </button>
+            <button class="btn-run" style="background: #6366f1; color: white; display: ${currentIndex === currentQuestions.length - 1 ? 'none' : 'flex'};" onclick="goNext()">
+                Next <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
     `;
 }
+
+function goPrevious() {
+    if (currentIndex > 0) {
+        currentIndex--;
+        renderCurrentQuestion();
+    }
+}
+
+function goNext() {
+    if (currentIndex < currentQuestions.length - 1) {
+        currentIndex++;
+        renderCurrentQuestion();
+    }
+}
+
 
 function checkAnswer(selected, btn) {
     const q = currentQuestions[currentIndex];
@@ -124,7 +147,10 @@ function showFinalScore() {
             <h2>Practice Completed!</h2>
             <p style="font-size: 1.5rem; margin: 15px 0;">Your Score: <strong>${userScore} / ${currentQuestions.length}</strong> (${percent}%)</p>
             <div class="progress-bar-container"><div class="progress-bar-fill" style="width: ${percent}%;"></div></div>
-            <button class="btn-run" style="margin-top: 30px;" onclick="loadQuestions()">Restart Practice</button>
+            <div style="display: flex; gap: 15px; justify-content: center; margin-top: 30px;">
+                <button class="btn-run" onclick="loadQuestions()">Restart Practice</button>
+                <button class="btn-run" style="background: #e2e8f0; color: #475569;" onclick="window.location.href='dashboard.html'">Back to Dashboard</button>
+            </div>
             ${isDailyQuiz ? `<button class="btn-run" style="margin-top: 10px; background: #6366f1;" onclick="submitQuizToLeaderboard()">Submit to Leaderboard</button>` : ''}
         </div>
     `;

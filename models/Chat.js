@@ -32,6 +32,5 @@ const ChatSchema = new mongoose.Schema({
 
 // Indexes
 ChatSchema.index({ 'participants.buyer': 1, 'participants.seller': 1 });
-ChatSchema.index({ conversationId: 1 });
 
 module.exports = mongoose.model('Chat', ChatSchema);

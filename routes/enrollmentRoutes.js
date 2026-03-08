@@ -104,6 +104,21 @@ router.post('/enroll-free', async (req, res) => {
             utr: 'FREE-' + Date.now()
         });
 
+        // ── ACTIVITY LOGGING ──
+        const Activity = require('../models/Activity');
+        try {
+            await Activity.create({
+                userId,
+                type: 'course_enrolled',
+                title: `Enrolled: ${courseName || id}`,
+                description: `Started learning ${courseName || id} for free.`,
+                courseId: id,
+                courseName: courseName || id
+            });
+        } catch (logErr) {
+            console.warn('Silent Enrollment Log Error:', logErr);
+        }
+
         res.status(201).json({ ok: true, message: 'Enrolled successfully!' });
     } catch (err) {
         res.status(500).json({ ok: false, message: err.message });

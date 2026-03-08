@@ -7,12 +7,17 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const Razorpay = require('razorpay');
 const { OAuth2Client } = require('google-auth-library');
-const passport = require('passport');
-const GoogleStrategy = require('passport-google-oauth20').Strategy;
-const mongoose = require('mongoose');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const xss = require('xss-clean');
 
 // Load environment variables
 require('dotenv').config();
+
+const mongoose = require('mongoose');
+const session = require('express-session');
+const passport = require('passport');
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
 
 // ─── Store & Marketplace Routers (MongoDB-backed) ──────────────
 const storeRouter = require('./routes/store');
@@ -34,7 +39,6 @@ const courseRoutes = require('./routes/courseRoutes');
 
 // ─── Community Routers (New) ──────────────────────────────────────
 const communityRoutes = require('./routes/community');
-const communityAiRoutes = require('./routes/communityAI');
 
 // ─── MongoDB Connection ───────────────────────────────────────
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/renvox-bookstore';
@@ -53,15 +57,15 @@ const CourseProgress = require('./models/CourseProgress');
 passport.use(new GoogleStrategy({
   clientID: GOOGLE_CLIENT_ID,
   clientSecret: GOOGLE_CLIENT_SECRET,
-  callbackURL: "/auth/google/callback" // Relative path is safer if domain changes
+  callbackURL: "/auth/google/callback",
+  proxy: true
 },
   async function (accessToken, refreshToken, profile, done) {
     try {
-      console.log('Google Profile:', profile.emails[0].value);
+      console.log('Google Auth Attempt:', profile.emails[0].value);
       let user = await StoreUser.findOne({ googleId: profile.id });
 
       if (!user) {
-        // Create new user if not exists
         user = new StoreUser({
           googleId: profile.id,
           name: profile.displayName,
@@ -71,9 +75,8 @@ passport.use(new GoogleStrategy({
           lastLogin: new Date()
         });
         await user.save();
-        console.log('New user created via Google:', user.email);
+        console.log('New user registered:', user.email);
       } else {
-        // Update last login and profile info
         user.lastLogin = new Date();
         user.name = profile.displayName;
         if (profile.photos && profile.photos.length > 0) user.picture = profile.photos[0].value;
@@ -86,6 +89,19 @@ passport.use(new GoogleStrategy({
     }
   }
 ));
+
+passport.serializeUser((user, done) => {
+  done(null, user.id);
+});
+
+passport.deserializeUser(async (id, done) => {
+  try {
+    const user = await StoreUser.findById(id);
+    done(null, user);
+  } catch (err) {
+    done(err, null);
+  }
+});
 
 function readUsers() {
   try {
@@ -109,22 +125,98 @@ function generateOtp() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
+const AppError = require('./utils/AppError');
+const globalErrorHandler = require('./middleware/errorMiddleware');
+
+// Handle Uncaught Exceptions (Synchronous errors)
+process.on('uncaughtException', err => {
+  console.error('❌ UNCAUGHT EXCEPTION! Shutting down...');
+  console.error(err.name, err.message);
+  process.exit(1);
+});
+
 const app = express();
+// ─── Security Middlewares ─────────────────────────────────────────
+
+// 1. Helmet for Security Headers (Standard production best practice)
+app.use(helmet());
+
+// 2. Rate Limiting to prevent API abuse/DoS
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: { ok: false, message: "Too many requests from this IP, please try again after 15 minutes." },
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  handler: (req, res, next, options) => {
+    logSuspiciousActivity('Rate limit exceeded', req);
+    res.status(options.statusCode).send(options.message);
+  }
+});
+
+// Apply rate limiter to all API routes
+app.use('/api/', apiLimiter);
+
+// 3. XSS Protection (Sanitize user input)
+app.use(xss());
+
+// 4. Proper CORS Configuration
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000',
+  'http://localhost:5500',
+  'http://127.0.0.1:5500',
+  'http://localhost:5508',
+  'http://127.0.0.1:5508'
+];
+
 app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'http://127.0.0.1:3000',
-    'http://localhost:5500',
-    'http://127.0.0.1:5500',
-    'http://localhost:5508',
-    'http://127.0.0.1:5508'
-  ]
+  origin: function (origin, callback) {
+    // allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
 }));
-app.use(express.json());
-// Serve frontend static files from project root
-app.use(express.static(path.join(__dirname)));
+
+app.use(express.json({ limit: '10kb' })); // Body limit to prevent large payload attacks
+app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+
+const { logSuspiciousActivity } = require('./middleware/security');
+
+
+// Express Session Middleware
+app.use(session({
+  secret: JWT_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: { secure: false } // Set to true if using HTTPS
+}));
 
 app.use(passport.initialize());
+app.use(passport.session());
+
+// Serve frontend static files with Caching for better performance
+app.use(express.static(path.join(__dirname), {
+  maxAge: '1y',
+  setHeaders: (res, path) => {
+    if (path.endsWith('.html')) {
+      // Don't cache HTML files so users always get the latest version
+      res.setHeader('Cache-Control', 'no-cache');
+    }
+  }
+}));
+
+// Route for /dashboard
+app.get('/dashboard', (req, res) => {
+  res.sendFile(path.join(__dirname, 'dashboard.html'));
+});
 
 // ─── JWT Authentication Middleware ──────────────────────────────
 // Extracts JWT token from Authorization header and attaches user to request
@@ -173,20 +265,26 @@ app.use('/api/test', require('./routes/testRoutes')); // New test endpoint
 
 // ─── Practice & AI Routes (New) ──────────────────────────────
 app.use('/api/practice', require('./routes/practice'));
+app.use('/api/mocktest', require('./routes/mockTestRoutes'));
 app.use('/api/ai', require('./routes/ai'));
 
 // ─── Authentication Routes ───────────────────────────
 const authRoutes = require('./routes/auth');
 app.use('/auth', authRoutes);
 app.use('/api', authRoutes); // also mount under /api for /api/me consistency
+const userRoutes = require('./routes/userRoutes');
+app.use('/api/user', userRoutes);
+app.use('/api/profile', require('./routes/userRoutes')); // fulfilling legacy endpoint requirements
 
 // ─── Community Routes ───────────────────────────────────────
 app.use('/api/community', communityRoutes);
-app.use('/api/community-ai', communityAiRoutes);
+app.use('/api/community-ai', require('./routes/ai'));
 
 // ─── Admin Panel Routes ───────────────────────────────────────
 const adminRoutes = require('./routes/adminRoutes');
+const analyticsRoutes = require('./routes/analyticsRoutes');
 app.use('/api/admin', adminRoutes);
+app.use('/api/analytics', analyticsRoutes);
 
 
 // Serve uploaded screenshots and generated certificates as static files
@@ -262,6 +360,33 @@ app.post('/api/verify-payment', async (req, res) => {
           { upsert: true, new: true }
         );
 
+        // 3. Save Transaction record for Profile Dashboard
+        const Transaction = require('./models/Transaction');
+        await Transaction.create({
+          userId: userId,
+          courseId: course,
+          courseName: course, // If you have course object title use it, otherwise fallback
+          amount: req.body.amount || 0, // ensure you pass amount/course from frontend
+          paymentId: razorpay_payment_id,
+          orderId: razorpay_order_id,
+          status: 'success'
+        });
+
+        // ── ACTIVITY LOGGING ──
+        const Activity = require('./models/Activity');
+        try {
+          await Activity.create({
+            userId,
+            type: 'course_enrolled',
+            title: `Enrolled: ${course}`,
+            description: `Purchased and unlocked "${course}" access.`,
+            courseId: course,
+            courseName: course
+          });
+        } catch (logErr) {
+          console.warn('Silent Paid Log Error:', logErr);
+        }
+
         console.log(`Enrolled ${user ? user.email : userId} in "${course}" via Razorpay.`);
       }
 
@@ -284,8 +409,13 @@ app.post('/api/verify-payment', async (req, res) => {
 // Google Auth Routes (Moved to routes/auth.js)
 // Get current user (Moved to routes/auth.js)
 
-// Simple endpoint to list users (for dev)
-app.get('/api/users', async (req, res) => {
+// Simple endpoint to list users (PROTECTED: Admin/Dev only in theory, adding requireAuth for demo security)
+app.get('/api/users', require('./middleware/auth').requireAuth, async (req, res) => {
+  // Check if user is admin
+  if (req.user && req.user.role !== 'admin') {
+    logSuspiciousActivity('Unauthorized access attempt to /api/users', req);
+    return res.status(403).json({ ok: false, message: 'Forbidden' });
+  }
   const users = await StoreUser.find({});
   const safe = users.map(u => ({ id: u._id, fullName: u.name, email: u.email, role: u.role, picture: u.picture }));
   res.json(safe);
@@ -480,8 +610,26 @@ app.get('/api/ping', (req, res) => {
 // Authentication is handled by middleware/auth.js
 // ─────────────────────────────────────────────────────────────────────────────
 
+
+// ─── Global Error Handling Middleware ───
+// This MUST be the last middleware in the chain
+app.all('*', (req, res, next) => {
+  next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
+});
+
+app.use(globalErrorHandler);
+
 const PORT = process.env.PORT || 5000;
 const server = require('http').createServer(app);
+
+// Handle Unhandled Rejections (Asynchronous errors)
+process.on('unhandledRejection', err => {
+  console.error('❌ UNHANDLED REJECTION! Shutting down...');
+  console.error(err.name, err.message);
+  server.close(() => {
+    process.exit(1);
+  });
+});
 const io = require('socket.io')(server, {
   cors: {
     origin: ["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:5500", "http://127.0.0.1:5500"],

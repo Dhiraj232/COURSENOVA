@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 const OrderSchema = new mongoose.Schema({
     orderNumber: { type: String, unique: true, required: true }, // ORD-20260228-001
-    
+
     buyer: {
         buyerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
         buyerName: String,
@@ -54,8 +54,8 @@ const OrderSchema = new mongoose.Schema({
     },
 
     status: {
-        current: { 
-            type: String, 
+        current: {
+            type: String,
             enum: ['order_placed', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'returned'],
             default: 'order_placed'
         },
@@ -92,7 +92,6 @@ OrderSchema.pre('save', async function (next) {
 
 // Indexes
 OrderSchema.index({ 'buyer.buyerId': 1 });
-OrderSchema.index({ orderNumber: 1 });
 OrderSchema.index({ status: 1 });
 OrderSchema.index({ createdAt: -1 });
 
