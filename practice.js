@@ -90,7 +90,10 @@ function checkAnswer(selected, btn) {
     const options = document.querySelectorAll('.option-btn');
     options.forEach(o => o.disabled = true); // Disable further clicks
 
-    if (selected === q.correctAnswer) {
+    const selectedClean = selected.trim();
+    const correctClean = q.correctAnswer.trim();
+
+    if (selectedClean === correctClean) {
         btn.classList.add('correct');
         userScore++;
     } else {
@@ -238,9 +241,9 @@ async function loadLeaderboard() {
         const data = await res.json();
         if (data.ok && data.entries.length > 0) {
             tbody.innerHTML = data.entries.map((e, i) => `
-                <tr>
+                <tr style="animation: fadeIn 0.3s ease forwards; animation-delay: ${i * 0.1}s">
                     <td class="rank rank-${i + 1}">${i + 1}</td>
-                    <td>${e.username}</td>
+                    <td><div style="display:flex; align-items:center; gap:8px;"><div style="width:24px; height:24px; background:#e2e8f0; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:10px;">${e.username.charAt(0)}</div> ${e.username}</div></td>
                     <td><strong>${e.score}</strong></td>
                 </tr>
             `).join('');

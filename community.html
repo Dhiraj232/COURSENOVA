@@ -2,503 +2,567 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RENVOX Community | Learn Together</title>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>RENVOX Community | Connect & Learn</title>
 
-    <!-- Google Fonts -->
-    <link
-        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap"
-        rel="stylesheet">
+	<!-- Google Fonts -->
+	<link
+		href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap"
+		rel="stylesheet">
 
-    <!-- Font Awesome -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+	<!-- Font Awesome -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- External CSS -->
-    <link rel="stylesheet" href="style.css">
+	<!-- Socket.io -->
+	<script src="/socket.io/socket.io.js"></script>
 
-    <style>
-        :root {
-            --comm-primary: #6366f1;
-            --comm-secondary: #a855f7;
-            --comm-bg: #f8fafc;
-            --comm-card: #ffffff;
-            --comm-border: #e2e8f0;
-            --comm-text: #1e293b;
-            --comm-text-light: #64748b;
-        }
+	<!-- External CSS -->
+	<link rel="stylesheet" href="style.css">
 
-        body {
-            background: var(--comm-bg);
-            font-family: 'Outfit', sans-serif;
-            color: var(--comm-text);
-        }
+	<style>
+		:root {
+			--comm-primary: #6366f1;
+			--comm-secondary: #a855f7;
+			--comm-bg: #f8fafc;
+			--comm-card: #ffffff;
+			--comm-border: #e2e8f0;
+			--comm-text: #1e293b;
+			--comm-text-light: #64748b;
+			--comm-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+		}
 
-        .community-container {
-            max-width: 1400px;
-            margin: 100px auto 40px;
-            padding: 0 20px;
-            display: grid;
-            grid-template-columns: 240px 1fr 340px;
-            gap: 30px;
-        }
+		body {
+			background: var(--comm-bg);
+			font-family: 'Outfit', sans-serif;
+			color: var(--comm-text);
+		}
 
-        @media (max-width: 1200px) {
-            .community-container {
-                grid-template-columns: 1fr 340px;
-            }
+		.community-container {
+			max-width: 1400px;
+			margin: 100px auto 40px;
+			padding: 0 20px;
+			display: grid;
+			grid-template-columns: 240px 1fr 340px;
+			gap: 30px;
+		}
 
-            .sidebar-left {
-                display: none;
-            }
-        }
+		@media (max-width: 1200px) {
+			.community-container {
+				grid-template-columns: 1fr 340px;
+			}
 
-        @media (max-width: 900px) {
-            .community-container {
-                grid-template-columns: 1fr;
-            }
+			.sidebar-left {
+				display: none;
+			}
+		}
 
-            .sidebar-right {
-                display: none;
-            }
-        }
+		@media (max-width: 900px) {
+			.community-container {
+				grid-template-columns: 1fr;
+			}
 
-        /* Sidebar Left */
-        .sidebar-left nav ul {
-            list-style: none;
-            position: sticky;
-            top: 100px;
-        }
+			.sidebar-right {
+				display: none;
+			}
+		}
 
-        .sidebar-left li {
-            margin-bottom: 8px;
-        }
+		/* Sidebar Left Navigation */
+		.sidebar-left nav ul {
+			list-style: none;
+			position: sticky;
+			top: 100px;
+		}
 
-        .nav-link {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 16px;
-            text-decoration: none;
-            color: var(--comm-text-light);
-            font-weight: 600;
-            border-radius: 12px;
-            transition: all 0.2s;
-        }
+		.nav-link {
+			display: flex;
+			align-items: center;
+			gap: 12px;
+			padding: 12px 16px;
+			text-decoration: none;
+			color: var(--comm-text-light);
+			font-weight: 600;
+			border-radius: 12px;
+			transition: all 0.2s;
+			cursor: pointer;
+			margin-bottom: 8px;
+		}
 
-        .nav-link:hover,
-        .nav-link.active {
-            background: white;
-            color: var(--comm-primary);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-        }
+		.nav-link:hover,
+		.nav-link.active {
+			background: white;
+			color: var(--comm-primary);
+			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+		}
 
-        /* Main Content */
-        .top-action-bar {
-            background: white;
-            padding: 20px;
-            border-radius: 20px;
-            display: flex;
-            gap: 15px;
-            margin-bottom: 30px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-        }
+		/* Top Action Bar */
+		.top-action-bar {
+			background: white;
+			padding: 20px 30px;
+			border-radius: 20px;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 30px;
+			box-shadow: var(--comm-shadow);
+		}
 
-        .btn-comm {
-            flex: 1;
-            padding: 15px;
-            border: none;
-            border-radius: 12px;
-            font-weight: 700;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            transition: transform 0.2s;
-        }
+		.btn-comm {
+			padding: 10px 20px;
+			border-radius: 10px;
+			font-weight: 700;
+			cursor: pointer;
+			border: none;
+			transition: all 0.2s;
+			display: flex;
+			align-items: center;
+			gap: 8px;
+		}
 
-        .btn-post {
-            background: var(--comm-primary);
-            color: white;
-        }
+		.btn-post {
+			background: var(--comm-primary);
+			color: white;
+		}
 
-        .btn-doubt {
-            background: #10b981;
-            color: white;
-        }
+		.btn-doubt {
+			background: var(--comm-secondary);
+			color: white;
+		}
 
-        .btn-leader {
-            background: #fbbf24;
-            color: white;
-        }
+		.btn-post:hover,
+		.btn-doubt:hover {
+			transform: scale(1.05);
+			filter: brightness(1.1);
+		}
 
-        .btn-comm:hover {
-            transform: translateY(-2px);
-        }
+		/* Feed Post Cards */
+		.post-card {
+			background: white;
+			border-radius: 24px;
+			padding: 25px;
+			margin-bottom: 25px;
+			box-shadow: var(--comm-shadow);
+			border: 1px solid #f1f5f9;
+		}
 
-        /* Post Cards */
-        .post-card {
-            background: white;
-            padding: 25px;
-            border-radius: 20px;
-            margin-bottom: 25px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-            border: 1px solid var(--comm-border);
-        }
+		.post-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 15px;
+		}
 
-        .post-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 15px;
-        }
+		.user-info {
+			display: flex;
+			gap: 12px;
+			align-items: center;
+		}
 
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
+		.user-avatar {
+			width: 45px;
+			height: 45px;
+			border-radius: 50%;
+			background: #e2e8f0;
+			overflow: hidden;
+		}
 
-        .user-avatar {
-            width: 45px;
-            height: 45px;
-            background: #e2e8f0;
-            border-radius: 50%;
-            overflow: hidden;
-        }
+		.user-avatar img {
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+		}
 
-        .user-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
+		.post-meta h4 {
+			margin: 0;
+			font-size: 1rem;
+		}
 
-        .post-meta h4 {
-            font-size: 1rem;
-            margin-bottom: 2px;
-        }
+		.post-meta span {
+			font-size: 0.8rem;
+			color: var(--comm-text-light);
+		}
 
-        .post-meta span {
-            font-size: 0.85rem;
-            color: var(--comm-text-light);
-        }
+		.post-content h2 {
+			font-size: 1.4rem;
+			margin-bottom: 15px;
+		}
 
-        .post-content h2 {
-            font-size: 1.4rem;
-            margin-bottom: 15px;
-        }
+		.post-content p {
+			color: #475569;
+			line-height: 1.6;
+		}
 
-        .post-content p {
-            color: var(--comm-text-light);
-            line-height: 1.6;
-            margin-bottom: 20px;
-        }
+		.post-footer {
+			display: flex;
+			gap: 30px;
+			margin-top: 25px;
+			padding-top: 20px;
+			border-top: 1px solid #f1f5f9;
+		}
 
-        .post-footer {
-            display: flex;
-            gap: 20px;
-            padding-top: 15px;
-            border-top: 1px solid var(--comm-border);
-        }
+		.footer-action {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			color: var(--comm-text-light);
+			cursor: pointer;
+			font-weight: 500;
+			transition: color 0.2s;
+		}
 
-        .footer-action {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: var(--comm-text-light);
-            cursor: pointer;
-            font-weight: 600;
-            transition: color 0.2s;
-        }
+		.footer-action:hover,
+		.footer-action.liked {
+			color: var(--comm-primary);
+		}
 
-        .footer-action:hover {
-            color: var(--comm-primary);
-        }
+		.footer-action.liked i {
+			color: #f43f5e;
+		}
 
-        .footer-action.liked {
-            color: #ef4444;
-        }
+		/* Sidebar Right Widgets */
+		.sidebar-right {
+			border-left: 1px solid #f1f5f9;
+			padding-left: 15px;
+		}
 
-        /* Sidebar Right */
-        .sidebar-card {
-            background: white;
-            padding: 24px;
-            border-radius: 20px;
-            margin-bottom: 30px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-        }
+		.sidebar-card {
+			background: white;
+			padding: 24px;
+			border-radius: 20px;
+			margin-bottom: 30px;
+			box-shadow: var(--comm-shadow);
+		}
 
-        .sidebar-card h3 {
-            font-size: 1.2rem;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+		.sidebar-card h3 {
+			font-size: 1.1rem;
+			margin-bottom: 15px;
+			display: flex;
+			align-items: center;
+			gap: 10px;
+		}
 
-        .trending-item {
-            padding: 12px 0;
-            border-bottom: 1px solid var(--comm-border);
-        }
+		.trending-item {
+			margin-bottom: 15px;
+			cursor: pointer;
+		}
 
-        .trending-item:last-child {
-            border: none;
-        }
+		.trending-item h5 {
+			margin: 0 0 4px;
+			font-size: 0.95rem;
+		}
 
-        .trending-item h5 {
-            font-size: 0.95rem;
-            margin-bottom: 4px;
-        }
+		.trending-item span {
+			font-size: 0.8rem;
+			color: var(--comm-text-light);
+		}
 
-        .trending-item span {
-            font-size: 0.8rem;
-            color: var(--comm-text-light);
-        }
+		.trending-item:hover h5 {
+			color: var(--comm-primary);
+		}
 
-        /* Real-time Chat Floating */
-        .chat-widget {
-            position: fixed;
-            bottom: 30px;
-            right: 100px;
-            width: 350px;
-            height: 500px;
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-            display: none;
-            flex-direction: column;
-            z-index: 1000;
-            border: 1px solid var(--comm-border);
-        }
+		/* Floating AI Doubts Assistant */
+		.ai-doubt-bubble {
+			position: fixed;
+			bottom: 30px;
+			right: 30px;
+			width: 60px;
+			height: 60px;
+			background: linear-gradient(135deg, #10b981, #06b6d4);
+			border-radius: 30px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			color: white;
+			font-size: 1.5rem;
+			cursor: pointer;
+			box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3);
+			z-index: 1000;
+		}
 
-        .chat-widget.active {
-            display: flex;
-        }
+		.ai-chat-window {
+			position: fixed;
+			bottom: 100px;
+			right: 30px;
+			width: 380px;
+			height: 500px;
+			background: white;
+			border-radius: 24px;
+			box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+			display: none;
+			flex-direction: column;
+			z-index: 1000;
+			overflow: hidden;
+			border: 1px solid #f1f5f9;
+		}
 
-        .chat-head {
-            background: var(--comm-primary);
-            padding: 15px 20px;
-            color: white;
-            display: flex;
-            justify-content: space-between;
-            border-radius: 20px 20px 0 0;
-        }
+		/* Real-time Group Chat Widget */
+		.chat-widget {
+			position: fixed;
+			bottom: 30px;
+			left: 30px;
+			width: 320px;
+			background: white;
+			border-radius: 20px;
+			box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+			overflow: hidden;
+			transition: all 0.3s;
+			z-index: 900;
+			border: 1px solid #eee;
+		}
 
-        .chat-msgs {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-            background: #f8fafc;
-        }
+		.chat-widget:not(.active) {
+			height: 50px;
+			width: 200px;
+		}
 
-        .chat-input-row {
-            padding: 15px;
-            display: flex;
-            gap: 10px;
-            border-top: 1px solid var(--comm-border);
-        }
+		.chat-widget.active {
+			height: 450px;
+		}
 
-        .chat-input-row input {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid var(--comm-border);
-            border-radius: 8px;
-            outline: none;
-        }
+		.chat-widget-header {
+			background: #1e293b;
+			color: white;
+			padding: 12px 20px;
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			cursor: pointer;
+		}
 
-        /* Modal */
-        .modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-        }
+		/* Modal Styles */
+		.modal {
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background: rgba(0, 0, 0, 0.5);
+			display: none;
+			align-items: center;
+			justify-content: center;
+			z-index: 2000;
+		}
 
-        .modal.active {
-            display: flex;
-        }
+		.modal.active {
+			display: flex;
+		}
 
-        .modal-content {
-            background: white;
-            padding: 30px;
-            border-radius: 20px;
-            width: 500px;
-            max-width: 90%;
-        }
+		.modal-content {
+			background: white;
+			padding: 30px;
+			border-radius: 24px;
+			width: 500px;
+			max-width: 90%;
+		}
 
-        .modal-content input,
-        .modal-content textarea,
-        .modal-content select {
-            width: 100%;
-            margin-bottom: 15px;
-            padding: 12px;
-            border: 1px solid var(--comm-border);
-            border-radius: 10px;
-        }
-    </style>
+		.form-group {
+			margin-bottom: 20px;
+		}
+
+		.form-group label {
+			display: block;
+			margin-bottom: 8px;
+			font-weight: 600;
+		}
+
+		.form-group input,
+		.form-group textarea,
+		.form-group select {
+			width: 100%;
+			padding: 12px;
+			border: 1px solid #e2e8f0;
+			border-radius: 12px;
+		}
+	</style>
 </head>
 
 <body>
-    <!-- Navbar -->
-    <nav class="navbar" id="navbar">
-        <div class="nav-container">
-            <a href="index.html" class="logo">
-                <i class="fas fa-brain"></i> RENVOX AI
-            </a>
-            <ul class="nav-menu" id="navMenu">
-                <li><a href="index.html">Home</a></li>
-                <li><a href="certificates.html">Courses</a></li>
-                <li><a href="practice.html">Practice</a></li>
-                <li><a href="store.html">Store</a></li>
-                <li><a href="community.html" class="active">Community</a></li>
-                <li><a href="my-certificates.html">Certificates</a></li>
-            </ul>
-            <div class="nav-buttons" id="navButtons"></div>
-            <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
-        </div>
-    </nav>
+	<!-- Navbar -->
+	<nav class="navbar" id="navbar">
+		<div class="nav-container">
+			<a href="index.html" class="logo">
+				<img src="logo renvox.png" height="40px" width="40px"> RENVOX
+			</a>
 
-    <div class="community-container">
-        <!-- Left Sidebar: Channels & Navigation -->
-        <aside class="sidebar-left">
-            <nav>
-                <ul>
-                    <li><a href="#" class="nav-link active" onclick="loadSection('feed')"><i class="fas fa-rss"></i>
-                            Post Feed</a></li>
-                    <li><a href="#" class="nav-link" onclick="loadSection('doubts')"><i
-                                class="fas fa-question-circle"></i> Doubt Solved</a></li>
-                    <li><a href="#" class="nav-link" onclick="loadChannels()"><i class="fas fa-comments"></i>
-                            Channels</a></li>
-                    <li><a href="#" class="nav-link" onclick="loadNotifications()"><i class="fas fa-bell"></i>
-                            Notifications <span id="notifBadge"
-                                style="background:red; color:white; border-radius:10px; padding:2px 6px; font-size:10px; display:none;">0</span></a>
-                    </li>
-                </ul>
-            </nav>
-        </aside>
+			<div class="nav-search">
+				<input type="text" id="navbarSearch" placeholder="Search discussions, doubts, or people...">
+				<button type="button" onclick="handleNavbarSearch()">
+					<i class="fas fa-search"></i>
+				</button>
+			</div>
 
-        <!-- Main Feed Area -->
-        <main class="main-content">
-            <div class="top-action-bar">
-                <button class="btn-comm btn-post" onclick="openModal('postModal')">
-                    <i class="fas fa-plus"></i> Create Post
-                </button>
-                <button class="btn-comm btn-doubt" onclick="openModal('doubtModal')">
-                    <i class="fas fa-headset"></i> Ask Doubt
-                </button>
-                <button class="btn-comm btn-leader" onclick="loadSection('leaderboard')">
-                    <i class="fas fa-trophy"></i> Leaderboard
-                </button>
-            </div>
+			<ul class="nav-menu" id="navMenu">
+				<li><a href="index.html">Home</a></li>
+				<li><a href="certificates.html">Courses</a></li>
+				<li><a href="practice.html">Practice</a></li>
+				<li><a href="store.html">Store</a></li>
+				<li><a href="community.html" class="active">Community</a></li>
+			</ul>
+			<div class="nav-buttons" id="navButtons"></div>
+			<button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+		</div>
+	</nav>
 
-            <div id="communityFeed">
-                <!-- Posts or Doubts rendered here -->
-                <div style="text-align:center; padding: 50px;">
-                    <i class="fas fa-spinner fa-spin" style="font-size: 2rem; color: #6366f1;"></i>
-                    <p>Loading Community Hub...</p>
-                </div>
-            </div>
-        </main>
+	<!-- Main Content Area -->
+	<div class="community-container">
+		<!-- Sidebar Left: Navigation -->
+		<aside class="sidebar-left">
+			<nav>
+				<ul>
+					<li><a class="nav-link active" onclick="loadSection('feed')"><i class="fas fa-stream"></i> Home
+							Feed</a></li>
+					<li><a class="nav-link" onclick="loadSection('doubts')"><i class="fas fa-question-circle"></i> Doubt
+							Solve</a></li>
+					<li><a class="nav-link" onclick="loadSection('leaderboard')"><i class="fas fa-medal"></i>
+							Leaderboard</a></li>
+					<li><a class="nav-link" onclick="loadChannels()"><i class="fas fa-comments"></i> Chat Groups</a>
+					</li>
+					<li><a class="nav-link" onclick="openNotifications()"><i class="fas fa-bell"></i> Notifications
+							<span id="notifBadge"
+								style="display:none; background:#ef4444; color:white; padding:2px 6px; border-radius:10px; font-size:10px; margin-left:5px;">0</span></a>
+					</li>
+				</ul>
+			</nav>
+		</aside>
 
-        <!-- Right Sidebar: Trends & Leaderboard -->
-        <aside class="sidebar-right">
-            <div class="sidebar-card">
-                <h3><i class="fas fa-fire" style="color:#ef4444"></i> Trending Discussions</h3>
-                <div id="trendingList">
-                    <!-- Filled by JS -->
-                </div>
-            </div>
+		<!-- Main Feed -->
+		<main>
+			<div class="top-action-bar">
+				<div class="user-info">
+					<div class="user-avatar" id="currentUserPic"></div>
+					<span style="font-weight: 600;">Share an update...</span>
+				</div>
+				<div style="display: flex; gap: 15px;">
+					<button class="btn-comm btn-post" onclick="openModal('postModal')"><i class="fas fa-plus"></i>
+						Post</button>
+					<button class="btn-comm btn-doubt" onclick="openModal('doubtModal')"><i class="fas fa-bolt"></i> Ask
+						Doubt</button>
+				</div>
+			</div>
 
-            <div class="sidebar-card">
-                <h3><i class="fas fa-star" style="color:#fbbf24"></i> Top Contributors</h3>
-                <div id="miniLeaderboard">
-                    <!-- Filled by JS -->
-                </div>
-            </div>
-        </aside>
-    </div>
+			<div id="communityFeed">
+				<!-- Posts will be loaded here -->
+				<div style="text-align: center; padding: 50px;"><i class="fas fa-spinner fa-spin"></i> Loading Feed...
+				</div>
+			</div>
+		</main>
 
-    <!-- AI Floating Widget -->
-    <div class="ai-chat-bubble" onclick="toggleAIChat()"
-        style="position:fixed; bottom:30px; right:30px; width:60px; height:60px; background:var(--comm-primary); border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-size:1.5rem; cursor:pointer; box-shadow:0 8px 16px rgba(0,0,0,0.2); z-index:1001;">
-        <i class="fas fa-robot"></i>
-    </div>
+		<!-- Sidebar Right: Widgets -->
+		<aside class="sidebar-right">
+			<div class="sidebar-card">
+				<h3><i class="fas fa-fire" style="color:#ef4444"></i> Trending Discussions</h3>
+				<div id="trendingList">
+					<!-- Filled by JS -->
+				</div>
+			</div>
 
-    <div id="aiChatWindow"
-        style="position:fixed; bottom:100px; right:30px; width:360px; height:500px; background:white; border-radius:20px; box-shadow:0 10px 40px rgba(0,0,0,0.15); display:none; flex-direction:column; z-index:2001; overflow:hidden; border:1px solid #e2e8f0;">
-        <div
-            style="padding:20px; background:var(--comm-primary); color:white; font-weight:700; display:flex; justify-content:space-between;">
-            <span>AI Community Assistant</span>
-            <i class="fas fa-times" onclick="toggleAIChat()" style="cursor:pointer"></i>
-        </div>
-        <div id="aiMsgs" style="flex:1; padding:15px; overflow-y:auto; background:#f8fafc;"></div>
-        <div style="padding:15px; border-top:1px solid #e2e8f0; display:flex; gap:10px;">
-            <input type="text" id="aiInput" placeholder="Ask a doubt..." style="flex:1; border:none; outline:none;"
-                onkeypress="if(event.key==='Enter') sendAICommMessage()">
-            <i class="fas fa-paper-plane" style="color:var(--comm-primary); cursor:pointer"
-                onclick="sendAICommMessage()"></i>
-        </div>
-    </div>
+			<div class="sidebar-card">
+				<h3><i class="fas fa-award" style="color:#fbbf24"></i> Top Contributors</h3>
+				<div id="miniLeaderboard">
+					<!-- Filled by JS -->
+				</div>
+				<button class="btn-comm" style="width:100%; margin-top:20px; font-size:14px;"
+					onclick="loadSection('leaderboard')">View All</button>
+			</div>
+		</aside>
+	</div>
 
-    <!-- Modals -->
-    <div id="postModal" class="modal">
-        <div class="modal-content">
-            <h3>Create New Post</h3>
-            <input type="text" id="postTitle" placeholder="Post Title">
-            <select id="postCategory">
-                <option value="Programming">Programming</option>
-                <option value="DSA">DSA</option>
-                <option value="Web Dev">Web Dev</option>
-                <option value="AI">AI</option>
-                <option value="Career">Career</option>
-            </select>
-            <textarea id="postContent" placeholder="What's on your mind?" rows="5"></textarea>
-            <div style="display:flex; gap:10px;">
-                <button class="btn-comm btn-post" onclick="submitPost()">Post Now</button>
-                <button class="btn-comm" style="background:#e2e8f0; color:#475569"
-                    onclick="closeModal('postModal')">Cancel</button>
-            </div>
-        </div>
-    </div>
+	<!-- Modals -->
+	<div class="modal" id="postModal">
+		<div class="modal-content">
+			<header style="display:flex; justify-content:space-between; margin-bottom:20px;">
+				<h2>Create Post</h2>
+				<button onclick="closeModal('postModal')" style="background:none; border:none; cursor:pointer;"><i
+						class="fas fa-times"></i></button>
+			</header>
+			<div class="form-group">
+				<label>Title</label>
+				<input type="text" id="postTitle" placeholder="Give it a catchy title">
+			</div>
+			<div class="form-group">
+				<label>Category</label>
+				<select id="postCategory">
+					<option value="Programming">Programming</option>
+					<option value="DSA">DSA</option>
+					<option value="Web Dev">Web Development</option>
+					<option value="AI">Artificial Intelligence</option>
+					<option value="Career">Career Advice</option>
+				</select>
+			</div>
+			<div class="form-group">
+				<label>Content</label>
+				<textarea id="postContent" rows="5" placeholder="What's on your mind?"></textarea>
+			</div>
+			<button class="btn-comm btn-post" style="width:100%; justify-content:center;" onclick="submitPost()">Publish
+				Post</button>
+		</div>
+	</div>
 
-    <div id="doubtModal" class="modal">
-        <div class="modal-content">
-            <h3>Ask a Doubt</h3>
-            <textarea id="doubtQuestion" placeholder="Explain your doubt clearly..." rows="4"></textarea>
-            <div style="display:flex; gap:10px;">
-                <button class="btn-comm btn-doubt" onclick="submitDoubt()">Ask Doubt</button>
-                <button class="btn-comm" style="background:#e2e8f0; color:#475569"
-                    onclick="closeModal('doubtModal')">Cancel</button>
-            </div>
-        </div>
-    </div>
+	<div class="modal" id="doubtModal">
+		<div class="modal-content">
+			<header style="display:flex; justify-content:space-between; margin-bottom:20px;">
+				<h2>Ask a Doubt</h2>
+				<button onclick="closeModal('doubtModal')" style="background:none; border:none; cursor:pointer;"><i
+						class="fas fa-times"></i></button>
+			</header>
+			<div class="form-group">
+				<label>The Doubt</label>
+				<textarea id="doubtQuestion" rows="4"
+					placeholder="Example: How does recursion work with factorials?"></textarea>
+			</div>
+			<button class="btn-comm btn-doubt" style="width:100%; justify-content:center;" onclick="submitDoubt()">Ask
+				Community</button>
+		</div>
+	</div>
 
-    <!-- Community Chat Widget -->
-    <div id="chatWidget" class="chat-widget">
-        <div class="chat-head">
-            <span id="currentChannel"># general-chat</span>
-            <i class="fas fa-times" onclick="document.getElementById('chatWidget').classList.remove('active')"
-                style="cursor:pointer"></i>
-        </div>
-        <div id="chatMsgs" class="chat-msgs"></div>
-        <div class="chat-input-row">
-            <input type="text" id="chatInput" placeholder="Type a message..."
-                onkeypress="if(event.key==='Enter') sendChatMessage()">
-            <button onclick="sendChatMessage()"
-                style="border:none; background:var(--comm-primary); color:white; border-radius:8px; padding:0 15px; cursor:pointer;"><i
-                    class="fas fa-paper-plane"></i></button>
-        </div>
-    </div>
+	<!-- AI Doubts Chat Widget -->
+	<div class="ai-doubt-bubble" onclick="toggleAIChat()">
+		<i class="fas fa-robot"></i>
+	</div>
+	<div class="ai-chat-window" id="aiChatWindow">
+		<div class="chat-header">
+			<span>AI Doubt Assistant</span>
+			<button onclick="toggleAIChat()" style="background:none; border:none; color:white; cursor:pointer;"><i
+					class="fas fa-times"></i></button>
+		</div>
+		<div id="aiMsgs"
+			style="flex:1; padding:20px; overflow-y:auto; background:#f1f5f9; display:flex; flex-direction:column;">
+			<div class="msg bot"
+				style="background:white; padding:10px; border-radius:12px; margin-bottom:10px; font-size:14px; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+				Hello! I can explain any coding doubt instantly. Try asking "How recursion works?"</div>
+		</div>
+		<div style="padding:15px; background:white; display:flex; gap:10px; border-top:1px solid #e2e8f0;">
+			<input type="text" id="aiInput" placeholder="Ask AI..."
+				style="flex:1; border:1px solid #e2e8f0; border-radius:12px; padding:10px;"
+				onkeypress="if(event.key==='Enter') sendAICommMessage()">
+			<button onclick="sendAICommMessage()"
+				style="background:var(--comm-primary); color:white; border:none; width:40px; border-radius:10px; cursor:pointer;"><i
+					class="fas fa-paper-plane"></i></button>
+		</div>
+	</div>
 
-    <script src="/socket.io/socket.io.js"></script>
-    <script src="navigation.js"></script>
-    <script src="community.js"></script>
+	<!-- Real-time Chat Widget -->
+	<div class="chat-widget" id="chatWidget">
+		<div class="chat-widget-header" onclick="document.getElementById('chatWidget').classList.toggle('active')">
+			<span><i class="fas fa-comments"></i> Group Chat</span>
+			<span id="currentChannel"># general</span>
+		</div>
+		<div class="chat-messages" id="chatMsgs"
+			style="height:340px; padding:15px; overflow-y:auto; display:flex; flex-direction:column; background:#f8fafc;">
+			<!-- Real-time messages here -->
+		</div>
+		<div style="padding:10px; background:white; display:flex; border-top:1px solid #eee;">
+			<input type="text" id="chatInput" placeholder="Message to #general..."
+				style="flex:1; border:none; padding:8px;" onkeypress="if(event.key==='Enter') sendChatMessage()">
+			<button onclick="sendChatMessage()"
+				style="border:none; background:none; color:var(--comm-primary); cursor:pointer;"><i
+					class="fas fa-paper-plane"></i></button>
+		</div>
+	</div>
+
+	<!-- Scripts -->
+	<script src="navigation.js"></script>
+	<script src="community.js"></script>
 </body>
 
 </html>

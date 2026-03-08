@@ -103,6 +103,42 @@ router.post('/post', requireAuth, async (req, res) => {
     }
 });
 
+// Get comments for a post
+router.get('/posts/:postId/comments', async (req, res) => {
+    try {
+        const comments = await Comment.find({ postId: req.params.postId }).sort({ createdAt: -1 });
+        res.json({ ok: true, comments });
+    } catch (err) {
+        res.status(500).json({ ok: false, message: 'Failed to fetch comments' });
+    }
+});
+
+// Add a comment to a post
+router.post('/posts/:postId/comments', requireAuth, async (req, res) => {
+    const { text } = req.body;
+    try {
+        const user = await User.findById(req.userId);
+        const comment = new Comment({
+            postId: req.params.postId,
+            userId: req.userId,
+            username: user.name,
+            userPicture: user.picture,
+            text
+        });
+        await comment.save();
+
+        // Increment comment count on post
+        await Post.findByIdAndUpdate(req.params.postId, { $inc: { commentsCount: 1 } });
+
+        // Update points: 5 points for commenting
+        await updatePoints(req.userId, user.name, 5);
+
+        res.json({ ok: true, comment });
+    } catch (err) {
+        res.status(500).json({ ok: false, message: 'Failed to add comment' });
+    }
+});
+
 // Like post
 router.post('/posts/:postId/like', requireAuth, async (req, res) => {
     try {

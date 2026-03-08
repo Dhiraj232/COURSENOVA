@@ -4,11 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Practice Dashboard - RENVOX</title>
+    <title>Practice Hub | RENVOX AI</title>
 
     <!-- Google Fonts -->
     <link
-        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
 
     <!-- Font Awesome -->
@@ -16,752 +16,590 @@
 
     <!-- External CSS -->
     <link rel="stylesheet" href="style.css">
+
     <style>
-        /* ==================== CONTAINER ==================== */
-        .container {
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.3);
+            --primary-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            --secondary-gradient: linear-gradient(135deg, #10b981 0%, #3b82f6 100%);
+            --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            background: #f8fafc;
+            font-family: 'Outfit', sans-serif;
+            color: #1e293b;
+        }
+
+        .practice-container {
             max-width: 1200px;
-            margin: 0 auto;
-            padding: 2rem;
+            margin: 100px auto 40px;
+            padding: 0 20px;
         }
 
-        /* ==================== PAGE TITLE ==================== */
-        .page-title {
-            background: linear-gradient(135deg, var(--primary-color) 0%, #3730a3 100%);
-            color: var(--white);
-            padding: 3rem 2rem;
-            border-radius: 8px;
-            margin-bottom: 3rem;
+        /* Hero Section */
+        .practice-hero {
+            background: var(--primary-gradient);
+            padding: 60px 40px;
+            border-radius: 30px;
+            color: white;
             text-align: center;
+            margin-bottom: 40px;
+            box-shadow: 0 20px 40px -15px rgba(99, 102, 241, 0.4);
+            position: relative;
+            overflow: hidden;
         }
 
-        .page-title h1 {
-            font-size: 2.5rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .page-title p {
-            font-size: 1.1rem;
-            opacity: 0.9;
-        }
-
-        /* ==================== WELCOME SECTION ==================== */
-        .welcome-section {
-            background: var(--white);
-            padding: 2rem;
-            border-radius: 8px;
-            margin-bottom: 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .welcome-text h2 {
-            color: var(--primary-color);
-            margin-bottom: 0.5rem;
-        }
-
-        .welcome-text p {
-            color: var(--text-light);
-            font-size: 1.05rem;
-        }
-
-        /* ==================== PRACTICE CARDS ==================== */
-        .practice-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 2rem;
-            margin-bottom: 3rem;
-        }
-
-        .practice-card {
-            background: var(--white);
-            border-radius: 8px;
-            padding: 2rem;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-            transition: all 0.3s ease;
-            border-top: 4px solid var(--primary-color);
-        }
-
-        .practice-card:nth-child(2) {
-            border-top-color: #8b5cf6;
-        }
-
-        .practice-card:nth-child(3) {
-            border-top-color: #ec4899;
-        }
-
-        .practice-card:nth-child(4) {
-            border-top-color: #f59e0b;
-        }
-
-        .practice-card:hover {
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-            transform: translateY(-4px);
-        }
-
-        .practice-icon {
+        .practice-hero h1 {
             font-size: 3rem;
-            margin-bottom: 1rem;
+            font-weight: 800;
+            margin-bottom: 10px;
         }
 
-        .practice-card h3 {
-            font-size: 1.3rem;
-            color: var(--primary-color);
-            margin-bottom: 0.5rem;
-        }
-
-        .practice-card p {
-            color: var(--text-light);
-            margin-bottom: 1.5rem;
-            line-height: 1.6;
-        }
-
-        .practice-stats {
-            display: flex;
-            gap: 2rem;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1.5rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .stat {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .stat-number {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--primary-color);
-        }
-
-        .stat-label {
-            font-size: 0.85rem;
-            color: var(--text-light);
-        }
-
-        .btn-practice {
-            width: 100%;
-            padding: 0.9rem;
-            background-color: var(--primary-color);
-            color: var(--white);
-            border: none;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .btn-practice:hover {
-            background-color: #1e2d6f;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(30, 58, 138, 0.3);
-        }
-
-        /* ==================== SECTION TITLE ==================== */
-        .section-title {
-            font-size: 1.8rem;
-            color: var(--primary-color);
-            margin: 3rem 0 2rem 0;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .section-title:before {
-            content: '';
-            width: 4px;
-            height: 2rem;
-            background-color: var(--accent-color);
-            border-radius: 2px;
-        }
-
-        /* ==================== ENHANCED PRACTICE CARDS ==================== */
-        .advanced-practice-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-            gap: 2rem;
-            margin-bottom: 3rem;
-        }
-
-        .advanced-practice-card {
-            background: var(--white);
-            border: 2px solid var(--border-color);
-            border-radius: 8px;
-            overflow: hidden;
-            transition: all 0.3s ease;
-        }
-
-        .advanced-practice-card:hover {
-            border-color: var(--primary-color);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
-            transform: translateY(-4px);
-        }
-
-        .card-header {
-            background: linear-gradient(135deg, var(--primary-color) 0%, #3730a3 100%);
-            padding: 1.5rem;
-            color: var(--white);
-        }
-
-        .card-header h3 {
+        .practice-hero p {
             font-size: 1.2rem;
-            margin-bottom: 0.3rem;
-            color: var(--white);
-        }
-
-        .card-header p {
-            font-size: 0.9rem;
             opacity: 0.9;
         }
 
-        .card-body {
-            padding: 1.5rem;
-        }
-
-        .card-options {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .option-group {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-
-        .option-group label {
-            font-weight: 600;
-            color: var(--text-dark);
-            font-size: 0.9rem;
-        }
-
-        .option-group select,
-        .option-group input {
-            padding: 0.65rem;
-            border: 1px solid var(--border-color);
-            border-radius: 6px;
-            font-family: 'Inter', sans-serif;
-            transition: all 0.3s ease;
-        }
-
-        .option-group select:focus,
-        .option-group input:focus {
-            outline: none;
-            border-color: var(--primary-color);
-            box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
-        }
-
-        .difficulty-buttons {
-            display: flex;
-            gap: 0.5rem;
-        }
-
-        .difficulty-btn {
-            flex: 1;
-            padding: 0.65rem;
-            border: 2px solid var(--border-color);
-            background: var(--white);
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            color: var(--text-dark);
-            font-size: 0.9rem;
-        }
-
-        .difficulty-btn:hover {
-            border-color: var(--primary-color);
-        }
-
-        .difficulty-btn.active {
-            background-color: var(--primary-color);
-            color: var(--white);
-            border-color: var(--primary-color);
-        }
-
-        .difficulty-btn.easy.active {
-            background-color: #10b981;
-            border-color: #10b981;
-        }
-
-        .difficulty-btn.hard.active {
-            background-color: #ef4444;
-            border-color: #ef4444;
-        }
-
-        .card-info {
-            display: flex;
-            gap: 1.5rem;
-            padding: 1rem;
-            background: var(--secondary-color);
-            border-radius: 6px;
-            margin-bottom: 1rem;
-            font-size: 0.9rem;
-        }
-
-        .info-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: var(--text-dark);
-        }
-
-        .info-item strong {
-            color: var(--primary-color);
-        }
-
-        /* ==================== SUBJECT-WISE PRACTICE LIST ==================== */
-        .subject-practice-grid {
+        /* Sidebar & Main Content Layout */
+        .main-layout {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 3rem;
+            grid-template-columns: 280px 1fr;
+            gap: 30px;
         }
 
-        .subject-practice-card {
-            background: var(--white);
-            padding: 1.5rem;
-            border-radius: 8px;
-            border: 1px solid var(--border-color);
-            transition: all 0.3s ease;
-        }
-
-        .subject-practice-card:hover {
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
-            transform: translateY(-3px);
-        }
-
-        .subject-header {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin-bottom: 1rem;
-        }
-
-        .subject-icon {
-            font-size: 2rem;
-        }
-
-        .subject-name {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: var(--primary-color);
-        }
-
-        .progress-section {
-            margin-bottom: 1rem;
-        }
-
-        .progress-label {
-            font-size: 0.85rem;
-            color: var(--text-light);
-            margin-bottom: 0.5rem;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 8px;
-            background: var(--border-color);
-            border-radius: 4px;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--accent-color), #059669);
-            border-radius: 4px;
-            transition: width 0.3s ease;
-        }
-
-        .accuracy-badge {
-            display: inline-block;
-            padding: 0.4rem 1rem;
-            background: #ecfdf5;
-            color: #047857;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-        }
-
-        .btn-practice-now {
-            width: 100%;
-            padding: 0.8rem;
-            background-color: var(--primary-color);
-            color: var(--white);
-            border: none;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 0.95rem;
-        }
-
-        .btn-practice-now:hover {
-            background-color: #1e2d6f;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(30, 58, 138, 0.3);
-        }
-
-        /* ==================== RECENT ACTIVITY ==================== */
-        .activity-list {
-            background: var(--white);
-            border-radius: 8px;
-            overflow: hidden;
-            border: 1px solid var(--border-color);
-            margin-bottom: 3rem;
-        }
-
-        .activity-item {
-            padding: 1.5rem;
-            border-bottom: 1px solid var(--border-color);
-            display: flex;
-            align-items: center;
-            gap: 1.5rem;
-            transition: all 0.3s ease;
-        }
-
-        .activity-item:last-child {
-            border-bottom: none;
-        }
-
-        .activity-item:hover {
-            background-color: var(--secondary-color);
-        }
-
-        .activity-icon {
-            font-size: 2rem;
-            min-width: 50px;
-            text-align: center;
-        }
-
-        .activity-details {
-            flex: 1;
-        }
-
-        .activity-title {
-            font-weight: 600;
-            color: var(--text-dark);
-            margin-bottom: 0.3rem;
-            font-size: 0.95rem;
-        }
-
-        .activity-meta {
-            font-size: 0.85rem;
-            color: var(--text-light);
-        }
-
-        .activity-stat {
-            font-weight: 600;
-            color: var(--primary-color);
-            text-align: right;
-            min-width: 100px;
-        }
-
-        .activity-stat-label {
-            font-size: 0.8rem;
-            color: var(--text-light);
-        }
-
-        /* ==================== WEAK AREAS ==================== */
-        .weak-areas-grid {
-            display: grid;
-            gap: 1rem;
-            margin-bottom: 3rem;
-        }
-
-        .weak-area-card {
-            background: var(--white);
-            padding: 1.5rem;
-            border-radius: 8px;
-            border-left: 4px solid #ef4444;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: all 0.3s ease;
-        }
-
-        .weak-area-card:hover {
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
-            transform: translateX(4px);
-        }
-
-        .weak-area-info {
-            flex: 1;
-        }
-
-        .weak-area-topic {
-            font-weight: 600;
-            color: var(--text-dark);
-            margin-bottom: 0.5rem;
-        }
-
-        .weak-area-accuracy {
-            font-size: 0.9rem;
-            color: var(--text-light);
-        }
-
-        .btn-practice-weak {
-            padding: 0.7rem 1.5rem;
-            background-color: #ef4444;
-            color: var(--white);
-            border: none;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            white-space: nowrap;
-        }
-
-        .btn-practice-weak:hover {
-            background-color: #dc2626;
-            transform: translateY(-2px);
-        }
-
-        /* ==================== FOOTER ==================== */
-        .footer {
-            background-color: var(--text-dark);
-            color: var(--white);
-            padding: 3rem 2rem 1rem;
-            margin-top: 3rem;
-        }
-
-        .footer-bottom {
-            border-top: 1px solid #4b5563;
-            padding-top: 2rem;
-            text-align: center;
-            color: #9ca3af;
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                padding: 1rem;
-            }
-
-            .page-title h1 {
-                font-size: 1.8rem;
-            }
-
-            .welcome-section {
-                flex-direction: column;
-                text-align: center;
-                gap: 1rem;
-            }
-
-            .practice-grid {
+        @media (max-width: 992px) {
+            .main-layout {
                 grid-template-columns: 1fr;
             }
+        }
 
-            .nav-menu {
-                display: none;
+        /* Tabs/Sidebar */
+        .practice-tabs {
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: var(--card-shadow);
+            height: fit-content;
+            position: sticky;
+            top: 100px;
+        }
+
+        .tab-btn {
+            width: 100%;
+            padding: 15px 20px;
+            margin-bottom: 10px;
+            border: none;
+            background: transparent;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #64748b;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .tab-btn:hover {
+            background: #f1f5f9;
+            color: #6366f1;
+            transform: translateX(5px);
+        }
+
+        .tab-btn.active {
+            background: var(--primary-gradient);
+            color: white;
+            box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3);
+        }
+
+        .tab-btn i {
+            font-size: 1.25rem;
+        }
+
+        /* Content Sections */
+        .practice-section {
+            display: none;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .practice-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
             }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .section-card {
+            background: white;
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: var(--card-shadow);
+            margin-bottom: 30px;
+            border: 1px solid #f1f5f9;
+        }
+
+        .section-header {
+            margin-bottom: 25px;
+            border-bottom: 1px solid #f1f5f9;
+            padding-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .section-header h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .badge {
+            background: #f5f3ff;
+            color: #6366f1;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        /* MCQ Card Styles */
+        .question-card {
+            background: #f8fafc;
+            padding: 25px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+        }
+
+        .question-text {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            line-height: 1.4;
+        }
+
+        .options-grid {
+            display: grid;
+            gap: 12px;
+        }
+
+        .option-btn {
+            padding: 15px 20px;
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            text-align: left;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .option-btn:hover {
+            border-color: #6366f1;
+            background: #f5f3ff;
+        }
+
+        .option-btn.correct {
+            background: #dcfce7;
+            border-color: #10b981;
+            color: #166534;
+        }
+
+        .option-btn.wrong {
+            background: #fee2e2;
+            border-color: #ef4444;
+            color: #991b1b;
+        }
+
+        /* Code Editor Simulation */
+        .code-container {
+            position: relative;
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .code-textarea {
+            width: 100%;
+            height: 300px;
+            background: transparent;
+            border: none;
+            color: #e2e8f0;
+            font-family: 'Fira Code', 'Courier New', monospace;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            resize: vertical;
+            outline: none;
+        }
+
+        .btn-run {
+            padding: 12px 24px;
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-run:hover {
+            transform: scale(1.02);
+            box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.3);
+        }
+
+        /* Leaderboard Table */
+        .leaderboard-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .leaderboard-table th {
+            text-align: left;
+            padding: 12px;
+            color: #64748b;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .leaderboard-table td {
+            padding: 15px 12px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .rank {
+            width: 40px;
+            font-weight: 800;
+        }
+
+        .rank-1 {
+            color: #f59e0b;
+        }
+
+        .rank-2 {
+            color: #94a3b8;
+        }
+
+        .rank-3 {
+            color: #b45309;
+        }
+
+        /* Floating AI Chatbox */
+        .ai-chat-bubble {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background: var(--primary-gradient);
+            border-radius: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.4);
+            z-index: 1000;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .ai-chat-bubble:hover {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        .chat-window {
+            position: fixed;
+            bottom: 100px;
+            right: 30px;
+            width: 380px;
+            height: 500px;
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            display: none;
+            flex-direction: column;
+            z-index: 1000;
+            overflow: hidden;
+            border: 1px solid #f1f5f9;
+        }
+
+        .chat-window.active {
+            display: flex;
+        }
+
+        .chat-header {
+            background: var(--primary-gradient);
+            padding: 20px;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background: #f8fafc;
+        }
+
+        .msg {
+            margin-bottom: 15px;
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 16px;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .msg.bot {
+            background: white;
+            color: #1e293b;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .msg.user {
+            background: #6366f1;
+            color: white;
+            align-self: flex-end;
+            margin-left: auto;
+            border-bottom-right-radius: 4px;
+        }
+
+        .chat-input-area {
+            padding: 15px;
+            background: white;
+            display: flex;
+            gap: 10px;
+            border-top: 1px solid #f1f5f9;
+        }
+
+        .chat-input {
+            flex: 1;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 10px 15px;
+            outline: none;
+        }
+
+        .btn-send {
+            background: var(--primary-gradient);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 10px;
+            background: #e2e8f0;
+            border-radius: 5px;
+            margin-bottom: 30px;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: var(--primary-gradient);
+            width: 0%;
+            border-radius: 5px;
+            transition: width 0.3s;
+        }
+
+        .loader {
+            text-align: center;
+            padding: 40px;
+            color: #64748b;
         }
     </style>
 </head>
 
 <body>
-    <!-- ==================== NAVBAR ==================== -->
+    <!-- Navbar -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
             <a href="index.html" class="logo">
-                <i class="fas fa-book"></i> RENVOX
+                <img src="logo renvox.png" height="40px" width="40px"> RENVOX
             </a>
+
             <div class="nav-search">
                 <input type="text" id="navbarSearch" placeholder="Search for courses, subjects, or concepts...">
                 <button type="button" onclick="handleNavbarSearch()">
                     <i class="fas fa-search"></i>
                 </button>
             </div>
+
             <ul class="nav-menu" id="navMenu">
                 <li><a href="index.html">Home</a></li>
-                <li><a href="certificates.html">Certificates</a></li>
+                <li><a href="certificates.html">Courses</a></li>
                 <li><a href="practice.html" class="active">Practice</a></li>
                 <li><a href="store.html">Store</a></li>
-                <li><a href="Family.html">Family</a></li>
+                <li><a href="community.html">Community</a></li>
             </ul>
-            <div class="nav-buttons" id="navButtons">
-                <!-- Filled by JavaScript -->
-            </div>
+            <div class="nav-buttons" id="navButtons"></div>
+            <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
         </div>
     </nav>
 
-    <!-- ==================== PAGE TITLE ==================== -->
-    <div style="padding: 0 2rem;">
-        <div class="page-title">
-            <h1>🧠 Practice Dashboard</h1>
-            <p>What would you like to practice today?</p>
-        </div>
-    </div>
+    <!-- Main Content -->
+    <main class="practice-container">
+        <section class="practice-hero">
+            <h1>Level Up Your Skills</h1>
+            <p>Interactive MCQs, Real-world Coding Challenges, and Daily Competitions.</p>
+        </section>
 
-    <!-- ==================== MAIN CONTENT ==================== -->
-    <div class="container" id="practiceContent">
-        <!-- Welcome Section -->
-        <div class="welcome-section">
-            <div class="welcome-text">
-                <h2>Ready to test your knowledge?</h2>
-                <p id="welcomeMsg">Choose your practice method to improve your skills and track your progress.</p>
-            </div>
-        </div>
+        <div class="main-layout">
+            <aside class="practice-tabs">
+                <button class="tab-btn active" onclick="showSection('mcq-section', this)"><i class="fas fa-list-ul"></i>
+                    MCQ Practice</button>
+                <button class="tab-btn" onclick="showSection('coding-section', this)"><i class="fas fa-code"></i> Coding
+                    Lab</button>
+                <button class="tab-btn" onclick="showSection('quiz-section', this)"><i class="fas fa-bolt"></i> Daily
+                    Quiz</button>
+            </aside>
 
-        <!-- 🧩 TOPIC-WISE PRACTICE ==================== -->
-        <h2 class="section-title">🧩 Topic-wise Practice</h2>
-        <div class="advanced-practice-grid">
-            <div class="advanced-practice-card">
-                <div class="card-header">
-                    <h3>Topic MCQs</h3>
-                    <p>Practice multiple choice questions by topic & difficulty</p>
-                </div>
-                <div class="card-body">
-                    <div class="card-options">
-                        <div class="option-group">
-                            <label for="topicSelect">Choose Topic</label>
-                            <select id="topicSelect">
-                                <option>Select a topic...</option>
-                                <option>Variables & Data Types</option>
-                                <option>Control Flow</option>
-                                <option>Functions</option>
-                                <option>Arrays & Strings</option>
-                                <option>Pointers</option>
-                            </select>
-                        </div>
-                        <div class="option-group">
-                            <label>Difficulty Level</label>
-                            <div class="difficulty-buttons">
-                                <button class="difficulty-btn easy active"
-                                    onclick="selectDifficulty(this, 'easy')">Easy</button>
-                                <button class="difficulty-btn"
-                                    onclick="selectDifficulty(this, 'medium')">Medium</button>
-                                <button class="difficulty-btn hard"
-                                    onclick="selectDifficulty(this, 'hard')">Hard</button>
+            <div class="practice-content">
+                <!-- MCQ Section -->
+                <section id="mcq-section" class="practice-section active">
+                    <div class="section-card">
+                        <div class="section-header">
+                            <h2>Topic-wise MCQ</h2>
+                            <div>
+                                <select id="mcqCategory" onchange="loadQuestions(this.value)"
+                                    style="padding: 5px 10px; border-radius: 8px;">
+                                    <option value="All">All Categories</option>
+                                    <option value="DSA">Data Structures</option>
+                                    <option value="Web Dev">Web Development</option>
+                                    <option value="AI">Artificial Intelligence</option>
+                                    <option value="Programming">Programming</option>
+                                </select>
                             </div>
                         </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" id="mcqProgress"></div>
+                        </div>
+                        <div id="mcqContainer">
+                            <div class="loader"><i class="fas fa-spinner fa-spin"></i> Preparing your practice
+                                session...</div>
+                        </div>
                     </div>
-                    <div class="card-info">
-                        <div class="info-item"><strong id="topicQCount">15</strong> Questions</div>
-                        <div class="info-item"><strong>10-15</strong> Minutes</div>
-                    </div>
-                    <button class="btn-practice" onclick="startTopicPractice()">Start Practice</button>
-                </div>
-            </div>
+                </section>
 
-            <!-- 📘 CHAPTER TESTS ==================== -->
-            <div class="advanced-practice-card">
-                <div class="card-header">
-                    <h3>Chapter Tests</h3>
-                    <p>Test your understanding of full chapter content</p>
-                </div>
-                <div class="card-body">
-                    <div class="card-options">
-                        <div class="option-group">
-                            <label for="chapterSelect">Select Chapter</label>
-                            <select id="chapterSelect">
-                                <option>Select a chapter...</option>
-                                <option>Chapter 1: Introduction</option>
-                                <option>Chapter 2: Basics</option>
-                                <option>Chapter 3: Advanced Concepts</option>
-                                <option>Chapter 4: Applications</option>
-                            </select>
+                <!-- Coding Section -->
+                <section id="coding-section" class="practice-section">
+                    <div class="section-card">
+                        <div class="section-header">
+                            <h2>Coding Sandbox</h2>
+                            <span class="badge">Beta</span>
+                        </div>
+                        <div class="problem-statement" style="margin-bottom: 20px;">
+                            <h3 id="problemTitle">Reverse a String</h3>
+                            <p id="problemDesc" style="color:#64748b; margin: 10px 0;">Write a function that returns the
+                                reverse of a given string. Example: 'renvox' -> 'xovner'</p>
+                        </div>
+                        <div class="code-container">
+                            <textarea id="codeEditor" class="code-textarea" spellcheck="false">function solve(str) {
+  // Write your code here
+  return str.split('').reverse().join('');
+}</textarea>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <button class="btn-run" onclick="runCode()"><i class="fas fa-play"></i> Submit
+                                Solution</button>
+                            <div id="runResult"></div>
                         </div>
                     </div>
-                    <div class="card-info">
-                        <div class="info-item"><i class="fas fa-question-circle"></i> <strong>25-30</strong> Questions
-                        </div>
-                        <div class="info-item"><i class="fas fa-clock"></i> <strong>30</strong> Minutes</div>
-                    </div>
-                    <button class="btn-practice" onclick="startChapterTest()">Start Test</button>
-                </div>
-            </div>
+                </section>
 
-            <!-- 📝 MOCK TESTS ==================== -->
-            <div class="advanced-practice-card">
-                <div class="card-header">
-                    <h3>Mock Tests</h3>
-                    <p>Full subject exam pattern tests</p>
-                </div>
-                <div class="card-body">
-                    <div class="card-options">
-                        <div class="option-group">
-                            <label for="mockSelect">Select Mock Test</label>
-                            <select id="mockSelect">
-                                <option>Select a mock test...</option>
-                                <option>Mock Test 1 - JEE Pattern</option>
-                                <option>Mock Test 2 - NEET Pattern</option>
-                                <option>Mock Test 3 - GATE Pattern</option>
-                            </select>
+                <!-- Daily Quiz Section -->
+                <section id="quiz-section" class="practice-section">
+                    <div class="section-card" id="quizGame">
+                        <div class="section-header">
+                            <h2>Daily Quiz Challenge</h2>
+                            <span class="badge">LIVE</span>
+                        </div>
+                        <div id="dailyQuizContainer" style="text-align: center; padding: 20px;">
+                            <img src="https://cdni.iconscout.com/illustration/premium/thumb/men-trying-to-solve-quiz-4560417-3788755.png"
+                                alt="" style="width: 200px; margin-bottom: 20px;">
+                            <h3>Ready for the Daily 5?</h3>
+                            <p style="margin-bottom: 25px; color:#64748b;">Answer 5 random questions and win your spot
+                                on today's leaderboard.</p>
+                            <button class="btn-run" style="margin: 0 auto;" onclick="startDailyQuiz()">Start Today's
+                                Quiz</button>
                         </div>
                     </div>
-                    <div class="card-info">
-                        <div class="info-item"><i class="fas fa-book"></i> <strong>Real</strong> Exam Format</div>
-                        <div class="info-item"><i class="fas fa-hourglass-end"></i> <strong>90</strong> Minutes Timed
-                        </div>
-                    </div>
-                    <button class="btn-practice" onclick="attemptMockTest()">Attempt Mock Test</button>
-                </div>
-            </div>
 
-            <!-- 📊 MY PRACTICE ==================== -->
-            <div class="advanced-practice-card">
-                <div class="card-header">
-                    <h3>My Practice</h3>
-                    <p>Track your practice performance</p>
-                </div>
-                <div class="card-body">
-                    <div style="margin-bottom: 1rem;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.8rem;">
-                            <span style="color: var(--text-dark); font-weight: 600;">Tests Completed</span>
-                            <strong style="color: var(--primary-color); font-size: 1.3rem;">24</strong>
+                    <div class="section-card">
+                        <div class="section-header">
+                            <h2>Daily Leaderboard</h2>
                         </div>
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.8rem;">
-                            <span style="color: var(--text-dark); font-weight: 600;">Average Accuracy</span>
-                            <strong style="color: var(--accent-color); font-size: 1.3rem;">78%</strong>
-                        </div>
-                        <div style="display: flex; justify-content: space-between;">
-                            <span style="color: var(--text-dark); font-weight: 600;">Current Streak</span>
-                            <strong style="color: #f59e0b; font-size: 1.3rem;">5 Days</strong>
-                        </div>
+                        <table class="leaderboard-table">
+                            <thead>
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Student</th>
+                                    <th>Score</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leaderboardBody">
+                                <!-- Filled by JS -->
+                            </tbody>
+                        </table>
                     </div>
-                    <button class="btn-practice" onclick="viewAnalytics()">View Analysis</button>
-                </div>
+                </section>
             </div>
         </div>
+    </main>
 
-        <!-- 🟦 SUBJECT-WISE PRACTICE LIST ==================== -->
-        <h2 class="section-title">Practice by Subject</h2>
-        <div class="subject-practice-grid" id="subjectsList">
-            <!-- Filled by JavaScript -->
+    <!-- AI Chatbox -->
+    <div class="ai-chat-bubble" onclick="toggleAIChat()">
+        <i class="fas fa-comment-dots"></i>
+    </div>
+
+    <div class="chat-window" id="aiChatWindow">
+        <div class="chat-header">
+            <span><i class="fas fa-robot"></i> Renvox AI Tutor</span>
+            <button onclick="toggleAIChat()" style="background:none; border:none; color:white; cursor:pointer;"><i
+                    class="fas fa-times"></i></button>
         </div>
-
-        <!-- 🟦 RECENT ACTIVITY ==================== -->
-        <h2 class="section-title">Recent Practice Activity</h2>
-        <div class="activity-list" id="activityList">
-            <!-- Filled by JavaScript -->
+        <div class="chat-messages" id="chatMsgs">
+            <div class="msg bot">Hi! I'm your AI doubt solver. Ask me anything about your practice questions or any
+                programming concept!</div>
         </div>
-
-        <!-- 🟦 WEAK AREAS ==================== -->
-        <h2 class="section-title">Topics You Need to Improve</h2>
-        <div class="weak-areas-grid" id="weakAreasList">
-            <!-- Filled by JavaScript -->
+        <div class="chat-input-area">
+            <input type="text" class="chat-input" id="chatInput" placeholder="Explain time complexity..."
+                onkeypress="if(event.key==='Enter') sendAIMessage()">
+            <button class="btn-send" onclick="sendAIMessage()"><i class="fas fa-paper-plane"></i></button>
         </div>
     </div>
 
-    <!-- ==================== FOOTER ==================== -->
-    <footer class="footer">
-        <div style="max-width: 1200px; margin: 0 auto; text-align: center;">
-            <div class="footer-bottom">
-                <p>&copy; 2025 RENVOX – All rights reserved.</p>
-            </div>
-        </div>
-    </footer>
-
-    <!-- ==================== EXTERNAL JAVASCRIPT FILES ==================== -->
-    <!-- Main Practice Dashboard Logic -->
+    <!-- Scripts -->
     <script src="practice.js"></script>
-    <!-- Navigation System -->
     <script src="navigation.js"></script>
 </body>
 

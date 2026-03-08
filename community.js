@@ -338,6 +338,109 @@ async function checkNotifications() {
     } catch (e) { }
 }
 
+async function fetchFullLeaderboard() {
+    const container = document.getElementById('communityFeed');
+    try {
+        const res = await fetch('/api/community/leaderboard');
+        const data = await res.json();
+        if (data.ok) {
+            container.innerHTML = `
+                <div class="section-card" style="padding: 30px; background: white; border-radius: 20px; box-shadow: var(--comm-shadow);">
+                    <h2 style="margin-bottom: 25px; text-align: center;"><i class="fas fa-trophy" style="color:#fbbf24"></i> Community Leaderboard</h2>
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="text-align: left; border-bottom: 2px solid #f1f5f9;">
+                                <th style="padding: 12px;">Rank</th>
+                                <th style="padding: 12px;">Contributor</th>
+                                <th style="padding: 12px;">Points</th>
+                                <th style="padding: 12px;">Posts</th>
+                                <th style="padding: 12px;">Answers</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.entries.map((e, i) => `
+                                <tr style="border-bottom: 1px solid #f1f5f9;">
+                                    <td style="padding: 15px 12px;"><strong>#${i + 1}</strong></td>
+                                    <td style="padding: 15px 12px;">
+                                        <div style="display:flex; align-items:center; gap:10px;">
+                                            <div class="user-avatar" style="width:30px; height:30px;"><img src="https://ui-avatars.com/api/?name=${e.username}"></div>
+                                            <span>${e.username}</span>
+                                        </div>
+                                    </td>
+                                    <td style="padding: 15px 12px;"><strong>${e.points}</strong></td>
+                                    <td style="padding: 15px 12px;">${e.posts || 0}</td>
+                                    <td style="padding: 15px 12px;">${e.answers || 0}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        }
+    } catch (e) {
+        container.innerHTML = '<div class="error">Failed to load leaderboard.</div>';
+    }
+}
+
+async function showComments(postId) {
+    const feed = document.getElementById('communityFeed');
+    // First, find the post in the current feed and expand it, or show in a separate view?
+    // For simplicity, let's fetch comments and replace the feed content with post + comments (like a thread view)
+    try {
+        // Fetch specific post data if needed? For now we only have the postId.
+        const res = await fetch(`/api/community/posts/${postId}/comments`);
+        const data = await res.json();
+        if (data.ok) {
+            const commentsHtml = data.comments.map(c => `
+                <div style="margin-bottom: 15px; background: #f8fafc; padding: 15px; border-radius: 12px; border-left: 4px solid var(--comm-primary);">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                        <strong>${c.username}</strong>
+                        <span style="font-size:11px; color:#64748b;">${new Date(c.createdAt).toLocaleString()}</span>
+                    </div>
+                    <p style="margin:0; font-size:14px; color:#334155;">${c.text}</p>
+                </div>
+            `).join('');
+
+            // Add comment input
+            const inputHtml = `
+                <div style="margin-top: 25px; padding-top: 25px; border-top: 2px dashed #e2e8f0;">
+                    <h4>Leave a Comment</h4>
+                    <div style="display:flex; gap:10px; margin-top:15px;">
+                        <textarea id="comm-input-${postId}" placeholder="Write your thoughts..." style="flex:1; border:1px solid #e2e8f0; border-radius:12px; padding:12px; resize:none;"></textarea>
+                        <button class="btn-comm btn-post" style="padding:10px 20px; align-self: flex-end;" onclick="submitComment('${postId}')">Post</button>
+                    </div>
+                    <button class="btn-comm" style="margin-top:20px; background:#f1f5f9; color:#64748b;" onclick="loadSection('feed')">← Back to Feed</button>
+                </div>
+            `;
+
+            feed.innerHTML = `
+                <div class="post-card">
+                    <h3 style="margin-bottom:20px; color:var(--comm-primary);">Discussion Thread</h3>
+                    ${data.comments.length ? commentsHtml : '<p style="color:#64748b; font-style:italic;">No comments yet. Be the first to comment!</p>'}
+                    ${inputHtml}
+                </div>
+            `;
+        }
+    } catch (e) { console.error(e); }
+}
+
+async function submitComment(postId) {
+    const text = document.getElementById(`comm-input-${postId}`).value;
+    if (!text || !token) return alert('Please login to comment!');
+
+    try {
+        const res = await fetch(`/api/community/posts/${postId}/comments`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ text })
+        });
+        const data = await res.json();
+        if (data.ok) {
+            showComments(postId);
+        }
+    } catch (e) { console.error(e); }
+}
+
 async function followUser(userId) {
     if (!token) return alert('Login to follow!');
     try {

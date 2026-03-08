@@ -47,8 +47,7 @@ function setupNavigation() {
         { name: 'Courses', href: 'certificates.html', key: 'courses' },
         { name: 'Practice', href: 'practice.html', key: 'practice' },
         { name: 'Store', href: 'store.html', key: 'store' },
-        { name: 'Community', href: 'community.html', key: 'community' },
-        { name: 'Certificates', href: 'my-certificates.html', key: 'certificates' }
+        { name: 'Community', href: 'community.html', key: 'community' }
     ];
 
     const currentPage = getCurrentPage();
@@ -167,27 +166,34 @@ function setupMobileMenu() {
     const menuToggle = document.getElementById('menuToggle');
     const navMenu = document.getElementById('navMenu');
 
+    // Create overlay if it doesn't exist
+    let overlay = document.querySelector('.navbar-overlay');
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.className = 'navbar-overlay';
+        document.body.appendChild(overlay);
+    }
+
     if (!menuToggle || !navMenu) return;
 
-    menuToggle.addEventListener('click', function () {
-        navMenu.classList.toggle('active');
+    function toggleMenu() {
+        const isActive = navMenu.classList.toggle('active');
         menuToggle.classList.toggle('active');
-    });
+        overlay.classList.toggle('active');
+        document.body.classList.toggle('no-scroll', isActive);
+    }
+
+    menuToggle.addEventListener('click', toggleMenu);
+    overlay.addEventListener('click', toggleMenu);
 
     // Close menu when a link is clicked
     navMenu.querySelectorAll('a').forEach(link => {
         link.addEventListener('click', function () {
             navMenu.classList.remove('active');
             menuToggle.classList.remove('active');
+            overlay.classList.remove('active');
+            document.body.classList.remove('no-scroll');
         });
-    });
-
-    // Close menu when clicking outside
-    document.addEventListener('click', function (e) {
-        if (!e.target.closest('.nav-container')) {
-            navMenu.classList.remove('active');
-            menuToggle.classList.remove('active');
-        }
     });
 }
 

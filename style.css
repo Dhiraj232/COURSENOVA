@@ -466,12 +466,12 @@ h6 {
 /* ==================== HERO SECTION ==================== */
 .hero {
     background-color: var(--white);
-    padding: 4rem 2rem;
+    padding: 6rem 2rem;
     max-width: 1200px;
     margin: 0 auto;
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 3rem;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 4rem;
     align-items: center;
 }
 
@@ -553,9 +553,21 @@ h6 {
     display: flex;
     justify-content: center;
     align-items: center;
-    border-radius: 3px;
-    padding: 1rem;
-    min-height: 100px;
+    position: relative;
+}
+
+.hero-image {
+    width: 100%;
+    max-width: 500px;
+    height: auto;
+    object-fit: contain;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+}
+
+.hero-image:hover {
+    transform: translateY(-10px);
 }
 
 .dashboard-mockup {
@@ -866,7 +878,7 @@ h6 {
     height: auto;
     max-width: 500px;
     border-radius: 12px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
 }
 
 .certificate-section {
