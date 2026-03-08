@@ -234,10 +234,10 @@
             line-height: 1.6;
             margin-bottom: 16px;
             display: -webkit-box;
-            line-clamp: 3;
             -webkit-line-clamp: 3;
             -webkit-box-orient: vertical;
             overflow: hidden;
+            line-clamp: 3;
         }
 
         /* Meta row */
@@ -539,11 +539,10 @@
             </div>
             <ul class="nav-menu" id="navMenu">
                 <li><a href="index.html">Home</a></li>
-                <li><a href="certificates.html" class="active">Courses</a></li>
+                <li><a href="certificates.html" class="active">Certificates</a></li>
                 <li><a href="practice.html">Practice</a></li>
                 <li><a href="store.html">Store</a></li>
-                <li><a href="community.html">Community</a></li>
-                <li><a href="my-certificates.html">Certificates</a></li>
+                <li><a href="family.html">Family</a></li>
             </ul>
             <div class="nav-buttons" id="navButtons"></div>
             <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
@@ -605,8 +604,8 @@
 
     <script src="navigation.js"></script>
     <script>
-        const API = '';
-        const token = localStorage.getItem('renvoxToken') || localStorage.getItem('renvox_token') || '';
+        const API = 'http://localhost:5000';
+        const token = localStorage.getItem('renvox_token') || localStorage.getItem('renvoxToken') || '';
 
         // ─── Course Definitions ───────────────────────────────────────────────────
         const COURSES = [
@@ -617,7 +616,7 @@
                 duration: '4 Weeks', assignments: 8,
                 description: 'Master C programming from scratch with practical assignments and real-world system programming projects.',
                 highlights: ['8 Assignments', 'Live Projects', '40+ Hours Content', 'Job Ready Skills'],
-                price: 0, isFree: true
+                price: 799, isFree: false
             },
             {
                 id: 'Data Structures Advanced',
@@ -626,7 +625,7 @@
                 duration: '6 Weeks', assignments: 12,
                 description: 'Deep dive into data structures with interview prep, competitive programming challenges and complexity analysis.',
                 highlights: ['12 Assignments', 'Interview Questions', 'Coding Challenges', 'Certificate'],
-                price: 0, isFree: true
+                price: 1199, isFree: false
             },
             {
                 id: 'Web Development Bootcamp',
@@ -635,7 +634,7 @@
                 duration: '8 Weeks', assignments: 10,
                 description: 'Complete full-stack web development covering HTML, CSS, JavaScript, Node.js, and React with real projects.',
                 highlights: ['10 Projects', 'Portfolio Ready', 'Job Support', 'Lifetime Access'],
-                price: 0, isFree: true
+                price: 1999, isFree: false
             },
             {
                 id: 'Python for Data Science',
@@ -644,7 +643,7 @@
                 duration: '5 Weeks', assignments: 7,
                 description: 'Learn Python with NumPy, Pandas, Matplotlib, and Scikit-Learn for real-world data science applications.',
                 highlights: ['7 Projects', 'Real Datasets', 'ML Basics', 'Career Ready'],
-                price: 0, isFree: true
+                price: 999, isFree: false
             },
             {
                 id: 'Database Management Systems',
@@ -653,7 +652,7 @@
                 duration: '3 Weeks', assignments: 5,
                 description: 'Master DBMS concepts, SQL queries, database design, normalization and practical database management.',
                 highlights: ['5 Assignments', 'SQL Mastery', 'Database Design', 'Verified Cert'],
-                price: 0, isFree: true
+                price: 599, isFree: false
             },
             {
                 id: 'Learning Essentials (Free)',
@@ -671,7 +670,7 @@
                 duration: '6 Weeks', assignments: 10,
                 description: 'Become a job-ready frontend developer. Learn HTML5, CSS3, responsive design, JavaScript DOM, React basics and build stunning UIs.',
                 highlights: ['10 Projects', 'React Basics', 'Responsive Design', 'Portfolio Ready'],
-                price: 0, isFree: true
+                price: 1499, isFree: false
             },
             {
                 id: 'Time Management',
@@ -680,7 +679,7 @@
                 duration: '2 Weeks', assignments: 4,
                 description: 'Master productivity techniques used by top performers. Learn Pomodoro, GTD, time-blocking and eliminate procrastination for good.',
                 highlights: ['4 Assignments', 'Productivity Tools', 'Life Skills', 'Digital Certificate'],
-                price: 0, isFree: true
+                price: 399, isFree: false
             },
             {
                 id: 'JavaScript Advanced',
@@ -689,7 +688,7 @@
                 duration: '5 Weeks', assignments: 8,
                 description: 'Go beyond the basics. Master closures, async/await, Promises, ES6+, design patterns and how JavaScript works under the hood.',
                 highlights: ['8 Projects', 'ES6+ Mastery', 'Async JS', 'Interview Ready'],
-                price: 0, isFree: true
+                price: 999, isFree: false
             },
             {
                 id: 'Web Design',
@@ -698,7 +697,7 @@
                 duration: '3 Weeks', assignments: 6,
                 description: 'Learn modern UI/UX principles, color theory, typography, Figma wireframing and build beautiful, user-friendly websites from scratch.',
                 highlights: ['6 Assignments', 'Figma Skills', 'UI/UX Basics', 'Design Portfolio'],
-                price: 0, isFree: true
+                price: 699, isFree: false
             },
             {
                 id: 'Communication Skills',
@@ -707,7 +706,7 @@
                 duration: '2 Weeks', assignments: 4,
                 description: 'Build confidence in spoken and written English. Learn professional email writing, public speaking, body language and workplace communication.',
                 highlights: ['4 Assignments', 'Mock Interviews', 'Email Writing', 'Career Boost'],
-                price: 0, isFree: true
+                price: 499, isFree: false
             }
         ];
 
