@@ -378,14 +378,14 @@
 	<script src="js/navigation.js"></script>
 </head>
 
-<body class="dark-theme">
+<body>
 	<!-- Navbar -->
 	<nav class="navbar" id="navbar">
 		<div class="nav-container">
-			<a href="index.html" class="logo"><img src="logo%20renvox.png" alt="RENVOX"> RENVOX</a>
+			<a href="index.html" class="logo"><img src="logo%20renvox.png" alt="RENVOX"></a>
 
 			<div class="nav-search">
-				<input type="text" id="navbarSearch" placeholder="Search discussions, doubts, or people...">
+				<input type="text" id="navbarSearch" placeholder="Search for courses, subjects, or concepts...">
 				<button type="button" onclick="handleNavbarSearch()">
 					<i class="fas fa-search"></i>
 				</button>
@@ -394,8 +394,7 @@
 			<ul class="nav-menu" id="navMenu">
 				<li><a href="index.html">Home</a></li>
 				<li><a href="certificates.html">Courses</a></li>
-
-				<li><a href="testing-center.html">Practice</a></li>
+				<li><a href="testing-center.html">Mock Tests</a></li>
 				<li><a href="community.html" class="active">Community</a></li>
 				<li><a href="store.html">Store</a></li>
 			</ul>
@@ -562,7 +561,7 @@
 	</div>
 
 	<!-- Scripts -->
-
+	<script src="/socket.io/socket.io.js"></script>
 	<script src="js/community.js"></script>
 </body>
 

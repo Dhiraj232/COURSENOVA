@@ -424,6 +424,7 @@
     </style>
     <link rel="stylesheet" href="css/navigation.css">
     <script src="js/navigation.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
 </head>
 
 <body>
@@ -437,11 +438,11 @@
             </div>
             <ul class="nav-menu" id="navMenu">
                 <li><a href="index.html">Home</a></li>
-                
+
                 <li><a href="practice.html">Practice</a></li>
                 <li><a href="store.html" class="active">Store</a></li>
                 <li><a href="community.html">Community</a></li>
-                
+
             </ul>
             <div class="nav-buttons" id="navButtons"></div>
             <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
@@ -472,12 +473,21 @@
     </div>
 
     <!-- ═══════════════ SCRIPTS ═══════════════ -->
-    
+
     <script>
         const API = '/api/used-books';
         const MSGS_API = '/api/messages';
         const IMG_BASE = '/uploads/books/';
         const bookId = new URLSearchParams(window.location.search).get('id');
+        const socket = typeof io !== 'undefined' ? io() : null;
+
+        if (socket && bookId) {
+            socket.emit('join-room', `book-${bookId}`);
+            socket.on('receive-message', (data) => {
+                // If message is for this book, reload chat
+                if (data.bookId === bookId) loadMessages();
+            });
+        }
 
         if (!bookId) {
             showError('No book ID in URL', 'Please go back and select a book.');
@@ -662,7 +672,18 @@
                     body: JSON.stringify({ bookId, from: fromName, text })
                 });
                 const data = await res.json();
-                if (data.ok) loadMessages();
+                if (data.ok) {
+                    if (socket) {
+                        socket.emit('send-message', {
+                            room: `book-${bookId}`,
+                            bookId: bookId,
+                            from: fromName,
+                            text: text,
+                            ts: Date.now()
+                        });
+                    }
+                    loadMessages();
+                }
             } catch (_) { }
             input.disabled = false;
             input.focus();

@@ -138,8 +138,19 @@ process.on('uncaughtException', err => {
 const app = express();
 // ─── Security Middlewares ─────────────────────────────────────────
 
-// 1. Helmet for Security Headers (Standard production best practice)
-app.use(helmet());
+// 1. Helmet for Security Headers with CSP for YouTube
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+      "frame-src": ["'self'", "https://www.youtube.com", "https://youtube.com", "https://api.razorpay.com"],
+      "img-src": ["'self'", "data:", "https://res.cloudinary.com", "https://images.unsplash.com", "https://*.google.com", "https://*.googleusercontent.com", "https://i.ytimg.com", "https://yt3.ggpht.com", "https://ui-avatars.com"],
+      "script-src": ["'self'", "'unsafe-inline'", "https://www.googletagmanager.com", "https://*.google.com", "https://checkout.razorpay.com"],
+      "script-src-attr": ["'unsafe-inline'"],
+      "connect-src": ["'self'", "https://*.google-analytics.com", "https://*.analytics.google.com", "https://*.googletagmanager.com", "https://api.razorpay.com"]
+    },
+  },
+}));
 
 // 2. Rate Limiting to prevent API abuse/DoS
 const apiLimiter = rateLimit({
@@ -215,6 +226,14 @@ app.use(express.static(path.join(__dirname, 'public'), {
 // Main entry point
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// ─── Authentication Routes ──────────────────────────────
+app.get('/auth/logout', (req, res) => {
+  req.logout((err) => {
+    if (err) return res.status(500).json({ ok: false, message: 'Logout failed' });
+    res.json({ ok: true, message: 'Logged out successfully' });
+  });
 });
 
 // ─── JWT Authentication Middleware ──────────────────────────────

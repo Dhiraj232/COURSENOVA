@@ -43,11 +43,11 @@ function setupNavigation() {
     const navMenu = document.getElementById('navMenu');
     if (!navMenu) return;
 
-    // Standardize links across all pages
+    const token = localStorage.getItem('renvoxToken') || localStorage.getItem('renvox_token');
     const links = [
         { name: 'Home', href: 'index.html', key: 'home' },
-        { name: 'Courses', href: 'certificates.html', key: 'courses' },
-        { name: 'Practice', href: 'testing-center.html', key: 'practice' },
+        { name: 'Courses', href: token ? 'my-courses.html' : 'certificates.html', key: 'courses' },
+        { name: 'Mock Tests', href: 'testing-center.html', key: 'mocktests' },
         { name: 'Community', href: 'community.html', key: 'community' },
         { name: 'Store', href: 'store.html', key: 'store' }
     ];
@@ -444,8 +444,8 @@ function setupUserDropdown() {
                     <svg style="width:16px; height:16px;" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" /><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" /><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" /><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" /></svg>
                     Google Login
                 </a>
-                <a href="#" class="btn-signup" onclick="alert('Renvox App Download will begin shortly!'); return false;">
-                    <i class="fas fa-download"></i> Download App
+                <a href="signup.html" class="btn-signup">
+                    <i class="fas fa-user-plus"></i> Signup
                 </a>
             </div>
         `;
@@ -483,7 +483,7 @@ function setupUserDropdown() {
                     </li>
                     <li class="dropdown-item">
                         <a href="testing-center.html" onclick="window.closeUserDropdown()">
-                            <i class="fas fa-edit"></i> Practice & Mock Tests
+                            <i class="fas fa-file-alt"></i> Mock Tests
                         </a>
                     </li>
                     <li class="dropdown-item">
@@ -558,11 +558,11 @@ async function logoutUser(event) {
         event.stopPropagation();
     }
 
-    // 1. Premium Confirmation
-    const confirmLogout = confirm("Are you sure you want to logout from RENVOX AI?");
+    // 1. Confirmation
+    const confirmLogout = confirm("Are you sure you want to logout?");
     if (!confirmLogout) return;
 
-    // 2. Visual "Logging Out" Overlay
+    // 2. Visual Overlay
     const overlay = document.createElement('div');
     overlay.id = 'logoutOverlay';
     overlay.style.cssText = `
@@ -571,55 +571,35 @@ async function logoutUser(event) {
         background: rgba(15, 23, 42, 0.95);
         display: flex; flex-direction: column; align-items: center; justify-content: center;
         z-index: 100000; color: white; font-family: 'Outfit', sans-serif;
-        backdrop-filter: blur(8px); transition: opacity 0.5s ease;
+        backdrop-filter: blur(8px);
     `;
     overlay.innerHTML = `
-        <div class="loader" style="width: 48px; height: 48px; border: 4px solid #f3f3f3; border-top: 4px solid #6366f1; border-radius: 50%; animation: spin 1s linear infinite;"></div>
-        <h2 style="margin-top: 24px; font-weight: 700; letter-spacing: -0.02em;">Logging out safely...</h2>
-        <p style="color: #94a3b8; margin-top: 8px;">Cleaning up your secure session</p>
-        <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+        <div class="loader" style="width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #6366f1; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+        <h2 style="margin-top: 20px; font-weight: 700;">Logging out...</h2>
     `;
     document.body.appendChild(overlay);
 
     try {
-        // 3. Notify backend (with timeout)
+        // 3. Notify backend (short timeout)
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 2500);
+        const timeoutId = setTimeout(() => controller.abort(), 1000);
 
         await fetch('/auth/logout', {
             signal: controller.signal,
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('renvox_token') || localStorage.getItem('renvoxToken')}` }
-        }).catch(() => console.warn('Server logout skipped or failed'));
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('renvoxToken') || localStorage.getItem('renvox_token')}` }
+        }).catch(() => { });
 
         clearTimeout(timeoutId);
+    } catch (e) { }
 
-        // 4. Forcefully Disable Google Auto-Select (GSI)
-        // This stops Google from automatically showing your account name after logout
-        if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
-            google.accounts.id.disableAutoSelect();
-        }
-    } catch (e) {
-        console.warn('Silent logout error', e);
-    }
-
-    // 5. Forceful Local Cleanup (Clear everything to be safe)
-    const keys = [
-        'renvox_user', 'renvox_token', 'renvoxUser', 'renvoxToken',
-        'userName', 'pendingUserId', 'auth_token', 'user', 'renvox_streak'
-    ];
-    keys.forEach(k => localStorage.removeItem(k));
-
-    // As a final safety net, wipe all storage
+    // 4. Local Cleanup
     localStorage.clear();
     sessionStorage.clear();
 
-    // 6. Finalize UI
-    if (typeof closeUserDropdown === 'function') closeUserDropdown();
-
-    // Small delay to ensure all cleanup operations are finalized
+    // 5. Finalize
     setTimeout(() => {
         window.location.href = 'index.html?logout=true';
-    }, 1200);
+    }, 500);
 }
 
 // Close dropdown when clicking outside

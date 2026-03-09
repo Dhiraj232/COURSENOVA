@@ -396,6 +396,7 @@
             line-height: 1.3;
             display: -webkit-box;
             -webkit-line-clamp: 2;
+            line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
         }
@@ -834,19 +835,17 @@
     <!-- ═══════════════ RENVOX NAVBAR ═══════════════ -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
-            <a href="index.html" class="logo"><img src="logo%20renvox.png" alt="RENVOX"> RENVOX</a>
+            <a href="index.html" class="logo"><img src="logo%20renvox.png" alt="RENVOX"></a>
             <div class="nav-search">
-                <input type="text" id="navbarSearch" placeholder="Search courses, subjects...">
+                <input type="text" id="navbarSearch" placeholder="Search for courses, subjects, or concepts...">
                 <button type="button" onclick="handleNavbarSearch()"><i class="fas fa-search"></i></button>
             </div>
             <ul class="nav-menu" id="navMenu">
                 <li><a href="index.html">Home</a></li>
                 <li><a href="certificates.html">Courses</a></li>
-
-                <li><a href="testing-center.html">Practice</a></li>
+                <li><a href="testing-center.html">Mock Tests</a></li>
                 <li><a href="community.html">Community</a></li>
                 <li><a href="store.html" class="active">Store</a></li>
-
             </ul>
             <div class="nav-buttons" id="navButtons"></div>
             <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
@@ -1093,10 +1092,21 @@
     <div class="toast" id="toast"></div>
 
     <!-- ═══════════════ SCRIPTS ═══════════════ -->
-
+    <script src="/socket.io/socket.io.js"></script>
     <script>
-        const API = 'http://localhost:5000/api/used-books';
-        const IMG_BASE = 'http://localhost:5000/uploads/books/';
+        const API = '/api/used-books';
+        const IMG_BASE = '/uploads/books/';
+        const socket = typeof io !== 'undefined' ? io() : null;
+
+        if (socket) {
+            socket.emit('join-room', 'store-notifications');
+            socket.on('receive-message', (data) => {
+                if (data.type === 'new-book') {
+                    showToast(`📚 New Book Listed: ${data.title}`, 'success');
+                    if (currentTab === 'browse') loadBooks();
+                }
+            });
+        }
         let allBooks = [];
         let currentTab = 'browse';
         let searchDebounceTimer = null;
@@ -1425,10 +1435,18 @@
                 if (!data.ok) throw new Error(data.message);
 
                 showFormAlert(editId ? 'Book updated successfully! ✅' : 'Book listed successfully! ✅', 'success');
+                if (!editId && socket) {
+                    socket.emit('send-message', {
+                        room: 'store-notifications',
+                        type: 'new-book',
+                        title: document.getElementById('fTitle').value.trim(),
+                        ts: Date.now()
+                    });
+                }
                 setTimeout(() => {
                     closeSellModal();
                     if (currentTab === 'my') loadMyBooks();
-                    else { loadBooks(); }
+                    else loadBooks();
                 }, 1200);
             } catch (err) {
                 showFormAlert(err.message, 'error');

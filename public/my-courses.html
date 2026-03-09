@@ -38,9 +38,9 @@
         }
 
         /* NAV */
-        
 
-        
+
+
 
         .nav-menu {
             display: flex;
@@ -474,7 +474,7 @@
                 padding-right: 1rem;
             }
 
-            
+
 
             .nav-menu {
                 display: none;
@@ -482,6 +482,7 @@
         }
     </style>
     <link rel="stylesheet" href="css/navigation.css">
+    <script src="/socket.io/socket.io.js"></script>
     <script src="js/navigation.js"></script>
 </head>
 
@@ -490,14 +491,17 @@
     <!-- standard navbar -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
-            <a href="index.html" class="logo"><img src="logo%20renvox.png" alt="RENVOX"> RENVOX</a>
+            <a href="index.html" class="logo"><img src="logo%20renvox.png" alt="RENVOX"></a>
+            <div class="nav-search">
+                <input type="text" id="navbarSearch" placeholder="Search for courses, subjects, or concepts...">
+                <button type="button" onclick="handleNavbarSearch()"><i class="fas fa-search"></i></button>
+            </div>
             <ul class="nav-menu" id="navMenu">
                 <li><a href="index.html">Home</a></li>
-
-                <li><a href="practice.html">Practice</a></li>
-                <li><a href="store.html">Store</a></li>
+                <li><a href="my-courses.html" class="active">Courses</a></li>
+                <li><a href="testing-center.html">Mock Tests</a></li>
                 <li><a href="community.html">Community</a></li>
-
+                <li><a href="store.html">Store</a></li>
             </ul>
             <div class="nav-buttons" id="navButtons"></div>
             <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
@@ -740,7 +744,7 @@
         loadEnrolledCourses();
     </script>
     <!-- Navigation System -->
-    
+
 </body>
 
 </html>

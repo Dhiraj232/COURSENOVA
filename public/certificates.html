@@ -536,16 +536,15 @@
     <!-- ═══════════ NAVBAR ═══════════ -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
-            <a href="index.html" class="logo"><img src="logo%20renvox.png" alt="RENVOX"> RENVOX</a>
+            <a href="index.html" class="logo"><img src="logo%20renvox.png" alt="RENVOX"></a>
             <div class="nav-search">
-                <input type="text" id="navbarSearch" placeholder="Search courses...">
+                <input type="text" id="navbarSearch" placeholder="Search for courses, subjects, or concepts...">
                 <button type="button" onclick="handleNavbarSearch()"><i class="fas fa-search"></i></button>
             </div>
             <ul class="nav-menu" id="navMenu">
                 <li><a href="index.html">Home</a></li>
                 <li><a href="certificates.html" class="active">Courses</a></li>
-
-                <li><a href="testing-center.html">Practice</a></li>
+                <li><a href="testing-center.html">Mock Tests</a></li>
                 <li><a href="community.html">Community</a></li>
                 <li><a href="store.html">Store</a></li>
             </ul>
@@ -589,15 +588,48 @@
 
         <!-- Skeleton loading state -->
         <div class="skeleton-grid" id="skeletonGrid">
-            ${[...Array(6)].map(() => `
             <div class="skeleton-card">
                 <div class="skel-header"></div>
                 <div class="skel-body">
                     <div class="skel-line"></div>
                     <div class="skel-line short"></div>
-                    <div class="skel-line"></div>
                 </div>
-            </div>`).join('')}
+            </div>
+            <div class="skeleton-card">
+                <div class="skel-header"></div>
+                <div class="skel-body">
+                    <div class="skel-line"></div>
+                    <div class="skel-line short"></div>
+                </div>
+            </div>
+            <div class="skeleton-card">
+                <div class="skel-header"></div>
+                <div class="skel-body">
+                    <div class="skel-line"></div>
+                    <div class="skel-line short"></div>
+                </div>
+            </div>
+            <div class="skeleton-card">
+                <div class="skel-header"></div>
+                <div class="skel-body">
+                    <div class="skel-line"></div>
+                    <div class="skel-line short"></div>
+                </div>
+            </div>
+            <div class="skeleton-card">
+                <div class="skel-header"></div>
+                <div class="skel-body">
+                    <div class="skel-line"></div>
+                    <div class="skel-line short"></div>
+                </div>
+            </div>
+            <div class="skeleton-card">
+                <div class="skel-header"></div>
+                <div class="skel-body">
+                    <div class="skel-line"></div>
+                    <div class="skel-line short"></div>
+                </div>
+            </div>
         </div>
 
         <!-- Actual grid -->
@@ -609,7 +641,7 @@
 
 
     <script>
-        const API = 'http://localhost:5000';
+        const API = '';
         const token = localStorage.getItem('renvox_token') || localStorage.getItem('renvoxToken') || '';
 
         // ─── Course Definitions ───────────────────────────────────────────────────
