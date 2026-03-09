@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -491,7 +491,7 @@
     <!-- standard navbar -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
-            <a href="index.html" class="logo"><img src="logo%20renvox.png" alt="RENVOX"></a>
+            <a href="index.html" class="logo"><img src="images/logo%20renvox.png" alt="RENVOX"> <span>RENVOX</span></a>
             <div class="nav-search">
                 <input type="text" id="navbarSearch" placeholder="Search for courses, subjects, or concepts...">
                 <button type="button" onclick="handleNavbarSearch()"><i class="fas fa-search"></i></button>
@@ -739,9 +739,43 @@
                 .replace(/"/g, '&quot;');
         }
 
-        // Init
-        loadUser();
-        loadEnrolledCourses();
+        // ─── INIT ─────────────────────────────────────────────────────────────
+        window.addEventListener('load', async () => {
+            await loadUser();
+            await loadEnrolledCourses();
+
+            // Handle URL Search Params
+            const urlParams = new URLSearchParams(window.location.search);
+            const searchQuery = urlParams.get('search');
+
+            if (searchQuery) {
+                const grid = document.getElementById('coursesGrid');
+                const cards = Array.from(grid.querySelectorAll('.course-card'));
+                let foundAny = false;
+
+                cards.forEach(card => {
+                    const title = card.querySelector('.course-name').textContent.toLowerCase();
+                    if (title.includes(searchQuery.toLowerCase())) {
+                        card.style.display = 'block';
+                        foundAny = true;
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+
+                if (!foundAny && cards.length > 0) {
+                    grid.innerHTML = `<div class="empty" style="grid-column: 1/-1;">
+                        <i class="fas fa-search"></i>
+                        <h3>No results for "${searchQuery}"</h3>
+                        <p>We couldn't find any of your enrolled courses matching this search.</p>
+                        <a href="my-courses.html" style="margin-top: 1rem;">View all my courses</a>
+                    </div>`;
+                }
+
+                // Scroll to results
+                document.querySelector('.hero').scrollIntoView({ behavior: 'smooth' });
+            }
+        });
     </script>
     <!-- Navigation System -->
 

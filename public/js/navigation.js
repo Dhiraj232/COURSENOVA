@@ -12,7 +12,28 @@
  * @version 1.0.0
  */
 
-// Run immediately on script load to capture OAuth params before page scripts run
+// 1. AUTH HELPERS
+/**
+ * Safely get the auth token from localStorage (handles both naming conventions)
+ * @returns {string|null} The token or null
+ */
+function getAuthToken() {
+    return localStorage.getItem('renvoxToken') || localStorage.getItem('renvox_token');
+}
+
+/**
+ * Safely get the user object from localStorage
+ * @returns {object|null} The user object or null
+ */
+function getAuthUser() {
+    const userStr = localStorage.getItem('renvox_user') || localStorage.getItem('renvoxUser');
+    try {
+        return userStr ? JSON.parse(userStr) : null;
+    } catch (e) {
+        return null;
+    }
+}
+
 handleAuthRedirect();
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -43,7 +64,7 @@ function setupNavigation() {
     const navMenu = document.getElementById('navMenu');
     if (!navMenu) return;
 
-    const token = localStorage.getItem('renvoxToken') || localStorage.getItem('renvox_token');
+    const token = getAuthToken();
     const links = [
         { name: 'Home', href: 'index.html', key: 'home' },
         { name: 'Courses', href: token ? 'my-courses.html' : 'certificates.html', key: 'courses' },
@@ -395,12 +416,18 @@ function setupNavbarSearch() {
 
 /**
  * Handle Navbar Search Submission
+ * Always redirects to certificates.html which has proper search filtering
  */
 function handleNavbarSearch() {
     const searchInput = document.getElementById('navbarSearch');
     if (searchInput && searchInput.value.trim() !== '') {
         const query = encodeURIComponent(searchInput.value.trim());
         window.location.href = `certificates.html?search=${query}`;
+    } else if (searchInput) {
+        // If empty search, just go to courses page
+        searchInput.focus();
+        searchInput.placeholder = 'Type something to search...';
+        setTimeout(() => { searchInput.placeholder = 'Search for courses, subjects, or concepts...'; }, 2000);
     }
 }
 

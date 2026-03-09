@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -9,6 +9,7 @@
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
+    <script src="js/config.js"></script>
     <style>
         /* ═══════════════════════════════════════════════════
            STORE PAGE — LOCAL STYLES
@@ -835,7 +836,7 @@
     <!-- ═══════════════ RENVOX NAVBAR ═══════════════ -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
-            <a href="index.html" class="logo"><img src="logo%20renvox.png" alt="RENVOX"></a>
+            <a href="index.html" class="logo"><img src="images/logo%20renvox.png" alt="RENVOX"> <span>RENVOX</span></a>
             <div class="nav-search">
                 <input type="text" id="navbarSearch" placeholder="Search for courses, subjects, or concepts...">
                 <button type="button" onclick="handleNavbarSearch()"><i class="fas fa-search"></i></button>
@@ -1367,7 +1368,7 @@
             const token = localStorage.getItem('renvox_token') || localStorage.getItem('renvoxToken') || '';
             if (!token) {
                 if (confirm('⚠️ You must be logged in to list a book.\n\nClick OK to go to the login page.')) {
-                    window.location.href = 'http://localhost:5000/auth/google';
+                    window.location.href = '/auth/google';
                 }
                 return;
             }
