@@ -75,6 +75,8 @@ router.post('/posts', requireAuth, async (req, res) => {
         // Update points: 10 points for creating a post
         await updatePoints(req.userId, user.name, 10, 'post');
 
+        if (req.app.get('io')) req.app.get('io').emit('new_post', post);
+
         res.json({ ok: true, post });
     } catch (err) {
         res.status(500).json({ ok: false, message: 'Failed to create post' });
@@ -133,6 +135,8 @@ router.post('/posts/:postId/comments', requireAuth, async (req, res) => {
         // Update points: 5 points for commenting
         await updatePoints(req.userId, user.name, 5);
 
+        if (req.app.get('io')) req.app.get('io').emit('new_comment', { postId: req.params.postId, comment });
+
         res.json({ ok: true, comment });
     } catch (err) {
         res.status(500).json({ ok: false, message: 'Failed to add comment' });
@@ -171,6 +175,7 @@ router.post('/posts/:postId/like', requireAuth, async (req, res) => {
             }
         }
         await post.save();
+        if (req.app.get('io')) req.app.get('io').emit('like_update', { postId: post._id, likesCount: post.likesCount });
         res.json({ ok: true, likesCount: post.likesCount, isLiked: !isLiked });
     } catch (err) {
         res.status(500).json({ ok: false, message: 'Like failed' });
@@ -202,6 +207,7 @@ router.post('/doubts', requireAuth, async (req, res) => {
             details
         });
         await doubt.save();
+        if (req.app.get('io')) req.app.get('io').emit('new_doubt', doubt);
         res.json({ ok: true, doubt });
     } catch (err) {
         res.status(500).json({ ok: false, message: 'Failed to post doubt' });
@@ -259,6 +265,8 @@ router.post('/doubts/:doubtId/answer', requireAuth, async (req, res) => {
             // Reward answerer: 15 points for answering a doubt
             await updatePoints(req.userId, user.name, 15, 'answer');
         }
+
+        if (req.app.get('io')) req.app.get('io').emit('new_answer', { doubtId: doubt._id, answers: doubt.answers });
 
         res.json({ ok: true, answers: doubt.answers });
     } catch (err) {

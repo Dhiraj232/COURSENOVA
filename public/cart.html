@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -277,14 +277,7 @@
     <nav class="navbar" id="navbar">
         <div class="nav-container">
             <a href="index.html" class="logo"><img src="images/logo%20renvox.png" alt="RENVOX"> <span>RENVOX</span></a>
-            <ul class="nav-menu" id="navMenu">
-                <li><a href="index.html">Home</a></li>
-                
-                <li><a href="practice.html">Practice</a></li>
-                <li><a href="store.html" class="active">Store</a></li>
-                <li><a href="community.html">Community</a></li>
-                
-            </ul>
+            <ul class="nav-menu" id="navMenu"></ul>
             <div class="nav-buttons" id="navButtons"></div>
             <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
         </div>
@@ -305,11 +298,11 @@
                 <h3>Order Summary</h3>
                 <div class="summary-row">
                     <strong>Subtotal:</strong>
-                    <span>₹<span id="subtotal">0</span></span>
+                    <span>?<span id="subtotal">0</span></span>
                 </div>
                 <div class="summary-row">
                     <strong>Discount:</strong>
-                    <span>-₹<span id="discount">0</span></span>
+                    <span>-?<span id="discount">0</span></span>
                 </div>
                 <div class="summary-row">
                     <strong>Shipping:</strong>
@@ -318,7 +311,7 @@
                 <div class="divider"></div>
                 <div class="total">
                     <strong>Total:</strong>
-                    <span>₹<span id="total">0</span></span>
+                    <span>?<span id="total">0</span></span>
                 </div>
                 <button class="checkout-btn" id="checkout-btn" onclick="proceedToCheckout()">PROCEED TO
                     CHECKOUT</button>
@@ -396,7 +389,7 @@
                             <div class="item-details">
                                 <h3>${book.title}</h3>
                                 <p>${book.author}</p>
-                                <div class="item-price">₹${book.price.sellingPrice}</div>
+                                <div class="item-price">?${book.price.sellingPrice}</div>
                             </div>
                             <div class="item-actions">
                                 <div class="qty-control">
@@ -456,7 +449,7 @@
                 const data = await response.json();
 
                 if (data.ok) {
-                    showMessage('✓ Item removed', 'success');
+                    showMessage('? Item removed', 'success');
                     loadCart();
                 } else {
                     showMessage(data.message, 'error');
@@ -474,7 +467,7 @@
 
             document.getElementById('subtotal').textContent = subtotal.toFixed(0);
             document.getElementById('discount').textContent = discount.toFixed(0);
-            document.getElementById('shipping').textContent = shipping === 0 ? 'FREE' : '₹' + shipping;
+            document.getElementById('shipping').textContent = shipping === 0 ? 'FREE' : '?' + shipping;
             document.getElementById('total').textContent = total.toFixed(0);
         }
 

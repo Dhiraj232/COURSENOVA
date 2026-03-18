@@ -4,384 +4,123 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Course Content – RENVOX AI</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <title>Course Content | RENVOX AI</title>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/navigation.css">
     <style>
-        *,
-        *::before,
-        *::after {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
+        :root {
+            --sidebar-bg: #f8fafc;
+            --main-bg: #ffffff;
+            --accent: #6366f1;
+            --text-dark: #1e293b;
+            --text-light: #64748b;
         }
 
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Outfit', sans-serif;
             background: #f1f5f9;
-            color: #1e293b;
-        }
-
-        /* ─── Header ─────────────────────────────────────────────────── */
-        .page-header {
-            background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
-            color: white;
-            padding: 1.2rem 2rem;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            position: sticky;
-            top: 0;
-            z-index: 200;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
-        }
-
-        .page-header a.back-btn {
-            background: rgba(255, 255, 255, 0.18);
-            border: none;
-            color: white;
-            padding: 0.45rem 1rem;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.85rem;
-            font-weight: 600;
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 0.4rem;
-            transition: background 0.2s;
-        }
-
-        .page-header a.back-btn:hover {
-            background: rgba(255, 255, 255, 0.28);
-        }
-
-        .page-header h1 {
-            font-size: 1.2rem;
-            font-weight: 700;
-            flex: 1;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        /* ─── Progress bar ───────────────────────────────────────────── */
-        .progress-section {
-            background: white;
-            border-bottom: 1px solid #e2e8f0;
-            padding: 0.85rem 2rem;
-            display: flex;
-            align-items: center;
-            gap: 1.5rem;
-        }
-
-        .progress-label {
-            font-size: 0.82rem;
-            font-weight: 600;
-            color: #64748b;
-            white-space: nowrap;
-        }
-
-        .progress-track {
-            flex: 1;
-            height: 10px;
-            background: #e2e8f0;
-            border-radius: 99px;
+            margin: 0;
+            padding: 0;
             overflow: hidden;
         }
 
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #4f46e5, #10b981);
-            border-radius: 99px;
-            transition: width 0.6s ease;
-            width: 0%;
-        }
-
-        .progress-pct {
-            font-size: 0.9rem;
-            font-weight: 700;
-            color: #4f46e5;
-            white-space: nowrap;
-        }
-
-        /* ─── Layout ─────────────────────────────────────────────────── */
-        .content-layout {
+        .content-container {
             display: grid;
-            grid-template-columns: 1fr 320px;
-            gap: 1.5rem;
-            max-width: 1200px;
-            margin: 1.5rem auto;
-            padding: 0 1.5rem;
+            grid-template-columns: 320px 1fr;
+            height: calc(100vh - 72px);
+            margin-top: 72px;
         }
 
-        /* ─── Card ───────────────────────────────────────────────────── */
-        .card {
-            background: white;
-            border-radius: 16px;
-            border: 2px solid #e2e8f0;
-            overflow: hidden;
-            transition: border-color 0.3s;
-            margin-bottom: 1.5rem;
+        @media (max-width: 992px) {
+            .content-container {
+                grid-template-columns: 1fr;
+                height: auto;
+                overflow-y: auto;
+            }
         }
 
-        .card.completed {
-            border-color: #10b981;
-        }
-
-        .card-header {
-            padding: 1rem 1.25rem;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 1rem;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .card-header-left {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .card-icon {
-            width: 42px;
-            height: 42px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2rem;
-        }
-
-        .icon-video {
-            background: #ede9fe;
-            color: #7c3aed;
-        }
-
-        .icon-pdf {
-            background: #fee2e2;
-            color: #dc2626;
-        }
-
-        .card-title {
-            font-size: 1rem;
-            font-weight: 700;
-            color: #1e293b;
-        }
-
-        .card-sub {
-            font-size: 0.8rem;
-            color: #94a3b8;
-            margin-top: 2px;
-        }
-
-        .status-badge {
-            display: flex;
-            align-items: center;
-            gap: 0.4rem;
-            padding: 0.4rem 0.9rem;
-            border-radius: 99px;
-            font-size: 0.8rem;
-            font-weight: 600;
-            background: #f1f5f9;
-            color: #64748b;
-            transition: all 0.3s;
-        }
-
-        .status-badge.done {
-            background: #d1fae5;
-            color: #059669;
-        }
-
-        .video-wrapper {
-            position: relative;
-            padding-bottom: 56.25%;
-            height: 0;
-            overflow: hidden;
-            background: #0f172a;
-        }
-
-        .video-wrapper iframe {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
-
-        .pdf-wrapper {
-            height: 420px;
-            background: #475569;
-        }
-
-        .pdf-wrapper iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
-
-        .card-footer {
-            padding: 1rem 1.25rem;
-            display: flex;
-            justify-content: flex-end;
-            border-top: 1px solid #e2e8f0;
-            gap: 0.75rem;
-        }
-
-        .mark-btn {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.65rem 1.25rem;
-            border-radius: 10px;
-            border: none;
-            font-family: 'Inter', sans-serif;
-            font-size: 0.88rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.25s;
-        }
-
-        .mark-btn-video {
-            background: #ede9fe;
-            color: #7c3aed;
-        }
-
-        .mark-btn-video:hover:not(:disabled) {
-            background: #7c3aed;
-            color: white;
-        }
-
-        .mark-btn-pdf {
-            background: #fee2e2;
-            color: #dc2626;
-        }
-
-        .mark-btn-pdf:hover:not(:disabled) {
-            background: #dc2626;
-            color: white;
-        }
-
-        .mark-btn.done {
-            background: #d1fae5 !important;
-            color: #059669 !important;
-            cursor: default;
-        }
-
-        .mark-btn:disabled {
-            opacity: 0.7;
-        }
-
-        /* ─── Placeholder ────────────────────────────────────────────── */
-        .no-content {
-            padding: 2.5rem;
-            text-align: center;
-            color: #94a3b8;
-        }
-
-        .no-content i {
-            font-size: 2.5rem;
-            margin-bottom: 0.75rem;
-            display: block;
-            opacity: 0.4;
-        }
-
-        /* ─── Sidebar ────────────────────────────────────────────────── */
-        .sidebar-card {
-            background: white;
-            border-radius: 16px;
-            border: 1px solid #e2e8f0;
-            padding: 1.5rem;
-            position: sticky;
-            top: 80px;
-        }
-
-        .sidebar-title {
-            font-size: 1rem;
-            font-weight: 700;
-            margin-bottom: 1.25rem;
-            color: #1e293b;
-        }
-
-        .course-info h2 {
-            font-size: 1.1rem;
-            font-weight: 800;
-            color: #1e293b;
-            margin-bottom: 0.3rem;
-        }
-
-        .course-info p {
-            font-size: 0.82rem;
-            color: #64748b;
-        }
-
-        /* Lesson list */
-        .lesson-list {
-            list-style: none;
+        /* Sidebar Styling */
+        .sidebar {
+            background: var(--sidebar-bg);
+            border-right: 1px solid #e2e8f0;
             display: flex;
             flex-direction: column;
-            gap: 0.5rem;
-            margin-bottom: 1.25rem;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            padding: 25px;
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .sidebar-header h2 {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--text-dark);
+            margin: 0 0 8px;
+        }
+
+        .sidebar-header p {
+            font-size: 0.85rem;
+            color: var(--text-light);
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        .lesson-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
         }
 
         .lesson-item {
+            padding: 18px 25px;
+            border-bottom: 1px solid #edf2f7;
+            cursor: pointer;
             display: flex;
             align-items: center;
-            gap: 0.6rem;
-            padding: 0.65rem 0.75rem;
-            border-radius: 10px;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            cursor: pointer;
-            font-size: 0.86rem;
-            font-weight: 500;
-            color: #475569;
+            gap: 15px;
             transition: all 0.2s;
+            font-weight: 600;
+            color: var(--text-light);
+            font-size: 0.95rem;
         }
 
         .lesson-item:hover {
-            border-color: #a5b4fc;
-            background: #f5f3ff;
-            color: #4f46e5;
+            background: #eff6ff;
+            color: var(--accent);
         }
 
         .lesson-item.active {
-            background: #ede9fe;
-            border-color: #818cf8;
-            color: #4338ca;
-            font-weight: 600;
+            background: white;
+            color: var(--accent);
+            border-left: 4px solid var(--accent);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.08);
         }
 
         .lesson-item.done {
-            background: #f0fdf4;
-            border-color: #bbf7d0;
-            color: #15803d;
-        }
-
-        .lesson-item.done.active {
-            background: #dcfce7;
-            border-color: #86efac;
+            color: #10b981;
         }
 
         .lesson-num {
-            width: 24px;
-            height: 24px;
+            width: 28px;
+            height: 28px;
+            background: #e2e8f0;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.75rem;
-            font-weight: 700;
-            background: #e2e8f0;
-            color: #64748b;
+            font-size: 0.8rem;
             flex-shrink: 0;
-            transition: all 0.2s;
         }
 
         .lesson-item.active .lesson-num {
-            background: #4f46e5;
+            background: var(--accent);
             color: white;
         }
 
@@ -390,278 +129,398 @@
             color: white;
         }
 
-        /* Checklist */
-        .checklist {
-            list-style: none;
-            display: flex;
-            flex-direction: column;
-            gap: 0.6rem;
-            margin-bottom: 1.5rem;
+        /* Main Area Styling */
+        .main-content {
+            background: var(--main-bg);
+            overflow-y: auto;
+            padding: 40px;
         }
 
-        .checklist-item {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            padding: 0.65rem 0.75rem;
-            border-radius: 10px;
+        .lesson-header {
+            margin-bottom: 30px;
+        }
+
+        .lesson-header h1 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--text-dark);
+            margin-bottom: 10px;
+        }
+
+        .progress-banner {
             background: #f8fafc;
+            padding: 20px 25px;
+            border-radius: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 40px;
             border: 1px solid #e2e8f0;
-            font-size: 0.86rem;
-            font-weight: 500;
-            color: #475569;
-            transition: all 0.3s;
         }
 
-        .checklist-item.done {
-            background: #f0fdf4;
-            border-color: #bbf7d0;
-            color: #15803d;
-        }
-
-        .check-icon {
-            width: 26px;
-            height: 26px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.8rem;
-            background: #e2e8f0;
-            color: #94a3b8;
-            flex-shrink: 0;
-            transition: all 0.3s;
-        }
-
-        .checklist-item.done .check-icon {
-            background: #10b981;
-            color: white;
-        }
-
-        /* Test button */
-        .btn-take-test {
-            width: 100%;
-            padding: 0.9rem;
-            border-radius: 12px;
-            border: none;
-            font-family: 'Inter', sans-serif;
+        .progress-info h4 {
+            margin: 0 0 5px;
             font-size: 0.95rem;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #6366f1, #a855f7);
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        /* Content Sections */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 40px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 24px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+            border: 1px solid #e2e8f0;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 20px 25px;
+            border-bottom: 1px solid #f1f5f9;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-header h3 {
+            margin: 0;
+            font-size: 1.1rem;
             font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s;
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            background: linear-gradient(135deg, #4f46e5, #3730a3);
+            gap: 10px;
+        }
+
+        .video-wrapper {
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            background: #000;
+        }
+
+        .video-wrapper iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .pdf-wrapper {
+            height: 600px;
+            background: #f8fafc;
+        }
+
+        .pdf-wrapper iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+
+        /* Statuses & Buttons */
+        .status-badge {
+            font-size: 0.8rem;
+            font-weight: 700;
+            padding: 5px 12px;
+            border-radius: 20px;
+            background: #fee2e2;
+            color: #ef4444;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .status-badge.done {
+            background: #dcfce7;
+            color: #10b981;
+        }
+
+        .action-footer {
+            padding: 20px 25px;
+            background: #f8fafc;
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+        }
+
+        .mark-btn {
+            padding: 10px 20px;
+            border-radius: 12px;
+            font-weight: 700;
+            border: none;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .mark-btn-video {
+            background: var(--accent);
             color: white;
         }
 
-        .btn-take-test:hover:not(:disabled) {
+        .mark-btn-pdf {
+            background: #ef4444;
+            color: white;
+        }
+
+        .mark-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(79, 70, 229, 0.4);
+            filter: brightness(1.1);
         }
 
-        .btn-take-test:disabled {
-            background: #e2e8f0;
-            color: #94a3b8;
+        .mark-btn:disabled {
+            background: #cbd5e1;
             cursor: not-allowed;
+            transform: none;
         }
 
-        .lock-note {
-            text-align: center;
-            font-size: 0.78rem;
-            color: #94a3b8;
-            margin-top: 0.75rem;
+        .btn-test {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 15px 35px;
+            font-size: 1.1rem;
+            border-radius: 15px;
+            box-shadow: 0 10px 20px rgba(16, 185, 129, 0.2);
         }
 
-        /* Divider link */
-        .cert-link {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: #4f46e5;
-            font-size: 0.85rem;
-            font-weight: 600;
-            text-decoration: none;
-            margin-top: 1.25rem;
-            padding-top: 1.25rem;
+        /* Sidebar checklist */
+        .task-checklist {
+            padding: 25px;
             border-top: 1px solid #e2e8f0;
         }
 
-        /* Loading */
-        .spinner {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 5rem;
+        .task-checklist h4 {
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+            color: var(--text-light);
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
-        .spinner i {
-            font-size: 2rem;
-            color: #4f46e5;
+        .check-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+            font-size: 0.9rem;
+            color: var(--text-light);
+        }
+
+        .check-item.done {
+            color: var(--text-dark);
+            font-weight: 600;
+        }
+
+        .check-icon {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #cbd5e1;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            flex-shrink: 0;
+        }
+
+        .check-item.done .check-icon {
+            background: #10b981;
+            border-color: #10b981;
+            color: white;
+        }
+
+        /* Loading Screen */
+        #loadingScreen {
+            position: fixed;
+            inset: 0;
+            background: white;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid var(--accent);
+            border-radius: 50%;
             animation: spin 1s linear infinite;
         }
 
         @keyframes spin {
-            to {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
                 transform: rotate(360deg);
             }
         }
-
-        @media (max-width: 900px) {
-            .content-layout {
-                grid-template-columns: 1fr;
-            }
-
-            .sidebar-card {
-                position: static;
-            }
-        }
     </style>
-    <link rel="stylesheet" href="css/navigation.css">
-    <script src="js/navigation.js"></script>
 </head>
 
 <body>
-
-    <div class="page-header">
-        <a href="my-courses.html" class="back-btn"><i class="fas fa-arrow-left"></i> My Courses</a>
-        <h1 id="pageTitle">Loading course...</h1>
+    <!-- Loading Screen -->
+    <div id="loadingScreen">
+        <div class="spinner"></div>
+        <p style="margin-top:20px; font-weight:700; color:#64748b;">Loading Course Content...</p>
     </div>
 
-    <div class="progress-section">
-        <span class="progress-label">Your Progress</span>
-        <div class="progress-track">
-            <div class="progress-fill" id="progressFill"></div>
-        </div>
-        <span class="progress-pct" id="progressPct">0%</span>
-    </div>
+    <!-- Navbar -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo"><img src="images/logo%20renvox.png" alt="RENVOX"> <span>RENVOX</span></a>
 
-    <div id="loadingScreen" class="spinner" style="margin-top:4rem;">
-        <i class="fas fa-circle-notch"></i>
-    </div>
-
-    <div class="content-layout" id="mainLayout" style="display:none;">
-        <!-- Main content -->
-        <div id="mainContent">
-            <!-- VIDEO CARD -->
-            <div class="card" id="videoCard">
-                <div class="card-header">
-                    <div class="card-header-left">
-                        <div class="card-icon icon-video"><i class="fas fa-play-circle"></i></div>
-                        <div>
-                            <div class="card-title" id="lessonVideoTitle">Video Lesson</div>
-                            <div class="card-sub">Watch the full video to mark as complete</div>
-                        </div>
-                    </div>
-                    <div class="status-badge" id="videoStatus"><i class="fas fa-clock"></i> Pending</div>
-                </div>
-                <div class="card-body">
-                    <div class="video-wrapper" id="videoWrapper">
-                        <div class="no-content"
-                            style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0f172a;color:#475569;">
-                            <i class="fas fa-video"
-                                style="font-size:3rem;margin-bottom:0.75rem;opacity:0.3;color:#6366f1;"></i>
-                            <p>No video configured for this lesson yet.</p>
-                            <p style="font-size:0.78rem;margin-top:0.3rem;opacity:0.7;">Admin needs to add a YouTube
-                                link.</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-footer">
-                    <button class="mark-btn mark-btn-video" id="markVideoBtn" onclick="markVideoComplete()">
-                        <i class="fas fa-check"></i> Mark as Watched
-                    </button>
-                </div>
-            </div>
-
-            <!-- PDF CARD -->
-            <div class="card" id="pdfCard">
-                <div class="card-header">
-                    <div class="card-header-left">
-                        <div class="card-icon icon-pdf"><i class="fas fa-file-pdf"></i></div>
-                        <div>
-                            <div class="card-title" id="lessonPdfTitle">Study Material (PDF)</div>
-                            <div class="card-sub">Read through the material for this lesson</div>
-                        </div>
-                    </div>
-                    <div class="status-badge" id="pdfStatus"><i class="fas fa-clock"></i> Pending</div>
-                </div>
-                <div class="card-body">
-                    <div class="pdf-wrapper" id="pdfWrapper">
-                        <div class="no-content"
-                            style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f8fafc;">
-                            <i class="fas fa-file-pdf"
-                                style="font-size:3rem;margin-bottom:0.75rem;color:#ef4444;opacity:0.3;"></i>
-                            <p style="color:#64748b;">No PDF configured for this lesson yet.</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="card-footer">
-                    <a id="pdfDownloadLink" href="#" target="_blank" class="mark-btn mark-btn-pdf"
-                        style="text-decoration:none;display:none;">
-                        <i class="fas fa-download"></i> Download PDF
-                    </a>
-                    <button class="mark-btn mark-btn-pdf" id="markPdfBtn" onclick="markPdfComplete()">
-                        <i class="fas fa-check"></i> Mark as Read
-                    </button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Sidebar -->
-        <div>
-            <div class="sidebar-card">
-                <div class="course-info" style="margin-bottom:1.25rem;">
-                    <h2 id="sidebarTitle">Course</h2>
-                    <p id="sidebarDesc" style="margin-top:0.3rem;">Complete all lessons to unlock the final test.</p>
-                </div>
-
-                <div class="sidebar-title">📚 Lessons</div>
-                <ul class="lesson-list" id="lessonList"></ul>
-
-                <!-- Completion checklist -->
-                <div class="sidebar-title" style="margin-top:0.5rem;">📋 Checklist</div>
-                <ul class="checklist">
-                    <li class="checklist-item" id="check-video">
-                        <span class="check-icon"><i class="fas fa-play"></i></span>
-                        Watch current lesson video
-                    </li>
-                    <li class="checklist-item" id="check-pdf">
-                        <span class="check-icon"><i class="fas fa-file-pdf"></i></span>
-                        Read study material
-                    </li>
-                    <li class="checklist-item" id="check-all">
-                        <span class="check-icon"><i class="fas fa-list-check"></i></span>
-                        Complete all lessons
-                    </li>
-                </ul>
-
-                <button class="btn-take-test" id="takeTestBtn" disabled onclick="goToTest()">
-                    <i class="fas fa-lock"></i> Take Final Test
+            <div class="nav-search">
+                <input type="text" id="navbarSearch" placeholder="Search for courses, subjects, or concepts...">
+                <button type="button" onclick="handleNavbarSearch()">
+                    <i class="fas fa-search"></i>
                 </button>
-                <p class="lock-note" id="lockNote">Complete all lessons to unlock the test</p>
-
-                <a href="my-certificates.html" class="cert-link">
-                    <i class="fas fa-trophy"></i> View My Certificates
-                </a>
             </div>
+
+            <ul class="nav-menu" id="navMenu"></ul>
+            <div class="nav-buttons" id="navButtons"></div>
+            <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
         </div>
+    </nav>
+
+    <div class="content-container" id="mainLayout" style="display:none;">
+        <!-- Sidebar: Lesson Navigation -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2 id="sidebarTitle">Course Title</h2>
+                <p id="sidebarDesc">Master these modules to earn your certificate.</p>
+            </div>
+
+            <ul class="lesson-list" id="lessonList">
+                <!-- Lessons populated by JS -->
+            </ul>
+
+            <div class="task-checklist">
+                <h4>Today's Goals</h4>
+                <div class="check-item" id="check-video">
+                    <span class="check-icon"><i class="fas fa-play" style="font-size:0.6rem;"></i></span>
+                    Watch Module Video
+                </div>
+                <div class="check-item" id="check-pdf">
+                    <span class="check-icon"><i class="fas fa-file-pdf" style="font-size:0.6rem;"></i></span>
+                    Read Study Material
+                </div>
+                <div class="check-item" id="check-all">
+                    <span class="check-icon"><i class="fas fa-list-check" style="font-size:0.6rem;"></i></span>
+                    Complete All Modules
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <div class="lesson-header">
+                <h1 id="pageTitle">Course Name</h1>
+                <div class="progress-banner">
+                    <div style="flex:1;">
+                        <div class="progress-info">
+                            <h4>Course Progress: <span id="progressPct">0%</span></h4>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="content-grid">
+                <!-- Video Section -->
+                <div class="card" id="videoCard">
+                    <div class="card-header">
+                        <h3 id="lessonVideoTitle"><i class="fas fa-video" style="color:#6366f1;"></i> Module Video</h3>
+                        <span class="status-badge" id="videoStatus"><i class="fas fa-clock"></i> Pending</span>
+                    </div>
+                    <div class="video-wrapper" id="videoWrapper">
+                        <!-- iframe here -->
+                    </div>
+                    <div class="action-footer">
+                        <button class="mark-btn mark-btn-video" id="markVideoBtn" onclick="markVideoComplete()">
+                            <i class="fas fa-check"></i> Mark as Watched
+                        </button>
+                    </div>
+                </div>
+
+                <!-- PDF Section -->
+                <div class="card" id="pdfCard">
+                    <div class="card-header">
+                        <h3 id="lessonPdfTitle"><i class="fas fa-file-pdf" style="color:#ef4444;"></i> Study Material
+                        </h3>
+                        <span class="status-badge" id="pdfStatus"><i class="fas fa-clock"></i> Pending</span>
+                    </div>
+                    <div class="pdf-wrapper" id="pdfWrapper">
+                        <!-- iframe here -->
+                    </div>
+                    <div class="action-footer">
+                        <a href="#" id="pdfDownloadLink" target="_blank" class="mark-btn"
+                            style="background:#f1f5f9; color:#475569; text-decoration:none;">
+                            <i class="fas fa-download"></i> Download PDF
+                        </a>
+                        <button class="mark-btn mark-btn-pdf" id="markPdfBtn" onclick="markPdfComplete()">
+                            <i class="fas fa-check"></i> Mark as Read
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Final Test Teaser -->
+                <div style="text-align: center; padding: 40px 0 80px;">
+                    <img src="https://ui-avatars.com/api/?name=Cert&background=dcfce7&color=10b981&size=100"
+                        style="border-radius:50%; margin-bottom:20px;" alt="">
+                    <h2 style="font-weight:800;">Ready for Certification?</h2>
+                    <p style="color:#64748b; margin-bottom:30px; max-width:500px; margin-left:auto; margin-right:auto;"
+                        id="lockNote">
+                        Complete all modules to unlock the final test and earn your official certificate.
+                    </p>
+                    <button class="mark-btn btn-test" id="takeTestBtn" disabled onclick="goToTest()">
+                        <i class="fas fa-lock"></i> Take Final Test
+                    </button>
+                </div>
+            </div>
+        </main>
     </div>
 
+    <script src="js/navigation.js"></script>
     <script>
         const API = '';
         const params = new URLSearchParams(window.location.search);
-        const courseId = params.get('course') || 'Unknown Course';
+        const courseId = params.get('course') || 'Learning Essentials (Free)';
 
-        let allLessons = [];         // from DB or fallback
+        let allLessons = [];
         let currentLessonIdx = 0;
-        let completedLessons = [];   // lessonId strings
+        let completedLessons = [];
         let currentVideoWatched = false;
         let currentPdfRead = false;
 
-        // ── Fallback course data (used when DB has no lessons configured) ──────────
         const FALLBACK_DATA = {
             'C Programming Fundamentals': { video: 'https://www.youtube.com/embed/KJgsSFOSQv0?rel=0', pdf: 'dummy_document.pdf', desc: 'Master C programming from scratch.' },
             'Data Structures Advanced': { video: 'https://www.youtube.com/embed/RBSGKlAvoiM?rel=0', pdf: 'dummy_document.pdf', desc: 'Deep dive into data structures.' },
@@ -680,7 +539,6 @@
             return localStorage.getItem('renvox_token') || localStorage.getItem('renvoxToken') || '';
         }
 
-        // ── Main init ─────────────────────────────────────────────────────────────
         async function init() {
             const token = getToken();
             if (!token) {
@@ -689,28 +547,40 @@
                 return;
             }
 
-            // All courses are freely accessible — no enrollment check needed
-
-            // Fetch course details + progress from server
             try {
+                // Auto-enroll if not already enrolled (for real-time dashboard reflection)
+                try {
+                    const checkRes = await fetch(`${API}/api/enrollments/check?courseId=${encodeURIComponent(courseId)}`, {
+                        headers: { Authorization: 'Bearer ' + token }
+                    });
+                    const checkData = await checkRes.json();
+                    if (checkData.ok && !checkData.enrolled) {
+                        const enrollRes = await fetch(`${API}/api/enrollments/enroll-free`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+                            body: JSON.stringify({ courseId })
+                        });
+                        const enrollData = await enrollRes.json();
+                        if (enrollData.ok && window.updateEnrollmentBadge) {
+                            window.updateEnrollmentBadge();
+                        }
+                    }
+                } catch (ee) { console.warn('Auto-enroll error:', ee); }
+
                 const res = await fetch(`${API}/api/course/details?courseId=${encodeURIComponent(courseId)}`, {
                     headers: { Authorization: 'Bearer ' + token }
                 });
                 const data = await res.json();
 
-                // Build lesson list
                 if (data.ok && data.course && data.course.lessons && data.course.lessons.length > 0) {
                     allLessons = data.course.lessons.slice().sort((a, b) => (a.order || 0) - (b.order || 0));
                 } else {
-                    // Fallback: synthesize one lesson from legacy data
                     const fb = FALLBACK_DATA[courseId] || FALLBACK_DATA['Learning Essentials (Free)'];
                     allLessons = [{ lessonId: 'lesson-1', title: 'Main Lesson', videoUrl: fb.video, pdfUrl: fb.pdf, order: 0 }];
                 }
 
-                // Load existing progress
                 if (data.ok && data.progress) {
                     completedLessons = data.progress.completedLessons || [];
-                    // Legacy: if videoWatched, mark first lesson done
                     if (data.progress.videoWatched && completedLessons.length === 0 && allLessons.length > 0) {
                         completedLessons.push(allLessons[0].lessonId);
                     }
@@ -728,15 +598,12 @@
 
             document.getElementById('pageTitle').textContent = courseId;
             document.getElementById('sidebarTitle').textContent = courseId;
-
             renderLessonList();
             loadLesson(0);
-
             document.getElementById('loadingScreen').style.display = 'none';
             document.getElementById('mainLayout').style.display = 'grid';
         }
 
-        // ── Render lesson list in sidebar ─────────────────────────────────────────
         function renderLessonList() {
             const ul = document.getElementById('lessonList');
             if (allLessons.length === 0) {
@@ -753,16 +620,12 @@
             }).join('');
         }
 
-        // ── Load a specific lesson ────────────────────────────────────────────────
         function loadLesson(idx) {
             currentLessonIdx = idx;
             const lesson = allLessons[idx];
             if (!lesson) return;
-
             currentVideoWatched = false;
             currentPdfRead = false;
-
-            // Reset card states
             ['videoCard', 'pdfCard'].forEach(id => document.getElementById(id).classList.remove('completed'));
             ['videoStatus', 'pdfStatus'].forEach(id => {
                 const el = document.getElementById(id);
@@ -777,24 +640,14 @@
             mpBtn.className = 'mark-btn mark-btn-pdf';
             mpBtn.innerHTML = '<i class="fas fa-check"></i> Mark as Read';
             mpBtn.disabled = false;
-
-            // Titles
             document.getElementById('lessonVideoTitle').textContent = lesson.title + ' – Video';
             document.getElementById('lessonPdfTitle').textContent = lesson.title + ' – Study Material';
-
-            // Video
             const vw = document.getElementById('videoWrapper');
             if (lesson.videoUrl) {
-                vw.innerHTML = `<iframe src="${lesson.videoUrl}" title="Course Video"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowfullscreen></iframe>`;
+                vw.innerHTML = `<iframe src="${lesson.videoUrl}" title="Course Video" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>`;
             } else {
-                vw.innerHTML = `<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0f172a;color:#475569;">
-                    <i class="fas fa-video" style="font-size:3rem;margin-bottom:0.75rem;opacity:0.3;color:#6366f1;"></i>
-                    <p>No video configured for this lesson yet.</p></div>`;
+                vw.innerHTML = `<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#0f172a;color:#475569;"><i class="fas fa-video" style="font-size:3rem;margin-bottom:0.75rem;opacity:0.3;color:#6366f1;"></i><p>No video configured for this lesson yet.</p></div>`;
             }
-
-            // PDF
             const pw = document.getElementById('pdfWrapper');
             const dlLink = document.getElementById('pdfDownloadLink');
             if (lesson.pdfUrl) {
@@ -803,23 +656,17 @@
                 dlLink.href = pdfSrc;
                 dlLink.style.display = 'flex';
             } else {
-                pw.innerHTML = `<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f8fafc;">
-                    <i class="fas fa-file-pdf" style="font-size:3rem;margin-bottom:0.75rem;color:#ef4444;opacity:0.3;"></i>
-                    <p style="color:#64748b;">No PDF configured for this lesson yet.</p></div>`;
+                pw.innerHTML = `<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f8fafc;"><i class="fas fa-file-pdf" style="font-size:3rem;margin-bottom:0.75rem;color:#ef4444;opacity:0.3;"></i><p style="color:#64748b;">No PDF configured for this lesson yet.</p></div>`;
                 dlLink.style.display = 'none';
             }
-
-            // If lesson already completed, auto-mark both done (no save)
             if (completedLessons.includes(lesson.lessonId)) {
                 applyVideoDone(false);
                 applyPdfDone(false);
             }
-
             renderLessonList();
             updateProgress();
         }
 
-        // ── Mark video complete ───────────────────────────────────────────────────
         function markVideoComplete() {
             if (currentVideoWatched) return;
             applyVideoDone(true);
@@ -838,8 +685,6 @@
             document.getElementById('check-video').querySelector('.check-icon').innerHTML = '<i class="fas fa-check"></i>';
             updateProgress(save);
         }
-
-        // ── Mark PDF complete ─────────────────────────────────────────────────────
         function markPdfComplete() {
             if (currentPdfRead) return;
             applyPdfDone(true);
@@ -858,48 +703,30 @@
             document.getElementById('check-pdf').querySelector('.check-icon').innerHTML = '<i class="fas fa-check"></i>';
             updateProgress(save);
         }
-
-        // ── Update progress bar + unlock test button ──────────────────────────────
         function updateProgress(save = false) {
             const total = allLessons.length;
-            const done = completedLessons.length;
-
-            // If this lesson is now fully done (video + pdf), mark it completed
             const lesson = allLessons[currentLessonIdx];
             if (lesson && currentVideoWatched && currentPdfRead && !completedLessons.includes(lesson.lessonId)) {
                 completedLessons.push(lesson.lessonId);
                 if (save) saveProgress(lesson.lessonId);
                 renderLessonList();
             }
-
-            const pct = total === 0 ? 0 : Math.round((completedLessons.length / total) * 80);
+            const pct = total === 0 ? 0 : Math.round((completedLessons.length / total) * 100);
             document.getElementById('progressFill').style.width = pct + '%';
             document.getElementById('progressPct').textContent = pct + '%';
-
             const allDone = total > 0 && completedLessons.length >= total;
             const testBtn = document.getElementById('takeTestBtn');
-
-            // Update all-lessons checklist item
             const checkAll = document.getElementById('check-all');
             if (allDone) {
                 checkAll.classList.add('done');
                 checkAll.querySelector('.check-icon').innerHTML = '<i class="fas fa-check"></i>';
             } else {
                 checkAll.classList.remove('done');
-                checkAll.querySelector('.check-icon').innerHTML = '<i class="fas fa-list-check"></i>';
             }
-
             testBtn.disabled = !allDone;
-            testBtn.innerHTML = allDone
-                ? '<i class="fas fa-arrow-right"></i> Take Final Test'
-                : '<i class="fas fa-lock"></i> Take Final Test';
-
-            document.getElementById('lockNote').textContent = allDone
-                ? 'You\'re ready! Click to start the test.'
-                : `${completedLessons.length}/${total} lessons completed`;
+            testBtn.innerHTML = allDone ? '<i class="fas fa-arrow-right"></i> Take Final Test' : '<i class="fas fa-lock"></i> Take Final Test';
+            document.getElementById('lockNote').textContent = allDone ? "You're ready! Click to start the test." : `${completedLessons.length}/${total} lessons completed`;
         }
-
-        // ── Save progress to server ───────────────────────────────────────────────
         async function saveProgress(lessonId) {
             const token = getToken();
             if (!token) return;
@@ -907,22 +734,14 @@
                 await fetch(`${API}/api/course/progress`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-                    body: JSON.stringify({
-                        courseId,
-                        lessonId,
-                        videoWatched: currentVideoWatched,
-                        pdfRead: currentPdfRead,
-                        totalLessons: allLessons.length
-                    })
+                    body: JSON.stringify({ courseId, lessonId, videoWatched: currentVideoWatched, pdfRead: currentPdfRead, totalLessons: allLessons.length })
                 });
-            } catch (e) { /* silent */ }
+            } catch (e) { }
         }
-
         function goToTest() {
             if (completedLessons.length < allLessons.length) return;
-            window.location.href = `course-test.html?course=${encodeURIComponent(courseId)}`;
+            window.location.href = `quiz-engine.html?course=${encodeURIComponent(courseId)}`;
         }
-
         function showTestPassed() {
             const btn = document.getElementById('takeTestBtn');
             btn.innerHTML = '<i class="fas fa-trophy"></i> Test Passed! Get Certificate';
@@ -932,10 +751,8 @@
             document.getElementById('progressFill').style.width = '100%';
             document.getElementById('progressPct').textContent = '100%';
         }
-
         init();
     </script>
-    
 </body>
 
 </html>

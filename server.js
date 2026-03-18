@@ -143,11 +143,11 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-      "frame-src": ["'self'", "https://www.youtube.com", "https://youtube.com", "https://api.razorpay.com"],
-      "img-src": ["'self'", "data:", "https://res.cloudinary.com", "https://images.unsplash.com", "https://*.google.com", "https://*.googleusercontent.com", "https://i.ytimg.com", "https://yt3.ggpht.com", "https://ui-avatars.com"],
+      "frame-src": ["'self'", "https://www.youtube.com", "https://youtube.com", "https://api.razorpay.com", "https://docs.google.com"],
+      "img-src": ["'self'", "data:", "blob:", "https://res.cloudinary.com", "https://images.unsplash.com", "https://*.google.com", "https://*.googleusercontent.com", "https://i.ytimg.com", "https://yt3.ggpht.com", "https://ui-avatars.com", "https://cdni.iconscout.com"],
       "script-src": ["'self'", "'unsafe-inline'", "https://www.googletagmanager.com", "https://*.google.com", "https://checkout.razorpay.com"],
       "script-src-attr": ["'unsafe-inline'"],
-      "connect-src": ["'self'", "https://*.google-analytics.com", "https://*.analytics.google.com", "https://*.googletagmanager.com", "https://api.razorpay.com"]
+      "connect-src": ["'self'", "https://*.google-analytics.com", "https://*.analytics.google.com", "https://*.googletagmanager.com", "https://api.razorpay.com", "https://lms-backend-renvox.onrender.com"]
     },
   },
 }));
@@ -155,7 +155,7 @@ app.use(helmet({
 // 2. Rate Limiting to prevent API abuse/DoS
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
+  max: 1000, // Limit each IP to 1000 requests per windowMs (increased for dev/restoration)
   message: { ok: false, message: "Too many requests from this IP, please try again after 15 minutes." },
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
@@ -168,36 +168,44 @@ const apiLimiter = rateLimit({
 // Apply rate limiter to all API routes
 app.use('/api/', apiLimiter);
 
-// 3. XSS Protection (Sanitize user input)
-app.use(xss());
+// 3. XSS Protection — skip multipart/form-data (file uploads) to avoid corrupting them
+app.use((req, res, next) => {
+    const ct = req.headers['content-type'] || '';
+    if (ct.startsWith('multipart/form-data')) return next();
+    xss()(req, res, next);
+});
 
-// 4. Proper CORS Configuration
-const allowedOrigins = [
-  'http://localhost:3000',
-  'http://127.0.0.1:3000',
-  'http://localhost:5500',
-  'http://127.0.0.1:5500',
-  'http://localhost:5508',
-  'http://127.0.0.1:5508'
-];
-
+// 4. CORS Configuration — allow all localhost origins in development
 app.use(cors({
   origin: function (origin, callback) {
-    // allow requests with no origin (like mobile apps or curl requests)
+    // No origin = same-origin request, mobile app, curl, etc. → always allow
     if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) === -1) {
-      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
-      return callback(new Error(msg), false);
-    }
-    return callback(null, true);
+
+    // Allow any localhost or 127.0.0.1 origin on ANY port (covers 5000, 5500, 3000, Live Server, etc.)
+    const isLocalhost =
+      /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) ||
+      origin === 'null'; // file:// protocol shows as "null"
+
+    if (isLocalhost) return callback(null, true);
+
+    // In production, restrict to your actual domain
+    const productionOrigins = [
+      'https://renvox.in',
+      'https://www.renvox.in',
+      'https://lms-backend-renvox.onrender.com'
+    ];
+    if (productionOrigins.includes(origin)) return callback(null, true);
+
+    // Block everything else
+    return callback(new Error(`CORS: origin "${origin}" is not allowed.`), false);
   },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 }));
 
-app.use(express.json({ limit: '10kb' })); // Body limit to prevent large payload attacks
-app.use(express.urlencoded({ extended: true, limit: '10kb' }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 const { logSuspiciousActivity } = require('./middleware/security');
 
@@ -272,6 +280,17 @@ app.use('/api/store', storeRouter);
 // ─── Used Books Marketplace Routes ───────────────────────────
 app.use('/api/used-books', usedBooksRoutes);
 app.use('/uploads/books', express.static(require('path').join(__dirname, 'uploads', 'books')));
+
+// Handle Multer upload errors (e.g. file too large, wrong type)
+app.use((err, req, res, next) => {
+    if (err && err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(413).json({ ok: false, message: 'Image is too large. Max size is 5MB.' });
+    }
+    if (err && err.message === 'Only image files allowed') {
+        return res.status(400).json({ ok: false, message: 'Only image files (JPG, PNG, WEBP) are allowed.' });
+    }
+    next(err);
+});
 
 // ─── Course Platform Routes ───────────────────────────────────
 app.use('/api/payments', paymentRoutes);
@@ -540,83 +559,6 @@ app.post('/api/update-profile', async (req, res) => {
   }
 });
 
-// ---------------- Books API ----------------
-const BOOKS_FILE = path.join(__dirname, 'data', 'books.json');
-
-function readBooks() {
-  try { return JSON.parse(fs.readFileSync(BOOKS_FILE, 'utf8') || '[]'); } catch (e) { return []; }
-}
-function writeBooks(books) { fs.writeFileSync(BOOKS_FILE, JSON.stringify(books, null, 2), 'utf8'); }
-
-// Get all book listings (with optional filters)
-app.get('/api/books', (req, res) => {
-  let books = readBooks();
-  const { college, condition, maxPrice } = req.query;
-  if (college) books = books.filter(b => b.college === college);
-  if (condition) books = books.filter(b => b.condition === condition);
-  if (maxPrice) books = books.filter(b => b.price <= Number(maxPrice));
-  res.json({ ok: true, books });
-});
-
-// List a new book for sale (requires login token)
-app.post('/api/books', async (req, res) => {
-  const auth = req.headers.authorization || '';
-  const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
-  if (!token) return res.status(401).json({ ok: false, message: 'Login required to list a book' });
-
-  let userId, userRole;
-  try {
-    const payload = jwt.verify(token, JWT_SECRET);
-    userId = payload.userId;
-    userRole = payload.role;
-  } catch (err) {
-    return res.status(401).json({ ok: false, message: 'Invalid or expired token' });
-  }
-
-  const user = await StoreUser.findById(userId);
-  if (!user) return res.status(404).json({ ok: false, message: 'User not found' });
-
-  const { name, subject, college, condition, price, img, contact } = req.body;
-  if (!name || !price) return res.status(400).json({ ok: false, message: 'Book name and price are required' });
-
-  const books = readBooks();
-  const book = {
-    id: Date.now().toString(),
-    name,
-    subject: subject || '',
-    college: college || user.collegeName || '',
-    condition: condition || 'Used',
-    price: Number(price) || 0,
-    seller: user.name || 'Anonymous',
-    sellerId: user._id,
-    sellerEmail: user.email || '',
-    contact: contact || '',
-    img: img || '',
-    listedAt: new Date().toISOString()
-  };
-  books.unshift(book);
-  writeBooks(books);
-  res.json({ ok: true, message: 'Book listed successfully!', book });
-});
-
-// Delete a book listing (only by the seller)
-app.delete('/api/books/:id', (req, res) => {
-  const auth = req.headers.authorization || '';
-  const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
-  if (!token) return res.status(401).json({ ok: false, message: 'Login required' });
-
-  let userId;
-  try { userId = jwt.verify(token, JWT_SECRET).userId; } catch (e) { return res.status(401).json({ ok: false, message: 'Invalid token' }); }
-
-  let books = readBooks();
-  const book = books.find(b => b.id === req.params.id);
-  if (!book) return res.status(404).json({ ok: false, message: 'Book not found' });
-  if (String(book.sellerId) !== String(userId)) return res.status(403).json({ ok: false, message: 'Not your listing' });
-  books = books.filter(b => b.id !== req.params.id);
-  writeBooks(books);
-  res.json({ ok: true, message: 'Book removed' });
-});
-
 // simple health check endpoint
 app.get('/api/ping', (req, res) => {
   res.json({ ok: true, message: 'pong' });
@@ -660,6 +602,7 @@ const io = require('socket.io')(server, {
     methods: ["GET", "POST"]
   }
 });
+app.set('io', io);
 
 // Community Chat Logic (Socket.io)
 io.on('connection', (socket) => {

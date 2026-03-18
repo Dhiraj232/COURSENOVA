@@ -1,19 +1,19 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📚 Book Store – RENVOX</title>
+    <title>Book Store - RENVOX</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
     <script src="js/config.js"></script>
     <style>
-        /* ═══════════════════════════════════════════════════
-           STORE PAGE — LOCAL STYLES
-           ═══════════════════════════════════════════════════ */
+        /* ---------------------------------------------------
+           STORE PAGE - LOCAL STYLES
+           --------------------------------------------------- */
         :root {
             --brand: #6c5ce7;
             --brand2: #a29bfe;
@@ -33,7 +33,7 @@
             color: var(--text);
         }
 
-        /* ── Hero Banner ── */
+        /* -- Hero Banner -- */
         .store-hero {
             background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 50%, #00cec9 100%);
             padding: 60px 20px 50px;
@@ -83,7 +83,7 @@
             box-shadow: 0 14px 32px rgba(0, 0, 0, .25);
         }
 
-        /* ── Stats Bar ── */
+        /* -- Stats Bar -- */
         .stats-bar {
             display: flex;
             justify-content: center;
@@ -118,7 +118,7 @@
             letter-spacing: .5px;
         }
 
-        /* ── Layout ── */
+        /* -- Layout -- */
         .store-layout {
             max-width: 1280px;
             margin: 0 auto;
@@ -134,7 +134,7 @@
             }
         }
 
-        /* ── Filter Sidebar ── */
+        /* -- Filter Sidebar -- */
         .filter-sidebar {
             background: var(--card-bg);
             border-radius: 16px;
@@ -229,10 +229,10 @@
             color: var(--brand);
         }
 
-        /* ── Main Content ── */
+        /* -- Main Content -- */
         .store-main {}
 
-        /* ── Tabs ── */
+        /* -- Tabs -- */
         .store-tabs {
             display: flex;
             gap: 4px;
@@ -262,7 +262,7 @@
             box-shadow: 0 4px 14px rgba(108, 92, 231, .3);
         }
 
-        /* ── Search Bar ── */
+        /* -- Search Bar -- */
         .search-bar {
             display: flex;
             gap: 10px;
@@ -314,14 +314,14 @@
             transform: translateY(-1px);
         }
 
-        /* ── Books Grid ── */
+        /* -- Books Grid -- */
         .books-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
             gap: 20px;
         }
 
-        /* ── Book Card ── */
+        /* -- Book Card -- */
         .book-card {
             background: var(--card-bg);
             border-radius: 16px;
@@ -449,7 +449,7 @@
             transform: scale(1.05);
         }
 
-        /* ── Empty / Loading States ── */
+        /* -- Empty / Loading States -- */
         .state-box {
             background: var(--card-bg);
             border-radius: 16px;
@@ -475,7 +475,7 @@
             margin-bottom: 20px;
         }
 
-        /* ── My Listings ── */
+        /* -- My Listings -- */
         .my-books-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -565,9 +565,9 @@
             color: white;
         }
 
-        /* ══════════════════════════════════════════════════
-           MODAL — SELL BOOK FORM
-           ══════════════════════════════════════════════════ */
+        /* --------------------------------------------------
+           MODAL - SELL BOOK FORM
+           -------------------------------------------------- */
         .modal-overlay {
             display: none;
             position: fixed;
@@ -764,7 +764,7 @@
             display: block;
         }
 
-        /* ── Toast ── */
+        /* -- Toast -- */
         .toast {
             position: fixed;
             bottom: 24px;
@@ -804,7 +804,7 @@
             background: var(--orange);
         }
 
-        /* ── Results header ── */
+        /* -- Results header -- */
         .results-hdr {
             display: flex;
             align-items: center;
@@ -833,7 +833,7 @@
 </head>
 
 <body>
-    <!-- ═══════════════ RENVOX NAVBAR ═══════════════ -->
+    <!-- --------------- RENVOX NAVBAR --------------- -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
             <a href="index.html" class="logo"><img src="images/logo%20renvox.png" alt="RENVOX"> <span>RENVOX</span></a>
@@ -841,56 +841,50 @@
                 <input type="text" id="navbarSearch" placeholder="Search for courses, subjects, or concepts...">
                 <button type="button" onclick="handleNavbarSearch()"><i class="fas fa-search"></i></button>
             </div>
-            <ul class="nav-menu" id="navMenu">
-                <li><a href="index.html">Home</a></li>
-                <li><a href="certificates.html">Courses</a></li>
-                <li><a href="testing-center.html">Mock Tests</a></li>
-                <li><a href="community.html">Community</a></li>
-                <li><a href="store.html" class="active">Store</a></li>
-            </ul>
+            <ul class="nav-menu" id="navMenu"></ul>
             <div class="nav-buttons" id="navButtons"></div>
             <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
         </div>
     </nav>
 
-    <!-- ═══════════════ HERO ═══════════════ -->
+    <!-- --------------- HERO --------------- -->
     <div class="store-hero">
-        <h1>📚 Used Books Marketplace</h1>
-        <p>Buy &amp; sell used books directly with students near you — No middlemen!</p>
+        <h1>Used Books Marketplace</h1>
+        <p>Buy &amp; sell used books directly with students near you - No middlemen!</p>
         <button class="sell-btn-hero" id="openSellModal">
             <i class="fas fa-plus-circle"></i> Sell Your Book
         </button>
     </div>
 
-    <!-- ═══════════════ STATS ═══════════════ -->
+    <!-- --------------- STATS --------------- -->
     <div class="stats-bar">
         <div class="stat-item">
             <div class="stat-num" id="statBooks">0</div>
-            <div class="stat-lbl">📖 Books Listed</div>
+            <div class="stat-lbl">Books Listed</div>
         </div>
         <div class="stat-item">
             <div class="stat-num" id="statSellers">0</div>
-            <div class="stat-lbl">👤 Active Sellers</div>
+            <div class="stat-lbl">Active Sellers</div>
         </div>
         <div class="stat-item">
-            <div class="stat-num" id="statAvg">₹0</div>
-            <div class="stat-lbl">💰 Avg Price</div>
+            <div class="stat-num" id="statAvg">0</div>
+            <div class="stat-lbl">Avg Price</div>
         </div>
         <div class="stat-item">
             <div class="stat-num" id="statCategories">0</div>
-            <div class="stat-lbl">📂 Categories</div>
+            <div class="stat-lbl">Categories</div>
         </div>
     </div>
 
-    <!-- ═══════════════ MAIN LAYOUT ═══════════════ -->
+    <!-- --------------- MAIN LAYOUT --------------- -->
     <div class="store-layout">
 
-        <!-- ── Filter Sidebar ── -->
+        <!-- -- Filter Sidebar -- -->
         <aside class="filter-sidebar">
             <h3><i class="fas fa-sliders-h"></i> Filters</h3>
 
             <div class="filter-group">
-                <label>📂 Category</label>
+                <label>Category</label>
                 <select id="filterCategory">
                     <option value="all">All Categories</option>
                     <option value="Engineering">Engineering</option>
@@ -905,18 +899,18 @@
             </div>
 
             <div class="filter-group">
-                <label>🔖 Condition</label>
+                <label>Condition</label>
                 <select id="filterCondition">
                     <option value="all">All Conditions</option>
-                    <option value="Like New">✨ Like New</option>
-                    <option value="Good">👍 Good</option>
-                    <option value="Used">📝 Used</option>
-                    <option value="Old">⚠️ Old</option>
+                    <option value="Like New">Like New</option>
+                    <option value="Good">Good</option>
+                    <option value="Used">Used</option>
+                    <option value="Old">Old</option>
                 </select>
             </div>
 
             <div class="filter-group">
-                <label>💰 Price Range (₹)</label>
+                <label>Price Range (₹)</label>
                 <div class="price-row">
                     <input type="number" id="filterMinPrice" placeholder="Min" min="0">
                     <input type="number" id="filterMaxPrice" placeholder="Max" min="0">
@@ -924,7 +918,7 @@
             </div>
 
             <div class="filter-group">
-                <label>📍 Location</label>
+                <label>Location</label>
                 <input type="text" id="filterLocation" placeholder="City or area">
             </div>
 
@@ -936,16 +930,16 @@
             </button>
         </aside>
 
-        <!-- ── Main Content ── -->
+        <!-- -- Main Content -- -->
         <div class="store-main">
 
             <!-- Tabs -->
             <div class="store-tabs">
                 <button class="tab-btn active" id="tabBrowse" onclick="switchTab('browse')">
-                    🔍 Browse Books
+                    Browse Books
                 </button>
                 <button class="tab-btn" id="tabMy" onclick="switchTab('my')">
-                    📋 My Listings
+                    My Listings
                 </button>
             </div>
 
@@ -969,18 +963,18 @@
                 </select>
             </div>
 
-            <!-- ══ BROWSE TAB ══ -->
+            <!-- -- BROWSE TAB -- -->
             <div id="browsePage">
                 <div class="books-grid" id="booksGrid">
                     <div class="state-box">
-                        <div class="icon">⏳</div>
+                        <div class="icon"></div>
                         <h3>Loading books...</h3>
                         <p>Fetching available listings</p>
                     </div>
                 </div>
             </div>
 
-            <!-- ══ MY LISTINGS TAB ══ -->
+            <!-- -- MY LISTINGS TAB -- -->
             <div id="myPage" style="display:none;">
                 <div class="search-bar" style="margin-bottom:18px;">
                     <button class="search-btn" style="flex:none; padding:12px 24px;" onclick="openSellModal()">
@@ -989,7 +983,7 @@
                 </div>
                 <div class="my-books-grid" id="myBooksGrid">
                     <div class="state-box">
-                        <div class="icon">📂</div>
+                        <div class="icon"></div>
                         <h3>No listings yet</h3>
                         <p>Click "Add New Book" to start selling</p>
                     </div>
@@ -999,11 +993,11 @@
         </div>
     </div>
 
-    <!-- ═══════════════ SELL BOOK MODAL ═══════════════ -->
+    <!-- --------------- SELL BOOK MODAL --------------- -->
     <div class="modal-overlay" id="sellModal">
         <div class="modal-box">
             <div class="modal-hdr">
-                <h2>📖 List Your Book</h2>
+                <h2>List Your Book</h2>
                 <button class="modal-close-btn" onclick="closeSellModal()"><i class="fas fa-times"></i></button>
             </div>
 
@@ -1038,10 +1032,10 @@
                     <div class="form-field">
                         <label>Condition</label>
                         <select id="fCondition">
-                            <option value="Like New">✨ Like New</option>
-                            <option value="Good" selected>👍 Good</option>
-                            <option value="Used">📝 Used</option>
-                            <option value="Old">⚠️ Old</option>
+                            <option value="Like New">Like New</option>
+                            <option value="Good" selected>Good</option>
+                            <option value="Used">Used</option>
+                            <option value="Old">Old</option>
                         </select>
                     </div>
                 </div>
@@ -1069,11 +1063,11 @@
                 </div>
 
                 <div class="form-field">
-                    <label>📷 Book Image</label>
+                    <label>Book Image</label>
                     <label class="img-upload-label" for="fImage">
                         <i class="fas fa-cloud-upload-alt"></i>
                         <span>Click to upload photo</span>
-                        <small style="color:var(--muted);">JPG, PNG, WEBP – Max 5MB</small>
+                        <small style="color:var(--muted);">JPG, PNG, WEBP - Max 5MB</small>
                     </label>
                     <input type="file" id="fImage" accept="image/*" style="display:none" onchange="previewImg(event)">
                     <img id="imagePreview" alt="Preview">
@@ -1089,10 +1083,10 @@
         </div>
     </div>
 
-    <!-- ═══════════════ TOAST ═══════════════ -->
+    <!-- --------------- TOAST --------------- -->
     <div class="toast" id="toast"></div>
 
-    <!-- ═══════════════ SCRIPTS ═══════════════ -->
+    <!-- --------------- SCRIPTS --------------- -->
     <script src="/socket.io/socket.io.js"></script>
     <script>
         const API = '/api/used-books';
@@ -1103,7 +1097,7 @@
             socket.emit('join-room', 'store-notifications');
             socket.on('receive-message', (data) => {
                 if (data.type === 'new-book') {
-                    showToast(`📚 New Book Listed: ${data.title}`, 'success');
+                    showToast(`New Book Listed: ${data.title}`, 'success');
                     if (currentTab === 'browse') loadBooks();
                 }
             });
@@ -1112,13 +1106,13 @@
         let currentTab = 'browse';
         let searchDebounceTimer = null;
 
-        // ═══ INIT ═══
+        // --- INIT ---
         document.addEventListener('DOMContentLoaded', () => {
             loadBooks();
             document.getElementById('openSellModal').addEventListener('click', openSellModal);
         });
 
-        // ═══ TAB SWITCH ═══
+        // --- TAB SWITCH ---
         function switchTab(tab) {
             currentTab = tab;
             document.getElementById('browsePage').style.display = tab === 'browse' ? 'block' : 'none';
@@ -1130,10 +1124,10 @@
             if (tab === 'my') loadMyBooks();
         }
 
-        // ═══ LOAD ALL BOOKS ═══
+        // --- LOAD ALL BOOKS ---
         async function loadBooks(params = {}) {
             const grid = document.getElementById('booksGrid');
-            grid.innerHTML = `<div class="state-box"><div class="icon">⏳</div><h3>Loading...</h3></div>`;
+            grid.innerHTML = `<div class="state-box"><div class="icon"></div><h3>Loading...</h3></div>`;
             try {
                 const qs = new URLSearchParams(params).toString();
                 const res = await fetch(`${API}${qs ? '?' + qs : ''}`);
@@ -1145,15 +1139,15 @@
                 document.getElementById('resultsCount').textContent =
                     `${data.total || allBooks.length} book${allBooks.length !== 1 ? 's' : ''} found`;
             } catch (err) {
-                grid.innerHTML = `<div class="state-box"><div class="icon">❌</div><h3>Failed to load</h3><p>${err.message}</p></div>`;
+                grid.innerHTML = `<div class="state-box"><div class="icon"></div><h3>Failed to load</h3><p>${err.message}</p></div>`;
             }
         }
 
-        // ═══ RENDER BOOK CARDS ═══
+        // --- RENDER BOOK CARDS ---
         function renderBooks(books, container) {
             if (!books.length) {
                 container.innerHTML = `<div class="state-box">
-                    <div class="icon">📭</div>
+                    <div class="icon"></div>
                     <h3>No books found</h3>
                     <p>Try changing the filters or be the first to list a book!</p>
                     <button class="apply-btn" style="max-width:180px;margin:0 auto;" onclick="openSellModal()">
@@ -1173,7 +1167,7 @@
                 return `
                 <div class="book-card" onclick="goToBook('${book._id}')">
                     <div class="book-img">
-                        ${imgSrc ? `<img src="${imgSrc}" alt="${book.title}" onerror="this.parentElement.innerHTML='📚'">` : '📚'}
+                        ${imgSrc ? `<img src="${imgSrc}" alt="${book.title}" onerror="this.parentElement.innerHTML=''">` : ''}
                         <span class="book-condition-badge ${condClass}">${book.condition || 'Used'}</span>
                     </div>
                     <div class="book-body">
@@ -1194,12 +1188,12 @@
             }).join('');
         }
 
-        // ═══ NAVIGATE TO BOOK DETAIL ═══
+        // --- NAVIGATE TO BOOK DETAIL ---
         function goToBook(id) {
             window.location.href = `book-detail.html?id=${id}`;
         }
 
-        // ═══ STATS ═══
+        // --- STATS ---
         function updateStats(books, total) {
             const sellers = new Set(books.map(b => b.sellerId)).size;
             const avg = books.length ? Math.round(books.reduce((s, b) => s + b.price, 0) / books.length) : 0;
@@ -1210,7 +1204,7 @@
             document.getElementById('statCategories').textContent = cats;
         }
 
-        // ═══ SEARCH & FILTER ═══
+        // --- SEARCH & FILTER ---
         function debounceSearch() {
             clearTimeout(searchDebounceTimer);
             searchDebounceTimer = setTimeout(applyFilters, 400);
@@ -1245,20 +1239,20 @@
             loadBooks();
         }
 
-        // ═══ MY LISTINGS ═══
+        // --- MY LISTINGS ---
         async function loadMyBooks() {
             const grid = document.getElementById('myBooksGrid');
             const token = localStorage.getItem('renvox_token') || localStorage.getItem('renvoxToken') || '';
             if (!token) {
                 grid.innerHTML = `<div class="state-box">
-                    <div class="icon">🔐</div>
+                    <div class="icon"></div>
                     <h3>Login Required</h3>
                     <p>Please log in to view and manage your listings</p>
                     <a href="signup.html" class="apply-btn" style="display:inline-block;max-width:180px;margin:0 auto;text-decoration:none;text-align:center;">Login / Sign Up</a>
                 </div>`;
                 return;
             }
-            grid.innerHTML = `<div class="state-box"><div class="icon">⏳</div><h3>Loading your listings...</h3></div>`;
+            grid.innerHTML = `<div class="state-box"><div class="icon"></div><h3>Loading your listings...</h3></div>`;
             try {
                 const res = await fetch(`${API}/my`, { headers: { 'Authorization': 'Bearer ' + token } });
                 const data = await res.json();
@@ -1266,7 +1260,7 @@
                 const books = data.books || [];
                 if (!books.length) {
                     grid.innerHTML = `<div class="state-box">
-                        <div class="icon">📚</div>
+                        <div class="icon"></div>
                         <h3>No listings yet</h3>
                         <p>Click "Add New Book" to start selling your books</p>
                     </div>`;
@@ -1277,28 +1271,28 @@
                     return `
                     <div class="my-book-card">
                         <div class="my-book-img">
-                            ${imgSrc ? `<img src="${imgSrc}" alt="${book.title}" onerror="this.parentElement.innerHTML='📚'">` : '📚'}
+                            ${imgSrc ? `<img src="${imgSrc}" alt="${book.title}" onerror="this.parentElement.innerHTML=''">` : ''}
                         </div>
                         <div class="my-book-info">
                             <h4>${book.title}</h4>
-                            <p>${book.author} · ₹${book.price}</p>
+                            <p>${book.author} - ₹${book.price}</p>
                             <p style="color:var(--muted);font-size:.78rem;">
                                 <i class="fas fa-map-marker-alt"></i> ${book.location || 'No location'}
                             </p>
                             <div class="my-book-actions">
-                                <button class="btn-edit"   onclick="editBook('${book._id}')">✏️ Edit</button>
-                                <button class="btn-delete" onclick="deleteBook('${book._id}', this)">🗑️ Delete</button>
-                                <button class="btn-sold" style="padding:6px 14px;border:none;border-radius:6px;font-size:.8rem;font-weight:600;cursor:pointer;transition:all .2s;background:${book.status === 'sold' ? '#d1fae5' : '#fef3c7'};color:${book.status === 'sold' ? '#065f46' : '#92400e'};" onclick="markSold('${book._id}', this, '${book.status}')">${book.status === 'sold' ? '🔄 Relist' : '✅ Mark Sold'}</button>
+                                <button class="btn-edit"   onclick="editBook('${book._id}')">Edit</button>
+                                <button class="btn-delete" onclick="deleteBook('${book._id}', this)">Delete</button>
+                                <button class="btn-sold" style="padding:6px 14px;border:none;border-radius:6px;font-size:.8rem;font-weight:600;cursor:pointer;transition:all .2s;background:${book.status === 'sold' ? '#d1fae5' : '#fef3c7'};color:${book.status === 'sold' ? '#065f46' : '#92400e'};" onclick="markSold('${book._id}', this, '${book.status}')">${book.status === 'sold' ? 'Relist' : 'Mark Sold'}</button>
                             </div>
                         </div>
                     </div>`;
                 }).join('');
             } catch (err) {
-                grid.innerHTML = `<div class="state-box"><div class="icon">❌</div><h3>${err.message}</h3></div>`;
+                grid.innerHTML = `<div class="state-box"><div class="icon"></div><h3>${err.message}</h3></div>`;
             }
         }
 
-        // ═══ EDIT BOOK ═══
+        // --- EDIT BOOK ---
         async function editBook(id) {
             try {
                 const res = await fetch(`${API}/${id}`);
@@ -1328,11 +1322,11 @@
             } catch (err) { showToast(err.message, 'error'); }
         }
 
-        // ═══ DELETE BOOK ═══
+        // --- DELETE BOOK ---
         async function deleteBook(id, btn) {
             if (!confirm('Are you sure you want to delete this listing?')) return;
             const token = localStorage.getItem('renvox_token') || localStorage.getItem('renvoxToken') || '';
-            btn.disabled = true; btn.textContent = '⏳';
+            btn.disabled = true; btn.textContent = '...';
             try {
                 const res = await fetch(`${API}/${id}`, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
                 const data = await res.json();
@@ -1341,15 +1335,15 @@
                 loadMyBooks();
             } catch (err) {
                 showToast(err.message, 'error');
-                btn.disabled = false; btn.textContent = '🗑️ Delete';
+                btn.disabled = false; btn.textContent = 'Delete';
             }
         }
 
-        // ═══ MARK AS SOLD ═══
+        // --- MARK AS SOLD ---
         async function markSold(id, btn, currentStatus) {
             const token = localStorage.getItem('renvox_token') || localStorage.getItem('renvoxToken') || '';
             if (!token) { showToast('Login required', 'error'); return; }
-            btn.disabled = true; btn.textContent = '⏳';
+            btn.disabled = true; btn.textContent = '...';
             try {
                 const res = await fetch(`${API}/${id}/sold`, { method: 'PATCH', headers: { 'Authorization': 'Bearer ' + token } });
                 const data = await res.json();
@@ -1359,15 +1353,15 @@
             } catch (err) {
                 showToast(err.message, 'error');
                 btn.disabled = false;
-                btn.textContent = currentStatus === 'sold' ? '🔄 Relist' : '✅ Mark Sold';
+                btn.textContent = currentStatus === 'sold' ? 'Relist' : 'Mark Sold';
             }
         }
 
-        // ═══ SELL / EDIT MODAL ═══
+        // --- SELL / EDIT MODAL ---
         function openSellModal() {
             const token = localStorage.getItem('renvox_token') || localStorage.getItem('renvoxToken') || '';
             if (!token) {
-                if (confirm('⚠️ You must be logged in to list a book.\n\nClick OK to go to the login page.')) {
+                if (confirm('You must be logged in to list a book.\n\nClick OK to go to the login page.')) {
                     window.location.href = '/auth/google';
                 }
                 return;
@@ -1402,7 +1396,7 @@
             reader.readAsDataURL(file);
         }
 
-        // ═══ SUBMIT BOOK ═══
+        // --- SUBMIT BOOK ---
         async function submitBook(e) {
             e.preventDefault();
             const token = localStorage.getItem('renvox_token') || localStorage.getItem('renvoxToken') || '';
@@ -1435,7 +1429,7 @@
                 const data = await res.json();
                 if (!data.ok) throw new Error(data.message);
 
-                showFormAlert(editId ? 'Book updated successfully! ✅' : 'Book listed successfully! ✅', 'success');
+                showFormAlert(editId ? 'Book updated successfully!' : 'Book listed successfully!', 'success');
                 if (!editId && socket) {
                     socket.emit('send-message', {
                         room: 'store-notifications',
@@ -1462,7 +1456,7 @@
             el.className = 'form-alert ' + type;
         }
 
-        // ═══ TOAST ═══
+        // --- TOAST ---
         function showToast(msg, type = 'success') {
             const t = document.getElementById('toast');
             t.textContent = msg;

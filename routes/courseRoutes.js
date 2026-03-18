@@ -110,9 +110,7 @@ router.get('/progress', async (req, res) => {
     }
 });
 
-// ── POST /api/course/progress ─────────────────────────────────────────────────
-// Body: { courseId, lessonId?, videoId?, testId?, videoWatched?, pdfRead?, totalLessons? }
-router.post('/progress', async (req, res) => {
+const handleProgress = async (req, res) => {
     const { courseId, lessonId, videoId, testId, videoWatched, pdfRead, totalLessons, totalVideos = 1, totalTests = 1 } = req.body;
     if (!courseId) return res.status(400).json({ ok: false, message: 'courseId is required' });
 
@@ -164,13 +162,15 @@ router.post('/progress', async (req, res) => {
 
         record.updatedAt = new Date();
         await record.save();
-
         res.json({ ok: true, record });
     } catch (err) {
         console.error('Progress update error:', err);
         res.status(500).json({ ok: false, message: 'Failed to save progress' });
     }
-});
+};
+
+router.post('/progress', handleProgress);
+router.post('/save-progress', handleProgress);
 
 // ── POST /api/course/submit-test ──────────────────────────────────────────────
 router.post('/submit-test', async (req, res) => {

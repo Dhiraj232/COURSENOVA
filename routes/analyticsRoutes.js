@@ -141,4 +141,38 @@ router.get('/me', requireAuth, async (req, res) => {
     res.redirect('/api/analytics/dashboard');
 });
 
+// @route   POST /api/track-time
+// @desc    Increments live time spent correctly every minute
+router.post('/track-time', requireAuth, async (req, res) => {
+    try {
+        const userId = req.userId;
+        let analytics = await UserAnalytics.findOne({ userId });
+        if (!analytics) {
+            analytics = new UserAnalytics({
+                userId,
+                learningStreak: 1,
+                weeklyActivity: [
+                    { day: 'Mon', minutes: 0 }, { day: 'Tue', minutes: 0 }, { day: 'Wed', minutes: 0 },
+                    { day: 'Thu', minutes: 0 }, { day: 'Fri', minutes: 0 }, { day: 'Sat', minutes: 0 }, { day: 'Sun', minutes: 0 }
+                ]
+            });
+        }
+        
+        analytics.totalTimeSpent += 1;
+        
+        // Update today's weekly graph
+        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const todayDay = days[new Date().getDay()];
+        const todayIdx = analytics.weeklyActivity.findIndex(d => d.day === todayDay);
+        if (todayIdx !== -1) {
+            analytics.weeklyActivity[todayIdx].minutes += 1;
+        }
+
+        await analytics.save();
+        res.json({ ok: true, totalTime: analytics.totalTimeSpent, weeklyActivity: analytics.weeklyActivity });
+    } catch (err) {
+        res.status(500).json({ ok: false, message: 'Server error tracking time' });
+    }
+});
+
 module.exports = router;

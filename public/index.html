@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -48,7 +48,7 @@
     <link rel="stylesheet" href="css/navigation.css">
 
     <!-- Deferred Scripts to avoid render blocking -->
-    <script src="js/navigation.js" defer></script>
+    <script src="js/navigation.js?v=1.2" defer></script>
     <script src="js/analytics.js" defer></script>
 </head>
 
@@ -65,13 +65,7 @@
                 </button>
             </div>
 
-            <ul class="nav-menu" id="navMenu">
-                <li><a href="index.html">Home</a></li>
-                <li><a href="certificates.html">Courses</a></li>
-                <li><a href="testing-center.html">Mock Tests</a></li>
-                <li><a href="community.html">Community</a></li>
-                <li><a href="store.html">Store</a></li>
-            </ul>
+            <ul class="nav-menu" id="navMenu"></ul>
             <div class="nav-buttons" id="navButtons">
                 <!-- Buttons or User Dropdown will be injected by navigation.js -->
             </div>
@@ -84,7 +78,7 @@
     <!-- ==================== HERO SECTION ==================== -->
     <section class="hero" id="home">
         <div class="hero-content">
-            <h1 id="heroTitle">Smart Learning Platform for Students</h1>
+            <h1 id="heroTitle">Smart Learning Platform for Indian Students</h1>
             <p>Notes, Practice Questions & Certificates Designed for Indian Colleges</p>
             <ul class="value-points">
                 <li>Structured syllabus-based content</li>
@@ -93,11 +87,10 @@
             </ul>
             <div class="hero-buttons">
                 <button class="btn-primary" onclick="handleGetStarted()">Get Started Free</button>
-                <button class="btn-secondary" onclick="handleViewCourses()">View Certificates</button>
+                <button class="btn-secondary" onclick="handleViewCourses()">Explore Courses</button>
             </div>
         </div>
         <div class="hero-visual">
-            <!-- replaced dashboard mockup with actual students image -->
             <img src="images/front.png" alt="Students studying" class="hero-image">
         </div>
     </section>
@@ -258,7 +251,7 @@
             <div class="footer-column">
                 <h4>Product</h4>
                 <ul>
-                    <li><a href="testing-center.html">Practice Hub</a></li>
+                    <li><a href="practice.html">Practice Hub</a></li>
                     <li><a href="verify-certificate.html">Verify Certificate</a></li>
                 </ul>
             </div>
@@ -293,16 +286,8 @@
     </footer>
 
     <script>
-        // ==================== CTA HANDLERS ====================
-        function handleGetStarted() {
-            const token = localStorage.getItem('renvoxToken') || localStorage.getItem('renvox_token');
-            if (token) {
-                window.location.href = 'dashboard.html';
-            } else {
-                document.getElementById('practice').scrollIntoView({ behavior: 'smooth' });
-                alert('Welcome! Please use the login button in the navigation to get started.');
-            }
-        }
+        // ==================== CTA HANDLERS (Delegated to navigation.js) ====================
+        // Local overrides removed to ensure consistency across the platform
 
         function handleViewCourses() {
             window.location.href = 'certificates.html';

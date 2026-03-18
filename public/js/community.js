@@ -236,6 +236,41 @@ function setupSocket() {
     socket.on('receive-message', (data) => {
         appendChatMessage(data);
     });
+
+    // Real-time Community Live Sync
+    socket.on('new_post', (post) => {
+        if (currentSection === 'feed') fetchPosts();
+        loadTrends(); // Refresh trending count
+    });
+
+    socket.on('new_comment', (data) => {
+        if (currentSection === 'feed') {
+            const feedContainer = document.getElementById('communityFeed');
+            // If viewing specific post comments thread, refresh it
+            if (feedContainer.innerHTML.includes('Discussion Thread')) {
+                showComments(data.postId);
+            } else {
+                fetchPosts();
+            }
+        }
+    });
+
+    socket.on('like_update', (data) => {
+        if (currentSection === 'feed') {
+            const feedContainer = document.getElementById('communityFeed');
+            if (!feedContainer.innerHTML.includes('Discussion Thread')) {
+                fetchPosts(); // Safely refresh feed immediately
+            }
+        }
+    });
+
+    socket.on('new_doubt', (doubt) => {
+        if (currentSection === 'doubts') fetchDoubts();
+    });
+
+    socket.on('new_answer', (data) => {
+        if (currentSection === 'doubts') fetchDoubts();
+    });
 }
 
 function loadChannels() {

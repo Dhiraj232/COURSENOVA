@@ -10,6 +10,7 @@ const { OAuth2Client } = require('google-auth-library');
 
 const StoreUser = require('../models/User');
 const Book = require('../models/Book');
+const Seller = require('../models/Seller');
 const { requireStoreAuth, requireProfile } = require('../middleware/storeAuth');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_me';
@@ -139,7 +140,7 @@ router.get('/books', requireStoreAuth, requireProfile, async (req, res) => {
 router.post('/books', requireStoreAuth, requireProfile, async (req, res) => {
     try {
         const user = req.storeUser;
-        const { title, subject, condition, isFree, price, contact, img } = req.body;
+        const { title, author, subject, category, condition, isFree, price, contact, img } = req.body;
 
         if (!title || !title.trim()) return res.status(400).json({ ok: false, message: 'Book title is required.' });
 
@@ -148,25 +149,75 @@ router.post('/books', requireStoreAuth, requireProfile, async (req, res) => {
             return res.status(400).json({ ok: false, message: 'Image too large. Please use a photo under 5 MB.' });
         }
 
+        // ── Auto-create or find a Seller record for this user ──────────────
+        let seller = await Seller.findOne({ userId: user._id });
+        if (!seller) {
+            seller = await Seller.create({
+                userId: user._id,
+                sellerType: user.role === 'college' ? 'Individual' : 'Individual',
+                businessInfo: {
+                    businessName: user.name || 'RENVOX Store Seller'
+                },
+                address: {
+                    city: 'India',
+                    state: '',
+                    country: 'India'
+                },
+                contactInfo: {
+                    phoneNumber: contact || '0000000000',
+                    email: user.email || ''
+                },
+                collegeInstitute: user.collegeName || '',
+                status: 'active'   // auto-active for store users
+            });
+        } else if (seller.status !== 'active') {
+            // Re-activate if previously inactive
+            seller.status = 'active';
+            await seller.save();
+        }
+
+        // ── Calculate price fields ─────────────────────────────────────────
+        const sellingPrice = isFree ? 0 : (Number(price) || 0);
+        const mrp = sellingPrice;   // for peer-to-peer store, MRP = selling price
+        const discount = 0;
+
+        // ── Build images array ────────────────────────────────────────────
+        const images = img ? [{ imageType: 'front_cover', imageUrl: img }] : [];
+
         const book = await Book.create({
             title: title.trim(),
-            subject: (subject || '').trim(),
+            author: (author || user.name || 'Unknown').trim(),
+            category: category || subject || 'General',
+            description: (subject || '').trim(),
             condition: condition || 'Used',
-            isFree: !!isFree,
-            price: isFree ? 0 : (Number(price) || 0),
-            ownerId: user._id,
-            ownerName: user.name,
-            ownerEmail: user.email,
-            contact: (contact || '').trim(),
-            visibilityGroup: user.role,
-            collegeName: user.role === 'college' ? user.collegeName : '',
-            img: img || ''
+            price: {
+                mrp,
+                sellingPrice,
+                discount
+            },
+            images,
+            stock: {
+                totalQuantity: 1,
+                availableQuantity: 1,
+                reorderLevel: 1
+            },
+            seller: {
+                sellerId: seller._id,
+                sellerType: seller.sellerType,
+                sellerName: seller.businessInfo.businessName,
+                contactNumber: contact || seller.contactInfo.phoneNumber,
+                email: user.email || seller.contactInfo.email,
+                address: seller.address,
+                collegeInstitute: user.collegeName || ''
+            },
+            tags: [subject, category].filter(Boolean),
+            status: 'active'
         });
 
         res.json({ ok: true, message: 'Book listed!', book });
     } catch (err) {
-        console.error('Add Book Error:', err);
-        res.status(500).json({ ok: false, message: 'Could not list book' });
+        console.error('Add Book Error:', err.message, err.stack);
+        res.status(500).json({ ok: false, message: err.message || 'Could not list book' });
     }
 });
 

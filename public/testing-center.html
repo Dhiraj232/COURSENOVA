@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -271,13 +271,7 @@
                 </button>
             </div>
 
-            <ul class="nav-menu" id="navMenu">
-                <li><a href="index.html">Home</a></li>
-                <li><a href="certificates.html">Courses</a></li>
-                <li><a href="testing-center.html" class="active">Mock Tests</a></li>
-                <li><a href="community.html">Community</a></li>
-                <li><a href="store.html">Store</a></li>
-            </ul>
+            <ul class="nav-menu" id="navMenu"></ul>
             <div class="nav-buttons" id="navButtons"></div>
             <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
         </div>
@@ -414,7 +408,7 @@
                                     <span><i class="fas fa-users"></i> ${Math.floor(Math.random() * 2000) + 500}+ Tried</span>
                                 </div>
                                 <div class="pack-footer">
-                                    <span class="pack-price">${pack.isFree ? 'FREE' : '₹' + pack.price}</span>
+                                    <span class="pack-price">${pack.isFree ? 'FREE' : '?' + pack.price}</span>
                                     <button class="btn-unlock ${pack.isFree ? 'btn-free' : ''}" onclick="openPack('${pack.id}')">
                                         ${pack.isFree ? 'Start Now' : 'Unlock Series'}
                                     </button>

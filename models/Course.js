@@ -61,10 +61,8 @@ const CourseSchema = new mongoose.Schema({
     updatedAt: { type: Date, default: Date.now }
 });
 
-// Auto-update updatedAt on save
-CourseSchema.pre('save', function (next) {
+CourseSchema.pre('save', function () {
     this.updatedAt = new Date();
-    next();
 });
 
 module.exports = mongoose.models.Course || mongoose.model('Course', CourseSchema);

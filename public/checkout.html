@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -243,14 +243,7 @@
     <nav class="navbar" id="navbar">
         <div class="nav-container">
             <a href="index.html" class="logo"><img src="images/logo%20renvox.png" alt="RENVOX"> <span>RENVOX</span></a>
-            <ul class="nav-menu" id="navMenu">
-                <li><a href="index.html">Home</a></li>
-                
-                <li><a href="practice.html">Practice</a></li>
-                <li><a href="store.html">Store</a></li>
-                <li><a href="community.html">Community</a></li>
-                
-            </ul>
+            <ul class="nav-menu" id="navMenu"></ul>
             <div class="nav-buttons" id="navButtons"></div>
             <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
         </div>
@@ -260,7 +253,7 @@
         <!-- Steps -->
         <div class="steps">
             <div class="step completed">
-                <div class="step-number">✓</div>
+                <div class="step-number">?</div>
                 <div>Cart</div>
             </div>
             <div class="step active">
@@ -406,15 +399,15 @@
                 let summaryHtml = `
                     <div class="summary-row">
                         <span>Subtotal</span>
-                        <strong>₹${totalAmount}</strong>
+                        <strong>?${totalAmount}</strong>
                     </div>
                     <div class="summary-row">
                         <span>Shipping</span>
-                        <strong>${totalAmount > 500 ? 'FREE' : '₹50'}</strong>
+                        <strong>${totalAmount > 500 ? 'FREE' : '?50'}</strong>
                     </div>
                     <div class="summary-row" style="border-top: 1px solid #ddd; padding-top: 10px; margin-top: 10px;">
                         <span class="summary-total">Total Amount</span>
-                        <span class="summary-total">₹${(totalAmount + (totalAmount > 500 ? 0 : 50))}</span>
+                        <span class="summary-total">?${(totalAmount + (totalAmount > 500 ? 0 : 50))}</span>
                     </div>
                 `;
 
@@ -498,7 +491,7 @@
                     throw new Error(data.message);
                 }
 
-                showMessage('✓ Order placed successfully!', 'success');
+                showMessage('? Order placed successfully!', 'success');
 
                 // Redirect to order confirmation
                 setTimeout(() => {

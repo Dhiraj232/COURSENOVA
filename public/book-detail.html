@@ -1,10 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Book Details – RENVOX Store</title>
+    <title>Book Details - RENVOX Store</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -28,7 +28,7 @@
             color: var(--text);
         }
 
-        /* ── Breadcrumb ── */
+        /* -- Breadcrumb -- */
         .breadcrumb {
             max-width: 1100px;
             margin: 0 auto;
@@ -46,7 +46,7 @@
             text-decoration: underline;
         }
 
-        /* ── Layout ── */
+        /* -- Layout -- */
         .detail-layout {
             max-width: 1100px;
             margin: 0 auto;
@@ -62,7 +62,7 @@
             }
         }
 
-        /* ── Image Panel ── */
+        /* -- Image Panel -- */
         .img-panel {}
 
         .main-img {
@@ -86,7 +86,7 @@
             object-fit: cover;
         }
 
-        /* ── Info Panel ── */
+        /* -- Info Panel -- */
         .info-panel {}
 
         .book-badge {
@@ -170,7 +170,7 @@
             margin-bottom: 24px;
         }
 
-        /* ── Seller Card ── */
+        /* -- Seller Card -- */
         .seller-card {
             background: var(--card);
             border: 1.5px solid var(--border);
@@ -286,7 +286,7 @@
             box-shadow: 0 8px 24px rgba(37, 211, 102, .35);
         }
 
-        /* ── Chat Section ── */
+        /* -- Chat Section -- */
         .chat-section {
             background: var(--card);
             border-radius: 16px;
@@ -378,7 +378,7 @@
             transform: scale(1.05);
         }
 
-        /* ── Loading / Error box ── */
+        /* -- Loading / Error box -- */
         .page-state {
             text-align: center;
             padding: 80px 20px;
@@ -400,7 +400,7 @@
             color: var(--muted);
         }
 
-        /* ── Related / Back bar ── */
+        /* -- Related / Back bar -- */
         .back-bar {
             max-width: 1100px;
             margin: 0 auto;
@@ -428,7 +428,7 @@
 </head>
 
 <body>
-    <!-- ═══════════════ RENVOX NAVBAR ═══════════════ -->
+    <!-- --------------- RENVOX NAVBAR --------------- -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
             <a href="index.html" class="logo"><img src="images/logo%20renvox.png" alt="RENVOX"> <span>RENVOX</span></a>
@@ -436,43 +436,36 @@
                 <input type="text" id="navbarSearch" placeholder="Search courses, subjects...">
                 <button type="button" onclick="handleNavbarSearch()"><i class="fas fa-search"></i></button>
             </div>
-            <ul class="nav-menu" id="navMenu">
-                <li><a href="index.html">Home</a></li>
-
-                <li><a href="practice.html">Practice</a></li>
-                <li><a href="store.html" class="active">Store</a></li>
-                <li><a href="community.html">Community</a></li>
-
-            </ul>
+            <ul class="nav-menu" id="navMenu"></ul>
             <div class="nav-buttons" id="navButtons"></div>
             <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
         </div>
     </nav>
 
-    <!-- ═══════════════ BACK BAR ═══════════════ -->
+    <!-- --------------- BACK BAR --------------- -->
     <div class="back-bar">
         <a href="store.html" class="back-link">
             <i class="fas fa-arrow-left"></i> Back to Store
         </a>
     </div>
 
-    <!-- ═══════════════ BREADCRUMB ═══════════════ -->
+    <!-- --------------- BREADCRUMB --------------- -->
     <div class="breadcrumb">
         <a href="index.html">Home</a> /
         <a href="store.html">Store</a> /
         <span id="breadcrumbTitle">Loading...</span>
     </div>
 
-    <!-- ═══════════════ MAIN CONTENT ═══════════════ -->
+    <!-- --------------- MAIN CONTENT --------------- -->
     <div id="pageContent">
         <div class="page-state">
-            <div class="icon">⏳</div>
+            <div class="icon"></div>
             <h2>Loading book details...</h2>
             <p>Please wait a moment</p>
         </div>
     </div>
 
-    <!-- ═══════════════ SCRIPTS ═══════════════ -->
+    <!-- --------------- SCRIPTS --------------- -->
 
     <script>
         const API = '/api/used-books';
@@ -495,7 +488,7 @@
             loadBook();
         }
 
-        // ═══ LOAD BOOK ═══
+        // --- LOAD BOOK ---
         async function loadBook() {
             try {
                 const res = await fetch(`${API}/${bookId}`);
@@ -508,9 +501,9 @@
             }
         }
 
-        // ═══ RENDER BOOK ═══
+        // --- RENDER BOOK ---
         function renderBook(b) {
-            document.title = `${b.title} – RENVOX Store`;
+            document.title = `${b.title} - RENVOX Store`;
             document.getElementById('breadcrumbTitle').textContent = b.title;
 
             const imgSrc = b.image ? `${IMG_BASE}${b.image}` : null;
@@ -525,8 +518,8 @@
                 <div class="img-panel">
                     <div class="main-img" id="mainImg">
                         ${imgSrc
-                    ? `<img src="${imgSrc}" alt="${b.title}" onerror="this.parentElement.innerHTML='📚'">`
-                    : '📚'}
+                    ? `<img src="${imgSrc}" alt="${b.title}" onerror="this.parentElement.innerHTML=''">`
+                    : ''}
                     </div>
                 </div>
 
@@ -538,9 +531,9 @@
                     <div class="book-price">₹${b.price}</div>
 
                     <div class="book-meta-grid">
-                        <span class="meta-label">📂 Category</span>  <span class="meta-val">${b.category}</span>
-                        <span class="meta-label">📍 Location</span>  <span class="meta-val">${b.location || 'Not specified'}</span>
-                        <span class="meta-label">📅 Listed On</span> <span class="meta-val">${since}</span>
+                        <span class="meta-label">Category</span>  <span class="meta-val">${b.category}</span>
+                        <span class="meta-label">Location</span>  <span class="meta-val">${b.location || 'Not specified'}</span>
+                        <span class="meta-label">Listed On</span> <span class="meta-val">${since}</span>
                     </div>
 
                     ${b.description ? `
@@ -548,7 +541,7 @@
 
                     <!-- Seller Card -->
                     <div class="seller-card">
-                        <h3>🧑 Seller Information</h3>
+                        <h3>Seller Information</h3>
                         <div class="seller-row">
                             <div class="seller-avatar">${initial}</div>
                             <div class="seller-info">
@@ -586,7 +579,7 @@
                         <h3><i class="fas fa-comments"></i> Chat with Seller</h3>
                         <div class="chat-messages" id="chatMessages">
                             <div style="text-align:center;color:var(--muted);font-size:.85rem;padding:20px;">
-                                No messages yet. Say hello! 👋
+                                No messages yet. Say hello!
                             </div>
                         </div>
                         <div class="chat-input-row">
@@ -599,7 +592,7 @@
             </div>`;
         }
 
-        // ═══ CONTACT SELLER ═══
+        // --- CONTACT SELLER ---
         function contactSeller(phone) {
             if (!phone) { alert('Contact number not provided by seller'); return; }
             if (confirm(`Call seller at ${phone}?`)) {
@@ -619,7 +612,7 @@
             document.getElementById('chatSection')?.scrollIntoView({ behavior: 'smooth' });
         }
 
-        // ═══ MESSAGES / CHAT ═══
+        // --- MESSAGES / CHAT ---
         async function loadMessages() {
             try {
                 const res = await fetch(`${MSGS_API}?bookId=${bookId}`);
@@ -645,7 +638,7 @@
                 const time = m.ts ? new Date(m.ts).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '';
                 return `<div class="chat-msg ${isOut ? 'out' : 'in'}">
                     <div>${m.text}</div>
-                    <div class="msg-meta">${isOut ? 'You' : m.from} · ${time}</div>
+                    <div class="msg-meta">${isOut ? 'You' : m.from} - ${time}</div>
                 </div>`;
             }).join('');
             container.scrollTop = container.scrollHeight;
@@ -689,15 +682,15 @@
             input.focus();
         }
 
-        // ═══ ERROR STATE ═══
+        // --- ERROR STATE ---
         function showError(title, msg) {
             document.getElementById('pageContent').innerHTML = `
             <div class="page-state">
-                <div class="icon">📭</div>
+                <div class="icon"></div>
                 <h2>${title}</h2>
                 <p>${msg}</p>
                 <a href="store.html" style="display:inline-block;margin-top:20px;padding:12px 28px;background:linear-gradient(135deg,#6c5ce7,#a29bfe);color:white;border-radius:10px;font-weight:700;text-decoration:none;">
-                    ← Back to Store
+                    Back to Store
                 </a>
             </div>`;
         }

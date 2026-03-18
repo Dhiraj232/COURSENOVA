@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/navigation.css">
-    <script src="js/navigation.js" defer></script>
+    <script src="js/navigation.js?v=1.2" defer></script>
     <script src="js/analytics.js" defer></script>
     <style>
         :root {
@@ -540,13 +540,7 @@
                 <input type="text" id="navbarSearch" placeholder="Search for courses, subjects, or concepts...">
                 <button type="button" onclick="handleNavbarSearch()"><i class="fas fa-search"></i></button>
             </div>
-            <ul class="nav-menu" id="navMenu">
-                <li><a href="index.html">Home</a></li>
-                <li><a href="certificates.html" class="active">Courses</a></li>
-                <li><a href="testing-center.html">Mock Tests</a></li>
-                <li><a href="community.html">Community</a></li>
-                <li><a href="store.html">Store</a></li>
-            </ul>
+            <ul class="nav-menu" id="navMenu"></ul>
             <div class="nav-buttons" id="navButtons"></div>
             <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
         </div>
@@ -557,7 +551,7 @@
         <div class="pbstat"><strong id="pbEnrolled">0</strong> Enrolled</div>
         <div class="pbstat"><strong id="pbCompleted">0</strong> Completed</div>
         <div class="pbstat"><strong id="pbCerts">0</strong> Certificates 🏆</div>
-        <a href="my-courses.html"
+        <a href="certificates.html"
             style="background:rgba(255,255,255,.2);color:white;padding:8px 20px;border-radius:20px;font-weight:700;text-decoration:none;font-size:.88rem;">View
             Dashboard →</a>
     </div>

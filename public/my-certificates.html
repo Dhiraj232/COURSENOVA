@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -36,10 +36,6 @@
             min-height: 100vh;
         }
 
-        
-
-        
-
         .nav-menu {
             display: flex;
             gap: 1.5rem;
@@ -55,36 +51,6 @@
         .nav-menu a:hover,
         .nav-menu a.active {
             color: var(--text);
-        }
-
-        .user-chip {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            background: var(--surface2);
-            padding: 0.4rem 1rem;
-            border-radius: 999px;
-            font-size: 0.85rem;
-        }
-
-        .user-chip img {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            object-fit: cover;
-        }
-
-        .avatar-ph {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            background: var(--primary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 0.8rem;
-            color: #fff;
         }
 
         .hero {
@@ -273,43 +239,28 @@
             }
         }
 
-        /* Hidden canvas for certificate generation */
         #certCanvas {
             display: none;
         }
 
         @media (max-width: 768px) {
-
-            .hero,
-            .certs-grid {
+            .hero, .certs-grid {
                 padding-left: 1rem;
                 padding-right: 1rem;
             }
-
-            
-
             .nav-menu {
                 display: none;
             }
         }
     </style>
     <link rel="stylesheet" href="css/navigation.css">
-    <script src="js/navigation.js"></script>
 </head>
 
 <body class="dark-theme">
-    <!-- standard navbar -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
             <a href="index.html" class="logo"><img src="images/logo%20renvox.png" alt="RENVOX"> <span>RENVOX</span></a>
-            <ul class="nav-menu" id="navMenu">
-                <li><a href="index.html">Home</a></li>
-                
-                <li><a href="practice.html">Practice</a></li>
-                <li><a href="store.html">Store</a></li>
-                <li><a href="community.html">Community</a></li>
-                
-            </ul>
+            <ul class="nav-menu" id="navMenu"></ul>
             <div class="nav-buttons" id="navButtons"></div>
             <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
         </div>
@@ -326,14 +277,14 @@
         <i class="fas fa-trophy"></i>
         <h3>No certificates yet!</h3>
         <p>Complete a course and pass the final test to earn your first certificate.</p>
-        <a href="my-courses.html">Go to My Courses</a>
+        <a href="certificates.html">Go to Courses</a>
     </div>
 
-    <!-- Off-screen canvas for certificate rendering -->
     <canvas id="certCanvas" width="1200" height="850"></canvas>
 
+    <script src="js/navigation.js"></script>
     <script>
-        const API = ''; // Use relative paths
+        const API = ''; 
         const token = localStorage.getItem('renvoxToken') || localStorage.getItem('renvox_token');
         if (!token) window.location.href = 'signup.html?redirect=my-certificates.html';
 
@@ -341,18 +292,10 @@
 
         async function loadUser() {
             try {
-                const res = await fetch(`${API}/api/me`, { headers: { Authorization: `Bearer ${token}` } });
+                const res = await fetch(`${API}/api/user/profile`, { headers: { Authorization: `Bearer ${token}` } });
                 const data = await res.json();
                 if (data.ok) {
-                    currentUserName = data.user.fullName || data.user.email;
-                    document.getElementById('userName').textContent = currentUserName;
-                    const av = document.getElementById('userAvatar');
-                    if (data.user.picture) {
-                        av.innerHTML = `<img src="${data.user.picture}" alt="avatar">`;
-                        av.style.background = 'transparent';
-                    } else {
-                        av.textContent = (currentUserName || '?')[0].toUpperCase();
-                    }
+                    currentUserName = data.profile.name || data.profile.fullName || data.profile.email;
                 }
             } catch { }
         }
@@ -368,7 +311,6 @@
                     return;
                 }
 
-                // Update currentUserName from response
                 if (data.userName && data.userName !== 'Student') currentUserName = data.userName;
 
                 const grid = document.getElementById('certsGrid');
@@ -405,13 +347,11 @@
             }
         }
 
-        // ── Certificate generator (Canvas) ─────────────────────────────────────
         function downloadCertificate(certId, courseName, dateStr) {
             const canvas = document.getElementById('certCanvas');
             const ctx = canvas.getContext('2d');
             const W = canvas.width, H = canvas.height;
 
-            // Background
             ctx.clearRect(0, 0, W, H);
             const bgGrad = ctx.createLinearGradient(0, 0, W, H);
             bgGrad.addColorStop(0, '#0f172a');
@@ -419,17 +359,14 @@
             ctx.fillStyle = bgGrad;
             ctx.fillRect(0, 0, W, H);
 
-            // Outer border
             ctx.strokeStyle = '#10b981';
             ctx.lineWidth = 6;
             ctx.strokeRect(30, 30, W - 60, H - 60);
 
-            // Inner border
             ctx.strokeStyle = 'rgba(16,185,129,0.3)';
             ctx.lineWidth = 2;
             ctx.strokeRect(46, 46, W - 92, H - 92);
 
-            // Gold accent top bar
             const topGrad = ctx.createLinearGradient(0, 60, W, 60);
             topGrad.addColorStop(0, 'transparent');
             topGrad.addColorStop(0.2, '#10b981');
@@ -438,50 +375,37 @@
             ctx.fillStyle = topGrad;
             ctx.fillRect(50, 70, W - 100, 4);
 
-            // Trophy emoji
             ctx.font = '80px serif';
             ctx.textAlign = 'center';
             ctx.fillText('🏆', W / 2, 180);
 
-            // "Certificate of Completion"
             ctx.font = '600 22px Inter, sans-serif';
             ctx.fillStyle = '#10b981';
             ctx.letterSpacing = '6px';
             ctx.fillText('CERTIFICATE OF COMPLETION', W / 2, 230);
             ctx.letterSpacing = '0px';
 
-            // Divider
             ctx.fillStyle = 'rgba(16,185,129,0.4)';
             ctx.fillRect(W / 2 - 200, 248, 400, 1);
 
-            // "This is to certify that"
             ctx.font = '18px Inter, sans-serif';
             ctx.fillStyle = '#94a3b8';
             ctx.fillText('This is to certify that', W / 2, 300);
 
-            // Student name
-            ctx.font = 'bold 48px "Playfair Display", serif';
-            const nameGrad = ctx.createLinearGradient(W / 2 - 250, 0, W / 2 + 250, 0);
-            nameGrad.addColorStop(0, '#e2e8f0');
-            nameGrad.addColorStop(0.5, '#ffffff');
-            nameGrad.addColorStop(1, '#e2e8f0');
-            ctx.fillStyle = nameGrad;
+            ctx.font = 'bold 48px serif';
+            ctx.fillStyle = '#ffffff';
             ctx.fillText(currentUserName, W / 2, 370);
 
-            // Underline name
             const nameW = ctx.measureText(currentUserName).width;
             ctx.fillStyle = '#6366f1';
             ctx.fillRect(W / 2 - nameW / 2, 380, nameW, 2);
 
-            // "has successfully completed"
             ctx.font = '18px Inter, sans-serif';
             ctx.fillStyle = '#94a3b8';
             ctx.fillText('has successfully completed', W / 2, 430);
 
-            // Course name
             ctx.font = 'bold 34px Inter, sans-serif';
             ctx.fillStyle = '#e2e8f0';
-            // Wrap long course names
             const maxWidth = W - 200;
             const words = courseName.split(' ');
             let line = '', lineY = 490;
@@ -494,18 +418,15 @@
             }
             ctx.fillText(line, W / 2, lineY);
 
-            // Bottom info row
             const infoY = H - 160;
             ctx.font = '600 14px Inter, sans-serif';
             ctx.fillStyle = '#64748b';
-            // Date
             ctx.textAlign = 'left';
             ctx.fillText('DATE ISSUED', 100, infoY);
             ctx.font = '18px Inter, sans-serif';
             ctx.fillStyle = '#e2e8f0';
             ctx.fillText(dateStr, 100, infoY + 28);
 
-            // Cert ID
             ctx.textAlign = 'center';
             ctx.font = '600 14px Inter, sans-serif';
             ctx.fillStyle = '#64748b';
@@ -514,7 +435,6 @@
             ctx.fillStyle = '#6366f1';
             ctx.fillText(certId, W / 2, infoY + 28);
 
-            // Issued by
             ctx.textAlign = 'right';
             ctx.font = '600 14px Inter, sans-serif';
             ctx.fillStyle = '#64748b';
@@ -523,7 +443,6 @@
             ctx.fillStyle = '#10b981';
             ctx.fillText('RENVOX AI', W - 100, infoY + 28);
 
-            // Bottom divider
             const botGrad = ctx.createLinearGradient(0, H - 100, W, H - 100);
             botGrad.addColorStop(0, 'transparent');
             botGrad.addColorStop(0.2, '#10b981');
@@ -532,13 +451,11 @@
             ctx.fillStyle = botGrad;
             ctx.fillRect(50, H - 100, W - 100, 2);
 
-            // Footer
             ctx.textAlign = 'center';
             ctx.font = '13px Inter, sans-serif';
             ctx.fillStyle = '#475569';
             ctx.fillText('This certificate is digitally issued by RENVOX AI Learning Platform', W / 2, H - 55);
 
-            // Download
             const link = document.createElement('a');
             link.download = `RENVOX_Certificate_${certId}.png`;
             link.href = canvas.toDataURL('image/png');
@@ -552,10 +469,11 @@
             return String(str || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
         }
 
-        loadUser();
-        loadCertificates();
+        async function init() {
+            await loadUser();
+            await loadCertificates();
+        }
+        init();
     </script>
-    
 </body>
-
 </html>

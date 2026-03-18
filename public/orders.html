@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -317,14 +317,7 @@
     <nav class="navbar" id="navbar">
         <div class="nav-container">
             <a href="index.html" class="logo"><img src="images/logo%20renvox.png" alt="RENVOX"> <span>RENVOX</span></a>
-            <ul class="nav-menu" id="navMenu">
-                <li><a href="index.html">Home</a></li>
-                
-                <li><a href="practice.html">Practice</a></li>
-                <li><a href="store.html">Store</a></li>
-                <li><a href="community.html">Community</a></li>
-                
-            </ul>
+            <ul class="nav-menu" id="navMenu"></ul>
             <div class="nav-buttons" id="navButtons"></div>
             <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
         </div>
@@ -435,7 +428,7 @@
                             </div>
                             <div class="item-price">
                                 <div class="qty">Qty: ${item.quantity}</div>
-                                <div class="total">₹${item.totalPrice}</div>
+                                <div class="total">?${item.totalPrice}</div>
                             </div>
                         </div>
                     `;
@@ -448,7 +441,7 @@
                     const isCompleted = order.status.timeline.indexOf(event) < order.status.timeline.length - 1;
                     return `
                         <div class="timeline-item ${isCompleted ? 'completed' : 'pending'}">
-                            <div class="timeline-icon">${isCompleted ? '✓' : '◯'}</div>
+                            <div class="timeline-icon">${isCompleted ? '?' : '?'}</div>
                             <div class="timeline-content">
                                 <div class="timeline-status">${event.status.replaceAll('_', ' ').toUpperCase()}</div>
                                 <div class="timeline-time">${new Date(event.timestamp).toLocaleDateString()} ${new Date(event.timestamp).toLocaleTimeString()}</div>
@@ -476,7 +469,7 @@
                         </div>
                         <div class="order-header-item">
                             <strong>Total</strong>
-                            <span>₹${order.pricing.finalAmount}</span>
+                            <span>?${order.pricing.finalAmount}</span>
                         </div>
                     </div>
 
@@ -486,7 +479,7 @@
                     </div>
 
                     <div class="order-timeline">
-                        <div class="timeline-title">📍 Tracking</div>
+                        <div class="timeline-title">?? Tracking</div>
                         ${timelineHtml}
                     </div>
 

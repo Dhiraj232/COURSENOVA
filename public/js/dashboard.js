@@ -78,7 +78,10 @@ function updateDashboardUI(data) {
     // Stats Ribbon
     document.getElementById('enrolledCount').innerText = stats.totalCourses || 0;
     document.getElementById('certificatesCount').innerText = stats.certificates || 0;
-    document.getElementById('timeSpentCount').innerText = `${Math.floor(stats.totalTime / 60)}h`;
+    const rawT = stats.totalTime || 0;
+    const initialHours = Math.floor(rawT / 60);
+    const initialMins = rawT % 60;
+    document.getElementById('timeSpentCount').innerText = (initialHours > 0) ? `${initialHours}h ${initialMins}m` : `${initialMins}m`;
     document.getElementById('avgScoreCount').innerText = `${stats.avgScore}%`;
 
     // 1. Topic Mastery / Weak Topics List
@@ -205,7 +208,7 @@ function initializeCharts(data) {
         const labels = data ? data.weeklyActivity.map(i => i.day) : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
         const values = data ? data.weeklyActivity.map(i => i.minutes) : [30, 45, 15, 60, 20, 10, 0];
 
-        new Chart(weeklyCtx, {
+        window.liveChartInstance = new Chart(weeklyCtx, {
             type: 'bar',
             data: {
                 labels: labels,
@@ -236,6 +239,7 @@ function initializeCharts(data) {
                 }
             }
         });
+        liveChartInstance = window.liveChartInstance;
     }
 
     // 2. Performance Radar Chart
@@ -280,3 +284,30 @@ function initializeCharts(data) {
         });
     }
 }
+
+// LIVE TRACKING
+let liveChartInstance = null;
+setInterval(async () => {
+    const token = localStorage.getItem('renvoxToken') || localStorage.getItem('renvox_token');
+    if (!token) return;
+    try {
+        const res = await fetch('/api/analytics/track-time', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const d = await res.json();
+        if (d.ok) {
+            // Live update visual timer label
+            const hours = Math.floor(d.totalTime / 60);
+            const rMin = d.totalTime % 60;
+            const text = (hours > 0) ? `${hours}h ${rMin}m` : `${rMin}m`;
+            document.getElementById('timeSpentCount').innerText = text;
+
+            // Live update graph array
+            if (liveChartInstance) {
+                liveChartInstance.data.datasets[0].data = d.weeklyActivity.map(i => i.minutes);
+                liveChartInstance.update();
+            }
+        }
+    } catch(e) {}
+}, 60000); // every minute

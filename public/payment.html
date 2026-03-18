@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
 <head>
@@ -201,14 +201,7 @@
     <nav class="navbar" id="navbar">
         <div class="nav-container">
             <a href="index.html" class="logo"><img src="images/logo%20renvox.png" alt="RENVOX"> <span>RENVOX</span></a>
-            <ul class="nav-menu" id="navMenu">
-                <li><a href="index.html">Home</a></li>
-                
-                <li><a href="practice.html">Practice</a></li>
-                <li><a href="store.html">Store</a></li>
-                <li><a href="community.html">Community</a></li>
-                
-            </ul>
+            <ul class="nav-menu" id="navMenu"></ul>
             <div class="nav-buttons" id="navButtons"></div>
             <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
         </div>
@@ -221,7 +214,7 @@
                 <p style="font-size: 0.9rem; opacity: 0.8; margin-bottom: 0.5rem; text-transform: uppercase;">You are
                     purchasing:</p>
                 <div class="course-title" id="displayCourseName">Loading Course...</div>
-                <div class="course-price" id="displayCoursePrice">₹...</div>
+                <div class="course-price" id="displayCoursePrice">?...</div>
             </div>
 
             <div class="upi-details">
@@ -286,7 +279,7 @@
     <!-- ==================== FOOTER ==================== -->
     <footer class="footer">
         <div class="footer-bottom">
-            <p>&copy; 2025 RENVOX – All rights reserved.</p>
+            <p>&copy; 2025 RENVOX � All rights reserved.</p>
         </div>
     </footer>
 
@@ -294,7 +287,7 @@
         let currentCourseName = "";
         let currentCourseId = "";
 
-        // Course catalog — add more courses here as needed
+        // Course catalog � add more courses here as needed
         const COURSE_CATALOG = [
             { id: 'c-programming-fundamentals', title: 'C Programming Fundamentals', price: 799 },
             { id: 'data-structures-advanced', title: 'Data Structures Advanced', price: 1199 },
@@ -321,13 +314,13 @@
                     currentCourseName = found.title;
                     currentCourseId = found.id;
                     document.getElementById('displayCourseName').innerText = found.title;
-                    document.getElementById('displayCoursePrice').innerText = `₹${found.price}`;
+                    document.getElementById('displayCoursePrice').innerText = `?${found.price}`;
                 } else {
                     // Fallback: use raw param as both name and id
                     currentCourseName = decoded;
                     currentCourseId = decoded;
                     document.getElementById('displayCourseName').innerText = decoded;
-                    document.getElementById('displayCoursePrice').innerText = '₹ —';
+                    document.getElementById('displayCoursePrice').innerText = '? �';
                 }
             } else {
                 document.getElementById('displayCourseName').innerText = "No course selected";
@@ -410,10 +403,10 @@
                 const data = await response.json();
 
                 if (response.ok && data.ok) {
-                    alert('✅ Payment submitted! Your enrollment will be active once an admin verifies your payment.');
+                    alert('? Payment submitted! Your enrollment will be active once an admin verifies your payment.');
                     window.location.href = 'my-courses.html';
                 } else {
-                    alert(`❌ ${data.message || 'Submission failed. Please try again.'}`);
+                    alert(`? ${data.message || 'Submission failed. Please try again.'}`);
                     btn.innerHTML = 'Submit Payment Details <i class="fas fa-arrow-right"></i>';
                     btn.disabled = false;
                 }

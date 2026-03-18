@@ -67,8 +67,8 @@ function setupNavigation() {
     const token = getAuthToken();
     const links = [
         { name: 'Home', href: 'index.html', key: 'home' },
-        { name: 'Courses', href: token ? 'my-courses.html' : 'certificates.html', key: 'courses' },
-        { name: 'Mock Tests', href: 'testing-center.html', key: 'mocktests' },
+        { name: 'Courses', href: 'certificates.html', key: 'courses' },
+        { name: 'Mock Tests', href: 'testing-center.html', key: 'tests' },
         { name: 'Community', href: 'community.html', key: 'community' },
         { name: 'Store', href: 'store.html', key: 'store' }
     ];
@@ -79,10 +79,14 @@ function setupNavigation() {
     navMenu.innerHTML = links.map(link => {
         let isActive = (link.href === currentPage + '.html') || (link.href === 'index.html' && currentPage === 'index');
         // Specific active rules
-        if (currentPage === 'my-certificates' && link.href === 'my-certificates.html') isActive = true;
+        if (currentPage === 'my-certificates' && link.href === 'certificates.html') isActive = true;
+        if (currentPage === 'testing-center' && link.href === 'testing-center.html') isActive = true;
 
         return `<li><a href="${link.href}" class="${isActive ? 'active' : ''}">${link.name}</a></li>`;
     }).join('');
+
+    // Update enrollment count badge if logged in
+    updateEnrollmentBadge();
 
     const navLinks = navMenu.querySelectorAll('a');
     navLinks.forEach(link => {
@@ -93,6 +97,52 @@ function setupNavigation() {
             navigateToPage(href);
         });
     });
+}
+
+/**
+ * Fetch and display the enrollment count next to "Courses" link
+ */
+async function updateEnrollmentBadge() {
+    const token = getAuthToken();
+    if (!token) return;
+
+    try {
+        const res = await fetch('/api/enrollments/all-status', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        const count = (data.enrolled || []).length;
+
+        if (count > 0) {
+            // 1. Update Main Navbar Link
+            const courseLinks = document.querySelectorAll('#navMenu a');
+            courseLinks.forEach(link => {
+                const text = link.textContent.trim();
+                if (text === 'Courses' || text.startsWith('Courses ')) {
+                    link.innerHTML = `Courses <span class="enroll-badge">${count}</span>`;
+                }
+            });
+
+            // 2. Update User Dropdown My Courses
+            const dropdownLinks = document.querySelectorAll('.dropdown-item a');
+            dropdownLinks.forEach(link => {
+                const text = link.textContent.trim();
+                if (text === 'My Courses' || text.startsWith('My Courses')) {
+                    link.innerHTML = `<i class="fas fa-book-open"></i> My Courses (${count})`;
+                }
+            });
+
+            // 3. Update Dashboard link if present
+            const dashboardLinks = document.querySelectorAll('.dropdown-item a');
+            dashboardLinks.forEach(link => {
+                if (link.textContent.trim() === 'Dashboard' && !link.innerHTML.includes('fa-th-large')) {
+                     // already has icon, just making sure we don't break it
+                }
+            });
+        }
+    } catch (e) {
+        console.warn('Badge Update Error:', e);
+    }
 }
 
 // ==================== 4. PAGE NAVIGATION WITH JAVASCRIPT ====================
@@ -514,16 +564,6 @@ function setupUserDropdown() {
                         </a>
                     </li>
                     <li class="dropdown-item">
-                        <a href="profile.html" onclick="window.closeUserDropdown()">
-                            <i class="fas fa-user-circle"></i> My Profile
-                        </a>
-                    </li>
-                    <li class="dropdown-item">
-                        <a href="my-courses.html" onclick="window.closeUserDropdown()">
-                            <i class="fas fa-book-open"></i> My Courses
-                        </a>
-                    </li>
-                    <li class="dropdown-item">
                         <a href="my-certificates.html" onclick="window.closeUserDropdown()">
                             <i class="fas fa-trophy"></i> My Certificates
                         </a>
@@ -662,5 +702,6 @@ if (typeof window !== 'undefined') {
     window.toggleUserDropdown = toggleUserDropdown;
     window.closeUserDropdown = closeUserDropdown;
     window.logoutUser = logoutUser;
+    window.updateEnrollmentBadge = updateEnrollmentBadge;
 }
 console.log('✅ Navigation system initialized');

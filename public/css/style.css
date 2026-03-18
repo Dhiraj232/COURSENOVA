@@ -20,6 +20,7 @@ body {
     line-height: 1.6;
     color: var(--text-dark);
     background-color: var(--white);
+    padding-top: 76px;
 }
 
 h1,
@@ -34,49 +35,54 @@ h6 {
 
 /* ==================== HEADER / NAVBAR ==================== */
 .navbar {
-    position: sticky;
+    position: fixed;
     top: 0;
-    background-color: var(--white);
+    left: 0;
+    width: 100%;
+    background-color: rgba(255, 255, 255, 0.97);
     border-bottom: 1px solid var(--border-color);
-    z-index: 1000;
-    padding: 0.8rem 2rem;
-    transition: all 0.3s ease;
-    backdrop-filter: blur(10px);
-    background-color: rgba(255, 255, 255, 0.95);
+    z-index: 2000;
+    padding: 0 2rem;
+    height: 68px;
+    transition: box-shadow 0.3s ease;
+    backdrop-filter: blur(12px);
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
 }
 
 .navbar.scrolled {
-    padding: 0.5rem 2rem;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.10);
     border-bottom: 1px solid transparent;
 }
 
+/* 3-column stable layout: logo | menu | buttons — never shifts */
 .nav-container {
-    max-width: 100%;
-    padding: 0 1rem;
-    margin: 0 auto;
+    width: 100%;
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    gap: 2rem;
+    flex-wrap: nowrap;
+    gap: 0;
 }
 
+/* ---- LOGO (LEFT, fixed min-width so menu stays centered) ---- */
 .logo {
-    font-size: 1.4rem;
+    font-size: 1.35rem;
     font-weight: 800;
     color: var(--primary-color);
     text-decoration: none;
     font-family: 'Poppins', sans-serif;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    transition: all 0.3s ease;
+    gap: 0.55rem;
     white-space: nowrap;
+    flex-shrink: 0;
+    min-width: 180px;
+    transition: opacity 0.2s ease;
 }
 
 .logo:hover {
-    transform: translateY(-2px);
-    color: #3730a3;
+    opacity: 0.8;
 }
 
 .logo i {
@@ -84,86 +90,78 @@ h6 {
 }
 
 .logo img {
-    height: 36px;
-    width: 36px;
-    object-fit: cover;
-    object-position: center center;
+    height: 44px;
+    width: auto;
+    object-fit: contain;
     border-radius: 6px;
     flex-shrink: 0;
 }
 
 .logo span {
-    font-size: 1.35rem;
+    font-size: 1.3rem;
     font-weight: 800;
     color: var(--primary-color);
     letter-spacing: 0.5px;
 }
 
+/* ---- NAV MENU (CENTER, takes remaining space, always centred) ---- */
 .nav-menu {
+    flex: 1;
     display: flex;
     list-style: none;
-    gap: 2.5rem;
+    gap: 0.2rem;
     align-items: center;
-    justify-content: flex-end;
-    /* Push links to the right */
+    justify-content: center;
     flex-wrap: nowrap;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
 }
 
 .nav-menu a {
     text-decoration: none;
-    color: var(--text-dark);
+    color: var(--text-light);
     font-weight: 500;
-    transition: all 0.3s ease;
-    font-size: 0.95rem;
-    position: relative;
-    padding-bottom: 0.25rem;
+    transition: color 0.2s ease, background 0.2s ease;
+    font-size: 0.93rem;
+    padding: 0.45rem 0.9rem;
+    border-radius: 6px;
     white-space: nowrap;
+    display: inline-block;
 }
 
-.nav-menu a:after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 0;
-    height: 2px;
-    background-color: var(--primary-color);
-    transition: width 0.3s ease;
-}
-
-.nav-menu a:hover {
+.nav-menu a:hover,
+.nav-menu a.active {
     color: var(--primary-color);
-}
-
-.nav-menu a:hover:after {
-    width: 100%;
+    background: rgba(30, 58, 138, 0.07);
 }
 
 .nav-menu a.active {
-    color: var(--primary-color);
+    font-weight: 600;
 }
 
-.nav-menu a.active:after {
-    width: 100%;
-}
-
+/* ---- NAV BUTTONS (RIGHT, fixed min-width mirror of logo width) ---- */
 .nav-buttons {
     display: flex;
-    gap: 1rem;
+    gap: 0.75rem;
     align-items: center;
+    flex-shrink: 0;
+    min-width: 180px;
+    justify-content: flex-end;
+    position: relative;
 }
 
-/* Ensure guestButtons (index header) has spacing between login & signup */
+/* Ensure guestButtons has spacing between login & signup */
 .nav-buttons #guestButtons {
     display: flex;
-    gap: 0.9rem;
+    gap: 0.7rem;
     align-items: center;
 }
 
-/* Ensure any dynamically-created .btn-user matches primary button styles */
+/* (duplicate removed) nav-buttons alias */
 .nav-buttons {
     display: flex;
-    gap: 1rem;
+    gap: 0.75rem;
     align-items: center;
     position: relative;
 }
@@ -1331,6 +1329,14 @@ h6 {
 html {
     scroll-behavior: smooth;
     overflow-x: hidden;
+    -webkit-tap-highlight-color: transparent; /* Native App Feel */
+}
+
+body {
+    overflow-x: hidden;
+    width: 100%;
+    /* Prevents pull-to-refresh on mobile if we want an app feel */
+    overscroll-behavior-y: none;
 }
 
 img,
@@ -1347,6 +1353,9 @@ textarea {
     font-size: 16px !important;
     /* Prevents iOS auto-zoom on focus */
     touch-action: manipulation;
+    -webkit-appearance: none; /* Strip out native iOS styling */
+    appearance: none;
+    border-radius: 6px;
 }
 
 /* Touch-friendly targets */
