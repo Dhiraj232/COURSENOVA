@@ -115,7 +115,7 @@ h6 {
     flex-wrap: nowrap;
     margin: 0;
     padding: 0;
-    overflow: hidden;
+    overflow: auto;
 }
 
 .nav-menu a {
@@ -1329,7 +1329,8 @@ h6 {
 html {
     scroll-behavior: smooth;
     overflow-x: hidden;
-    -webkit-tap-highlight-color: transparent; /* Native App Feel */
+    -webkit-tap-highlight-color: transparent;
+    /* Native App Feel */
 }
 
 body {
@@ -1353,7 +1354,8 @@ textarea {
     font-size: 16px !important;
     /* Prevents iOS auto-zoom on focus */
     touch-action: manipulation;
-    -webkit-appearance: none; /* Strip out native iOS styling */
+    -webkit-appearance: none;
+    /* Strip out native iOS styling */
     appearance: none;
     border-radius: 6px;
 }
