@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken');
 const Enrollment = require('../models/Enrollment');
 const CourseProgress = require('../models/CourseProgress');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_me';
+const JWT_SECRET = process.env.JWT_SECRET || 'Dhiraj@2026_secure_key!';
 
 function extractUserId(req) {
     const auth = req.headers.authorization || '';

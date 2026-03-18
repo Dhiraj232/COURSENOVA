@@ -13,7 +13,7 @@ const Book = require('../models/Book');
 const Seller = require('../models/Seller');
 const { requireStoreAuth, requireProfile } = require('../middleware/storeAuth');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_me';
+const JWT_SECRET = process.env.JWT_SECRET || 'Dhiraj@2026_secure_key!';
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '1055845988581-ri62t8onk3drda4qc3q5pi0gi3bsmksa.apps.googleusercontent.com';
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 

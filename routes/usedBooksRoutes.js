@@ -11,7 +11,7 @@ const multer = require('multer');
 const UsedBook = require('../models/UsedBook');
 const jwt = require('jsonwebtoken');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_me';
+const JWT_SECRET = process.env.JWT_SECRET || 'Dhiraj@2026_secure_key!';
 
 // ─── Multer — save images to /uploads/books/ ─────────────────────────────────
 const storage = multer.diskStorage({

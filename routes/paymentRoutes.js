@@ -11,7 +11,7 @@ const CourseProgress = require('../models/CourseProgress');
 const { generateCertificate } = require('../controllers/certificateController');
 const { sendCertificateEmail } = require('../controllers/emailController');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_me';
+const JWT_SECRET = process.env.JWT_SECRET || 'Dhiraj@2026_secure_key!';
 
 // ── Multer setup ──────────────────────────────────────────────────────────────
 const uploadDir = path.join(__dirname, '..', 'uploads');

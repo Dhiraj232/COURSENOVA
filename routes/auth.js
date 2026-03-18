@@ -6,7 +6,7 @@ const { sensitiveLimiter, preventInjection } = require('../middleware/security')
 const AppError = require('../utils/AppError');
 const catchAsync = require('../utils/catchAsync');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_me';
+const JWT_SECRET = process.env.JWT_SECRET || 'Dhiraj@2026_secure_key!';
 
 // @route   GET /auth/google
 // @desc    Redirect to Google for authentication

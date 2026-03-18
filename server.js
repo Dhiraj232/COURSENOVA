@@ -40,16 +40,34 @@ const courseRoutes = require('./routes/courseRoutes');
 // ─── Community Routers (New) ──────────────────────────────────────
 const communityRoutes = require('./routes/community');
 
+// ─── Environment Configuration Setup ────────────────────────────
+const isProduction = process.env.NODE_ENV === 'production';
+
+if (!process.env.MONGO_URI) console.warn('⚠️ MONGO_URI is missing.');
+if (!process.env.GOOGLE_CLIENT_ID) console.warn('⚠️ GOOGLE_CLIENT_ID is missing. Google OAuth will fail.');
+if (!process.env.GOOGLE_CLIENT_SECRET) console.warn('⚠️ GOOGLE_CLIENT_SECRET is missing. Google OAuth will fail.');
+if (!process.env.JWT_SECRET) console.warn('⚠️ JWT_SECRET is missing. Using insecure fallback secret.');
+if (!process.env.BASE_URL) console.warn('⚠️ BASE_URL is missing. OAuth redirects will use localhost:5000.');
+
 // ─── MongoDB Connection ───────────────────────────────────────
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/renvox-bookstore';
+const MONGO_URI = isProduction ? process.env.MONGO_URI : (process.env.MONGO_URI || 'mongodb://localhost:27017/renvox-bookstore');
+
+if (isProduction && !MONGO_URI) {
+  console.error('❌ CRITICAL ERROR: MONGO_URI missing in production! Exiting...');
+  process.exit(1);
+}
+
 mongoose.connect(MONGO_URI)
   .then(() => console.log('✅ MongoDB connected:', MONGO_URI.split('@').pop() || MONGO_URI))
-  .catch(err => console.error('❌ MongoDB connection error:', err.message, '\n   Set MONGO_URI env var or start MongoDB locally.'));
+  .catch(err => {
+      console.error('❌ MongoDB connection error:', err.message);
+      if (isProduction) process.exit(1);
+  });
 
 const DATA_FILE = path.join(__dirname, 'data', 'users.json');
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || 'DUMMY_CLIENT_ID';
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || 'DUMMY_CLIENT_SECRET';
-const JWT_SECRET = process.env.JWT_SECRET || 'default_jwt_fallback_secret_for_dev_only';
+const JWT_SECRET = process.env.JWT_SECRET || 'Dhiraj@2026_secure_key!';
 
 const StoreUser = require('./models/User');
 const CourseProgress = require('./models/CourseProgress');
