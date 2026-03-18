@@ -8,7 +8,7 @@ const User = require('../models/User');
 const { generateCertificate } = require('../controllers/certificateController');
 const { sendCertificateEmail } = require('../controllers/emailController');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'dev_secret_change_me';
+const JWT_SECRET = process.env.JWT_SECRET || 'Dhiraj@2026_secure_key!';
 
 const certsDir = path.join(__dirname, '..', 'certificates');
 if (!fs.existsSync(certsDir)) fs.mkdirSync(certsDir, { recursive: true });
