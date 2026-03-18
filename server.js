@@ -47,9 +47,9 @@ mongoose.connect(MONGO_URI)
   .catch(err => console.error('❌ MongoDB connection error:', err.message, '\n   Set MONGO_URI env var or start MongoDB locally.'));
 
 const DATA_FILE = path.join(__dirname, 'data', 'users.json');
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-const JWT_SECRET = process.env.JWT_SECRET;
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || 'DUMMY_CLIENT_ID';
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || 'DUMMY_CLIENT_SECRET';
+const JWT_SECRET = process.env.JWT_SECRET || 'default_jwt_fallback_secret_for_dev_only';
 
 const StoreUser = require('./models/User');
 const CourseProgress = require('./models/CourseProgress');
@@ -598,7 +598,16 @@ process.on('unhandledRejection', err => {
 });
 const io = require('socket.io')(server, {
   cors: {
-    origin: ["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:5500", "http://127.0.0.1:5500"],
+    origin: [
+      "http://localhost:3000", 
+      "http://127.0.0.1:3000", 
+      "http://localhost:5500", 
+      "http://127.0.0.1:5500",
+      "https://renvox.in",
+      "https://www.renvox.in",
+      "https://lms-backend-renvox.onrender.com",
+      "https://renvox-ai.onrender.com" // Just in case
+    ],
     methods: ["GET", "POST"]
   }
 });

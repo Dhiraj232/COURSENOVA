@@ -5,7 +5,7 @@
 
 const token = localStorage.getItem('renvoxToken') || localStorage.getItem('renvox_token');
 const user = JSON.parse(localStorage.getItem('renvoxUser') || localStorage.getItem('renvox_user') || '{}');
-const socket = typeof io !== 'undefined' ? io() : null;
+const socket = typeof io !== 'undefined' ? io(window.RENVOX_API || undefined) : null;
 
 let currentSection = 'feed';
 let currentChannel = 'general';

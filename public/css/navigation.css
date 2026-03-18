@@ -97,7 +97,6 @@
     margin: 0 !important;
     padding: 0 !important;
     flex-wrap: nowrap !important;
-    overflow: hidden !important;
 }
 
 .nav-menu li {
@@ -490,6 +489,7 @@ body.dark-theme .dropdown-divider {
         box-shadow: -10px 0 30px rgba(0, 0, 0, 0.1) !important;
         transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1) !important;
         z-index: 2001 !important;
+        overflow-y: auto !important;
     }
 
     .nav-menu.active {
@@ -558,10 +558,11 @@ body.dark-theme .dropdown-divider {
     }
 }
 
-/* Helper to prevent body scroll when menu is open */
+/* Removed body.no-scroll to allow pages to scale seamlessly without locking scroll *//*
 body.no-scroll {
     overflow: hidden !important;
 }
+*/
 
 /* Enrollment Badge for "Courses" link */
 .enroll-badge {

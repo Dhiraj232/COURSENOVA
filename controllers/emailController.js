@@ -7,6 +7,11 @@ const path = require('path');
 async function sendCertificateEmail({ toEmail, userName, courseName, certFilePath, certId }) {
     // Create transporter — uses Gmail by default.
     // Set EMAIL_USER and EMAIL_PASS in your .env file.
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+        console.warn('⚠️  EMAIL_USER or EMAIL_PASS not set. Certificate email will not be sent.');
+        return;
+    }
+
     const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {

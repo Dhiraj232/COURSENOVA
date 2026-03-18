@@ -1328,16 +1328,13 @@ h6 {
 /* ==================== TOUCH & GLOBAL RESPONSIVENESS ==================== */
 html {
     scroll-behavior: smooth;
-    overflow-x: hidden;
     -webkit-tap-highlight-color: transparent;
     /* Native App Feel */
 }
 
 body {
-    overflow-x: hidden;
     width: 100%;
-    /* Prevents pull-to-refresh on mobile if we want an app feel */
-    overscroll-behavior-y: none;
+    overflow-x: hidden;
 }
 
 img,

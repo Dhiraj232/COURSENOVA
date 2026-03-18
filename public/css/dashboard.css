@@ -144,7 +144,6 @@ body.dashboard-body {
 /* Main Content Area */
 .dashboard-main {
     padding: 40px;
-    overflow-y: auto;
 }
 
 .dashboard-header {
