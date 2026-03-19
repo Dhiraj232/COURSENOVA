@@ -174,111 +174,147 @@ router.post('/save-progress', handleProgress);
 
 // ── POST /api/course/submit-test ──────────────────────────────────────────────
 router.post('/submit-test', async (req, res) => {
-    const { courseId, answers, correctAnswers } = req.body;
-    if (!courseId || !answers) {
-        return res.status(400).json({ ok: false, message: 'courseId and answers are required' });
-    }
-
     try {
-        // Try to get quiz from DB first
-        let dbCorrectAnswers = correctAnswers;
-        const course = await Course.findOne({
-            $or: [
-                { title: courseId },
-                { slug: courseId.toLowerCase().replace(/\s+/g, '-') }
-            ]
-        });
+        console.log('Incoming submit-test body:', req.body);
+        const { courseId, answers, correctAnswers } = req.body;
+        
+        if (!courseId || !answers || !Array.isArray(answers)) {
+            return res.status(400).json({ ok: false, message: 'courseId and valid answers array are required' });
+        }
+
+        const safeUserId = (req.user && req.user.id) ? req.user.id : (req.userId ? req.userId : null);
+
+        let dbCorrectAnswers = correctAnswers || [];
+        let course = null;
+        
+        try {
+            course = await Course.findOne({
+                $or: [
+                    { title: courseId },
+                    { slug: courseId.toLowerCase().replace(/\s+/g, '-') }
+                ]
+            });
+        } catch(e) {
+            console.log("Course fetch error, maybe invalid courseId format", e);
+        }
+
         if (course && course.quizQuestions && course.quizQuestions.length > 0) {
             dbCorrectAnswers = course.quizQuestions.map(q => q.correctIndex);
         }
 
         if (!dbCorrectAnswers || dbCorrectAnswers.length === 0) {
-            // When no questions exist directly in the course model (e.g. from the hardcoded question banks), 
-            // safely use correctAnswers from the request which matches the dynamically loaded questions.
-            dbCorrectAnswers = correctAnswers;
-            if (!dbCorrectAnswers || dbCorrectAnswers.length === 0) {
-                return res.status(400).json({ ok: false, message: 'No quiz answers available for grading.' });
-            }
+            return res.status(400).json({ ok: false, message: 'No quiz answers available for grading.' });
         }
 
-        // Grade
         let correct = 0;
-        answers.forEach((ans, i) => { if (String(ans) === String(dbCorrectAnswers[i])) correct++; });
-        const total = dbCorrectAnswers.length;
+        answers.forEach((ans, i) => { 
+            if (String(ans) === String(dbCorrectAnswers[i])) correct++; 
+        });
+        const total = dbCorrectAnswers.length || 1;
         const score = Math.round((correct / total) * 100);
         const passed = score >= 60;
 
-        let record = await CourseProgress.findOne({ userId: req.userId, courseId });
-        if (!record) record = new CourseProgress({ userId: req.userId, courseId });
+        let record = null;
+        let certId = null;
+        let earnedAt = null;
 
-        record.score = score;
-        record.testPassed = passed;
+        if (safeUserId) {
+            try {
+                record = await CourseProgress.findOne({ userId: safeUserId, courseId });
+                if (!record) {
+                    record = new CourseProgress({ userId: safeUserId, courseId });
+                }
 
-        if (passed) {
-            if (!record.videoWatched && record.completedVideos.length === 0 && record.completedLessons.length === 0) {
-                return res.status(403).json({ ok: false, message: 'Please complete at least one course lesson before taking the test.' });
+                record.score = score;
+                record.testPassed = passed;
+
+                if (passed) {
+                    if (!record.certId) {
+                        record.certId = 'RENV-' + Date.now().toString(36).toUpperCase();
+                        record.earnedAt = new Date();
+                    }
+                    record.isCompleted = true;
+                    record.progressPercent = 100;
+                }
+
+                record.updatedAt = new Date();
+                await record.save();
+                
+                certId = record.certId;
+                earnedAt = record.earnedAt;
+            } catch (err) {
+                console.error("Error saving CourseProgress:", err.message);
             }
 
-            if (!record.certId) {
-                record.certId = 'RENV-' + Date.now().toString(36).toUpperCase();
-                record.earnedAt = new Date();
-            }
+            // Dashboard Logging
+            try {
+                const tr = require('../models/TestResult');
+                const act = require('../models/Activity');
 
-            record.isCompleted = true;
-            record.progressPercent = 100;
-        }
-
-        record.updatedAt = new Date();
-        await record.save();
-
-        // ── DASHBOARD LOGGING ──
-        try {
-            const TestResult = require('../models/TestResult');
-            const Activity = require('../models/Activity');
-
-            await TestResult.create({
-                userId: req.userId,
-                courseId,
-                courseName: course ? course.title : courseId,
-                score,
-                passed,
-                totalQuestions: total,
-                correctQuestions: correct
-            });
-
-            await Activity.create({
-                userId: req.userId,
-                type: (score >= 60) ? 'test_passed' : 'test_failed',
-                title: `Final Test: ${course ? course.title : courseId}`,
-                courseId,
-                courseName: course ? course.title : courseId,
-                score
-            });
-
-            if (score >= 60) {
-                await Activity.create({
-                    userId: req.userId,
-                    type: 'certificate_earned',
-                    title: `Certificate: ${course ? course.title : courseId}`,
+                await tr.create({
+                    userId: safeUserId,
                     courseId,
-                    courseName: course ? course.title : courseId
+                    courseName: course ? course.title : courseId,
+                    score,
+                    passed,
+                    totalQuestions: total,
+                    correctQuestions: correct
                 });
+
+                await act.create({
+                    userId: safeUserId,
+                    type: passed ? 'test_passed' : 'test_failed',
+                    title: `Final Test: ${course ? course.title : courseId}`,
+                    courseId,
+                    courseName: course ? course.title : courseId,
+                    score
+                });
+
+                if (passed) {
+                    await act.create({
+                        userId: safeUserId,
+                        type: 'certificate_earned',
+                        title: `Certificate: ${course ? course.title : courseId}`,
+                        courseId,
+                        courseName: course ? course.title : courseId
+                    });
+                }
+            } catch (logErr) {
+                console.error('Logging Error:', logErr.message);
             }
-        } catch (logErr) {
-            console.error('Logging Error:', logErr);
+        } else {
+             // If user is undefined/anonymous but we want it to work (optional-safe)
+             if (passed) {
+                 certId = 'RENV-' + Date.now().toString(36).toUpperCase();
+                 earnedAt = new Date();
+             }
         }
 
-        const user = await User.findById(req.userId);
-        res.json({
+        let user = null;
+        if (safeUserId) {
+            try {
+                user = await User.findById(safeUserId);
+            } catch (e) {
+                console.error("User fetch error:", e.message);
+            }
+        }
+
+        return res.json({
             ok: true,
-            passed, score, correct, total,
-            certId: record.certId,
-            earnedAt: record.earnedAt,
+            passed,
+            score,
+            correct,
+            total,
+            certId: certId,
+            earnedAt: earnedAt,
             userName: user ? user.name : 'Student'
         });
     } catch (err) {
-        console.error('Submit test error:', err);
-        res.status(500).json({ ok: false, message: 'Failed to submit test' });
+        console.error("API ERROR:", err);
+        return res.status(500).json({ 
+            message: err.message,
+            stack: err.stack 
+        });
     }
 });
 

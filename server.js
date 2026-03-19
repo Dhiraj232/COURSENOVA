@@ -50,10 +50,10 @@ if (!process.env.JWT_SECRET) console.warn('⚠️ JWT_SECRET is missing. Using i
 if (!process.env.BASE_URL) console.warn('⚠️ BASE_URL is missing. OAuth redirects will use localhost:5000.');
 
 // ─── MongoDB Connection ───────────────────────────────────────
-const MONGO_URI = isProduction ? process.env.MONGO_URI : (process.env.MONGO_URI || 'mongodb://localhost:27017/renvox-bookstore');
+const MONGO_URI = process.env.MONGO_URI;
 
-if (isProduction && !MONGO_URI) {
-  console.error('❌ CRITICAL ERROR: MONGO_URI missing in production! Exiting...');
+if (!MONGO_URI) {
+  console.error('❌ CRITICAL ERROR: MONGO_URI missing! Exiting...');
   process.exit(1);
 }
 

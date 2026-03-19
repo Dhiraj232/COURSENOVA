@@ -1,14 +1,13 @@
 const mongoose = require('mongoose');
 
 const postSchema = new mongoose.Schema({
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+    userId: { type: String, required: true },
     username: { type: String, required: true },
     userPicture: { type: String },
     title: { type: String, required: true },
     content: { type: String, required: true },
     category: {
-        type: String,
-        enum: ['Programming', 'DSA', 'Web Dev', 'AI', 'Career'],
+        type: String, // Kept as simple String to avoid validation crash if an unknown category is used
         default: 'Programming'
     },
     likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],

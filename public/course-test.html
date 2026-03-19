@@ -473,7 +473,7 @@
     </div>
 
     <script>
-        const API = '';
+        const API = window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1') ? 'http://localhost:5000' : 'https://renvox-ai.onrender.com';
         const params = new URLSearchParams(window.location.search);
         const courseId = params.get('course') || 'Unknown Course';
         document.getElementById('headerCourse').textContent = courseId;
