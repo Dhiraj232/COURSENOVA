@@ -10,6 +10,7 @@ const { OAuth2Client } = require('google-auth-library');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const xss = require('xss-clean');
+const { logSuspiciousActivity } = require('./middleware/security');
 
 // Load environment variables
 require('dotenv').config();
@@ -154,9 +155,46 @@ process.on('uncaughtException', err => {
 });
 
 const app = express();
-// ─── Security Middlewares ─────────────────────────────────────────
 
-// 1. Helmet for Security Headers with CSP for YouTube
+// ─── 1. CORS — MUST be first, before all other middleware ────────────────────
+const allowedOrigins = [
+  "http://localhost:3000",
+  "http://localhost:5000",
+  "http://localhost:5500",
+  "http://127.0.0.1:5500",
+  "https://renvox.in",
+  "https://www.renvox.in",
+  "https://lms-backend-renvox.onrender.com",
+  "https://renvox-ai.onrender.com"
+];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (server-to-server, curl, Postman, mobile apps)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS: origin ' + origin + ' is not allowed'));
+    }
+  },
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+};
+
+// Handle preflight OPTIONS requests for all routes
+app.options('*', cors(corsOptions));
+
+// Apply CORS to all routes
+app.use(cors(corsOptions));
+
+// ─── 2. Body Parsers ─────────────────────────────────────────────────────────
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// ─── 3. Security Middlewares ──────────────────────────────────────────────────
+
+// Helmet for Security Headers with CSP
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -165,18 +203,18 @@ app.use(helmet({
       "img-src": ["'self'", "data:", "blob:", "https://res.cloudinary.com", "https://images.unsplash.com", "https://*.google.com", "https://*.googleusercontent.com", "https://i.ytimg.com", "https://yt3.ggpht.com", "https://ui-avatars.com", "https://cdni.iconscout.com"],
       "script-src": ["'self'", "'unsafe-inline'", "https://www.googletagmanager.com", "https://*.google.com", "https://checkout.razorpay.com"],
       "script-src-attr": ["'unsafe-inline'"],
-      "connect-src": ["'self'", "https://*.google-analytics.com", "https://*.analytics.google.com", "https://*.googletagmanager.com", "https://api.razorpay.com", "https://lms-backend-renvox.onrender.com"]
+      "connect-src": ["'self'", "https://*.google-analytics.com", "https://*.analytics.google.com", "https://*.googletagmanager.com", "https://api.razorpay.com", "https://lms-backend-renvox.onrender.com", "https://renvox-ai.onrender.com"]
     },
   },
 }));
 
-// 2. Rate Limiting to prevent API abuse/DoS
+// Rate Limiting to prevent API abuse/DoS
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // Limit each IP to 1000 requests per windowMs (increased for dev/restoration)
+  max: 1000,
   message: { ok: false, message: "Too many requests from this IP, please try again after 15 minutes." },
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  standardHeaders: true,
+  legacyHeaders: false,
   handler: (req, res, next, options) => {
     logSuspiciousActivity('Rate limit exceeded', req);
     res.status(options.statusCode).send(options.message);
@@ -186,33 +224,13 @@ const apiLimiter = rateLimit({
 // Apply rate limiter to all API routes
 app.use('/api/', apiLimiter);
 
-// 3. XSS Protection — skip multipart/form-data (file uploads) to avoid corrupting them
+// XSS Protection — skip multipart/form-data (file uploads) to avoid corrupting them
 app.use((req, res, next) => {
     const ct = req.headers['content-type'] || '';
     if (ct.startsWith('multipart/form-data')) return next();
     xss()(req, res, next);
 });
 
-// 4. CORS Configuration
-app.use(cors({
-  origin: [
-    "http://localhost:3000",
-    "http://localhost:5000",
-    "http://127.0.0.1:5500",
-    "https://renvox.in",
-    "https://www.renvox.in",
-    "https://lms-backend-renvox.onrender.com",
-    "https://renvox-ai.onrender.com"
-  ],
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
-}));
-
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-const { logSuspiciousActivity } = require('./middleware/security');
 
 
 // Express Session Middleware
