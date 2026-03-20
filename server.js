@@ -193,31 +193,18 @@ app.use((req, res, next) => {
     xss()(req, res, next);
 });
 
-// 4. CORS Configuration — allow all localhost origins in development
+// 4. CORS Configuration
 app.use(cors({
-  origin: function (origin, callback) {
-    // No origin = same-origin request, mobile app, curl, etc. → always allow
-    if (!origin) return callback(null, true);
-
-    // Allow any localhost or 127.0.0.1 origin on ANY port (covers 5000, 5500, 3000, Live Server, etc.)
-    const isLocalhost =
-      /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) ||
-      origin === 'null'; // file:// protocol shows as "null"
-
-    if (isLocalhost) return callback(null, true);
-
-    // In production, restrict to your actual domain
-    const productionOrigins = [
-      'https://renvox.in',
-      'https://www.renvox.in',
-      'https://lms-backend-renvox.onrender.com'
-    ];
-    if (productionOrigins.includes(origin)) return callback(null, true);
-
-    // Block everything else
-    return callback(new Error(`CORS: origin "${origin}" is not allowed.`), false);
-  },
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  origin: [
+    "http://localhost:3000",
+    "http://localhost:5000",
+    "http://127.0.0.1:5500",
+    "https://renvox.in",
+    "https://www.renvox.in",
+    "https://lms-backend-renvox.onrender.com",
+    "https://renvox-ai.onrender.com"
+  ],
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 }));
