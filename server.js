@@ -156,6 +156,9 @@ process.on('uncaughtException', err => {
 
 const app = express();
 
+// ─── CRITICAL: Trust Render's proxy — fixes ERR_ERL_UNEXPECTED_X_FORWARDED_FOR ─
+app.set('trust proxy', 1);
+
 // ─── 1. CORS — MUST be first, before all other middleware ────────────────────
 const allowedOrigins = [
   "http://localhost:3000",
@@ -174,7 +177,9 @@ const corsOptions = {
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(new Error('CORS: origin ' + origin + ' is not allowed'));
+      // Do NOT throw an Error — silently reject with false to avoid 500 errors
+      console.warn('[CORS] Blocked request from origin:', origin);
+      callback(null, false);
     }
   },
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -185,7 +190,7 @@ const corsOptions = {
 // Handle preflight OPTIONS requests for all routes
 app.options('*', cors(corsOptions));
 
-// Apply CORS to all routes
+// Apply CORS to all routes (only once)
 app.use(cors(corsOptions));
 
 // ─── 2. Body Parsers ─────────────────────────────────────────────────────────
@@ -208,7 +213,7 @@ app.use(helmet({
   },
 }));
 
-// Rate Limiting to prevent API abuse/DoS
+// ─── 4. Rate Limiting (requires trust proxy to be set above) ─────────────────
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 1000,
@@ -224,7 +229,7 @@ const apiLimiter = rateLimit({
 // Apply rate limiter to all API routes
 app.use('/api/', apiLimiter);
 
-// XSS Protection — skip multipart/form-data (file uploads) to avoid corrupting them
+// ─── 5. XSS Protection — skip multipart/form-data (file uploads) ─────────────
 app.use((req, res, next) => {
     const ct = req.headers['content-type'] || '';
     if (ct.startsWith('multipart/form-data')) return next();
