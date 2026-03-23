@@ -34,6 +34,12 @@ const CourseSchema = new mongoose.Schema({
     price: { type: Number, required: true, min: 0, default: 0 },
     isFree: { type: Boolean, default: false },
 
+    // Premium course gate — true means payment required before access
+    isPremium: { type: Boolean, default: false },
+
+    // Minimum score % to pass the final exam and earn a certificate
+    examPassPercent: { type: Number, default: 60, min: 0, max: 100 },
+
     // Card metadata
     duration: { type: String, default: '' },     // e.g. "6 Weeks"
     level: { type: String, default: 'Beginner', enum: ['Beginner', 'Intermediate', 'Advanced'] },

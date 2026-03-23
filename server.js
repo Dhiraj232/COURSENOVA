@@ -320,6 +320,9 @@ app.use((err, req, res, next) => {
     next(err);
 });
 
+// ─── Premium Course Routes ─────────────────────────────────────
+app.use('/api/premium', require('./routes/premiumCourseRoutes'));
+
 // ─── Course Platform Routes ───────────────────────────────────
 app.use('/api/payments', paymentRoutes);
 app.use('/api/enrollments', enrollmentRoutes);
