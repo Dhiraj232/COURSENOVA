@@ -396,4 +396,42 @@ router.get('/certificate/:courseId', requireAuth, async (req, res) => {
     }
 });
 
+// ─── GET /api/premium/all-courses ────────────────────────────────────────────
+// Public — lists ALL active courses (free + premium) merged.
+// If user is logged in (optionalAuth), each course is annotated with
+// { enrolled, progress }. Quiz answer keys are never exposed here.
+router.get('/all-courses', optionalAuth, async (req, res) => {
+    try {
+        const courses = await Course.find({ isActive: true })
+            .select('-quizQuestions.correctIndex -__v')
+            .lean();
+
+        const userId = req.userId || null;
+
+        const annotated = await Promise.all(courses.map(async c => {
+            let enrolled = false;
+            let progress = null;
+
+            if (userId) {
+                enrolled = await isEnrolled(userId, String(c._id));
+                if (enrolled) {
+                    const p = await CourseProgress.findOne({
+                        userId: String(userId),
+                        courseId: String(c._id)
+                    }).lean();
+                    if (p) progress = { progressPercent: p.progressPercent || 0, isCompleted: p.isCompleted || false, certId: p.certId || null };
+                }
+            }
+
+            return { ...c, enrolled, progress };
+        }));
+
+        res.json({ ok: true, courses: annotated });
+    } catch (err) {
+        console.error('GET /premium/all-courses error:', err);
+        res.status(500).json({ ok: false, message: 'Failed to fetch courses' });
+    }
+});
+
 module.exports = router;
+
