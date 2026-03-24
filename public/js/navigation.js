@@ -67,15 +67,7 @@ function setupNavigation() {
     const token = getAuthToken();
     const links = [
         { name: 'Home', href: 'index.html', key: 'home' },
-        { 
-            name: 'Courses', 
-            href: '#', 
-            key: 'courses',
-            dropdown: [
-                { name: 'Free Courses', href: 'certificates.html' },
-                { name: 'Premium Courses ✨', href: 'premium-courses.html' }
-            ]
-        },
+        { name: 'Courses', href: 'certificates.html', key: 'courses' },
         { name: 'Mock Tests', href: 'testing-center.html', key: 'tests' },
         { name: 'Community', href: 'community.html', key: 'community' },
         { name: 'Store', href: 'store.html', key: 'store' }
