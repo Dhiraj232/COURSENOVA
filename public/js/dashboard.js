@@ -140,7 +140,7 @@ function updateDashboardUI(data) {
                             <div class="progress-bar-fill" style="width: ${active.progress}%;"></div>
                         </div>
                     </div>
-                    <button class="btn-resume" onclick="window.location.href='course-content.html?course=${active.id}&t=${Date.now()}'">
+                    <button class="btn-resume" onclick="window.location.href='premium-course-player.html?course=${active.id}&t=${Date.now()}'">
                         <i class="fas fa-chevron-right"></i>
                     </button>
                 </div>

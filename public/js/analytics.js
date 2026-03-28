@@ -5,7 +5,7 @@
  * Replace 'G-XXXXXXXXXX' with your actual GA4 Measurement ID.
  */
 
-const GA_MEASUREMENT_ID = 'G-XXXXXXXXXX';
+const GA_MEASUREMENT_ID = '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';
 
 // Initialize GA4
 function initGA() {

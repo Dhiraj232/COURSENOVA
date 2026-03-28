@@ -5,7 +5,7 @@ const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const Razorpay = require('razorpay');
+// const Razorpay = require('razorpay');
 const { OAuth2Client } = require('google-auth-library');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
@@ -253,8 +253,9 @@ app.use(passport.session());
 // Serve frontend static files from the specialized 'public' directory
 app.use(express.static(path.join(__dirname, 'public'), {
   maxAge: '1y',
-  setHeaders: (res, path) => {
-    if (path.endsWith('.html')) {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Content-Type', 'text/html');
       res.setHeader('Cache-Control', 'no-cache');
     }
   }

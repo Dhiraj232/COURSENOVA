@@ -22,15 +22,42 @@ const razorpay = new Razorpay({
 
 // ─── Helper: check if a user is enrolled in a course ─────────────────────────
 async function isEnrolled(userId, courseId) {
-    if (!userId) return false;
-    const enrollment = await Enrollment.findOne({ userId: String(userId), courseId: String(courseId) });
-    if (enrollment) return true;
+    if (!userId || !courseId) return false;
+    
+    try {
+        const course = await Course.findOne({
+            $or: [
+                { _id: String(courseId).match(/^[0-9a-fA-F]{24}$/) ? courseId : null },
+                { slug: String(courseId).toLowerCase().replace(/\s+/g, '-') },
+                { title: String(courseId) }
+            ]
+        });
+        if (course && course.isFree) return true;
+
+        const searchOrs = [{ courseId: String(courseId) }, { courseName: String(courseId) }];
+        if (course) {
+            searchOrs.push({ courseId: course.title });
+            searchOrs.push({ courseName: course.title });
+            if (course.slug) searchOrs.push({ courseId: course.slug });
+            searchOrs.push({ courseId: String(course._id) });
+        }
+
+        const enrollment = await Enrollment.findOne({ 
+            userId: String(userId), 
+            $or: searchOrs
+        });
+        if (enrollment) return true;
+    } catch (e) {
+        console.warn("isEnrolled error", e.message);
+    }
+
     // Legacy: check User.enrolledCourses string array
     const user = await User.findById(userId);
     return !!(user && user.enrolledCourses &&
-        (user.enrolledCourses.includes(courseId) ||
+        (user.enrolledCourses.includes(String(courseId)) ||
          user.enrolledCourses.some(c =>
-            c.toLowerCase() === courseId.toLowerCase()
+            c.toLowerCase() === String(courseId).toLowerCase() ||
+            searchOrs.some(s => s.courseId && c.toLowerCase() === String(s.courseId).toLowerCase())
          )
         )
     );
@@ -40,7 +67,14 @@ async function isEnrolled(userId, courseId) {
 // Public — lists all active premium courses. Strips quiz answers.
 router.get('/courses', optionalAuth, async (req, res) => {
     try {
-        const courses = await Course.find({ isPremium: true, isActive: true })
+        const courses = await Course.find({
+            $or: [
+                { isPremium: true },
+                { isFree: true },
+                { price: { $gt: 0 } }
+            ],
+            isActive: true 
+        })
             .select('-quizQuestions.correctIndex -__v')
             .lean();
 
@@ -67,11 +101,35 @@ router.get('/courses', optionalAuth, async (req, res) => {
 // Public metadata — returns course info. Content (quizQuestions) only for enrolled.
 router.get('/course/:id', optionalAuth, async (req, res) => {
     try {
-        const course = await Course.findById(req.params.id).lean();
-        if (!course || !course.isPremium) return res.status(404).json({ ok: false, message: 'Premium course not found' });
+        const courseId = req.params.id;
+        const course = await Course.findOne({
+            $or: [
+                { _id: String(courseId).match(/^[0-9a-fA-F]{24}$/) ? courseId : null },
+                { slug: String(courseId).toLowerCase().replace(/\s+/g, '-') },
+                { title: String(courseId) }
+            ]
+        }).lean();
+        
+        if (!course) return res.status(404).json({ ok: false, message: 'Course not found' });
 
         const userId = req.userId || null;
-        const enrolled = await isEnrolled(userId, String(course._id));
+        let enrolled = await isEnrolled(userId, String(course._id));
+
+        // ── AUTO-ENROLL for FREE courses if not already enrolled ───────
+        if (!enrolled && userId && course.isFree) {
+            try {
+                await Enrollment.create({
+                    userId: String(userId),
+                    courseId: String(course._id),
+                    courseName: course.title,
+                    purchaseDate: new Date(),
+                    status: 'approved',
+                    amountPaid: 0,
+                    utr: 'AUTO-FREE-' + Date.now().toString(36).toUpperCase()
+                });
+                enrolled = true;
+            } catch (err) { console.warn('Auto-enroll error:', err.message); }
+        }
 
         // Strip answer keys for non-enrolled users
         if (!enrolled && course.quizQuestions) {
@@ -115,8 +173,17 @@ router.post('/create-order', requireAuth, async (req, res) => {
         const { courseId } = req.body;
         if (!courseId) return res.status(400).json({ ok: false, message: 'courseId is required' });
 
-        const course = await Course.findById(courseId);
-        if (!course || !course.isPremium) return res.status(404).json({ ok: false, message: 'Premium course not found' });
+        const course = await Course.findOne({
+            $or: [
+                { _id: String(courseId).match(/^[0-9a-fA-F]{24}$/) ? courseId : null },
+                { slug: String(courseId).toLowerCase().replace(/\s+/g, '-') },
+                { title: String(courseId) }
+            ]
+        });
+        if (!course) return res.status(404).json({ ok: false, message: 'Course not found' });
+        
+        const isPaid = course.price > 0 && !course.isFree;
+        if (!isPaid) return res.status(400).json({ ok: false, message: 'This course is free. Join via Enroll Free button.' });
 
         // Check already enrolled
         const alreadyEnrolled = await isEnrolled(req.userId, String(course._id));
@@ -164,7 +231,13 @@ router.post('/verify-payment', requireAuth, async (req, res) => {
     }
 
     try {
-        const course = await Course.findById(courseId);
+        const course = await Course.findOne({
+            $or: [
+                { _id: String(courseId).match(/^[0-9a-fA-F]{24}$/) ? courseId : null },
+                { slug: String(courseId).toLowerCase().replace(/\s+/g, '-') },
+                { title: String(courseId) }
+            ]
+        });
         if (!course) return res.status(404).json({ ok: false, message: 'Course not found' });
 
         const userId = String(req.userId);

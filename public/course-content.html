@@ -689,7 +689,7 @@
                     courseMongoId   = String(premiumData._id);
 
                     // ── If premium and NOT enrolled → show gate ──────────────────
-                    if (courseIsPremium && !premiumData.enrolled) {
+                    if (courseIsPremium && !premiumData.enrolled && coursePrice > 0) {
                         document.getElementById('gateTitle').textContent   = premiumData.title || courseId;
                         document.getElementById('gateSubtitle').textContent = premiumData.description || 'Unlock full access to learn and earn your certificate';
                         document.getElementById('gatePrice').textContent   = '₹' + Number(coursePrice).toLocaleString('en-IN');

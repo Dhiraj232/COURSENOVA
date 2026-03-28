@@ -19,12 +19,15 @@ router.get('/details', async (req, res) => {
 
     try {
         // All courses are freely accessible — no enrollment check
-        const course = await Course.findOne({
-            $or: [
-                { title: courseId },
-                { slug: courseId.toLowerCase().replace(/\s+/g, '-') }
-            ]
-        });
+        const orQuery = [
+            { title: courseId },
+            { slug: courseId.toLowerCase().replace(/\s+/g, '-') }
+        ];
+        if (String(courseId).match(/^[0-9a-fA-F]{24}$/)) {
+            orQuery.push({ _id: courseId });
+        }
+        
+        const course = await Course.findOne({ $or: orQuery });
 
         const progress = await CourseProgress.findOne({ userId: req.userId, courseId });
 
