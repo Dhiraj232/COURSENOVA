@@ -2,11 +2,9 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const cors = require('cors');
-const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-// const Razorpay = require('razorpay');
-const { OAuth2Client } = require('google-auth-library');
+const Razorpay = require('razorpay');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const xss = require('xss-clean');
@@ -51,17 +49,10 @@ if (!process.env.JWT_SECRET) console.warn('⚠️ JWT_SECRET is missing. Using i
 if (!process.env.BASE_URL) console.warn('⚠️ BASE_URL is missing. OAuth redirects will use localhost:5000.');
 
 // ─── MongoDB Connection ───────────────────────────────────────
-<<<<<<< HEAD
 const MONGO_URI = isProduction ? process.env.MONGO_URI : (process.env.MONGO_URI || 'mongodb://localhost:27017/renvox-bookstore');
 
 if (isProduction && !MONGO_URI) {
   console.error('❌ CRITICAL ERROR: MONGO_URI missing in production! Exiting...');
-=======
-const MONGO_URI = process.env.MONGO_URI;
-
-if (!MONGO_URI) {
-  console.error('❌ CRITICAL ERROR: MONGO_URI missing! Exiting...');
->>>>>>> 105dec747cdc277aa6e134178a3fa5ceeaaa7817
   process.exit(1);
 }
 
