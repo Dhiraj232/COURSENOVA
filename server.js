@@ -74,7 +74,7 @@ const CourseProgress = require('./models/CourseProgress');
 passport.use(new GoogleStrategy({
   clientID: GOOGLE_CLIENT_ID,
   clientSecret: GOOGLE_CLIENT_SECRET,
-  callbackURL: (process.env.BASE_URL || "http://localhost:5000") + "/auth/google/callback",
+  callbackURL: "/auth/google/callback",
   proxy: true
 },
   async function (accessToken, refreshToken, profile, done) {
