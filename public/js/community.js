@@ -85,16 +85,18 @@ function renderPosts(posts, targetId) {
 }
 
 async function submitPost() {
-    if (!token) return alert('Login to post!');
     const title = document.getElementById('postTitle').value;
     const content = document.getElementById('postContent').value;
     const category = document.getElementById('postCategory').value;
 
     try {
-        const res = await fetch('/api/community/posts', {
+        const res = await fetch("https://renvox-ai.onrender.com/api/community/posts", {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ title, content, category })
+            headers: { 
+                'Content-Type': 'application/json', 
+                'Authorization': `Bearer ${token || ''}` 
+            },
+            body: JSON.stringify({ title, category, content })
         });
         if ((await res.json()).ok) {
             closeModal('postModal');

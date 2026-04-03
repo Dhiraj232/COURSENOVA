@@ -4,938 +4,151 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Certificate Courses — RENVOX</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
-        rel="stylesheet">
+    <title>Certificate Courses — RENVOX AI</title>
+
+    <!-- 1. External Resources (Allowed by backend CSP) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- 2. Local Stylesheets -->
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/navigation.css">
-    <script src="js/navigation.js?v=1.2" defer></script>
-    <script src="js/analytics.js" defer></script>
+
+    <!-- 3. Core Framework Scripts -->
+    <script src="js/navigation.js" defer></script>
+    <!-- <script src="js/analytics.js" defer></script> -->
+
     <style>
         :root {
             --brand: #4f46e5;
-            --brand2: #818cf8;
+            --brand-light: #818cf8;
             --green: #10b981;
             --orange: #f59e0b;
-            --red: #ef4444;
-            --bg: #f5f7ff;
-            --card: #fff;
-            --text: #1e293b;
-            --muted: #64748b;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
             --border: #e2e8f0;
+            --premium: linear-gradient(135deg, #7c3aed, #a855f7);
         }
 
         body {
-            background: var(--bg);
+            background-color: var(--bg);
             font-family: 'Inter', sans-serif;
-            color: var(--text);
-        }
-
-        /* ── Progress Banner ── */
-        .progress-banner {
-            background: linear-gradient(135deg, #4f46e5, #818cf8);
-            color: white;
-            padding: 14px 20px;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            gap: 40px;
-            font-size: .9rem;
-        }
-
-        .progress-banner.show {
-            display: flex;
-        }
-
-        .pbstat {
-            text-align: center;
-        }
-
-        .pbstat strong {
-            font-size: 1.5rem;
-            display: block;
-            font-weight: 800;
+            color: var(--text-main);
+            margin: 0;
+            padding-top: 80px; /* Space for fixed navbar */
         }
 
         /* ── Hero ── */
-        .cert-hero {
-            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%);
-            padding: 54px 20px 48px;
+        .hero {
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+            padding: 50px 20px;
             text-align: center;
             color: white;
-            position: relative;
-            overflow: hidden;
+            margin-bottom: 30px;
         }
 
-        .cert-hero::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M20 20c0 11.046-8.954 20-20 20S-20 31.046-20 20s8.954-20 20-20 20 8.954 20 20zm-40 0c0 11.046-8.954 20-20 20s-20-8.954-20-20 8.954-20 20-20 20 8.954 20 20z'/%3E%3C/g%3E%3C/svg%3E");
-        }
+        .hero h1 { font-size: 2.3rem; font-weight: 800; margin: 0 0 10px; }
+        .hero p { opacity: 0.9; margin: 0 auto; max-width: 650px; }
 
-        .cert-hero h1 {
-            font-size: clamp(1.6rem, 4vw, 2.6rem);
-            font-weight: 800;
-            margin-bottom: 10px;
-            position: relative;
-        }
-
-        .cert-hero p {
-            font-size: 1.05rem;
-            opacity: .85;
-            position: relative;
-        }
-
-        /* ── Filter Bar ── */
-        .filter-bar {
-            background: white;
-            border-bottom: 1px solid var(--border);
-            padding: 14px 20px;
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            justify-content: center;
-            position: sticky;
-            top: 62px;
-            z-index: 50;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, .05);
-        }
-
-        .filter-chip {
-            padding: 7px 18px;
-            border-radius: 20px;
-            border: 1.5px solid var(--border);
-            background: white;
-            font-size: .85rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all .2s;
-            color: var(--muted);
-        }
-
-        .filter-chip.active,
-        .filter-chip:hover {
-            background: var(--brand);
-            border-color: var(--brand);
-            color: white;
-        }
-
-        /* ── Main Grid ── */
-        .certs-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 36px 20px 60px;
-        }
-
-        .certs-grid {
+        /* ── Grid ── */
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+        .course-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
-            gap: 24px;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+            margin-top: 40px;
+            margin-bottom: 60px;
         }
 
-        /* ── Course Card ── */
-        .course-card {
+        /* ── Card ── */
+        .card {
             background: var(--card);
-            border-radius: 18px;
-            border: 1.5px solid var(--border);
+            border-radius: 14px;
+            border: 1px solid var(--border);
             overflow: hidden;
-            transition: all .3s cubic-bezier(.175, .885, .32, 1.275);
-            position: relative;
-        }
-
-        .course-card:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 20px 48px rgba(79, 70, 229, .14);
-            border-color: var(--brand);
-        }
-
-        .course-card.locked {
-            opacity: .75;
-        }
-
-        /* Card Header */
-        .card-header {
-            padding: 28px 20px 20px;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            position: relative;
+            transition: all 0.3s ease;
         }
 
-        .card-header.beginner {
-            background: linear-gradient(135deg, #312e81, #4f46e5);
-        }
+        .card:hover { transform: translateY(-6px); box-shadow: 0 15px 30px rgba(0,0,0,0.08); border-color: var(--brand); }
 
-        .card-header.intermediate {
-            background: linear-gradient(135deg, #1e3a5f, #2563eb);
+        .card-header {
+            padding: 35px 20px; text-align: center; color: white;
         }
+        .card-header.free { background: linear-gradient(135deg, #059669, #10b981); }
+        .card-header.premium { background: var(--premium); }
 
-        .card-header.advanced {
-            background: linear-gradient(135deg, #3b1212, #dc2626);
-        }
+        .course-icon { font-size: 3rem; margin-bottom: 12px; }
+        .course-title { font-size: 1.2rem; font-weight: 700; margin: 0; }
 
-        .card-header.free {
-            background: linear-gradient(135deg, #064e3b, #10b981);
-        }
+        .card-body { padding: 25px; flex-grow: 1; display: flex; flex-direction: column; }
+        .course-desc { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 25px; line-height: 1.6; min-height: 44px; }
 
-        .course-icon {
-            font-size: 3rem;
-            margin-bottom: 8px;
-        }
+        .card-actions { margin-top: auto; }
 
-        .course-title {
-            font-size: 1.1rem;
-            font-weight: 800;
-            color: white;
-            text-align: center;
-            line-height: 1.35;
-        }
-
-        /* Status Badges */
-        .status-badge {
-            position: absolute;
-            top: 12px;
-            right: 12px;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: .72rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: .5px;
-        }
-
-        .badge-locked {
-            background: rgba(0, 0, 0, .35);
-            color: #fff;
-        }
-
-        .badge-enrolled {
-            background: rgba(16, 185, 129, .9);
-            color: #fff;
-        }
-
-        .badge-completed {
-            background: rgba(245, 158, 11, .95);
-            color: #fff;
-        }
-
-        .badge-free {
-            background: rgba(255, 255, 255, .2);
-            color: #fff;
-        }
-
-        /* Card Body */
-        .card-body {
-            padding: 20px;
-        }
-
-        .course-desc {
-            font-size: .85rem;
-            color: var(--muted);
-            line-height: 1.6;
-            margin-bottom: 16px;
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            line-clamp: 3;
-        }
-
-        /* Meta row */
-        .course-meta {
-            display: flex;
-            gap: 14px;
-            flex-wrap: wrap;
-            margin-bottom: 14px;
-        }
-
-        .meta-tag {
-            font-size: .78rem;
-            color: var(--muted);
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .meta-tag i {
-            color: var(--brand);
-            font-size: .72rem;
-        }
-
-        /* Highlights */
-        .highlights {
-            list-style: none;
-            margin-bottom: 18px;
-        }
-
-        .highlights li {
-            font-size: .82rem;
-            color: var(--text);
-            padding: 3px 0;
-            display: flex;
-            gap: 8px;
-            align-items: center;
-        }
-
-        .highlights li::before {
-            content: "✓";
-            color: var(--green);
-            font-weight: 800;
-        }
-
-        /* Price block */
-        .price-block {
-            background: var(--bg);
-            border-radius: 10px;
-            padding: 12px 16px;
-            text-align: center;
-            margin-bottom: 16px;
-        }
-
-        .price-amount {
-            font-size: 1.6rem;
-            font-weight: 800;
-            color: var(--brand);
-        }
-
-        .price-note {
-            font-size: .75rem;
-            color: var(--muted);
-        }
-
-        /* Progress bar (inside card) */
-        .progress-wrap {
-            margin-bottom: 14px;
-        }
-
-        .progress-label {
-            display: flex;
-            justify-content: space-between;
-            font-size: .78rem;
-            color: var(--muted);
-            margin-bottom: 5px;
-        }
-
-        .progress-bar {
-            height: 7px;
-            background: var(--border);
-            border-radius: 99px;
-            overflow: hidden;
-        }
-
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--brand), var(--brand2));
-            border-radius: 99px;
-            transition: width 1s ease;
-        }
-
-        /* Action Buttons */
+        /* ── Buttons ── */
         .btn-action {
-            display: block;
-            width: 100%;
-            padding: 13px;
-            border: none;
-            border-radius: 10px;
-            font-size: .95rem;
-            font-weight: 700;
-            cursor: pointer;
-            text-align: center;
-            text-decoration: none;
-            transition: all .3s;
-            font-family: inherit;
+            display: block; width: 100%; padding: 13px; border-radius: 10px;
+            font-weight: 700; text-align: center; text-decoration: none;
+            font-size: 0.95rem; border: none; font-family: inherit;
+            cursor: pointer; transition: all 0.2s;
+            background: var(--brand); color: white;
         }
+        .btn-action:hover { filter: brightness(1.1); transform: scale(1.01); }
+        .btn-free { background: var(--green); }
+        .btn-premium { background: var(--orange); }
 
-        .btn-enroll {
-            background: linear-gradient(135deg, var(--brand), var(--brand2));
-            color: white;
-        }
-
-        .btn-enroll:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(79, 70, 229, .35);
-        }
-
-        .btn-free {
-            background: linear-gradient(135deg, var(--green), #34d399);
-            color: white;
-        }
-
-        .btn-free:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(16, 185, 129, .35);
-        }
-
-        .btn-continue {
-            background: linear-gradient(135deg, #0284c7, #38bdf8);
-            color: white;
-        }
-
-        .btn-continue:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(2, 132, 199, .3);
-        }
-
-        .btn-completed {
-            background: linear-gradient(135deg, var(--orange), #fbbf24);
-            color: white;
-        }
-
-        .btn-completed:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(245, 158, 11, .3);
-        }
-
-        .btn-locked {
-            background: #e2e8f0;
-            color: #94a3b8;
-            cursor: not-allowed;
-        }
-
-        .btn-cert {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            margin-top: 8px;
-            width: 100%;
-            padding: 10px;
-            background: transparent;
-            border: 1.5px solid var(--orange);
-            border-radius: 10px;
-            color: var(--orange);
-            font-weight: 700;
-            font-size: .88rem;
-            cursor: pointer;
-            transition: all .2s;
-            text-decoration: none;
-            font-family: inherit;
-        }
-
-        .btn-cert:hover {
-            background: var(--orange);
-            color: white;
-        }
-
-        /* Loading skeleton */
-        .skeleton-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
-            gap: 24px;
-        }
-
-        .skeleton-card {
-            background: var(--card);
-            border-radius: 18px;
-            overflow: hidden;
-            border: 1.5px solid var(--border);
-        }
-
-        .skel-header {
-            height: 120px;
-            background: linear-gradient(90deg, #e2e8f0 25%, #f0f4f8 50%, #e2e8f0 75%);
-            background-size: 200%;
-            animation: shimmer 1.5s infinite;
-        }
-
-        .skel-body {
-            padding: 20px;
-        }
-
-        .skel-line {
-            height: 12px;
-            border-radius: 6px;
-            background: linear-gradient(90deg, #e2e8f0 25%, #f0f4f8 50%, #e2e8f0 75%);
-            background-size: 200%;
-            animation: shimmer 1.5s infinite;
-            margin-bottom: 10px;
-        }
-
-        .skel-line.short {
-            width: 60%;
-        }
-
-        @keyframes shimmer {
-            to {
-                background-position: -200% center;
-            }
-        }
-
-        /* Login CTA */
-        .login-cta {
-            background: linear-gradient(135deg, #1e1b4b, #312e81);
-            color: white;
-            border-radius: 16px;
-            padding: 32px;
-            text-align: center;
-            margin-bottom: 32px;
-        }
-
-        .login-cta h2 {
-            font-size: 1.3rem;
-            margin-bottom: 8px;
-        }
-
-        .login-cta p {
-            opacity: .8;
-            margin-bottom: 20px;
-            font-size: .9rem;
-        }
-
-        .login-cta a {
-            display: inline-block;
-            padding: 12px 32px;
-            background: white;
-            color: var(--brand);
-            border-radius: 10px;
-            font-weight: 700;
-            text-decoration: none;
-            transition: all .25s;
-        }
-
-        .login-cta a:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, .2);
-        }
-
-        /* Toast */
+        /* ── Toast ── */
         .toast {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            padding: 14px 22px;
-            border-radius: 12px;
-            color: white;
-            font-weight: 600;
-            font-size: .9rem;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, .2);
-            z-index: 9999;
-            display: none;
+            position: fixed; bottom: 25px; right: 25px; padding: 14px 28px;
+            border-radius: 10px; background: #1e293b; color: white;
+            font-weight: 600; box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            transform: translateY(120px); transition: transform 0.3s; z-index: 10000;
         }
-
-        .toast.show {
-            display: block;
-        }
-
-        .toast.success {
-            background: var(--green);
-        }
-
-        .toast.error {
-            background: var(--red);
-        }
+        .toast.show { transform: translateY(0); }
     </style>
 </head>
 
 <body>
-
-    <!-- ═══════════ NAVBAR ═══════════ -->
+    <!-- Navbar -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
-            <a href="index.html" class="logo"><img src="images/logo%20renvox.png" alt="RENVOX"> <span>RENVOX</span></a>
-            <div class="nav-search">
-                <input type="text" id="navbarSearch" placeholder="Search for courses, subjects, or concepts...">
-                <button type="button" onclick="handleNavbarSearch()"><i class="fas fa-search"></i></button>
-            </div>
+            <a href="index.html" class="logo">
+                <img src="images/logo%20renvox.png" alt="RENVOX">
+                <span>RENVOX AI</span>
+            </a>
             <ul class="nav-menu" id="navMenu"></ul>
             <div class="nav-buttons" id="navButtons"></div>
             <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
         </div>
     </nav>
 
-    <!-- ═══════════ PROGRESS BANNER (logged-in users) ═══════════ -->
-    <div class="progress-banner" id="progressBanner">
-        <div class="pbstat"><strong id="pbEnrolled">0</strong> Enrolled</div>
-        <div class="pbstat"><strong id="pbCompleted">0</strong> Completed</div>
-        <div class="pbstat"><strong id="pbCerts">0</strong> Certificates 🏆</div>
-        <a href="certificates.html"
-            style="background:rgba(255,255,255,.2);color:white;padding:8px 20px;border-radius:20px;font-weight:700;text-decoration:none;font-size:.88rem;">View
-            Dashboard →</a>
-    </div>
-
-    <!-- ═══════════ HERO ═══════════ -->
-    <div class="cert-hero">
-        <h1>🎓 Certificate Courses</h1>
-        <p>Enroll • Learn • Pass the test • Earn your verified certificate</p>
-    </div>
-
-    <!-- ═══════════ FILTER BAR ═══════════ -->
-    <div class="filter-bar">
-        <button class="filter-chip active" onclick="filterCards('all', this)">All Courses</button>
-        <button class="filter-chip" onclick="filterCards('Beginner', this)">🌱 Beginner</button>
-        <button class="filter-chip" onclick="filterCards('Intermediate', this)">📈 Intermediate</button>
-        <button class="filter-chip" onclick="filterCards('completed', this)">🏆 Completed</button>
-    </div>
-
-    <!-- ═══════════ MAIN CONTENT ═══════════ -->
-    <div class="certs-container">
-        <!-- Login CTA (hidden when logged in) -->
-        <div class="login-cta" id="loginCta" style="display:none;">
-            <h2>🔐 Login to Track Your Progress</h2>
-            <p>Sign in to enroll in courses, track your learning, and download certificates.</p>
-            <a href="signup.html">Login / Sign Up</a>
+    <!-- Header -->
+    <section class="hero">
+        <div class="container">
+            <h1>🚀 Level Up Your AI Skills</h1>
+            <p>Enroll in industry-leading courses today. Complete the modules and earn your official RENVOX certificate for free.</p>
         </div>
+    </section>
 
-        <!-- Skeleton loading state -->
-        <div class="skeleton-grid" id="skeletonGrid">
-            <div class="skeleton-card">
-                <div class="skel-header"></div>
-                <div class="skel-body">
-                    <div class="skel-line"></div>
-                    <div class="skel-line short"></div>
-                </div>
-            </div>
-            <div class="skeleton-card">
-                <div class="skel-header"></div>
-                <div class="skel-body">
-                    <div class="skel-line"></div>
-                    <div class="skel-line short"></div>
-                </div>
-            </div>
-            <div class="skeleton-card">
-                <div class="skel-header"></div>
-                <div class="skel-body">
-                    <div class="skel-line"></div>
-                    <div class="skel-line short"></div>
-                </div>
-            </div>
-            <div class="skeleton-card">
-                <div class="skel-header"></div>
-                <div class="skel-body">
-                    <div class="skel-line"></div>
-                    <div class="skel-line short"></div>
-                </div>
-            </div>
-            <div class="skeleton-card">
-                <div class="skel-header"></div>
-                <div class="skel-body">
-                    <div class="skel-line"></div>
-                    <div class="skel-line short"></div>
-                </div>
-            </div>
-            <div class="skeleton-card">
-                <div class="skel-header"></div>
-                <div class="skel-body">
-                    <div class="skel-line"></div>
-                    <div class="skel-line short"></div>
-                </div>
+    <!-- Course Listing -->
+    <main class="container">
+        <div class="course-grid" id="courseGrid">
+            <!-- Loading State -->
+            <div style="grid-column: 1/-1; text-align: center; padding: 50px;">
+                <i class="fas fa-circle-notch fa-spin" style="font-size: 2.5rem; color: var(--brand);"></i>
+                <p style="margin-top: 15px; color: var(--text-muted);">Getting your courses ready...</p>
             </div>
         </div>
+    </main>
 
-        <!-- Actual grid -->
-        <div class="certs-grid" id="certsGrid" style="display:none;"></div>
-    </div>
-
-    <!-- ═══════════ TOAST ═══════════ -->
     <div class="toast" id="toast"></div>
 
-
-    <script>
-        const API = '';
-        const token = localStorage.getItem('renvox_token') || localStorage.getItem('renvoxToken') || '';
-
-        // ─── Course Definitions ───────────────────────────────────────────────────
-        const COURSES = [
-            {
-                id: 'C Programming Fundamentals',
-                title: 'C Programming Fundamentals',
-                icon: '💻', level: 'Beginner',
-                duration: '4 Weeks', assignments: 8,
-                description: 'Master C programming from scratch with practical assignments and real-world system programming projects.',
-                highlights: ['8 Assignments', 'Live Projects', '40+ Hours Content', 'Job Ready Skills'],
-                price: 799, isFree: false
-            },
-            {
-                id: 'Data Structures Advanced',
-                title: 'Data Structures Advanced',
-                icon: '🔗', level: 'Intermediate',
-                duration: '6 Weeks', assignments: 12,
-                description: 'Deep dive into data structures with interview prep, competitive programming challenges and complexity analysis.',
-                highlights: ['12 Assignments', 'Interview Questions', 'Coding Challenges', 'Certificate'],
-                price: 1199, isFree: false
-            },
-            {
-                id: 'Web Development Bootcamp',
-                title: 'Web Development Bootcamp',
-                icon: '🌐', level: 'Intermediate',
-                duration: '8 Weeks', assignments: 10,
-                description: 'Complete full-stack web development covering HTML, CSS, JavaScript, Node.js, and React with real projects.',
-                highlights: ['10 Projects', 'Portfolio Ready', 'Job Support', 'Lifetime Access'],
-                price: 1999, isFree: false
-            },
-            {
-                id: 'Python for Data Science',
-                title: 'Python for Data Science',
-                icon: '🐍', level: 'Intermediate',
-                duration: '5 Weeks', assignments: 7,
-                description: 'Learn Python with NumPy, Pandas, Matplotlib, and Scikit-Learn for real-world data science applications.',
-                highlights: ['7 Projects', 'Real Datasets', 'ML Basics', 'Career Ready'],
-                price: 999, isFree: false
-            },
-            {
-                id: 'Database Management Systems',
-                title: 'Database Management Systems',
-                icon: '🗄️', level: 'Beginner',
-                duration: '3 Weeks', assignments: 5,
-                description: 'Master DBMS concepts, SQL queries, database design, normalization and practical database management.',
-                highlights: ['5 Assignments', 'SQL Mastery', 'Database Design', 'Verified Cert'],
-                price: 599, isFree: false
-            },
-            {
-                id: 'Learning Essentials (Free)',
-                title: 'Learning Essentials',
-                icon: '📚', level: 'Beginner',
-                duration: '2 Weeks', assignments: 3,
-                description: 'Free starter course to understand the RENVOX platform, effective learning basics and study techniques.',
-                highlights: ['3 Assignments', 'Free Access', 'Digital Certificate', 'No Credit Card'],
-                price: 0, isFree: true
-            },
-            {
-                id: 'Frontend Developer',
-                title: 'Frontend Developer',
-                icon: '🎨', level: 'Intermediate',
-                duration: '6 Weeks', assignments: 10,
-                description: 'Become a job-ready frontend developer. Learn HTML5, CSS3, responsive design, JavaScript DOM, React basics and build stunning UIs.',
-                highlights: ['10 Projects', 'React Basics', 'Responsive Design', 'Portfolio Ready'],
-                price: 1499, isFree: false
-            },
-            {
-                id: 'Time Management',
-                title: 'Time Management',
-                icon: '⏰', level: 'Beginner',
-                duration: '2 Weeks', assignments: 4,
-                description: 'Master productivity techniques used by top performers. Learn Pomodoro, GTD, time-blocking and eliminate procrastination for good.',
-                highlights: ['4 Assignments', 'Productivity Tools', 'Life Skills', 'Digital Certificate'],
-                price: 399, isFree: false
-            },
-            {
-                id: 'JavaScript Advanced',
-                title: 'JavaScript Advanced',
-                icon: '⚡', level: 'Intermediate',
-                duration: '5 Weeks', assignments: 8,
-                description: 'Go beyond the basics. Master closures, async/await, Promises, ES6+, design patterns and how JavaScript works under the hood.',
-                highlights: ['8 Projects', 'ES6+ Mastery', 'Async JS', 'Interview Ready'],
-                price: 999, isFree: false
-            },
-            {
-                id: 'Web Design',
-                title: 'Web Design',
-                icon: '🖌️', level: 'Beginner',
-                duration: '3 Weeks', assignments: 6,
-                description: 'Learn modern UI/UX principles, color theory, typography, Figma wireframing and build beautiful, user-friendly websites from scratch.',
-                highlights: ['6 Assignments', 'Figma Skills', 'UI/UX Basics', 'Design Portfolio'],
-                price: 699, isFree: false
-            },
-            {
-                id: 'Communication Skills',
-                title: 'Communication Skills',
-                icon: '🗣️', level: 'Beginner',
-                duration: '2 Weeks', assignments: 4,
-                description: 'Build confidence in spoken and written English. Learn professional email writing, public speaking, body language and workplace communication.',
-                highlights: ['4 Assignments', 'Mock Interviews', 'Email Writing', 'Career Boost'],
-                price: 499, isFree: false
-            }
-        ];
-
-        let enrolledIds = [];  // course IDs the user is enrolled in
-        let completedMap = {};  // courseId → { certId, earnedAt }
-        let progressMap = {};  // courseId → progressPercent
-
-        // ─── Init ─────────────────────────────────────────────────────────────────
-        document.getElementById('skeletonGrid').innerHTML = COURSES.map(() => `
-        <div class="skeleton-card">
-            <div class="skel-header"></div>
-            <div class="skel-body">
-                <div class="skel-line"></div>
-                <div class="skel-line short"></div>
-                <div class="skel-line"></div>
-                <div class="skel-line short"></div>
-            </div>
-        </div>`).join('');
-
-        window.addEventListener('DOMContentLoaded', async () => {
-            if (!token) {
-                document.getElementById('loginCta').style.display = 'block';
-            }
-            await loadUserStatus();
-
-            // Handle URL Search Params
-            const urlParams = new URLSearchParams(window.location.search);
-            const searchQuery = urlParams.get('search');
-
-            if (searchQuery) {
-                // Filter courses by search query
-                const filtered = COURSES.filter(c =>
-                    c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    c.description.toLowerCase().includes(searchQuery.toLowerCase())
-                );
-
-                const grid = document.getElementById('certsGrid');
-                if (filtered.length > 0) {
-                    grid.innerHTML = filtered.map(c => buildCard(c)).join('');
-                } else {
-                    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--muted);">
-                        <div style="font-size:3rem;margin-bottom:12px;">🔍</div>
-                        <h3 style="color:var(--text);margin-bottom:8px;">No courses found for "${searchQuery}"</h3>
-                        <p>Try searching for different keywords or browse all courses.</p>
-                        <a href="certificates.html" style="color:var(--primary);text-decoration:underline;">View all courses</a>
-                    </div>`;
-                }
-
-                // Update active chips
-                document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
-            } else {
-                renderCards('all');
-            }
-
-            hideSkeleton();
-        });
-
-        // ─── Load all status in one shot ─────────────────────────────────────────
-        async function loadUserStatus() {
-            if (!token) return;
-            try {
-                const [statusRes, progResults] = await Promise.all([
-                    fetch(`${API}/api/enrollments/all-status`, { headers: { Authorization: `Bearer ${token}` } }),
-                    Promise.all(COURSES.map(c =>
-                        fetch(`${API}/api/course/progress?courseId=${encodeURIComponent(c.id)}`, { headers: { Authorization: `Bearer ${token}` } })
-                            .then(r => r.json()).catch(() => ({ ok: false }))
-                    ))
-                ]);
-
-                const status = await statusRes.json();
-                enrolledIds = status.enrolled || [];
-                completedMap = {};
-                (status.completed || []).forEach(c => { completedMap[c.courseId] = c; });
-
-                progressMap = {};
-                COURSES.forEach((c, i) => {
-                    const rec = progResults[i]?.record;
-                    if (rec) progressMap[c.id] = rec.progressPercent || 0;
-                });
-
-                // Show progress banner
-                const banner = document.getElementById('progressBanner');
-                banner.classList.add('show');
-                document.getElementById('pbEnrolled').textContent = enrolledIds.length;
-                document.getElementById('pbCompleted').textContent = Object.keys(completedMap).length;
-                document.getElementById('pbCerts').textContent = Object.keys(completedMap).length;
-            } catch (err) {
-                console.warn('Status load:', err);
-            }
-        }
-
-        // ─── Render Cards ─────────────────────────────────────────────────────────
-        function renderCards(filter) {
-            const grid = document.getElementById('certsGrid');
-            let courses = COURSES;
-            if (filter === 'free') courses = COURSES.filter(c => c.isFree);
-            if (filter === 'Beginner') courses = COURSES.filter(c => c.level === 'Beginner');
-            if (filter === 'Intermediate') courses = COURSES.filter(c => c.level === 'Intermediate');
-            if (filter === 'enrolled') courses = COURSES.filter(c => isEnrolled(c.id));
-            if (filter === 'completed') courses = COURSES.filter(c => !!completedMap[c.id]);
-
-            if (!courses.length) {
-                grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--muted);">
-                <div style="font-size:3rem;margin-bottom:12px;">📭</div>
-                <h3 style="color:var(--text);margin-bottom:8px;">Nothing here yet</h3>
-                <p>Try enrolling in a course to see it here.</p>
-            </div>`;
-                return;
-            }
-
-            grid.innerHTML = courses.map(c => buildCard(c)).join('');
-        }
-
-        function isEnrolled(id) {
-            return enrolledIds.some(e => e === id || e?.toLowerCase() === id?.toLowerCase());
-        }
-
-        function buildCard(c) {
-            const completed = !!completedMap[c.id];
-            const progress = progressMap[c.id] || 0;
-            const headerCls = c.level.toLowerCase();
-
-            // Badge — only show Completed when earned
-            let badge = completed
-                ? `<span class="status-badge badge-completed">✅ Completed</span>`
-                : `<span class="status-badge badge-free">🆓 Free</span>`;
-
-            // Progress bar
-            const progressHTML = (!completed && progress > 0)
-                ? `<div class="progress-wrap">
-                <div class="progress-label"><span>Progress</span><span>${progress}%</span></div>
-                <div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div>
-               </div>`
-                : '';
-
-            // CTA button
-            let btnHTML = '';
-            if (completed) {
-                const cert = completedMap[c.id];
-                btnHTML = `
-                <a href="course-content.html?course=${encodeURIComponent(c.id)}" class="btn-action btn-completed">
-                    🏆 View Course Again
-                </a>
-                ${cert?.certId ? `<a href="${API}/api/certificates/generate/${cert.certId}" class="btn-cert" download onclick="if(window.RenvoxAnalytics) RenvoxAnalytics.trackCertDownload('${cert.certId}', '${c.id}')">
-                    <i class="fas fa-download"></i> Download Certificate
-                </a>` : ''}`;
-            } else if (progress > 0) {
-                btnHTML = `<a href="course-content.html?course=${encodeURIComponent(c.id)}" class="btn-action btn-continue">
-                <i class="fas fa-play"></i> Continue Learning
-            </a>`;
-            } else {
-                btnHTML = `<a href="course-content.html?course=${encodeURIComponent(c.id)}" class="btn-action btn-free">
-                <i class="fas fa-rocket"></i> Start Course — Free
-            </a>`;
-            }
-
-            return `
-        <div class="course-card" data-level="${c.level}" data-completed="${completed}" id="card-${c.id.replace(/\s+/g, '_')}">
-            <div class="card-header ${headerCls}">
-                ${badge}
-                <div class="course-icon">${c.icon}</div>
-                <div class="course-title">${c.title}</div>
-            </div>
-            <div class="card-body">
-                <p class="course-desc">${c.description}</p>
-                <div class="course-meta">
-                    <span class="meta-tag"><i class="fas fa-clock"></i> ${c.duration}</span>
-                    <span class="meta-tag"><i class="fas fa-signal"></i> ${c.level}</span>
-                    <span class="meta-tag"><i class="fas fa-tasks"></i> ${c.assignments} Tasks</span>
-                </div>
-                <ul class="highlights">
-                    ${c.highlights.map(h => `<li>${h}</li>`).join('')}
-                </ul>
-                ${progressHTML}
-                ${btnHTML}
-            </div>
-        </div>`;
-        }
-
-        // ─── Filter ───────────────────────────────────────────────────────────────
-        function filterCards(type, btn) {
-            document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            renderCards(type);
-        }
-
-        // ─── Actions ──────────────────────────────────────────────────────────────
-        function hideSkeleton() {
-            document.getElementById('skeletonGrid').style.display = 'none';
-            document.getElementById('certsGrid').style.display = 'grid';
-        }
-
-        function showToast(msg, type = 'success') {
-            const t = document.getElementById('toast');
-            t.textContent = msg;
-            t.className = `toast show ${type}`;
-            setTimeout(() => t.classList.remove('show'), 3000);
-        }
-    </script>
+    <!-- 4. PAGE LOGIC SCRIPT (External for Security) -->
+    <script src="js/certificates.js" defer></script>
 </body>
 
 </html>

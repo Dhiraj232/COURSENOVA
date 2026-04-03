@@ -78,11 +78,28 @@ function setupNavigation() {
     // Inject normalized links
     navMenu.innerHTML = links.map(link => {
         let isActive = (link.href === currentPage + '.html') || (link.href === 'index.html' && currentPage === 'index');
-        // Specific active rules
-        if (currentPage === 'my-certificates' && link.href === 'certificates.html') isActive = true;
-        if (currentPage === 'testing-center' && link.href === 'testing-center.html') isActive = true;
+        
+        if (link.dropdown) {
+            // Check if any dropdown item is active
+            const isDropdownActive = link.dropdown.some(d => d.href === currentPage + '.html' || (currentPage === 'my-certificates' && d.href === 'certificates.html'));
+            
+            let dropdownHtml = `<li class="nav-dropdown">
+                <a href="#" class="nav-dropdown-toggle ${isDropdownActive ? 'active' : ''}">${link.name} <i class="fas fa-chevron-down ChevronIcon"></i></a>
+                <ul class="nav-dropdown-menu">`;
+            
+            link.dropdown.forEach(d => {
+                let isSubActive = (d.href === currentPage + '.html') || (currentPage === 'my-certificates' && d.href === 'certificates.html');
+                dropdownHtml += `<li><a href="${d.href}" class="${isSubActive ? 'active' : ''}">${d.name}</a></li>`;
+            });
+            
+            dropdownHtml += `</ul></li>`;
+            return dropdownHtml;
+        } else {
+            // Specific active rules
+            if (currentPage === 'testing-center' && link.href === 'testing-center.html') isActive = true;
 
-        return `<li><a href="${link.href}" class="${isActive ? 'active' : ''}">${link.name}</a></li>`;
+            return `<li><a href="${link.href}" class="${isActive ? 'active' : ''}">${link.name}</a></li>`;
+        }
     }).join('');
 
     // Update enrollment count badge if logged in

@@ -11,6 +11,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/navigation.css">
+    <!-- Razorpay SDK -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <style>
         :root {
             --sidebar-bg: #f8fafc;
@@ -380,6 +382,82 @@
                 transform: rotate(360deg);
             }
         }
+
+        /* ── Premium Gate Overlay ── */
+        #premiumGate {
+            position: fixed;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(15,10,40,0.97) 0%, rgba(76,29,149,0.97) 100%);
+            z-index: 9500;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            text-align: center;
+            color: white;
+        }
+        #premiumGate.show { display: flex; }
+        .gate-icon { font-size: 4rem; margin-bottom: 16px; }
+        .gate-title { font-size: 1.8rem; font-weight: 800; margin-bottom: 10px; }
+        .gate-subtitle { font-size: 1rem; opacity: .75; margin-bottom: 28px; max-width: 480px; }
+        .gate-price { font-size: 2.8rem; font-weight: 800; color: #fbbf24; margin-bottom: 6px; }
+        .gate-price-note { font-size: .85rem; opacity: .6; margin-bottom: 32px; }
+        .gate-features {
+            display: flex; flex-wrap: wrap; justify-content: center;
+            gap: 12px; margin-bottom: 32px; max-width: 500px;
+        }
+        .gate-feature {
+            background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.15);
+            border-radius: 20px; padding: 8px 16px; font-size: .85rem; font-weight: 600;
+        }
+        .btn-gate-pay {
+            padding: 16px 48px; background: linear-gradient(135deg, #f59e0b, #fbbf24);
+            color: #1e1b4b; border: none; border-radius: 14px; font-size: 1.1rem;
+            font-weight: 800; cursor: pointer; font-family: inherit; transition: all .3s;
+            margin-bottom: 14px; display: block; width: 100%; max-width: 340px;
+        }
+        .btn-gate-pay:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(245,158,11,.4); }
+        .btn-gate-pay:disabled { opacity: .6; cursor: not-allowed; transform: none; }
+        .btn-gate-back {
+            background: transparent; border: 1.5px solid rgba(255,255,255,.3);
+            color: rgba(255,255,255,.7); padding: 10px 28px; border-radius: 10px;
+            font-size: .9rem; font-weight: 600; cursor: pointer; font-family: inherit;
+            transition: all .2s;
+        }
+        .btn-gate-back:hover { border-color: white; color: white; }
+
+        /* ── Exam Section ── */
+        .exam-section { display: none; }
+        .exam-section.show { display: block; }
+        .question-block { margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid #f1f5f9; }
+        .question-block:last-child { border-bottom: none; }
+        .q-text { font-size: .95rem; font-weight: 700; color: #1e293b; margin-bottom: 14px; line-height: 1.5; }
+        .q-options { display: flex; flex-direction: column; gap: 10px; }
+        .q-option {
+            display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+            border: 1.5px solid #e2e8f0; border-radius: 10px; cursor: pointer;
+            font-size: .9rem; transition: all .2s; background: white;
+        }
+        .q-option:hover { border-color: #6366f1; background: #eff6ff; }
+        .q-option input[type=radio] { accent-color: #6366f1; width: 16px; height: 16px; flex-shrink: 0; }
+        .q-option.selected { border-color: #6366f1; background: #eef2ff; }
+        .q-option.correct { border-color: #10b981; background: #ecfdf5; }
+        .q-option.wrong { border-color: #ef4444; background: #fef2f2; }
+        .exam-result {
+            background: linear-gradient(135deg, #1e1b4b, #312e81);
+            color: white; border-radius: 20px; padding: 36px; text-align: center;
+            margin-top: 24px;
+        }
+        .result-score { font-size: 3.5rem; font-weight: 800; margin-bottom: 8px; }
+        .result-msg { font-size: 1.1rem; opacity: .85; margin-bottom: 24px; }
+        .btn-result {
+            padding: 12px 32px; border: none; border-radius: 12px; font-size: 1rem;
+            font-weight: 700; cursor: pointer; font-family: inherit; transition: all .3s;
+            margin: 6px;
+        }
+        .btn-result.primary { background: #fbbf24; color: #1e1b4b; }
+        .btn-result.secondary { background: rgba(255,255,255,.15); color: white; border: 1.5px solid rgba(255,255,255,.3); }
     </style>
 </head>
 
@@ -388,6 +466,24 @@
     <div id="loadingScreen">
         <div class="spinner"></div>
         <p style="margin-top:20px; font-weight:700; color:#64748b;">Loading Course Content...</p>
+    </div>
+
+    <!-- Premium Gate Overlay -->
+    <div id="premiumGate">
+        <div class="gate-icon">👑</div>
+        <h1 class="gate-title" id="gateTitle">This is a Premium Course</h1>
+        <p class="gate-subtitle" id="gateSubtitle">Unlock full access to learn and earn your certificate</p>
+        <div class="gate-price" id="gatePrice">₹999</div>
+        <div class="gate-price-note">One-time payment • Lifetime access</div>
+        <div class="gate-features">
+            <span class="gate-feature">📹 Full Video Lectures</span>
+            <span class="gate-feature">📄 PDF Notes</span>
+            <span class="gate-feature">📝 MCQ Exam (3 Attempts)</span>
+            <span class="gate-feature">🏆 Verified Certificate</span>
+            <span class="gate-feature">♾️ Lifetime Access</span>
+        </div>
+        <button class="btn-gate-pay" id="btnGatePay" onclick="gatePayNow()">🔓 Unlock Now</button>
+        <button class="btn-gate-back" onclick="history.back()">← Go Back to Courses</button>
     </div>
 
     <!-- Navbar -->
@@ -491,8 +587,8 @@
                     </div>
                 </div>
 
-                <!-- Final Test Teaser -->
-                <div style="text-align: center; padding: 40px 0 80px;">
+                <!-- Final Test / Exam Section -->
+                <div style="text-align: center; padding: 40px 0 20px;">
                     <img src="https://ui-avatars.com/api/?name=Cert&background=dcfce7&color=10b981&size=100"
                         style="border-radius:50%; margin-bottom:20px;" alt="">
                     <h2 style="font-weight:800;">Ready for Certification?</h2>
@@ -500,9 +596,25 @@
                         id="lockNote">
                         Complete all modules to unlock the final test and earn your official certificate.
                     </p>
-                    <button class="mark-btn btn-test" id="takeTestBtn" disabled onclick="goToTest()">
+                    <button class="mark-btn btn-test" id="takeTestBtn" disabled onclick="showExamSection()">
                         <i class="fas fa-lock"></i> Take Final Test
                     </button>
+                </div>
+
+                <!-- MCQ Exam Section (shown inline after Take Test) -->
+                <div class="card exam-section" id="examSection">
+                    <div class="card-header">
+                        <h3><i class="fas fa-clipboard-check" style="color:#6366f1;"></i> Final Exam</h3>
+                        <span id="examAttemptBadge" style="font-size:.8rem;color:#64748b;font-weight:600;"></span>
+                    </div>
+                    <div style="padding:28px;">
+                        <div id="examQuestions"></div>
+                        <button class="mark-btn" id="submitExamBtn" onclick="submitExam()"
+                            style="background:linear-gradient(135deg,#6366f1,#a855f7);color:white;padding:14px 28px;font-size:1rem;border-radius:12px;margin-top:12px;width:100%;">
+                            <i class="fas fa-paper-plane"></i> Submit Exam
+                        </button>
+                        <div id="examResult" class="exam-result" style="display:none;"></div>
+                    </div>
                 </div>
             </div>
         </main>
@@ -513,6 +625,13 @@
         const API = '';
         const params = new URLSearchParams(window.location.search);
         const courseId = params.get('course') || 'Learning Essentials (Free)';
+
+        // ── Premium state ──
+        let courseIsPremium = false;
+        let coursePrice     = 0;
+        let courseMongoId   = null;   // MongoDB _id for Razorpay
+        let examQuestions   = [];     // quiz questions from API
+        let examAttempts    = 3;      // attempts remaining
 
         let allLessons = [];
         let currentLessonIdx = 0;
@@ -542,30 +661,68 @@
             const token = getToken();
             if (!token) {
                 alert('Please sign in to access course content.');
-                window.location.href = 'index.html';
+                window.location.href = 'signup.html';
                 return;
             }
 
             try {
-                // Auto-enroll if not already enrolled (for real-time dashboard reflection)
+                // ── 1. Try loading premium course data first ──────────────────────
+                let premiumData = null;
                 try {
-                    const checkRes = await fetch(`${API}/api/enrollments/check?courseId=${encodeURIComponent(courseId)}`, {
+                    const pRes = await fetch(`${API}/api/premium/all-courses`, {
                         headers: { Authorization: 'Bearer ' + token }
                     });
-                    const checkData = await checkRes.json();
-                    if (checkData.ok && !checkData.enrolled) {
-                        const enrollRes = await fetch(`${API}/api/enrollments/enroll-free`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-                            body: JSON.stringify({ courseId })
-                        });
-                        const enrollData = await enrollRes.json();
-                        if (enrollData.ok && window.updateEnrollmentBadge) {
-                            window.updateEnrollmentBadge();
-                        }
+                    const pData = await pRes.json();
+                    if (pData.ok && Array.isArray(pData.courses)) {
+                        // Match by _id, title, or slug
+                        premiumData = pData.courses.find(c =>
+                            String(c._id) === courseId ||
+                            (c.title || '').toLowerCase() === courseId.toLowerCase() ||
+                            (c.slug || '').toLowerCase() === courseId.toLowerCase()
+                        );
                     }
-                } catch (ee) { console.warn('Auto-enroll error:', ee); }
+                } catch (pe) { console.warn('Premium courses fetch error:', pe); }
 
+                if (premiumData) {
+                    courseIsPremium = premiumData.isPremium || (!premiumData.isFree && premiumData.price > 0);
+                    coursePrice     = premiumData.price || 0;
+                    courseMongoId   = String(premiumData._id);
+
+                    // ── If premium and NOT enrolled → show gate ──────────────────
+                    if (courseIsPremium && !premiumData.enrolled && coursePrice > 0) {
+                        document.getElementById('gateTitle').textContent   = premiumData.title || courseId;
+                        document.getElementById('gateSubtitle').textContent = premiumData.description || 'Unlock full access to learn and earn your certificate';
+                        document.getElementById('gatePrice').textContent   = '₹' + Number(coursePrice).toLocaleString('en-IN');
+                        document.getElementById('premiumGate').classList.add('show');
+                        document.getElementById('loadingScreen').style.display = 'none';
+                        return;   // Stop loading the content
+                    }
+
+                    // ── Enrolled: load exam questions ─────────────────────────────
+                    if (premiumData.quizQuestions && premiumData.quizQuestions.length > 0) {
+                        examQuestions = premiumData.quizQuestions;
+                    }
+                    examAttempts = premiumData.examAttemptsLeft !== undefined ? premiumData.examAttemptsLeft : 3;
+                }
+
+                // ── 2. Auto-enroll free courses ───────────────────────────────────
+                if (!courseIsPremium) {
+                    try {
+                        const checkRes = await fetch(`${API}/api/enrollments/check?courseId=${encodeURIComponent(courseId)}`, {
+                            headers: { Authorization: 'Bearer ' + token }
+                        });
+                        const checkData = await checkRes.json();
+                        if (checkData.ok && !checkData.enrolled) {
+                            await fetch(`${API}/api/enrollments/enroll-free`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+                                body: JSON.stringify({ courseId })
+                            });
+                        }
+                    } catch (ee) { console.warn('Auto-enroll error:', ee); }
+                }
+
+                // ── 3. Load course details (lessons + progress) ───────────────────
                 const res = await fetch(`${API}/api/course/details?courseId=${encodeURIComponent(courseId)}`, {
                     headers: { Authorization: 'Bearer ' + token }
                 });
@@ -584,6 +741,7 @@
                         completedLessons.push(allLessons[0].lessonId);
                     }
                     if (data.progress.testPassed) showTestPassed();
+                    examAttempts = data.examAttemptsLeft !== undefined ? data.examAttemptsLeft : examAttempts;
                 }
 
                 const desc = (data.ok && data.course) ? data.course.description : (FALLBACK_DATA[courseId] || {}).desc || '';
@@ -737,10 +895,210 @@
                 });
             } catch (e) { }
         }
-        function goToTest() {
+        // ─── Exam Section ─────────────────────────────────────────────────────────
+        function showExamSection() {
             if (completedLessons.length < allLessons.length) return;
-            window.location.href = `quiz-engine.html?course=${encodeURIComponent(courseId)}`;
+
+            // If the course has MCQ questions, show inline exam; else redirect
+            if (examQuestions && examQuestions.length > 0) {
+                document.getElementById('takeTestBtn').style.display = 'none';
+                const examSec = document.getElementById('examSection');
+                examSec.classList.add('show');
+                renderExamQuestions();
+            } else {
+                // Fallback: redirect to quiz-engine
+                window.location.href = `quiz-engine.html?course=${encodeURIComponent(courseId)}`;
+            }
         }
+
+        function renderExamQuestions() {
+            const attLeft = examAttempts;
+            document.getElementById('examAttemptBadge').textContent =
+                attLeft > 0 ? `${attLeft} attempt${attLeft !== 1 ? 's' : ''} remaining` : 'No attempts left';
+
+            if (attLeft <= 0) {
+                document.getElementById('examQuestions').innerHTML =
+                    '<div style="text-align:center;padding:30px;color:#ef4444;font-weight:700;">⛔ You have used all 3 attempts for this exam.</div>';
+                document.getElementById('submitExamBtn').style.display = 'none';
+                return;
+            }
+
+            document.getElementById('examQuestions').innerHTML = examQuestions.map((q, qi) => `
+                <div class="question-block">
+                    <div class="q-text">${qi + 1}. ${q.question}</div>
+                    <div class="q-options">
+                        ${(q.options || []).map((opt, oi) => `
+                        <label class="q-option" id="opt-${qi}-${oi}">
+                            <input type="radio" name="q${qi}" value="${oi}" onchange="selectOption(${qi}, ${oi})">
+                            ${opt}
+                        </label>`).join('')}
+                    </div>
+                </div>`).join('');
+        }
+
+        function selectOption(qi, oi) {
+            document.querySelectorAll(`[id^="opt-${qi}-"]`).forEach(el => el.classList.remove('selected'));
+            document.getElementById(`opt-${qi}-${oi}`).classList.add('selected');
+        }
+
+        async function submitExam() {
+            const token = getToken();
+            const answers = examQuestions.map((_, qi) => {
+                const selected = document.querySelector(`input[name="q${qi}"]:checked`);
+                return selected ? parseInt(selected.value) : -1;
+            });
+
+            const unanswered = answers.filter(a => a === -1).length;
+            if (unanswered > 0) {
+                alert(`Please answer all questions. ${unanswered} question(s) unanswered.`);
+                return;
+            }
+
+            const btn = document.getElementById('submitExamBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Grading...';
+
+            try {
+                // Use MongoDB _id if available, else fall back to title-based courseId
+                const examCourseId = courseMongoId || courseId;
+                const res = await fetch(`${API}/api/premium/submit-exam`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+                    body: JSON.stringify({ courseId: examCourseId, answers })
+                });
+                const data = await res.json();
+
+                if (data.ok) {
+                    examAttempts = data.attemptsLeft;
+                    showExamResult(data);
+                } else {
+                    alert(data.message || 'Exam submission failed');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Exam';
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Network error. Please try again.');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Exam';
+            }
+        }
+
+        function showExamResult(data) {
+            const resultDiv = document.getElementById('examResult');
+            document.getElementById('submitExamBtn').style.display = 'none';
+            resultDiv.style.display = 'block';
+
+            let html = '';
+            if (data.passed) {
+                html = `
+                <div class="result-score" style="color:#4ade80;">🎉 ${data.score}%</div>
+                <div class="result-msg">You passed! ${data.correct}/${data.total} correct.</div>
+                <div style="margin-bottom:20px;font-size:.9rem;opacity:.8;">Your certificate is ready!</div>
+                <button class="btn-result primary" onclick="window.location.href='my-certificates.html'">
+                    <i class="fas fa-certificate"></i> Download Certificate
+                </button>
+                <button class="btn-result secondary" onclick="window.location.href='certificates.html'">
+                    ← Back to Courses
+                </button>`;
+                showTestPassed();
+            } else {
+                const retry = data.attemptsLeft > 0;
+                html = `
+                <div class="result-score" style="color:#f87171;">😔 ${data.score}%</div>
+                <div class="result-msg">You need 60% to pass. ${data.correct}/${data.total} correct.</div>
+                <div style="margin-bottom:20px;font-size:.9rem;opacity:.8;">${retry ? `${data.attemptsLeft} attempt(s) remaining.` : 'No attempts left.'}</div>
+                ${retry ? `<button class="btn-result primary" onclick="retryExam()">
+                    <i class="fas fa-redo"></i> Retry Exam
+                </button>` : ''}
+                <button class="btn-result secondary" onclick="window.location.href='certificates.html'">
+                    ← Back to Courses
+                </button>`;
+            }
+            resultDiv.innerHTML = html;
+        }
+
+        function retryExam() {
+            document.getElementById('examResult').style.display = 'none';
+            const btn = document.getElementById('submitExamBtn');
+            btn.style.display = 'block';
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-paper-plane"></i> Submit Exam';
+            renderExamQuestions();
+        }
+
+        // ─── Premium Gate Payment ─────────────────────────────────────────────────
+        async function gatePayNow() {
+            const token = getToken();
+            if (!token) { window.location.href = 'signup.html'; return; }
+
+            const btn = document.getElementById('btnGatePay');
+            btn.disabled = true;
+            btn.textContent = '⏳ Creating order...';
+
+            try {
+                const orderRes = await fetch(`${API}/api/premium/create-order`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+                    body: JSON.stringify({ courseId: courseMongoId || courseId })
+                });
+                const orderData = await orderRes.json();
+
+                // Already enrolled edge-case
+                if (!orderData.ok && (orderData.message || '').toLowerCase().includes('already')) {
+                    document.getElementById('premiumGate').classList.remove('show');
+                    location.reload();
+                    return;
+                }
+                if (!orderData.ok) throw new Error(orderData.message || 'Order failed');
+
+                const options = {
+                    key:      orderData.key,
+                    amount:   orderData.amount,
+                    currency: orderData.currency || 'INR',
+                    name:     'RENVOX',
+                    description: `Enroll in ${document.getElementById('gateTitle').textContent}`,
+                    order_id: orderData.orderId,
+                    handler: async function (response) {
+                        btn.textContent = '🔐 Verifying...';
+                        const verifyRes = await fetch(`${API}/api/premium/verify-payment`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+                            body: JSON.stringify({
+                                razorpay_order_id:   response.razorpay_order_id,
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_signature:  response.razorpay_signature,
+                                courseId: orderData.courseId
+                            })
+                        });
+                        const verifyData = await verifyRes.json();
+                        if (verifyData.ok) {
+                            document.getElementById('premiumGate').classList.remove('show');
+                            location.reload();  // Reload to unlock content
+                        } else {
+                            alert(verifyData.message || 'Payment verified but enrollment failed. Contact support.');
+                        }
+                    },
+                    theme: { color: '#7c3aed' },
+                    modal: {
+                        ondismiss: () => {
+                            btn.disabled = false;
+                            btn.textContent = '🔓 Unlock Now';
+                        }
+                    }
+                };
+
+                const rzp = new Razorpay(options);
+                rzp.open();
+
+            } catch (err) {
+                console.error(err);
+                alert(err.message || 'Payment failed. Please try again.');
+                btn.disabled = false;
+                btn.textContent = '🔓 Unlock Now';
+            }
+        }
+
         function showTestPassed() {
             const btn = document.getElementById('takeTestBtn');
             btn.innerHTML = '<i class="fas fa-trophy"></i> Test Passed! Get Certificate';

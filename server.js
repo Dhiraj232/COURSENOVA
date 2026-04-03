@@ -5,11 +5,12 @@ const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const Razorpay = require('razorpay');
+// const Razorpay = require('razorpay');
 const { OAuth2Client } = require('google-auth-library');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const xss = require('xss-clean');
+const { logSuspiciousActivity } = require('./middleware/security');
 
 // Load environment variables
 require('dotenv').config();
@@ -50,10 +51,17 @@ if (!process.env.JWT_SECRET) console.warn('⚠️ JWT_SECRET is missing. Using i
 if (!process.env.BASE_URL) console.warn('⚠️ BASE_URL is missing. OAuth redirects will use localhost:5000.');
 
 // ─── MongoDB Connection ───────────────────────────────────────
+<<<<<<< HEAD
 const MONGO_URI = isProduction ? process.env.MONGO_URI : (process.env.MONGO_URI || 'mongodb://localhost:27017/renvox-bookstore');
 
 if (isProduction && !MONGO_URI) {
   console.error('❌ CRITICAL ERROR: MONGO_URI missing in production! Exiting...');
+=======
+const MONGO_URI = process.env.MONGO_URI;
+
+if (!MONGO_URI) {
+  console.error('❌ CRITICAL ERROR: MONGO_URI missing! Exiting...');
+>>>>>>> 105dec747cdc277aa6e134178a3fa5ceeaaa7817
   process.exit(1);
 }
 
@@ -154,9 +162,51 @@ process.on('uncaughtException', err => {
 });
 
 const app = express();
-// ─── Security Middlewares ─────────────────────────────────────────
 
-// 1. Helmet for Security Headers with CSP for YouTube
+// ─── CRITICAL: Trust Render's proxy — fixes ERR_ERL_UNEXPECTED_X_FORWARDED_FOR ─
+app.set('trust proxy', 1);
+
+// ─── 1. CORS — MUST be first, before all other middleware ────────────────────
+const allowedOrigins = [
+  "http://localhost:3000",
+  "http://localhost:5000",
+  "http://localhost:5500",
+  "http://127.0.0.1:5500",
+  "https://renvox.in",
+  "https://www.renvox.in",
+  "https://lms-backend-renvox.onrender.com",
+  "https://renvox-ai.onrender.com"
+];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (server-to-server, curl, Postman, mobile apps)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      // Do NOT throw an Error — silently reject with false to avoid 500 errors
+      console.warn('[CORS] Blocked request from origin:', origin);
+      callback(null, false);
+    }
+  },
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+};
+
+// Handle preflight OPTIONS requests for all routes
+app.options('*', cors(corsOptions));
+
+// Apply CORS to all routes (only once)
+app.use(cors(corsOptions));
+
+// ─── 2. Body Parsers ─────────────────────────────────────────────────────────
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// ─── 3. Security Middlewares ──────────────────────────────────────────────────
+
+// Helmet for Security Headers with CSP
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -165,18 +215,19 @@ app.use(helmet({
       "img-src": ["'self'", "data:", "blob:", "https://res.cloudinary.com", "https://images.unsplash.com", "https://*.google.com", "https://*.googleusercontent.com", "https://i.ytimg.com", "https://yt3.ggpht.com", "https://ui-avatars.com", "https://cdni.iconscout.com"],
       "script-src": ["'self'", "'unsafe-inline'", "https://www.googletagmanager.com", "https://*.google.com", "https://checkout.razorpay.com"],
       "script-src-attr": ["'unsafe-inline'"],
-      "connect-src": ["'self'", "https://*.google-analytics.com", "https://*.analytics.google.com", "https://*.googletagmanager.com", "https://api.razorpay.com", "https://lms-backend-renvox.onrender.com"]
+      "connect-src": ["'self'", "https://*.google-analytics.com", "https://*.analytics.google.com", "https://*.googletagmanager.com", "https://api.razorpay.com", "https://lpm.razorpay.com", "https://checkout.razorpay.com", "https://lms-backend-renvox.onrender.com", "https://renvox-ai.onrender.com"]
+
     },
   },
 }));
 
-// 2. Rate Limiting to prevent API abuse/DoS
+// ─── 4. Rate Limiting (requires trust proxy to be set above) ─────────────────
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // Limit each IP to 1000 requests per windowMs (increased for dev/restoration)
+  max: 1000,
   message: { ok: false, message: "Too many requests from this IP, please try again after 15 minutes." },
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  standardHeaders: true,
+  legacyHeaders: false,
   handler: (req, res, next, options) => {
     logSuspiciousActivity('Rate limit exceeded', req);
     res.status(options.statusCode).send(options.message);
@@ -186,46 +237,13 @@ const apiLimiter = rateLimit({
 // Apply rate limiter to all API routes
 app.use('/api/', apiLimiter);
 
-// 3. XSS Protection — skip multipart/form-data (file uploads) to avoid corrupting them
+// ─── 5. XSS Protection — skip multipart/form-data (file uploads) ─────────────
 app.use((req, res, next) => {
     const ct = req.headers['content-type'] || '';
     if (ct.startsWith('multipart/form-data')) return next();
     xss()(req, res, next);
 });
 
-// 4. CORS Configuration — allow all localhost origins in development
-app.use(cors({
-  origin: function (origin, callback) {
-    // No origin = same-origin request, mobile app, curl, etc. → always allow
-    if (!origin) return callback(null, true);
-
-    // Allow any localhost or 127.0.0.1 origin on ANY port (covers 5000, 5500, 3000, Live Server, etc.)
-    const isLocalhost =
-      /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin) ||
-      origin === 'null'; // file:// protocol shows as "null"
-
-    if (isLocalhost) return callback(null, true);
-
-    // In production, restrict to your actual domain
-    const productionOrigins = [
-      'https://renvox.in',
-      'https://www.renvox.in',
-      'https://lms-backend-renvox.onrender.com'
-    ];
-    if (productionOrigins.includes(origin)) return callback(null, true);
-
-    // Block everything else
-    return callback(new Error(`CORS: origin "${origin}" is not allowed.`), false);
-  },
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
-}));
-
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
-
-const { logSuspiciousActivity } = require('./middleware/security');
 
 
 // Express Session Middleware
@@ -242,8 +260,9 @@ app.use(passport.session());
 // Serve frontend static files from the specialized 'public' directory
 app.use(express.static(path.join(__dirname, 'public'), {
   maxAge: '1y',
-  setHeaders: (res, path) => {
-    if (path.endsWith('.html')) {
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Content-Type', 'text/html');
       res.setHeader('Cache-Control', 'no-cache');
     }
   }
@@ -309,6 +328,9 @@ app.use((err, req, res, next) => {
     }
     next(err);
 });
+
+// ─── Premium Course Routes ─────────────────────────────────────
+app.use('/api/premium', require('./routes/premiumCourseRoutes'));
 
 // ─── Course Platform Routes ───────────────────────────────────
 app.use('/api/payments', paymentRoutes);

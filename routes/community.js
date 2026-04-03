@@ -7,7 +7,7 @@ const Follower = require('../models/Follower');
 const CommunityLeaderboard = require('../models/CommunityLeaderboard');
 const Notification = require('../models/Notification');
 const User = require('../models/User');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, optionalAuth } = require('../middleware/auth');
 
 // Utility to update leaderboard points
 async function updatePoints(userId, username, points, type) {
@@ -58,50 +58,107 @@ router.get('/posts', async (req, res) => {
 });
 
 // Create post
-router.post('/posts', requireAuth, async (req, res) => {
+router.post('/posts', optionalAuth, async (req, res) => {
+    console.log('Incoming post body:', req.body);
     const { title, content, category } = req.body;
+    
+    if (!title || !content || !category) {
+        return res.status(400).json({ ok: false, message: 'title, category, and content are required' });
+    }
+
     try {
-        const user = await User.findById(req.userId);
+        const userId = (req.user && req.user.id) ? req.user.id : (req.userId ? req.userId : 'guest');
+        let username = 'Guest User';
+        let userPicture = '';
+
+        if (userId !== 'guest') {
+            try {
+                const user = await User.findById(userId);
+                if (user) {
+                    username = user.name || 'Anonymous';
+                    userPicture = user.picture || '';
+                }
+            } catch (err) {
+                console.error("User fetch error:", err.message);
+            }
+        }
+
         const post = new Post({
-            userId: req.userId,
-            username: user.name,
-            userPicture: user.picture,
+            userId,
+            username,
+            userPicture,
             title,
             content,
             category
         });
+        
         await post.save();
 
-        // Update points: 10 points for creating a post
-        await updatePoints(req.userId, user.name, 10, 'post');
+        if (userId !== 'guest') {
+            // Update points: 10 points for creating a post
+            await updatePoints(userId, username, 10, 'post');
+        }
 
         if (req.app.get('io')) req.app.get('io').emit('new_post', post);
 
         res.json({ ok: true, post });
     } catch (err) {
-        res.status(500).json({ ok: false, message: 'Failed to create post' });
+        console.error("API ERROR:", err);
+        res.status(500).json({ 
+            message: err.message,
+            stack: err.stack 
+        });
     }
 });
 
 // Alias for singular post
-router.post('/post', requireAuth, async (req, res) => {
-    // Redirect to the plural version handler or just logic repeat
+router.post('/post', optionalAuth, async (req, res) => {
+    console.log('Incoming post body:', req.body);
     const { title, content, category } = req.body;
+    
+    if (!title || !content || !category) {
+        return res.status(400).json({ ok: false, message: 'title, category, and content are required' });
+    }
+
     try {
-        const user = await User.findById(req.userId);
+        const userId = (req.user && req.user.id) ? req.user.id : (req.userId ? req.userId : 'guest');
+        let username = 'Guest User';
+        let userPicture = '';
+
+        if (userId !== 'guest') {
+            try {
+                const user = await User.findById(userId);
+                if (user) {
+                    username = user.name || 'Anonymous';
+                    userPicture = user.picture || '';
+                }
+            } catch (err) {
+                console.error("User fetch error:", err.message);
+            }
+        }
+
         const post = new Post({
-            userId: req.userId,
-            username: user.name,
-            userPicture: user.picture,
+            userId,
+            username,
+            userPicture,
             title,
             content,
             category
         });
+        
         await post.save();
-        await updatePoints(req.userId, user.name, 10, 'post');
+
+        if (userId !== 'guest') {
+            await updatePoints(userId, username, 10, 'post');
+        }
+
         res.json({ ok: true, post });
     } catch (err) {
-        res.status(500).json({ ok: false, message: 'Failed to create post' });
+        console.error("API ERROR:", err);
+        res.status(500).json({ 
+            message: err.message,
+            stack: err.stack 
+        });
     }
 });
 

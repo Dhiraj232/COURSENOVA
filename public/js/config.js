@@ -13,12 +13,12 @@
  *   const PRODUCTION_API = 'https://api.yoursite.com';
  */
 (function () {
-    const PRODUCTION_API = ''; // Leave empty for same-origin. Set to 'https://api.yourdomain.com' if API is on a different server.
+    const PRODUCTION_API = 'https://renvox-ai.onrender.com';
 
     if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
         window.RENVOX_API = 'http://localhost:5000';
     } else {
-        window.RENVOX_API = PRODUCTION_API || window.location.origin;
+        window.RENVOX_API = PRODUCTION_API;
     }
 
     // Also expose a convenience function for building API URLs
