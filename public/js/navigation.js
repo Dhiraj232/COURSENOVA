@@ -64,10 +64,18 @@ function setupNavigation() {
     const navMenu = document.getElementById('navMenu');
     if (!navMenu) return;
 
-    const token = getAuthToken();
     const links = [
         { name: 'Home', href: 'index.html', key: 'home' },
-        { name: 'Courses', href: 'certificates.html', key: 'courses' },
+        { 
+            name: 'Courses', 
+            href: 'certificates.html', 
+            key: 'courses',
+            dropdown: [
+                { name: 'Explore All', href: 'certificates.html' },
+                { name: 'Premium Courses', href: 'premium-courses.html' },
+                { name: 'My Certificates', href: 'my-certificates.html' }
+            ]
+        },
         { name: 'Mock Tests', href: 'testing-center.html', key: 'tests' },
         { name: 'Community', href: 'community.html', key: 'community' },
         { name: 'Store', href: 'store.html', key: 'store' }
@@ -78,20 +86,13 @@ function setupNavigation() {
     // Inject normalized links
     navMenu.innerHTML = links.map(link => {
         let isActive = (link.href === currentPage + '.html') || (link.href === 'index.html' && currentPage === 'index');
-<<<<<<< HEAD
-        // Specific active rules
-        if (currentPage === 'my-certificates' && link.href === 'certificates.html') isActive = true;
-        if (currentPage === 'testing-center' && link.href === 'testing-center.html') isActive = true;
-
-        return `<li><a href="${link.href}" class="${isActive ? 'active' : ''}">${link.name}</a></li>`;
-=======
         
         if (link.dropdown) {
             // Check if any dropdown item is active
             const isDropdownActive = link.dropdown.some(d => d.href === currentPage + '.html' || (currentPage === 'my-certificates' && d.href === 'certificates.html'));
             
             let dropdownHtml = `<li class="nav-dropdown">
-                <a href="#" class="nav-dropdown-toggle ${isDropdownActive ? 'active' : ''}">${link.name} <i class="fas fa-chevron-down ChevronIcon"></i></a>
+                <a href="${link.href}" class="nav-dropdown-toggle ${isDropdownActive ? 'active' : ''}">${link.name} <i class="fas fa-chevron-down ChevronIcon"></i></a>
                 <ul class="nav-dropdown-menu">`;
             
             link.dropdown.forEach(d => {
@@ -107,7 +108,6 @@ function setupNavigation() {
 
             return `<li><a href="${link.href}" class="${isActive ? 'active' : ''}">${link.name}</a></li>`;
         }
->>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
     }).join('');
 
     // Update enrollment count badge if logged in
@@ -143,8 +143,9 @@ async function updateEnrollmentBadge() {
             const courseLinks = document.querySelectorAll('#navMenu a');
             courseLinks.forEach(link => {
                 const text = link.textContent.trim();
-                if (text === 'Courses' || text.startsWith('Courses ')) {
-                    link.innerHTML = `Courses <span class="enroll-badge">${count}</span>`;
+                if (text === 'Courses' || text.startsWith('Courses')) {
+                    const hasChevron = link.innerHTML.includes('fa-chevron-down');
+                    link.innerHTML = `Courses <span class="enroll-badge">${count}</span>${hasChevron ? ' <i class="fas fa-chevron-down ChevronIcon"></i>' : ''}`;
                 }
             });
 

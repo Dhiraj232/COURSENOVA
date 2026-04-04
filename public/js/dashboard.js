@@ -83,6 +83,7 @@ function updateDashboardUI(data) {
     const initialMins = rawT % 60;
     document.getElementById('timeSpentCount').innerText = (initialHours > 0) ? `${initialHours}h ${initialMins}m` : `${initialMins}m`;
     document.getElementById('avgScoreCount').innerText = `${stats.avgScore}%`;
+    document.getElementById('testsTakenCount').innerText = stats.totalTestsTaken || 0;
 
     // 1. Topic Mastery / Weak Topics List
     const topicGrid = document.getElementById('topicGrid');
@@ -126,7 +127,7 @@ function updateDashboardUI(data) {
     const activeCourseBox = document.getElementById('activeCourse');
     if (activeCourseBox && courses && courses.length > 0) {
         // Find most recently accessed course that isn't finished
-        const sorted = courses.sort((a, b) => new Date(b.lastAccessed) - new Date(a.lastAccessed));
+        const sorted = [...courses].sort((a, b) => new Date(b.lastAccessed) - new Date(a.lastAccessed));
         const active = sorted.find(c => c.progress < 100) || sorted[0];
 
         if (active) {
@@ -140,11 +141,7 @@ function updateDashboardUI(data) {
                             <div class="progress-bar-fill" style="width: ${active.progress}%;"></div>
                         </div>
                     </div>
-<<<<<<< HEAD
-                    <button class="btn-resume" onclick="window.location.href='course-content.html?course=${active.id}&t=${Date.now()}'">
-=======
-                    <button class="btn-resume" onclick="window.location.href='premium-course-player.html?course=${active.id}&t=${Date.now()}'">
->>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
+                    <button class="btn-resume" onclick="window.location.href='course-content.html?course=${encodeURIComponent(active.id)}&t=${Date.now()}'">
                         <i class="fas fa-chevron-right"></i>
                     </button>
                 </div>
@@ -312,6 +309,9 @@ setInterval(async () => {
                 liveChartInstance.data.datasets[0].data = d.weeklyActivity.map(i => i.minutes);
                 liveChartInstance.update();
             }
+
+            // ALSO REFRESH OTHER DASHBOARD DATA (Courses, Tests, etc.)
+            fetchDashboardData(); 
         }
     } catch(e) {}
 }, 60000); // every minute

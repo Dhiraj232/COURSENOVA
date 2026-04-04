@@ -23,6 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
 function loadSection(section) {
     currentSection = section;
     const container = document.getElementById('communityFeed');
+    if (!container) return;
     container.innerHTML = '<div style="text-align:center; padding:50px;"><i class="fas fa-spinner fa-spin"></i> Loading...</div>';
 
     if (section === 'feed') fetchPosts();
@@ -43,11 +44,16 @@ async function fetchPosts() {
         const res = await fetch('/api/community/posts');
         const data = await res.json();
         if (data.ok) renderPosts(data.posts, 'communityFeed');
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+        console.error('Fetch posts error:', e);
+        const container = document.getElementById('communityFeed');
+        if (container) container.innerHTML = '<div class="no-content">Failed to load posts.</div>';
+    }
 }
 
 function renderPosts(posts, targetId) {
     const container = document.getElementById(targetId);
+    if (!container) return;
     if (!posts.length) {
         container.innerHTML = '<div class="no-content">No posts yet. Start the conversation!</div>';
         return;
@@ -85,35 +91,33 @@ function renderPosts(posts, targetId) {
 }
 
 async function submitPost() {
-<<<<<<< HEAD
     if (!token) return alert('Login to post!');
-=======
->>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
     const title = document.getElementById('postTitle').value;
     const content = document.getElementById('postContent').value;
     const category = document.getElementById('postCategory').value;
 
+    if (!title || !content) return alert('Title and Content are required');
+
     try {
-<<<<<<< HEAD
         const res = await fetch('/api/community/posts', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ title, content, category })
-=======
-        const res = await fetch("https://renvox-ai.onrender.com/api/community/posts", {
             method: 'POST',
             headers: { 
                 'Content-Type': 'application/json', 
-                'Authorization': `Bearer ${token || ''}` 
+                'Authorization': `Bearer ${token}` 
             },
-            body: JSON.stringify({ title, category, content })
->>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
+            body: JSON.stringify({ title, content, category })
         });
-        if ((await res.json()).ok) {
+        const data = await res.json();
+        if (data.ok) {
             closeModal('postModal');
             loadSection('feed');
+        } else {
+            alert(data.message || 'Failed to submit post');
         }
-    } catch (e) { console.error(e); }
+    } catch (e) {
+        console.error('Submit post error:', e);
+        alert('Network error while submitting post');
+    }
 }
 
 async function likePost(postId, btn) {
@@ -143,6 +147,7 @@ async function fetchDoubts() {
 
 function renderDoubts(doubts) {
     const container = document.getElementById('communityFeed');
+    if (!container) return;
     container.innerHTML = doubts.map(d => `
         <div class="post-card">
             <div class="post-header">
@@ -177,13 +182,16 @@ function renderDoubts(doubts) {
 async function submitDoubt() {
     if (!token) return alert('Login to ask a doubt!');
     const question = document.getElementById('doubtQuestion').value;
+    if (!question) return alert('Question is required');
+
     try {
         const res = await fetch('/api/community/doubts', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ question })
         });
-        if ((await res.json()).ok) {
+        const data = await res.json();
+        if (data.ok) {
             closeModal('doubtModal');
             loadSection('doubts');
         }
@@ -211,8 +219,9 @@ async function loadTrends() {
     try {
         const res = await fetch('/api/community/posts/trending');
         const data = await res.json();
-        if (data.ok) {
-            document.getElementById('trendingList').innerHTML = data.posts.map(p => `
+        const trendList = document.getElementById('trendingList');
+        if (data.ok && trendList) {
+            trendList.innerHTML = data.posts.map(p => `
                 <div class="trending-item">
                     <h5>${p.title}</h5>
                     <span>${p.likesCount} Likes • ${p.commentsCount} Comments</span>
@@ -226,8 +235,9 @@ async function loadMiniLeaderboard() {
     try {
         const res = await fetch('/api/community/leaderboard');
         const data = await res.json();
-        if (data.ok) {
-            document.getElementById('miniLeaderboard').innerHTML = data.entries.map((e, i) => `
+        const miniL = document.getElementById('miniLeaderboard');
+        if (data.ok && miniL) {
+            miniL.innerHTML = data.entries.map((e, i) => `
                 <div style="display:flex; align-items:center; gap:12px; margin-bottom:12px;">
                     <strong style="color:var(--comm-primary); width:20px;">${i + 1}</strong>
                     <div style="flex:1;">
@@ -250,17 +260,15 @@ function setupSocket() {
         appendChatMessage(data);
     });
 
-    // Real-time Community Live Sync
     socket.on('new_post', (post) => {
         if (currentSection === 'feed') fetchPosts();
-        loadTrends(); // Refresh trending count
+        loadTrends();
     });
 
     socket.on('new_comment', (data) => {
         if (currentSection === 'feed') {
             const feedContainer = document.getElementById('communityFeed');
-            // If viewing specific post comments thread, refresh it
-            if (feedContainer.innerHTML.includes('Discussion Thread')) {
+            if (feedContainer && feedContainer.innerHTML.includes('Discussion Thread')) {
                 showComments(data.postId);
             } else {
                 fetchPosts();
@@ -271,8 +279,8 @@ function setupSocket() {
     socket.on('like_update', (data) => {
         if (currentSection === 'feed') {
             const feedContainer = document.getElementById('communityFeed');
-            if (!feedContainer.innerHTML.includes('Discussion Thread')) {
-                fetchPosts(); // Safely refresh feed immediately
+            if (feedContainer && !feedContainer.innerHTML.includes('Discussion Thread')) {
+                fetchPosts();
             }
         }
     });
@@ -287,10 +295,11 @@ function setupSocket() {
 }
 
 function loadChannels() {
-    document.getElementById('chatWidget').classList.add('active');
-    // Default to general
+    const chatW = document.getElementById('chatWidget');
+    if (chatW) chatW.classList.add('active');
     currentChannel = 'general';
-    document.getElementById('currentChannel').innerText = '# ' + currentChannel;
+    const currC = document.getElementById('currentChannel');
+    if (currC) currC.innerText = '# ' + currentChannel;
 }
 
 function sendChatMessage() {
@@ -312,6 +321,7 @@ function sendChatMessage() {
 
 function appendChatMessage(data) {
     const container = document.getElementById('chatMsgs');
+    if (!container) return;
     const div = document.createElement('div');
     div.style.cssText = 'margin-bottom:15px; display:flex; gap:10px;';
     div.innerHTML = `
@@ -329,7 +339,7 @@ function appendChatMessage(data) {
 
 function toggleAIChat() {
     const win = document.getElementById('aiChatWindow');
-    win.style.display = win.style.display === 'flex' ? 'none' : 'flex';
+    if (win) win.style.display = win.style.display === 'flex' ? 'none' : 'flex';
 }
 
 async function sendAICommMessage() {
@@ -343,7 +353,8 @@ async function sendAICommMessage() {
     const typing = document.createElement('div');
     typing.style.cssText = 'background:white; border:1px solid #e2e8f0; padding:10px; border-radius:12px; max-width:100px; font-size:12px; margin-bottom:10px; color:#94a3b8; font-style:italic;';
     typing.innerText = 'AI is thinking...';
-    document.getElementById('aiMsgs').appendChild(typing);
+    const msgs = document.getElementById('aiMsgs');
+    if (msgs) msgs.appendChild(typing);
 
     try {
         const res = await fetch('/api/community-ai/ai-chat', {
@@ -362,6 +373,7 @@ async function sendAICommMessage() {
 
 function appendAIMessage(text, side) {
     const container = document.getElementById('aiMsgs');
+    if (!container) return;
     const div = document.createElement('div');
     div.style.cssText = `margin-bottom:10px; padding:10px; border-radius:12px; max-width:85%; font-size:14px; ${side === 'user' ? 'margin-left:auto; background:var(--comm-primary); color:white;' : 'background:white; border:1px solid #e2e8f0;'}`;
     div.innerText = text;
@@ -373,9 +385,13 @@ function appendAIMessage(text, side) {
 
 function openModal(id) {
     if (!token) return alert('Please Login');
-    document.getElementById(id).classList.add('active');
+    const modal = document.getElementById(id);
+    if (modal) modal.classList.add('active');
 }
-function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+function closeModal(id) { 
+    const modal = document.getElementById(id);
+    if (modal) modal.classList.remove('active'); 
+}
 
 async function checkNotifications() {
     if (!token) return;
@@ -384,12 +400,14 @@ async function checkNotifications() {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await res.json();
-        if (data.ok) {
+        const badge = document.getElementById('notifBadge');
+        if (data.ok && badge) {
             const unread = data.notifications.filter(n => !n.isRead).length;
-            const badge = document.getElementById('notifBadge');
             if (unread > 0) {
                 badge.innerText = unread;
                 badge.style.display = 'inline-block';
+            } else {
+                badge.style.display = 'none';
             }
         }
     } catch (e) { }
@@ -397,6 +415,7 @@ async function checkNotifications() {
 
 async function fetchFullLeaderboard() {
     const container = document.getElementById('communityFeed');
+    if (!container) return;
     try {
         const res = await fetch('/api/community/leaderboard');
         const data = await res.json();
@@ -441,10 +460,8 @@ async function fetchFullLeaderboard() {
 
 async function showComments(postId) {
     const feed = document.getElementById('communityFeed');
-    // First, find the post in the current feed and expand it, or show in a separate view?
-    // For simplicity, let's fetch comments and replace the feed content with post + comments (like a thread view)
+    if (!feed) return;
     try {
-        // Fetch specific post data if needed? For now we only have the postId.
         const res = await fetch(`/api/community/posts/${postId}/comments`);
         const data = await res.json();
         if (data.ok) {
@@ -458,7 +475,6 @@ async function showComments(postId) {
                 </div>
             `).join('');
 
-            // Add comment input
             const inputHtml = `
                 <div style="margin-top: 25px; padding-top: 25px; border-top: 2px dashed #e2e8f0;">
                     <h4>Leave a Comment</h4>
@@ -482,7 +498,8 @@ async function showComments(postId) {
 }
 
 async function submitComment(postId) {
-    const text = document.getElementById(`comm-input-${postId}`).value;
+    const textEl = document.getElementById(`comm-input-${postId}`);
+    const text = textEl ? textEl.value : '';
     if (!text || !token) return alert('Please login to comment!');
 
     try {

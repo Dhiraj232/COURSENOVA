@@ -180,8 +180,8 @@ body.dashboard-body {
 /* Stats Ribbon */
 .stats-ribbon {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 20px;
+    grid-template-columns: repeat(5, 1fr); /* 5 cards in a row */
+    gap: 15px;
     margin-bottom: 40px;
 }
 
@@ -225,6 +225,11 @@ body.dashboard-body {
 .stat-icon.green {
     background: rgba(16, 185, 129, 0.1);
     color: #10b981;
+}
+
+.stat-icon.red {
+    background: rgba(239, 68, 64, 0.1);
+    color: #ef4444;
 }
 
 .stat-info h4 {
@@ -302,6 +307,18 @@ body.dashboard-body {
 .topic-grid {
     display: grid;
     gap: 20px;
+    max-height: 400px;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+.topic-grid::-webkit-scrollbar {
+    width: 6px;
+}
+
+.topic-grid::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 10px;
 }
 
 .topic-info {

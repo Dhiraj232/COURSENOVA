@@ -11,11 +11,10 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/navigation.css">
-<<<<<<< HEAD
-=======
+    
     <!-- Razorpay SDK -->
     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
->>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
+
     <style>
         :root {
             --sidebar-bg: #f8fafc;
@@ -377,16 +376,9 @@
         }
 
         @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
-<<<<<<< HEAD
-=======
 
         /* ── Premium Gate Overlay ── */
         #premiumGate {
@@ -463,7 +455,6 @@
         }
         .btn-result.primary { background: #fbbf24; color: #1e1b4b; }
         .btn-result.secondary { background: rgba(255,255,255,.15); color: white; border: 1.5px solid rgba(255,255,255,.3); }
->>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
     </style>
 </head>
 
@@ -474,8 +465,6 @@
         <p style="margin-top:20px; font-weight:700; color:#64748b;">Loading Course Content...</p>
     </div>
 
-<<<<<<< HEAD
-=======
     <!-- Premium Gate Overlay -->
     <div id="premiumGate">
         <div class="gate-icon">👑</div>
@@ -494,11 +483,10 @@
         <button class="btn-gate-back" onclick="history.back()">← Go Back to Courses</button>
     </div>
 
->>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
     <!-- Navbar -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
-            <a href="index.html" class="logo"><img src="images/logo%20renvox.png" alt="RENVOX"> <span>RENVOX</span></a>
+            <a href="index.html" class="logo"><img src="images/logo%20renvox.png" alt="RENVOX"> <span>RENVOX AI</span></a>
 
             <div class="nav-search">
                 <input type="text" id="navbarSearch" placeholder="Search for courses, subjects, or concepts...">
@@ -596,13 +584,8 @@
                     </div>
                 </div>
 
-<<<<<<< HEAD
-                <!-- Final Test Teaser -->
-                <div style="text-align: center; padding: 40px 0 80px;">
-=======
                 <!-- Final Test / Exam Section -->
                 <div style="text-align: center; padding: 40px 0 20px;">
->>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
                     <img src="https://ui-avatars.com/api/?name=Cert&background=dcfce7&color=10b981&size=100"
                         style="border-radius:50%; margin-bottom:20px;" alt="">
                     <h2 style="font-weight:800;">Ready for Certification?</h2>
@@ -610,12 +593,6 @@
                         id="lockNote">
                         Complete all modules to unlock the final test and earn your official certificate.
                     </p>
-<<<<<<< HEAD
-                    <button class="mark-btn btn-test" id="takeTestBtn" disabled onclick="goToTest()">
-                        <i class="fas fa-lock"></i> Take Final Test
-                    </button>
-                </div>
-=======
                     <button class="mark-btn btn-test" id="takeTestBtn" disabled onclick="showExamSection()">
                         <i class="fas fa-lock"></i> Take Final Test
                     </button>
@@ -636,7 +613,6 @@
                         <div id="examResult" class="exam-result" style="display:none;"></div>
                     </div>
                 </div>
->>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
             </div>
         </main>
     </div>
@@ -647,8 +623,6 @@
         const params = new URLSearchParams(window.location.search);
         const courseId = params.get('course') || 'Learning Essentials (Free)';
 
-<<<<<<< HEAD
-=======
         // ── Premium state ──
         let courseIsPremium = false;
         let coursePrice     = 0;
@@ -656,7 +630,6 @@
         let examQuestions   = [];     // quiz questions from API
         let examAttempts    = 3;      // attempts remaining
 
->>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
         let allLessons = [];
         let currentLessonIdx = 0;
         let completedLessons = [];
@@ -685,36 +658,11 @@
             const token = getToken();
             if (!token) {
                 alert('Please sign in to access course content.');
-<<<<<<< HEAD
-                window.location.href = 'index.html';
-=======
                 window.location.href = 'signup.html';
->>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
                 return;
             }
 
             try {
-<<<<<<< HEAD
-                // Auto-enroll if not already enrolled (for real-time dashboard reflection)
-                try {
-                    const checkRes = await fetch(`${API}/api/enrollments/check?courseId=${encodeURIComponent(courseId)}`, {
-                        headers: { Authorization: 'Bearer ' + token }
-                    });
-                    const checkData = await checkRes.json();
-                    if (checkData.ok && !checkData.enrolled) {
-                        const enrollRes = await fetch(`${API}/api/enrollments/enroll-free`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-                            body: JSON.stringify({ courseId })
-                        });
-                        const enrollData = await enrollRes.json();
-                        if (enrollData.ok && window.updateEnrollmentBadge) {
-                            window.updateEnrollmentBadge();
-                        }
-                    }
-                } catch (ee) { console.warn('Auto-enroll error:', ee); }
-
-=======
                 // ── 1. Try loading premium course data first ──────────────────────
                 let premiumData = null;
                 try {
@@ -723,7 +671,6 @@
                     });
                     const pData = await pRes.json();
                     if (pData.ok && Array.isArray(pData.courses)) {
-                        // Match by _id, title, or slug
                         premiumData = pData.courses.find(c =>
                             String(c._id) === courseId ||
                             (c.title || '').toLowerCase() === courseId.toLowerCase() ||
@@ -737,17 +684,15 @@
                     coursePrice     = premiumData.price || 0;
                     courseMongoId   = String(premiumData._id);
 
-                    // ── If premium and NOT enrolled → show gate ──────────────────
                     if (courseIsPremium && !premiumData.enrolled && coursePrice > 0) {
                         document.getElementById('gateTitle').textContent   = premiumData.title || courseId;
                         document.getElementById('gateSubtitle').textContent = premiumData.description || 'Unlock full access to learn and earn your certificate';
                         document.getElementById('gatePrice').textContent   = '₹' + Number(coursePrice).toLocaleString('en-IN');
                         document.getElementById('premiumGate').classList.add('show');
                         document.getElementById('loadingScreen').style.display = 'none';
-                        return;   // Stop loading the content
+                        return;
                     }
 
-                    // ── Enrolled: load exam questions ─────────────────────────────
                     if (premiumData.quizQuestions && premiumData.quizQuestions.length > 0) {
                         examQuestions = premiumData.quizQuestions;
                     }
@@ -772,7 +717,6 @@
                 }
 
                 // ── 3. Load course details (lessons + progress) ───────────────────
->>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
                 const res = await fetch(`${API}/api/course/details?courseId=${encodeURIComponent(courseId)}`, {
                     headers: { Authorization: 'Bearer ' + token }
                 });
@@ -791,10 +735,7 @@
                         completedLessons.push(allLessons[0].lessonId);
                     }
                     if (data.progress.testPassed) showTestPassed();
-<<<<<<< HEAD
-=======
                     examAttempts = data.examAttemptsLeft !== undefined ? data.examAttemptsLeft : examAttempts;
->>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
                 }
 
                 const desc = (data.ok && data.course) ? data.course.description : (FALLBACK_DATA[courseId] || {}).desc || '';
@@ -948,24 +889,16 @@
                 });
             } catch (e) { }
         }
-<<<<<<< HEAD
-        function goToTest() {
-            if (completedLessons.length < allLessons.length) return;
-            window.location.href = `quiz-engine.html?course=${encodeURIComponent(courseId)}`;
-        }
-=======
+
         // ─── Exam Section ─────────────────────────────────────────────────────────
         function showExamSection() {
             if (completedLessons.length < allLessons.length) return;
-
-            // If the course has MCQ questions, show inline exam; else redirect
             if (examQuestions && examQuestions.length > 0) {
                 document.getElementById('takeTestBtn').style.display = 'none';
                 const examSec = document.getElementById('examSection');
                 examSec.classList.add('show');
                 renderExamQuestions();
             } else {
-                // Fallback: redirect to quiz-engine
                 window.location.href = `quiz-engine.html?course=${encodeURIComponent(courseId)}`;
             }
         }
@@ -977,7 +910,7 @@
 
             if (attLeft <= 0) {
                 document.getElementById('examQuestions').innerHTML =
-                    '<div style="text-align:center;padding:30px;color:#ef4444;font-weight:700;">⛔ You have used all 3 attempts for this exam.</div>';
+                    '<div style="text-align:center;padding:30px;color:#ef4444;font-weight:700;">⛔ You have used all attempts for this exam.</div>';
                 document.getElementById('submitExamBtn').style.display = 'none';
                 return;
             }
@@ -1018,7 +951,6 @@
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Grading...';
 
             try {
-                // Use MongoDB _id if available, else fall back to title-based courseId
                 const examCourseId = courseMongoId || courseId;
                 const res = await fetch(`${API}/api/premium/submit-exam`, {
                     method: 'POST',
@@ -1103,7 +1035,6 @@
                 });
                 const orderData = await orderRes.json();
 
-                // Already enrolled edge-case
                 if (!orderData.ok && (orderData.message || '').toLowerCase().includes('already')) {
                     document.getElementById('premiumGate').classList.remove('show');
                     location.reload();
@@ -1133,9 +1064,9 @@
                         const verifyData = await verifyRes.json();
                         if (verifyData.ok) {
                             document.getElementById('premiumGate').classList.remove('show');
-                            location.reload();  // Reload to unlock content
+                            location.reload();
                         } else {
-                            alert(verifyData.message || 'Payment verified but enrollment failed. Contact support.');
+                            alert(verifyData.message || 'Payment verified but enrollment failed.');
                         }
                     },
                     theme: { color: '#7c3aed' },
@@ -1146,19 +1077,16 @@
                         }
                     }
                 };
-
                 const rzp = new Razorpay(options);
                 rzp.open();
-
             } catch (err) {
                 console.error(err);
-                alert(err.message || 'Payment failed. Please try again.');
+                alert(err.message || 'Payment failed.');
                 btn.disabled = false;
                 btn.textContent = '🔓 Unlock Now';
             }
         }
 
->>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
         function showTestPassed() {
             const btn = document.getElementById('takeTestBtn');
             btn.innerHTML = '<i class="fas fa-trophy"></i> Test Passed! Get Certificate';
@@ -1171,5 +1099,4 @@
         init();
     </script>
 </body>
-
 </html>

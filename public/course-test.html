@@ -53,15 +53,8 @@
         }
 
         @keyframes pulse {
-
-            0%,
-            100% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0.7;
-            }
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
         }
 
         .test-progress-bar {
@@ -297,15 +290,8 @@
         }
 
         @keyframes pop {
-            from {
-                transform: scale(0.8);
-                opacity: 0;
-            }
-
-            to {
-                transform: scale(1);
-                opacity: 1;
-            }
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
         }
 
         .result-emoji {
@@ -319,13 +305,8 @@
             margin-bottom: 0.5rem;
         }
 
-        .result-title.pass {
-            color: #059669;
-        }
-
-        .result-title.fail {
-            color: #dc2626;
-        }
+        .result-title.pass { color: #059669; }
+        .result-title.fail { color: #dc2626; }
 
         .result-score {
             font-size: 3rem;
@@ -333,13 +314,8 @@
             margin: 1rem 0;
         }
 
-        .result-score.pass {
-            color: #10b981;
-        }
-
-        .result-score.fail {
-            color: #f87171;
-        }
+        .result-score.pass { color: #10b981; }
+        .result-score.fail { color: #f87171; }
 
         .result-msg {
             color: #64748b;
@@ -417,13 +393,10 @@
         }
 
         @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
+            to { transform: rotate(360deg); }
         }
     </style>
     <link rel="stylesheet" href="css/navigation.css">
-    <script src="js/navigation.js"></script>
 </head>
 
 <body>
@@ -472,12 +445,9 @@
         </div>
     </div>
 
+    <script src="js/navigation.js"></script>
     <script>
-<<<<<<< HEAD
         const API = '';
-=======
-        const API = window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1') ? 'http://localhost:5000' : 'https://renvox-ai.onrender.com';
->>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
         const params = new URLSearchParams(window.location.search);
         const courseId = params.get('course') || 'Unknown Course';
         document.getElementById('headerCourse').textContent = courseId;
@@ -485,8 +455,6 @@
         function getToken() {
             return localStorage.getItem('renvox_token') || localStorage.getItem('renvoxToken') || '';
         }
-
-        // ── Hardcoded fallback question banks (Moved to Backend) ─────────────────────
 
         let questions = [];
         let userAnswers = [];
@@ -660,7 +628,5 @@
         // Init
         loadQuestions();
     </script>
-    
 </body>
-
 </html>

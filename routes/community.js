@@ -7,11 +7,7 @@ const Follower = require('../models/Follower');
 const CommunityLeaderboard = require('../models/CommunityLeaderboard');
 const Notification = require('../models/Notification');
 const User = require('../models/User');
-<<<<<<< HEAD
 const { requireAuth } = require('../middleware/auth');
-=======
-const { requireAuth, optionalAuth } = require('../middleware/auth');
->>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
 
 // Utility to update leaderboard points
 async function updatePoints(userId, username, points, type) {
@@ -62,151 +58,41 @@ router.get('/posts', async (req, res) => {
 });
 
 // Create post
-<<<<<<< HEAD
 router.post('/posts', requireAuth, async (req, res) => {
     const { title, content, category } = req.body;
+    if (!title || !content || !category) {
+        return res.status(400).json({ ok: false, message: 'Title, category, and content are required' });
+    }
+
     try {
         const user = await User.findById(req.userId);
+        if (!user) return res.status(404).json({ ok: false, message: 'User not found' });
+
         const post = new Post({
             userId: req.userId,
             username: user.name,
             userPicture: user.picture,
-=======
-router.post('/posts', optionalAuth, async (req, res) => {
-    console.log('Incoming post body:', req.body);
-    const { title, content, category } = req.body;
-    
-    if (!title || !content || !category) {
-        return res.status(400).json({ ok: false, message: 'title, category, and content are required' });
-    }
-
-    try {
-        const userId = (req.user && req.user.id) ? req.user.id : (req.userId ? req.userId : 'guest');
-        let username = 'Guest User';
-        let userPicture = '';
-
-        if (userId !== 'guest') {
-            try {
-                const user = await User.findById(userId);
-                if (user) {
-                    username = user.name || 'Anonymous';
-                    userPicture = user.picture || '';
-                }
-            } catch (err) {
-                console.error("User fetch error:", err.message);
-            }
-        }
-
-        const post = new Post({
-            userId,
-            username,
-            userPicture,
->>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
             title,
             content,
             category
         });
-<<<<<<< HEAD
         await post.save();
 
         // Update points: 10 points for creating a post
         await updatePoints(req.userId, user.name, 10, 'post');
-=======
-        
-        await post.save();
-
-        if (userId !== 'guest') {
-            // Update points: 10 points for creating a post
-            await updatePoints(userId, username, 10, 'post');
-        }
->>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
 
         if (req.app.get('io')) req.app.get('io').emit('new_post', post);
 
         res.json({ ok: true, post });
     } catch (err) {
-<<<<<<< HEAD
-        res.status(500).json({ ok: false, message: 'Failed to create post' });
-=======
-        console.error("API ERROR:", err);
-        res.status(500).json({ 
-            message: err.message,
-            stack: err.stack 
-        });
->>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
+        console.error('Create post error:', err);
+        res.status(500).json({ ok: false, message: 'Failed to create post', error: err.message });
     }
 });
 
 // Alias for singular post
-<<<<<<< HEAD
-router.post('/post', requireAuth, async (req, res) => {
-    // Redirect to the plural version handler or just logic repeat
-    const { title, content, category } = req.body;
-    try {
-        const user = await User.findById(req.userId);
-        const post = new Post({
-            userId: req.userId,
-            username: user.name,
-            userPicture: user.picture,
-=======
-router.post('/post', optionalAuth, async (req, res) => {
-    console.log('Incoming post body:', req.body);
-    const { title, content, category } = req.body;
-    
-    if (!title || !content || !category) {
-        return res.status(400).json({ ok: false, message: 'title, category, and content are required' });
-    }
-
-    try {
-        const userId = (req.user && req.user.id) ? req.user.id : (req.userId ? req.userId : 'guest');
-        let username = 'Guest User';
-        let userPicture = '';
-
-        if (userId !== 'guest') {
-            try {
-                const user = await User.findById(userId);
-                if (user) {
-                    username = user.name || 'Anonymous';
-                    userPicture = user.picture || '';
-                }
-            } catch (err) {
-                console.error("User fetch error:", err.message);
-            }
-        }
-
-        const post = new Post({
-            userId,
-            username,
-            userPicture,
->>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
-            title,
-            content,
-            category
-        });
-<<<<<<< HEAD
-        await post.save();
-        await updatePoints(req.userId, user.name, 10, 'post');
-        res.json({ ok: true, post });
-    } catch (err) {
-        res.status(500).json({ ok: false, message: 'Failed to create post' });
-=======
-        
-        await post.save();
-
-        if (userId !== 'guest') {
-            await updatePoints(userId, username, 10, 'post');
-        }
-
-        res.json({ ok: true, post });
-    } catch (err) {
-        console.error("API ERROR:", err);
-        res.status(500).json({ 
-            message: err.message,
-            stack: err.stack 
-        });
->>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
-    }
-});
+// Alias for singular post — forward to main handler
+router.post('/post', (req, res, next) => { req.url = '/posts'; next(); }, router.post);
 
 // Get comments for a post
 router.get('/posts/:postId/comments', async (req, res) => {
