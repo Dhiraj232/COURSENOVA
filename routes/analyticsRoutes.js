@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose'); // Added missing import
 const router = express.Router();
 const { requireAuth } = require('../middleware/auth');
 const UserAnalytics = require('../models/UserAnalytics');
@@ -20,7 +21,18 @@ router.get('/dashboard', requireAuth, async (req, res) => {
         if (!user) return res.status(404).json({ ok: false, message: 'User not found' });
 
         // 2. Fetch/Create User Analytics (streak, time, daily activity)
-        let analytics = await UserAnalytics.findOne({ userId });
+        // Ensure userId is handled correctly for both String (Enrollment) and ObjectId (others)
+        const uidString = String(userId);
+        let queryUserId = userId;
+        try {
+            if (mongoose.Types.ObjectId.isValid(userId)) {
+                queryUserId = new mongoose.Types.ObjectId(userId);
+            }
+        } catch (e) {
+            console.warn('ObjectId cast warning:', e.message);
+        }
+
+        let analytics = await UserAnalytics.findOne({ userId: queryUserId });
         if (!analytics) {
             analytics = new UserAnalytics({
                 userId,
@@ -28,18 +40,19 @@ router.get('/dashboard', requireAuth, async (req, res) => {
                 weeklyActivity: [
                     { day: 'Mon', minutes: 0 }, { day: 'Tue', minutes: 0 }, { day: 'Wed', minutes: 0 },
                     { day: 'Thu', minutes: 0 }, { day: 'Fri', minutes: 0 }, { day: 'Sat', minutes: 0 }, { day: 'Sun', minutes: 0 }
-                ]
+                ],
+                totalTimeSpent: 0
             });
             await analytics.save();
         }
 
         // 3. Course Progress & Metrics
-        const enrollments = await Enrollment.find({ userId: String(userId) });
-        const allProgress = await CourseProgress.find({ userId });
+        const enrollments = await Enrollment.find({ userId: uidString });
+        const allProgress = await CourseProgress.find({ userId: queryUserId });
 
         const totalCourses = enrollments.length;
         const completedCourses = allProgress.filter(p => p.isCompleted).length;
-        const certificatesCount = allProgress.filter(p => p.isCompleted && p.certId).length;
+        const certificatesCount = allProgress.filter(p => p.certId).length;
 
         // Detailed course progress with module counts
         const courseProgressDetails = await Promise.all(enrollments.map(async (e) => {
@@ -71,6 +84,7 @@ router.get('/dashboard', requireAuth, async (req, res) => {
                 title: course ? course.title : e.courseName,
                 icon: course ? course.icon : '📚',
                 progress: progressPercent,
+                isPaid: (e.amount > 0 || !!e.paymentId), // New field for Paid status
                 completedModules: completedCount,
                 totalModules: totalModules,
                 lastAccessed: (p && p.updatedAt) ? p.updatedAt : e.purchaseDate
@@ -78,7 +92,7 @@ router.get('/dashboard', requireAuth, async (req, res) => {
         }));
 
         // 4. Test Performance Analytics
-        const testResults = await TestResult.find({ userId }).sort({ timestamp: -1 });
+        const testResults = await TestResult.find({ userId: queryUserId }).sort({ timestamp: -1 });
         const testsPassed = testResults.filter(t => t.passed).length;
         const testsFailed = testResults.filter(t => !t.passed).length;
         const avgScore = testResults.length > 0
@@ -89,7 +103,7 @@ router.get('/dashboard', requireAuth, async (req, res) => {
         const weakTopics = [...new Set(testResults.filter(t => t.score < 60).map(t => t.courseName || t.topic))];
 
         // 5. Recent Activity Feed
-        const recentActivities = await Activity.find({ userId })
+        const recentActivities = await Activity.find({ userId: queryUserId })
             .sort({ timestamp: -1 })
             .limit(10);
 
@@ -98,7 +112,8 @@ router.get('/dashboard', requireAuth, async (req, res) => {
             user: {
                 name: user.name,
                 email: user.email,
-                avatar: user.picture
+                avatar: user.picture,
+                role: user.role || 'student' // Added for rank mapping
             },
             stats: {
                 totalCourses,
@@ -119,8 +134,14 @@ router.get('/dashboard', requireAuth, async (req, res) => {
         });
 
     } catch (err) {
-        console.error('API /api/dashboard encountered an issue:', err);
-        res.status(500).json({ ok: false, message: 'Server error retrieving dashboard data' });
+        console.error('API /api/dashboard error:', err);
+        // Log to file for AI/Dev debugging
+        const fs = require('fs');
+        const path = require('path');
+        const logPath = path.join(__dirname, '..', 'error.log');
+        fs.appendFileSync(logPath, `[${new Date().toISOString()}] Dashboard Error: ${err.message}\n${err.stack}\n`);
+        
+        res.status(500).json({ ok: false, message: 'Server error retrieving dashboard data', debug: err.message });
     }
 });
 
@@ -162,15 +183,21 @@ router.get('/me', requireAuth, async (req, res) => {
 router.post('/track-time', requireAuth, async (req, res) => {
     try {
         const userId = req.userId;
-        let analytics = await UserAnalytics.findOne({ userId });
+        let queryUserId = userId;
+        if (mongoose.Types.ObjectId.isValid(userId)) {
+            queryUserId = new mongoose.Types.ObjectId(userId);
+        }
+
+        let analytics = await UserAnalytics.findOne({ userId: queryUserId });
         if (!analytics) {
             analytics = new UserAnalytics({
-                userId,
+                userId: queryUserId,
                 learningStreak: 1,
                 weeklyActivity: [
                     { day: 'Mon', minutes: 0 }, { day: 'Tue', minutes: 0 }, { day: 'Wed', minutes: 0 },
                     { day: 'Thu', minutes: 0 }, { day: 'Fri', minutes: 0 }, { day: 'Sat', minutes: 0 }, { day: 'Sun', minutes: 0 }
-                ]
+                ],
+                totalTimeSpent: 0
             });
         }
         

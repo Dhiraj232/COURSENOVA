@@ -22,7 +22,7 @@ function checkAuthentication() {
     const token = localStorage.getItem('renvoxToken') || localStorage.getItem('renvox_token');
     const user = localStorage.getItem('renvoxUser') || localStorage.getItem('renvox_user');
 
-    if (!token || !user) {
+    if (!token) {
         console.warn('Authentication token not found. Redirecting to login...');
         window.location.href = 'signup.html?redirect=dashboard.html';
         return false;
@@ -69,13 +69,28 @@ async function fetchDashboardData() {
 function updateDashboardUI(data) {
     const { user, stats, recentActivities, weakTopics, courses } = data;
 
-    // Header & Personalization
+    // 1. Header & Personalization
     const studentFirstName = user.name ? user.name.split(' ')[0] : 'Learner';
-    document.getElementById('studentFirstName').innerText = studentFirstName;
-    document.getElementById('userNameDisplay').innerText = user.name;
-    document.getElementById('streakCounter').innerText = `${stats.streak} day`;
+    if (document.getElementById('studentFirstName')) document.getElementById('studentFirstName').innerText = studentFirstName;
+    if (document.getElementById('userNameDisplay')) document.getElementById('userNameDisplay').innerText = user.name;
+    if (document.getElementById('streakCounter')) document.getElementById('streakCounter').innerText = `${stats.streak} day`;
+    
+    // 2. Sidebar Profile Sync
+    const userRank = document.getElementById('userRank');
+    if (userRank) {
+        const rankMap = { 'admin': 'Administrator', 'college': 'Verified College Student', 'child': 'Junior Scholar', 'student': 'Pro Learner' };
+        userRank.innerText = rankMap[user.role] || 'Pro Learner';
+    }
 
-    // Stats Ribbon
+    const userAvatar = document.getElementById('userAvatar');
+    if (userAvatar && user.name) {
+        userAvatar.innerText = user.name.charAt(0).toUpperCase();
+        if (user.avatar) {
+            userAvatar.innerHTML = `<img src="${user.avatar}" alt="${user.name}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 2px solid white;">`;
+        }
+    }
+
+    // 3. Stats Ribbon
     document.getElementById('enrolledCount').innerText = stats.totalCourses || 0;
     document.getElementById('certificatesCount').innerText = stats.certificates || 0;
     const rawT = stats.totalTime || 0;
@@ -91,14 +106,17 @@ function updateDashboardUI(data) {
         topicGrid.innerHTML = courses.map(c => `
             <div class="topic-item">
                 <div class="topic-info">
-                    <span>${c.title}</span>
+                    <span>
+                        ${c.title} 
+                        ${c.isPaid ? '<span class="badge-premium"><i class="fas fa-crown"></i> Paid</span>' : ''}
+                    </span>
                     <span>${c.progress}%</span>
                 </div>
                 <div class="progress-bar-bg">
                     <div class="progress-bar-fill" style="width: ${c.progress}%; background: ${getTopicColor(c.progress)}"></div>
                 </div>
             </div>
-        `).join('') || '<p style="color: grey">Finish a module to see progress.</p>';
+        `).join('') || '<p style="color: grey">Explore all courses to begin.</p>';
 
         // Add weak topics if any
         if (weakTopics && weakTopics.length > 0) {
@@ -149,14 +167,6 @@ function updateDashboardUI(data) {
         }
     }
 
-    // Avatar Initial
-    const userAvatar = document.getElementById('userAvatar');
-    if (userAvatar && user.name) {
-        userAvatar.innerText = user.name.charAt(0).toUpperCase();
-        if (user.avatar) {
-            userAvatar.innerHTML = `<img src="${user.avatar}" alt="${user.name}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
-        }
-    }
 }
 
 /**

@@ -6,8 +6,8 @@ const TransactionSchema = new mongoose.Schema({
     courseName: { type: String, required: true },
     amount: { type: Number, required: true },
     currency: { type: String, default: 'INR' },
-    paymentId: { type: String, required: true }, // Razorpay Payment ID
-    orderId: { type: String, required: true },   // Razorpay Order ID
+    paymentId: { type: String, required: true }, // Payment ID
+    orderId: { type: String, required: true },   // Order ID
     status: { type: String, enum: ['success', 'failed', 'refunded'], default: 'success' },
     date: { type: Date, default: Date.now }
 });

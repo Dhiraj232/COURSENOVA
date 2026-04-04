@@ -12,8 +12,8 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/navigation.css">
     
-    <!-- Razorpay SDK -->
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <!-- Cashfree SDK -->
+    <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
 
     <style>
         :root {
@@ -626,7 +626,7 @@
         // ── Premium state ──
         let courseIsPremium = false;
         let coursePrice     = 0;
-        let courseMongoId   = null;   // MongoDB _id for Razorpay
+        let courseMongoId   = null;   // MongoDB _id for Checkout
         let examQuestions   = [];     // quiz questions from API
         let examAttempts    = 3;      // attempts remaining
 
@@ -1028,7 +1028,7 @@
             btn.textContent = '⏳ Creating order...';
 
             try {
-                const orderRes = await fetch(`${API}/api/premium/create-order`, {
+                const orderRes = await fetch(`${API}/api/cashfree/create-order`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
                     body: JSON.stringify({ courseId: courseMongoId || courseId })
@@ -1041,44 +1041,12 @@
                     return;
                 }
                 if (!orderData.ok) throw new Error(orderData.message || 'Order failed');
-
-                const options = {
-                    key:      orderData.key,
-                    amount:   orderData.amount,
-                    currency: orderData.currency || 'INR',
-                    name:     'RENVOX',
-                    description: `Enroll in ${document.getElementById('gateTitle').textContent}`,
-                    order_id: orderData.orderId,
-                    handler: async function (response) {
-                        btn.textContent = '🔐 Verifying...';
-                        const verifyRes = await fetch(`${API}/api/premium/verify-payment`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-                            body: JSON.stringify({
-                                razorpay_order_id:   response.razorpay_order_id,
-                                razorpay_payment_id: response.razorpay_payment_id,
-                                razorpay_signature:  response.razorpay_signature,
-                                courseId: orderData.courseId
-                            })
-                        });
-                        const verifyData = await verifyRes.json();
-                        if (verifyData.ok) {
-                            document.getElementById('premiumGate').classList.remove('show');
-                            location.reload();
-                        } else {
-                            alert(verifyData.message || 'Payment verified but enrollment failed.');
-                        }
-                    },
-                    theme: { color: '#7c3aed' },
-                    modal: {
-                        ondismiss: () => {
-                            btn.disabled = false;
-                            btn.textContent = '🔓 Unlock Now';
-                        }
-                    }
-                };
-                const rzp = new Razorpay(options);
-                rzp.open();
+                // Launch Cashfree
+                if (typeof Cashfree === 'undefined') {
+                    throw new Error('Payment gateway not loaded. Please refresh.');
+                }
+                const cashfree = Cashfree({ mode: "sandbox" });
+                cashfree.checkout({ paymentSessionId: orderData.payment_session_id });
             } catch (err) {
                 console.error(err);
                 alert(err.message || 'Payment failed.');

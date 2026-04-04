@@ -1,4 +1,5 @@
-const API = '';
+// API base is auto-detected by config.js (localhost in dev, Render in prod)
+const API = window.RENVOX_API || 'https://renvox-ai.onrender.com';
 const token = localStorage.getItem('renvox_token') || localStorage.getItem('renvoxToken') || '';
 const params = new URLSearchParams(window.location.search);
 const courseId = params.get('course');
@@ -13,8 +14,104 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.location.href = 'premium-courses.html';
         return;
     }
+
+    const isPaymentVerify = params.get('payment') === 'verify';
+    const orderId = params.get('order_id');
+
+    if (isPaymentVerify && orderId) {
+        // Automatically hide layout and verify payment with backend
+        document.getElementById('playerLayout').style.display = 'none';
+        document.getElementById('lockedScreen').style.display = 'none';
+        showToast('Verifying your payment, please wait...', 'toast-success');
+        await verifyCashfreePayment(orderId, courseId);
+        // Clear params to prevent re-verifying on refresh
+        window.history.replaceState({}, document.title, window.location.pathname + "?course=" + courseId);
+    }
+
     await loadCoursePlayer();
 });
+
+async function verifyCashfreePayment(orderId, courseId) {
+    try {
+        showToast('Verifying your payment, please wait...', 'toast-success');
+
+        // First try: call /verify which checks Cashfree API server-side
+        const res = await fetch(`${API}/api/cashfree/verify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+            body: JSON.stringify({ orderId, courseId })
+        });
+        const data = await res.json();
+
+        if (data.ok) {
+            fireConfetti();
+            showToast('🎉 Payment verified! Welcome to the course.', 'toast-success');
+            return; // Done
+        }
+
+        // If not yet successful — poll /order-status (webhook may arrive after redirect)
+        // Cashfree can take a few seconds to fire the webhook. Poll up to 30s.
+        showToast('Confirming with payment server... please wait.', 'toast-success');
+        const confirmed = await pollOrderStatus(orderId, 15, 2000); // 15 attempts × 2s = 30s max
+
+        if (confirmed) {
+            fireConfetti();
+            showToast('🎉 Payment confirmed! Welcome to the course.', 'toast-success');
+        } else {
+            showToast(
+                data.message || 'Payment not confirmed yet. If you paid, access will unlock within minutes.',
+                'toast-error'
+            );
+        }
+    } catch (err) {
+        console.error('[verifyCashfreePayment]', err);
+        showToast('Network error during payment verification. If you paid, please contact support.', 'toast-error');
+    }
+}
+
+/**
+ * Polls /api/cashfree/order-status/:orderId until status is "paid" or max attempts reached.
+ * @param {string} orderId
+ * @param {number} maxAttempts
+ * @param {number} intervalMs
+ * @returns {boolean} true if "paid"
+ */
+async function pollOrderStatus(orderId, maxAttempts, intervalMs) {
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+        await new Promise(r => setTimeout(r, intervalMs));
+        try {
+            const res = await fetch(`${API}/api/cashfree/order-status/${orderId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (data.ok && data.status === 'paid') {
+                console.log(`[pollOrderStatus] ✅ Confirmed on attempt ${attempt}`);
+                return true;
+            }
+            if (data.status === 'failed') {
+                console.warn(`[pollOrderStatus] ❌ Order failed on attempt ${attempt}`);
+                return false;
+            }
+            console.log(`[pollOrderStatus] Attempt ${attempt}/${maxAttempts}: status=${data.status}`);
+        } catch (e) {
+            console.warn(`[pollOrderStatus] Network error on attempt ${attempt}:`, e.message);
+        }
+    }
+    return false; // Timed out
+}
+
+function fireConfetti() {
+    for (let i = 0; i < 30; i++) {
+        const conf = document.createElement('div');
+        conf.className = 'confetti-piece';
+        conf.style.left = Math.random() * 100 + 'vw';
+        conf.style.backgroundColor = ['#7c3aed', '#f5c518', '#10b981', '#06b6d4'][Math.floor(Math.random() * 4)];
+        conf.style.animationDuration = (Math.random() * 2 + 2) + 's';
+        document.body.appendChild(conf);
+        setTimeout(() => conf.remove(), 4000);
+    }
+}
+
 
 async function loadCoursePlayer() {
     if (!token) {

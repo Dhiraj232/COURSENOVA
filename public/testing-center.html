@@ -328,7 +328,7 @@
         </div>
     </main>
 
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
     <script src="js/navigation.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
@@ -452,43 +452,23 @@
             const token = localStorage.getItem('renvox_token') || localStorage.getItem('renvoxToken');
 
             try {
-                const res = await fetch('/api/create-order', {
+                // Testing center API can reuse the cashfree course purchase since packs act like courses.
+                // Assuming pack.id resolves to a Course object internally or similar logic exists.
+                const res = await fetch('/api/cashfree/create-order', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                    body: JSON.stringify({ amount: pack.price, courseId: pack.id })
+                    body: JSON.stringify({ courseId: pack.id })
                 });
                 const orderData = await res.json();
 
-                if (!orderData.ok) throw new Error(orderData.message);
+                if (!orderData.ok) throw new Error(orderData.message || "Failed to create order");
 
-                const options = {
-                    key: "rzp_test_YourKey", // Logic matches server.js keys
-                    amount: orderData.order.amount,
-                    currency: "INR",
-                    name: "RENVOX AI",
-                    description: `Unlock ${pack.title}`,
-                    order_id: orderData.order.id,
-                    handler: async function (response) {
-                        const verifyRes = await fetch('/api/verify-payment', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                            body: JSON.stringify({
-                                ...response,
-                                course: pack.id,
-                                amount: pack.price
-                            })
-                        });
-                        const verifyData = await verifyRes.json();
-                        if (verifyData.ok) {
-                            alert('Success! Redirecting to test...');
-                            window.location.href = `quiz-engine.html?packId=${pack.id}&mode=mock`;
-                        }
-                    },
-                    theme: { color: "#6366f1" }
-                };
+                if (typeof Cashfree === 'undefined') {
+                    throw new Error('Payment gateway not loaded. Please disable adblockers or refresh.');
+                }
 
-                const rzp = new Razorpay(options);
-                rzp.open();
+                const cashfree = Cashfree({ mode: "sandbox" });
+                cashfree.checkout({ paymentSessionId: orderData.payment_session_id });
             } catch (err) { alert('Purchase error: ' + err.message); }
         }
     </script>

@@ -1,24 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const crypto = require('crypto');
-const Razorpay = require('razorpay');
-
-const Course        = require('../models/Course');
-const Enrollment    = require('../models/Enrollment');
-const Payment       = require('../models/Payment');
-const CourseProgress= require('../models/CourseProgress');
-const User          = require('../models/User');
-const Activity      = require('../models/Activity');
-const Transaction   = require('../models/Transaction');
-const ExamAttempt   = require('../models/ExamAttempt');
 const { requireAuth, optionalAuth } = require('../middleware/auth');
+const Course = require('../models/Course');
+const Enrollment = require('../models/Enrollment');
+const User = require('../models/User');
+const CourseProgress = require('../models/CourseProgress');
 
 const MAX_EXAM_ATTEMPTS = 3;
-
-const razorpay = new Razorpay({
-    key_id:     process.env.RAZORPAY_KEY_ID     || 'rzp_test_TYYvG5LdO0V12j',
-    key_secret: process.env.RAZORPAY_KEY_SECRET || 'tK0lWjAOr3mR0K9uI3uSqkZ1'
-});
 
 // ─── Helper: check if a user is enrolled in a course ─────────────────────────
 async function isEnrolled(userId, courseId) {
@@ -166,147 +154,8 @@ router.get('/course/:id', optionalAuth, async (req, res) => {
     }
 });
 
-// ─── POST /api/premium/create-order ──────────────────────────────────────────
-// Creates a Razorpay order. Requires auth.
-router.post('/create-order', requireAuth, async (req, res) => {
-    try {
-        const { courseId } = req.body;
-        if (!courseId) return res.status(400).json({ ok: false, message: 'courseId is required' });
-
-        const course = await Course.findOne({
-            $or: [
-                { _id: String(courseId).match(/^[0-9a-fA-F]{24}$/) ? courseId : null },
-                { slug: String(courseId).toLowerCase().replace(/\s+/g, '-') },
-                { title: String(courseId) }
-            ]
-        });
-        if (!course) return res.status(404).json({ ok: false, message: 'Course not found' });
-        
-        const isPaid = course.price > 0 && !course.isFree;
-        if (!isPaid) return res.status(400).json({ ok: false, message: 'This course is free. Join via Enroll Free button.' });
-
-        // Check already enrolled
-        const alreadyEnrolled = await isEnrolled(req.userId, String(course._id));
-        if (alreadyEnrolled) return res.status(400).json({ ok: false, message: 'Already enrolled in this course' });
-
-        const options = {
-            amount:   course.price * 100,   // paise
-            currency: 'INR',
-            receipt:  `prem_${req.userId}_${Date.now()}`
-        };
-
-        const order = await razorpay.orders.create(options);
-        res.json({
-            ok:       true,
-            orderId:  order.id,
-            amount:   order.amount,
-            currency: order.currency,
-            courseId: String(course._id),
-            courseName: course.title,
-            key:      process.env.RAZORPAY_KEY_ID || 'rzp_test_TYYvG5LdO0V12j'
-        });
-    } catch (err) {
-        console.error('Create-order error:', err);
-        res.status(500).json({ ok: false, message: 'Failed to create Razorpay order' });
-    }
-});
-
-// ─── POST /api/premium/verify-payment ────────────────────────────────────────
-// Verifies Razorpay payment signature, enrolls user, creates Payment record.
-router.post('/verify-payment', requireAuth, async (req, res) => {
-    const { razorpay_order_id, razorpay_payment_id, razorpay_signature, courseId } = req.body;
-
-    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !courseId) {
-        return res.status(400).json({ ok: false, message: 'Missing payment fields' });
-    }
-
-    const secret = process.env.RAZORPAY_KEY_SECRET || 'tK0lWjAOr3mR0K9uI3uSqkZ1';
-    const expectedSig = crypto
-        .createHmac('sha256', secret)
-        .update(`${razorpay_order_id}|${razorpay_payment_id}`)
-        .digest('hex');
-
-    if (expectedSig !== razorpay_signature) {
-        return res.status(400).json({ ok: false, message: 'Invalid payment signature. Possible fraud attempt.' });
-    }
-
-    try {
-        const course = await Course.findOne({
-            $or: [
-                { _id: String(courseId).match(/^[0-9a-fA-F]{24}$/) ? courseId : null },
-                { slug: String(courseId).toLowerCase().replace(/\s+/g, '-') },
-                { title: String(courseId) }
-            ]
-        });
-        if (!course) return res.status(404).json({ ok: false, message: 'Course not found' });
-
-        const userId = String(req.userId);
-
-        // 1. Enrollment record (upsert)
-        await Enrollment.findOneAndUpdate(
-            { userId, courseId: String(course._id) },
-            {
-                userId,
-                courseId:   String(course._id),
-                courseName: course.title,
-                paymentId:  razorpay_payment_id,
-                amount:     course.price,
-                purchaseDate: new Date()
-            },
-            { upsert: true, new: true }
-        );
-
-        // 2. User.enrolledCourses quick lookup
-        const user = await User.findById(userId);
-        if (user && !user.enrolledCourses.includes(String(course._id))) {
-            user.enrolledCourses.push(String(course._id));
-            await user.save();
-        }
-
-        // 3. Payment record
-        await Payment.create({
-            userId,
-            courseId:            String(course._id),
-            courseName:          course.title,
-            amount:              course.price,
-            razorpayOrderId:     razorpay_order_id,
-            razorpayPaymentId:   razorpay_payment_id,
-            razorpaySignature:   razorpay_signature,
-            paymentMethod:       'razorpay',
-            status:              'approved'
-        });
-
-        // 4. Transaction record
-        try {
-            await Transaction.create({
-                userId,
-                courseId:   String(course._id),
-                courseName: course.title,
-                amount:     course.price,
-                paymentId:  razorpay_payment_id,
-                orderId:    razorpay_order_id,
-                status:     'success'
-            });
-        } catch (e) { console.warn('Transaction log error:', e.message); }
-
-        // 5. Activity log
-        try {
-            await Activity.create({
-                userId,
-                type:       'course_enrolled',
-                title:      `Enrolled: ${course.title}`,
-                description:`Purchased premium course "${course.title}" via Razorpay.`,
-                courseId:   String(course._id),
-                courseName: course.title
-            });
-        } catch (e) { console.warn('Activity log error:', e.message); }
-
-        res.json({ ok: true, message: 'Payment verified. You are now enrolled!', courseName: course.title });
-    } catch (err) {
-        console.error('Verify-payment error:', err);
-        res.status(500).json({ ok: false, message: 'Payment verified but enrollment failed. Contact support.' });
-    }
-});
+// Payments are now handled entirely by routes/cashfree.js
+// /create-order and /verify-payment endpoints have been migrated there.
 
 // ─── GET /api/premium/access/:courseId ───────────────────────────────────────
 // Returns enrollment status + progress + exam attempts left.

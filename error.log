@@ -1,0 +1,24 @@
+[2026-04-04T13:33:01.892Z] Dashboard Error: Cast to ObjectId failed for value "Data Structures Advanced" (type string) at path "_id" for model "Course"
+CastError: Cast to ObjectId failed for value "Data Structures Advanced" (type string) at path "_id" for model "Course"
+    at SchemaObjectId.cast (C:\RENVOX STARTUP\node_modules\mongoose\lib\schema\objectId.js:253:11)
+    at SchemaType.applySetters (C:\RENVOX STARTUP\node_modules\mongoose\lib\schemaType.js:1279:12)
+    at SchemaType.castForQuery (C:\RENVOX STARTUP\node_modules\mongoose\lib\schemaType.js:1705:17)
+    at cast (C:\RENVOX STARTUP\node_modules\mongoose\lib\cast.js:386:32)
+    at Query.cast (C:\RENVOX STARTUP\node_modules\mongoose\lib\query.js:5088:12)
+    at Query._castConditions (C:\RENVOX STARTUP\node_modules\mongoose\lib\query.js:2376:10)
+    at model.Query._findOne (C:\RENVOX STARTUP\node_modules\mongoose\lib\query.js:2716:8)
+    at model.Query.exec (C:\RENVOX STARTUP\node_modules\mongoose\lib\query.js:4687:80)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async C:\RENVOX STARTUP\routes\analyticsRoutes.js:60:26
+[2026-04-04T13:36:04.278Z] Dashboard Error: Cast to ObjectId failed for value "Data Structures Advanced" (type string) at path "_id" for model "Course"
+CastError: Cast to ObjectId failed for value "Data Structures Advanced" (type string) at path "_id" for model "Course"
+    at SchemaObjectId.cast (C:\RENVOX STARTUP\node_modules\mongoose\lib\schema\objectId.js:253:11)
+    at SchemaType.applySetters (C:\RENVOX STARTUP\node_modules\mongoose\lib\schemaType.js:1279:12)
+    at SchemaType.castForQuery (C:\RENVOX STARTUP\node_modules\mongoose\lib\schemaType.js:1705:17)
+    at cast (C:\RENVOX STARTUP\node_modules\mongoose\lib\cast.js:386:32)
+    at Query.cast (C:\RENVOX STARTUP\node_modules\mongoose\lib\query.js:5088:12)
+    at Query._castConditions (C:\RENVOX STARTUP\node_modules\mongoose\lib\query.js:2376:10)
+    at model.Query._findOne (C:\RENVOX STARTUP\node_modules\mongoose\lib\query.js:2716:8)
+    at model.Query.exec (C:\RENVOX STARTUP\node_modules\mongoose\lib\query.js:4687:80)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at async C:\RENVOX STARTUP\routes\analyticsRoutes.js:60:26

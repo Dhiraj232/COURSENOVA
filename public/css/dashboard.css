@@ -467,6 +467,23 @@ body.dashboard-body {
     }
 }
 
+/* Premium Badge for Courses */
+.badge-premium {
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+    color: white !important;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 0.70rem;
+    font-weight: 800;
+    margin-left: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 4px 10px rgba(245, 158, 11, 0.4);
+    text-transform: uppercase;
+    vertical-align: middle;
+}
+
 @media (max-width: 600px) {
     .stats-ribbon {
         grid-template-columns: 1fr;

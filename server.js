@@ -1,11 +1,12 @@
+require('dotenv').config();
 const express = require('express');
 const fs = require('fs');
+
 const path = require('path');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const Razorpay = require('razorpay');
 const { OAuth2Client } = require('google-auth-library');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
@@ -13,8 +14,7 @@ const xss = require('xss-clean');
 const { logSuspiciousActivity } = require('./middleware/security');
 
 
-// Load environment variables
-require('dotenv').config();
+// Environment variables loaded at the very top
 
 const mongoose = require('mongoose');
 const session = require('express-session');
@@ -49,7 +49,13 @@ if (!process.env.MONGO_URI) console.warn('⚠️ MONGO_URI is missing.');
 if (!process.env.GOOGLE_CLIENT_ID) console.warn('⚠️ GOOGLE_CLIENT_ID is missing. Google OAuth will fail.');
 if (!process.env.GOOGLE_CLIENT_SECRET) console.warn('⚠️ GOOGLE_CLIENT_SECRET is missing. Google OAuth will fail.');
 if (!process.env.JWT_SECRET) console.warn('⚠️ JWT_SECRET is missing. Using insecure fallback secret.');
-if (!process.env.BASE_URL) console.warn('⚠️ BASE_URL is missing. OAuth redirects will use localhost:5000.');
+if (!process.env.BASE_URL) console.warn('⚠️ BASE_URL is missing. Webhook notify_url will default to localhost — payments WON\'T work in production!');
+// ─── Cashfree Env Validation ──────────────────────────────────────
+if (!process.env.CASHFREE_APP_ID) console.error('❌ CASHFREE_APP_ID is missing! Payments will fail.');
+if (!process.env.CASHFREE_SECRET_KEY) console.error('❌ CASHFREE_SECRET_KEY is missing! Webhook verification will fail.');
+if (process.env.BASE_URL && process.env.BASE_URL.includes('localhost') && process.env.NODE_ENV === 'production') {
+    console.error('❌ BASE_URL is still localhost in production! Cashfree webhook notify_url will be unreachable.');
+}
 
 // ─── MongoDB Connection ───────────────────────────────────────
 const MONGO_URI = isProduction ? process.env.MONGO_URI : (process.env.MONGO_URI || 'mongodb://localhost:27017/renvox-bookstore');
@@ -200,7 +206,12 @@ app.options('*', cors(corsOptions));
 app.use(cors(corsOptions));
 
 // ─── 2. Body Parsers ─────────────────────────────────────────────────────────
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ 
+  limit: '10mb',
+  verify: (req, res, buf) => {
+    req.rawBody = buf; // Specifically required for Cashfree Webhook Signature validation
+  }
+}));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // ─── 3. Security Middlewares ──────────────────────────────────────────────────
@@ -210,11 +221,11 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-      "frame-src": ["'self'", "https://www.youtube.com", "https://youtube.com", "https://api.razorpay.com", "https://docs.google.com"],
+      "frame-src": ["'self'", "https://www.youtube.com", "https://youtube.com", "https://docs.google.com"],
       "img-src": ["'self'", "data:", "blob:", "https://res.cloudinary.com", "https://images.unsplash.com", "https://*.google.com", "https://*.googleusercontent.com", "https://i.ytimg.com", "https://yt3.ggpht.com", "https://ui-avatars.com", "https://cdni.iconscout.com"],
-      "script-src": ["'self'", "'unsafe-inline'", "https://www.googletagmanager.com", "https://*.google.com", "https://checkout.razorpay.com"],
+      "script-src": ["'self'", "'unsafe-inline'", "https://www.googletagmanager.com", "https://*.google.com", "https://sdk.cashfree.com"],
       "script-src-attr": ["'unsafe-inline'"],
-      "connect-src": ["'self'", "https://*.google-analytics.com", "https://*.analytics.google.com", "https://*.googletagmanager.com", "https://api.razorpay.com", "https://lms-backend-renvox.onrender.com", "https://renvox-ai.onrender.com"]
+      "connect-src": ["'self'", "https://*.google-analytics.com", "https://*.analytics.google.com", "https://*.googletagmanager.com", "https://sdk.cashfree.com", "https://sandbox.cashfree.com", "https://api.cashfree.com", "https://lms-backend-renvox.onrender.com", "https://renvox-ai.onrender.com"]
 
       },
   },
@@ -368,114 +379,9 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/certificates', express.static(path.join(__dirname, 'certificates')));
 
-// Razorpay Instance (Test Keys)
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID || 'rzp_test_TYYvG5LdO0V12j',
-  key_secret: process.env.RAZORPAY_KEY_SECRET || 'tK0lWjAOr3mR0K9uI3uSqkZ1'
-});
+// ─── Cashfree API Routes ──────────────────────────────────────────────
+app.use('/api/cashfree', require('./routes/cashfree'));
 
-// Create Order API
-app.post('/api/create-order', async (req, res) => {
-  try {
-    const { amount, course } = req.body;
-    if (!amount) return res.status(400).json({ ok: false, message: 'Amount is required' });
-
-    const options = {
-      amount: amount * 100, // amount in smallest currency unit (paise)
-      currency: "INR",
-      receipt: `receipt_${Date.now()}`
-    };
-
-    const order = await razorpay.orders.create(options);
-    res.json({ ok: true, orderId: order.id, amount: order.amount, currency: order.currency, course });
-  } catch (error) {
-    console.error('Razorpay Create Order Error:', error);
-    res.status(500).json({ ok: false, message: 'Failed to create order' });
-  }
-});
-
-// Verify Payment API and Enroll User
-app.post('/api/verify-payment', async (req, res) => {
-  const auth = req.headers.authorization || '';
-  const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
-  if (!token) return res.status(401).json({ ok: false, message: 'Login required' });
-
-  let userId;
-  try {
-    userId = jwt.verify(token, JWT_SECRET).userId;
-  } catch (e) {
-    return res.status(401).json({ ok: false, message: 'Invalid token' });
-  }
-
-  const { razorpay_order_id, razorpay_payment_id, razorpay_signature, course } = req.body;
-
-  const secret = process.env.RAZORPAY_KEY_SECRET || 'tK0lWjAOr3mR0K9uI3uSqkZ1';
-  const body = razorpay_order_id + "|" + razorpay_payment_id;
-
-  const expectedSignature = crypto
-    .createHmac('sha256', secret)
-    .update(body.toString())
-    .digest('hex');
-
-  const isAuthentic = expectedSignature === razorpay_signature;
-
-  if (isAuthentic) {
-    try {
-      if (course) {
-        // 1. Update User.enrolledCourses (legacy quick lookup)
-        const user = await StoreUser.findById(userId);
-        if (user && !user.enrolledCourses.includes(course)) {
-          user.enrolledCourses.push(course);
-          await user.save();
-        }
-
-        // 2. Create/upsert Enrollment record (permanent DB record used by my-courses.html)
-        const Enrollment = require('./models/Enrollment');
-        await Enrollment.findOneAndUpdate(
-          { userId: String(userId), courseId: course },
-          { userId: String(userId), courseId: course, courseName: course, purchaseDate: new Date() },
-          { upsert: true, new: true }
-        );
-
-        // 3. Save Transaction record for Profile Dashboard
-        const Transaction = require('./models/Transaction');
-        await Transaction.create({
-          userId: userId,
-          courseId: course,
-          courseName: course, // If you have course object title use it, otherwise fallback
-          amount: req.body.amount || 0, // ensure you pass amount/course from frontend
-          paymentId: razorpay_payment_id,
-          orderId: razorpay_order_id,
-          status: 'success'
-        });
-
-        // ── ACTIVITY LOGGING ──
-        const Activity = require('./models/Activity');
-        try {
-          await Activity.create({
-            userId,
-            type: 'course_enrolled',
-            title: `Enrolled: ${course}`,
-            description: `Purchased and unlocked "${course}" access.`,
-            courseId: course,
-            courseName: course
-          });
-        } catch (logErr) {
-          console.warn('Silent Paid Log Error:', logErr);
-        }
-
-        console.log(`Enrolled ${user ? user.email : userId} in "${course}" via Razorpay.`);
-      }
-
-      res.json({ ok: true, message: 'Payment verified successfully and user enrolled.' });
-    } catch (err) {
-      console.error('Database Error during enrollment:', err);
-      res.status(500).json({ ok: false, message: 'Payment verified, but failed to save enrollment.' });
-    }
-  } else {
-    res.status(400).json({ ok: false, message: 'Invalid payment signature' });
-  }
-});
 
 // ────────────────────────────────────────────────────────────
 // NOTE: Payment routes are now handled by routes/paymentRoutes.js

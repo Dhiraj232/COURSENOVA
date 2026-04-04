@@ -4,7 +4,7 @@ const EnrollmentSchema = new mongoose.Schema({
     userId: { type: String, required: true },
     courseId: { type: String, required: true },
     courseName: { type: String, default: '' },
-    paymentId: { type: String, default: '' },   // Razorpay paymentId or 'manual'
+    paymentId: { type: String, default: '' },   // Payment ID or 'manual'
     amount: { type: Number, default: 0 },
     purchaseDate: { type: Date, default: Date.now }
 });

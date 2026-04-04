@@ -1,4 +1,5 @@
-const API = '';
+// API base is auto-detected by config.js (localhost in dev, Render in prod)
+const API = window.RENVOX_API || 'https://renvox-ai.onrender.com';
 const token = localStorage.getItem('renvoxToken') || localStorage.getItem('renvox_token') || '';
 
 let courses = [];
@@ -153,102 +154,69 @@ window.enrollFree = async function(id, title) {
     }
 };
 
-window.buyCourse = async function(id, title, price) {
+window.buyCourse = async function(courseId, title, price) {
     if (!token) {
         showToast('Please login to purchase premium courses', 'toast-error');
         setTimeout(() => window.location.href = 'signup.html', 1500);
         return;
     }
 
+    // Disable all Buy buttons to prevent double-click
+    document.querySelectorAll('.btn-buy').forEach(b => {
+        b.disabled = true;
+        b._originalText = b.innerHTML;
+        b.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    });
+
     try {
         showToast('Initializing secure checkout...', 'toast-success');
-        
-        // 1. Create Order
-        const orderRes = await fetch(`${API}/api/premium/create-order`, {
+
+        // 1. Create Order on backend (server validates, creates CF order)
+        const orderRes = await fetch(`${API}/api/cashfree/create-order`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-            body: JSON.stringify({ courseId: id })
+            body: JSON.stringify({ courseId })
         });
         const orderData = await orderRes.json();
 
         if (!orderData.ok) {
+            // Handle "already enrolled" gracefully
             if (orderData.message && orderData.message.toLowerCase().includes('already')) {
-                showToast('You are already enrolled in this course!', 'toast-success');
-                fetchCourses();
+                showToast('You are already enrolled in this course! Redirecting...', 'toast-success');
+                setTimeout(() => window.location.href = `premium-course-player.html?course=${courseId}`, 1500);
                 return;
             }
-            throw new Error(orderData.message || 'Failed to create order');
+            throw new Error(orderData.message || 'Failed to create order. Please try again.');
         }
 
-        // 2. Launch Razorpay
-        if (typeof Razorpay === 'undefined') {
-            throw new Error('Payment gateway not loaded. Please disable adblockers or refresh.');
+        // 2. Verify Cashfree JS SDK loaded
+        if (typeof Cashfree === 'undefined') {
+            throw new Error('Payment gateway script not loaded. Disable adblockers or refresh.');
         }
 
-        const options = {
-            key: orderData.key,
-            amount: orderData.amount,
-            currency: orderData.currency || 'INR',
-            name: 'RENVOX AI',
-            description: `Lifetime Access: ${title}`,
-            order_id: orderData.orderId,
-            handler: async function (response) {
-                await verifyPayment(response, id, title);
-            },
-            theme: { color: '#7c3aed' },
-            modal: {
-                ondismiss: () => showToast('Payment checkout cancelled', 'toast-error')
-            }
-        };
+        // ⚠️ PRODUCTION: use "production" mode when live keys are active
+        // The mode must match your Cashfree Dashboard environment
+        const cashfreeMode = (orderData.payment_session_id || '').startsWith('session_') ? 'production' : 'sandbox';
+        const cashfree = Cashfree({ mode: cashfreeMode });
 
-        const rzp = new Razorpay(options);
-        rzp.open();
+        // 3. Redirect to Cashfree Hosted Checkout
+        // On completion Cashfree calls our return_url:
+        // /premium-course-player.html?course=<id>&payment=verify&order_id=<id>
+        await cashfree.checkout({ paymentSessionId: orderData.payment_session_id });
 
     } catch (err) {
-        console.error(err);
-        showToast(err.message || 'Error launching checkout', 'toast-error');
+        console.error('[buyCourse] Error:', err);
+        showToast(err.message || 'Error launching checkout. Please try again.', 'toast-error');
+        // Re-enable buy buttons on error
+        document.querySelectorAll('.btn-buy').forEach(b => {
+            b.disabled = false;
+            if (b._originalText) b.innerHTML = b._originalText;
+        });
     }
 };
 
-async function verifyPayment(response, courseId, title) {
-    showToast('Verifying payment...', 'toast-success');
-    try {
-        const verifyRes = await fetch(`${API}/api/premium/verify-payment`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-            body: JSON.stringify({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-                courseId: courseId
-            })
-        });
-        const data = await verifyRes.json();
-        
-        if (data.ok) {
-            for(let i=0; i<30; i++) {
-                const conf = document.createElement('div');
-                conf.className = 'confetti-piece';
-                conf.style.left = Math.random() * 100 + 'vw';
-                conf.style.backgroundColor = ['#7c3aed', '#f5c518', '#10b981', '#06b6d4'][Math.floor(Math.random()*4)];
-                conf.style.animationDuration = (Math.random() * 2 + 2) + 's';
-                document.body.appendChild(conf);
-                setTimeout(() => conf.remove(), 4000);
-            }
-            
-            showToast(`Payment successful! Welcome to ${title}! Redirecting...`, 'toast-success');
-            
-            setTimeout(() => {
-                window.location.href = `premium-course-player.html?course=${courseId}`;
-            }, 2500);
-        } else {
-            throw new Error(data.message || 'Verification failed');
-        }
-    } catch (err) {
-        console.error(err);
-        showToast(err.message || 'Payment enrolled failed. Contact support.', 'toast-error');
-    }
-}
+// The verifyPayment function has been removed. Cashfree checkout redirects the user
+// to premium-course-player.html?payment=verify&order_id=... where we will handle it.
 
 function showToast(msg, typeClass = 'toast-success') {
     const toast = document.getElementById('premToast');

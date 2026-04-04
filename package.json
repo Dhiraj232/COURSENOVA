@@ -9,6 +9,7 @@
   "dependencies": {
     "bcrypt": "^5.1.0",
     "bcryptjs": "^3.0.3",
+    "cashfree-pg": "^5.1.0",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^4.22.1",
@@ -24,7 +25,6 @@
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
     "pdfkit": "^0.17.2",
-    "razorpay": "^2.9.6",
     "socket.io": "^4.8.3",
     "xss-clean": "^0.1.4"
   },
