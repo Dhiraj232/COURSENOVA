@@ -43,6 +43,7 @@ router.get('/dashboard', requireAuth, async (req, res) => {
 
         // Detailed course progress with module counts
         const courseProgressDetails = await Promise.all(enrollments.map(async (e) => {
+<<<<<<< HEAD
             const course = await Course.findOne({
                 $or: [{ title: e.courseId }, { slug: e.courseId.toLowerCase().replace(/\s+/g, '-') }]
             });
@@ -55,11 +56,43 @@ router.get('/dashboard', requireAuth, async (req, res) => {
             return {
                 id: e.courseId,
                 title: e.courseName,
+=======
+            // Priority 1: Match by direct ObjectID match
+            let course = await Course.findById(e.courseId);
+            
+            // Priority 2: Fallback to title/Slug match
+            if (!course) {
+                course = await Course.findOne({
+                    $or: [
+                        { title: String(e.courseId) },
+                        { title: String(e.courseName) },
+                        { slug: String(e.courseId).toLowerCase().replace(/\s+/g, '-') }
+                    ]
+                });
+            }
+
+            const p = allProgress.find(ap => 
+                String(ap.courseId) === String(e.courseId) || 
+                (course && String(ap.courseId) === String(course._id))
+            );
+
+            const totalModules = (course && course.lessons && course.lessons.length > 0) ? course.lessons.length : 1;
+            const completedCount = p ? (p.completedLessons ? p.completedLessons.length : 0) : 0;
+            const progressPercent = p ? p.progressPercent : 0;
+
+            return {
+                id: course ? String(course._id) : e.courseId,
+                title: course ? course.title : e.courseName,
+>>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
                 icon: course ? course.icon : '📚',
                 progress: progressPercent,
                 completedModules: completedCount,
                 totalModules: totalModules,
+<<<<<<< HEAD
                 lastAccessed: p ? p.updatedAt : e.purchaseDate
+=======
+                lastAccessed: (p && p.updatedAt) ? p.updatedAt : e.purchaseDate
+>>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
             };
         }));
 

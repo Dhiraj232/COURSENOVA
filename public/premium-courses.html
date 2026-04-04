@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Premium Courses | RENVOX AI</title>
+  <meta name="description" content="Unlock premium courses on RENVOX AI — DSA, Anger Management, Communication Skills. Pay once, learn for life. Certificate on completion.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/navigation.css">
+  <link rel="stylesheet" href="css/premium.css">
+
+  <script src="js/navigation.js?v=1.2" defer></script>
+  <script src="js/analytics.js" defer></script>
+</head>
+<body>
+
+  <!-- NAVBAR (injected by navigation.js) -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="logo"><img src="images/logo%20renvox.png" alt="RENVOX"> <span>RENVOX</span></a>
+      <div class="nav-search">
+        <input type="text" id="navbarSearch" placeholder="Search courses...">
+        <button type="button" onclick="handleNavbarSearch()"><i class="fas fa-search"></i></button>
+      </div>
+      <ul class="nav-menu" id="navMenu"></ul>
+      <div class="nav-buttons" id="navButtons"></div>
+      <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+    </div>
+  </nav>
+
+  <!-- ── HERO ──────────────────────────────────────────────────── -->
+  <section class="prem-hero">
+    <div class="prem-hero-badge">✨ Free & Premium Courses</div>
+    <h1>Invest in Your Skills,<br>Get Certified</h1>
+    <p>Expert-curated courses with videos, PDFs, MCQ exams, and verified certificates. Start for free or go premium.</p>
+    <div class="prem-hero-stats">
+      <div class="prem-stat">
+        <div class="prem-stat-number" id="coursesCount">10</div>
+        <div class="prem-stat-label">Total Courses</div>
+      </div>
+      <div class="prem-stat">
+        <div class="prem-stat-number">9+</div>
+        <div class="prem-stat-label">HD Video Lessons</div>
+      </div>
+      <div class="prem-stat">
+        <div class="prem-stat-number">100%</div>
+        <div class="prem-stat-label">Certificate on Pass</div>
+      </div>
+      <div class="prem-stat">
+        <div class="prem-stat-number">Free</div>
+        <div class="prem-stat-label">Starting Price</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── COURSES GRID ───────────────────────────────────────────── -->
+  <section class="prem-section">
+    <div class="prem-section-title">
+      Explore All Courses <span id="premCourseCount">Loading...</span>
+    </div>
+    <div class="prem-grid" id="premGrid">
+      <!-- Skeleton loaders -->
+      <div class="prem-card" style="min-height:380px">
+        <div class="prem-card-top">
+          <div class="skeleton" style="height:50px;width:50px;border-radius:12px;margin-bottom:14px"></div>
+          <div class="skeleton" style="height:22px;width:60%;margin-bottom:10px"></div>
+          <div class="skeleton" style="height:16px;width:90%;margin-bottom:6px"></div>
+          <div class="skeleton" style="height:16px;width:75%"></div>
+        </div>
+      </div>
+      <div class="prem-card" style="min-height:380px">
+        <div class="prem-card-top">
+          <div class="skeleton" style="height:50px;width:50px;border-radius:12px;margin-bottom:14px"></div>
+          <div class="skeleton" style="height:22px;width:55%;margin-bottom:10px"></div>
+          <div class="skeleton" style="height:16px;width:90%;margin-bottom:6px"></div>
+          <div class="skeleton" style="height:16px;width:70%"></div>
+        </div>
+      </div>
+      <div class="prem-card" style="min-height:380px">
+        <div class="prem-card-top">
+          <div class="skeleton" style="height:50px;width:50px;border-radius:12px;margin-bottom:14px"></div>
+          <div class="skeleton" style="height:22px;width:65%;margin-bottom:10px"></div>
+          <div class="skeleton" style="height:16px;width:90%;margin-bottom:6px"></div>
+          <div class="skeleton" style="height:16px;width:80%"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Toast Notification ────────────────────────────────────── -->
+  <div class="prem-toast" id="premToast">
+    <div class="prem-toast-title" id="premToastTitle"></div>
+    <div class="prem-toast-msg"   id="premToastMsg"></div>
+  </div>
+
+  <!-- Razorpay SDK -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <script src="js/premium-courses.js"></script>
+</body>
+</html>

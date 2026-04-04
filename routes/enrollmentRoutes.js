@@ -88,12 +88,37 @@ router.post('/enroll-free', async (req, res) => {
     if (!id) return res.status(400).json({ ok: false, message: 'courseId or courseName required' });
 
     try {
+<<<<<<< HEAD
         // Idempotent: only create if not already enrolled
         const existing = await Enrollment.findOne({ userId, $or: [{ courseId: id }, { courseName: id }] });
+=======
+        // First, find the actual course object
+        const Course = require('../models/Course');
+        const course = await Course.findOne({
+            $or: [
+                { _id: id.match(/^[0-9a-fA-F]{24}$/) ? id : null },
+                { slug: id.toLowerCase().replace(/\s+/g, '-') },
+                { title: id }
+            ]
+        });
+
+        if (!course) return res.status(404).json({ ok: false, message: 'Course not found' });
+        if (!course.isFree && course.price > 0) {
+            return res.status(400).json({ ok: false, message: 'This is a premium course. Payment required.' });
+        }
+
+        // Idempotent check
+        const existing = await Enrollment.findOne({ 
+            userId, 
+            courseId: String(course._id) 
+        });
+        
+>>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
         if (existing) {
             return res.json({ ok: true, message: 'Already enrolled', alreadyEnrolled: true });
         }
 
+<<<<<<< HEAD
         await Enrollment.create({
             userId,
             courseId: id,
@@ -104,6 +129,27 @@ router.post('/enroll-free', async (req, res) => {
             utr: 'FREE-' + Date.now()
         });
 
+=======
+        // Create enrollment
+        await Enrollment.create({
+            userId,
+            courseId:     String(course._id),
+            courseName:   course.title,
+            purchaseDate: new Date(),
+            status:       'approved',
+            amountPaid:   0,
+            utr:          'FREE-' + Date.now().toString(36).toUpperCase()
+        });
+
+        // ── SYNC Legacy User.enrolledCourses (if exists) ──
+        const User = require('../models/User');
+        const user = await User.findById(userId);
+        if (user && !user.enrolledCourses.includes(String(course._id))) {
+            user.enrolledCourses.push(String(course._id));
+            await user.save();
+        }
+
+>>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
         // ── ACTIVITY LOGGING ──
         const Activity = require('../models/Activity');
         try {

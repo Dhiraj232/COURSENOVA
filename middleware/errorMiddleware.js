@@ -66,12 +66,21 @@ const sendErrorProd = (err, req, res) => {
             message: err.message
         });
     }
+<<<<<<< HEAD
     // 3. Programming or other unknown error: don't leak error details
     else {
         console.error('❌ ERROR:', err);
         res.status(500).json({
             success: false,
             message: 'Something went very wrong!'
+=======
+    // 3. Programming or other unknown error: return actual error message
+    else {
+        console.error('❌ ERROR:', err);
+        res.status(500).json({
+            message: err.message || 'Internal Server Error',
+            stack: err.stack
+>>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
         });
     }
 };

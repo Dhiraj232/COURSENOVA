@@ -2,6 +2,7 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const cors = require('cors');
+<<<<<<< HEAD
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
@@ -10,6 +11,15 @@ const { OAuth2Client } = require('google-auth-library');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const xss = require('xss-clean');
+=======
+const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+const Razorpay = require('razorpay');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+const xss = require('xss-clean');
+const { logSuspiciousActivity } = require('./middleware/security');
+>>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
 
 // Load environment variables
 require('dotenv').config();
@@ -75,8 +85,12 @@ const CourseProgress = require('./models/CourseProgress');
 passport.use(new GoogleStrategy({
   clientID: GOOGLE_CLIENT_ID,
   clientSecret: GOOGLE_CLIENT_SECRET,
+<<<<<<< HEAD
   callbackURL: (process.env.BASE_URL || "http://localhost:5000") + "/auth/google/callback",
   proxy: true
+=======
+callbackURL: "https://renvox-ai.onrender.com/auth/google/callback",  proxy: true
+>>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
 },
   async function (accessToken, refreshToken, profile, done) {
     try {
@@ -154,9 +168,57 @@ process.on('uncaughtException', err => {
 });
 
 const app = express();
+<<<<<<< HEAD
 // ─── Security Middlewares ─────────────────────────────────────────
 
 // 1. Helmet for Security Headers with CSP for YouTube
+=======
+
+// ─── CRITICAL: Trust Render's proxy — fixes ERR_ERL_UNEXPECTED_X_FORWARDED_FOR ─
+app.set('trust proxy', 1);
+
+// ─── 1. CORS — MUST be first, before all other middleware ────────────────────
+const allowedOrigins = [
+  "http://localhost:3000",
+  "http://localhost:5000",
+  "http://localhost:5500",
+  "http://127.0.0.1:5500",
+  "https://renvox.in",
+  "https://www.renvox.in",
+  "https://lms-backend-renvox.onrender.com",
+  "https://renvox-ai.onrender.com"
+];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (server-to-server, curl, Postman, mobile apps)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      // Do NOT throw an Error — silently reject with false to avoid 500 errors
+      console.warn('[CORS] Blocked request from origin:', origin);
+      callback(null, false);
+    }
+  },
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+};
+
+// Handle preflight OPTIONS requests for all routes
+app.options('*', cors(corsOptions));
+
+// Apply CORS to all routes (only once)
+app.use(cors(corsOptions));
+
+// ─── 2. Body Parsers ─────────────────────────────────────────────────────────
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// ─── 3. Security Middlewares ──────────────────────────────────────────────────
+
+// Helmet for Security Headers with CSP
+>>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -165,11 +227,17 @@ app.use(helmet({
       "img-src": ["'self'", "data:", "blob:", "https://res.cloudinary.com", "https://images.unsplash.com", "https://*.google.com", "https://*.googleusercontent.com", "https://i.ytimg.com", "https://yt3.ggpht.com", "https://ui-avatars.com", "https://cdni.iconscout.com"],
       "script-src": ["'self'", "'unsafe-inline'", "https://www.googletagmanager.com", "https://*.google.com", "https://checkout.razorpay.com"],
       "script-src-attr": ["'unsafe-inline'"],
+<<<<<<< HEAD
       "connect-src": ["'self'", "https://*.google-analytics.com", "https://*.analytics.google.com", "https://*.googletagmanager.com", "https://api.razorpay.com", "https://lms-backend-renvox.onrender.com"]
+=======
+      "connect-src": ["'self'", "https://*.google-analytics.com", "https://*.analytics.google.com", "https://*.googletagmanager.com", "https://api.razorpay.com", "https://lpm.razorpay.com", "https://checkout.razorpay.com", "https://lms-backend-renvox.onrender.com", "https://renvox-ai.onrender.com"]
+
+>>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
     },
   },
 }));
 
+<<<<<<< HEAD
 // 2. Rate Limiting to prevent API abuse/DoS
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -177,6 +245,15 @@ const apiLimiter = rateLimit({
   message: { ok: false, message: "Too many requests from this IP, please try again after 15 minutes." },
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+=======
+// ─── 4. Rate Limiting (requires trust proxy to be set above) ─────────────────
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 1000,
+  message: { ok: false, message: "Too many requests from this IP, please try again after 15 minutes." },
+  standardHeaders: true,
+  legacyHeaders: false,
+>>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
   handler: (req, res, next, options) => {
     logSuspiciousActivity('Rate limit exceeded', req);
     res.status(options.statusCode).send(options.message);
@@ -186,13 +263,18 @@ const apiLimiter = rateLimit({
 // Apply rate limiter to all API routes
 app.use('/api/', apiLimiter);
 
+<<<<<<< HEAD
 // 3. XSS Protection — skip multipart/form-data (file uploads) to avoid corrupting them
+=======
+// ─── 5. XSS Protection — skip multipart/form-data (file uploads) ─────────────
+>>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
 app.use((req, res, next) => {
     const ct = req.headers['content-type'] || '';
     if (ct.startsWith('multipart/form-data')) return next();
     xss()(req, res, next);
 });
 
+<<<<<<< HEAD
 // 4. CORS Configuration — allow all localhost origins in development
 app.use(cors({
   origin: function (origin, callback) {
@@ -226,6 +308,8 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 const { logSuspiciousActivity } = require('./middleware/security');
+=======
+>>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
 
 
 // Express Session Middleware
@@ -242,8 +326,14 @@ app.use(passport.session());
 // Serve frontend static files from the specialized 'public' directory
 app.use(express.static(path.join(__dirname, 'public'), {
   maxAge: '1y',
+<<<<<<< HEAD
   setHeaders: (res, path) => {
     if (path.endsWith('.html')) {
+=======
+  setHeaders: (res, filePath) => {
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Content-Type', 'text/html');
+>>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
       res.setHeader('Cache-Control', 'no-cache');
     }
   }
@@ -310,6 +400,12 @@ app.use((err, req, res, next) => {
     next(err);
 });
 
+<<<<<<< HEAD
+=======
+// ─── Premium Course Routes ─────────────────────────────────────
+app.use('/api/premium', require('./routes/premiumCourseRoutes'));
+
+>>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
 // ─── Course Platform Routes ───────────────────────────────────
 app.use('/api/payments', paymentRoutes);
 app.use('/api/enrollments', enrollmentRoutes);

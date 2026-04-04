@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<<<<<<< HEAD
     <title>Certificate Courses — RENVOX</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
@@ -527,10 +528,118 @@
         .toast.error {
             background: var(--red);
         }
+=======
+    <title>Certificate Courses — RENVOX AI</title>
+
+    <!-- 1. External Resources (Allowed by backend CSP) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- 2. Local Stylesheets -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/navigation.css">
+
+    <!-- 3. Core Framework Scripts -->
+    <script src="js/navigation.js" defer></script>
+    <!-- <script src="js/analytics.js" defer></script> -->
+
+    <style>
+        :root {
+            --brand: #4f46e5;
+            --brand-light: #818cf8;
+            --green: #10b981;
+            --orange: #f59e0b;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --premium: linear-gradient(135deg, #7c3aed, #a855f7);
+        }
+
+        body {
+            background-color: var(--bg);
+            font-family: 'Inter', sans-serif;
+            color: var(--text-main);
+            margin: 0;
+            padding-top: 80px; /* Space for fixed navbar */
+        }
+
+        /* ── Hero ── */
+        .hero {
+            background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+            padding: 50px 20px;
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        .hero h1 { font-size: 2.3rem; font-weight: 800; margin: 0 0 10px; }
+        .hero p { opacity: 0.9; margin: 0 auto; max-width: 650px; }
+
+        /* ── Grid ── */
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+        .course-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+            margin-top: 40px;
+            margin-bottom: 60px;
+        }
+
+        /* ── Card ── */
+        .card {
+            background: var(--card);
+            border-radius: 14px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover { transform: translateY(-6px); box-shadow: 0 15px 30px rgba(0,0,0,0.08); border-color: var(--brand); }
+
+        .card-header {
+            padding: 35px 20px; text-align: center; color: white;
+        }
+        .card-header.free { background: linear-gradient(135deg, #059669, #10b981); }
+        .card-header.premium { background: var(--premium); }
+
+        .course-icon { font-size: 3rem; margin-bottom: 12px; }
+        .course-title { font-size: 1.2rem; font-weight: 700; margin: 0; }
+
+        .card-body { padding: 25px; flex-grow: 1; display: flex; flex-direction: column; }
+        .course-desc { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 25px; line-height: 1.6; min-height: 44px; }
+
+        .card-actions { margin-top: auto; }
+
+        /* ── Buttons ── */
+        .btn-action {
+            display: block; width: 100%; padding: 13px; border-radius: 10px;
+            font-weight: 700; text-align: center; text-decoration: none;
+            font-size: 0.95rem; border: none; font-family: inherit;
+            cursor: pointer; transition: all 0.2s;
+            background: var(--brand); color: white;
+        }
+        .btn-action:hover { filter: brightness(1.1); transform: scale(1.01); }
+        .btn-free { background: var(--green); }
+        .btn-premium { background: var(--orange); }
+
+        /* ── Toast ── */
+        .toast {
+            position: fixed; bottom: 25px; right: 25px; padding: 14px 28px;
+            border-radius: 10px; background: #1e293b; color: white;
+            font-weight: 600; box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+            transform: translateY(120px); transition: transform 0.3s; z-index: 10000;
+        }
+        .toast.show { transform: translateY(0); }
+>>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
     </style>
 </head>
 
 <body>
+<<<<<<< HEAD
 
     <!-- ═══════════ NAVBAR ═══════════ -->
     <nav class="navbar" id="navbar">
@@ -540,12 +649,22 @@
                 <input type="text" id="navbarSearch" placeholder="Search for courses, subjects, or concepts...">
                 <button type="button" onclick="handleNavbarSearch()"><i class="fas fa-search"></i></button>
             </div>
+=======
+    <!-- Navbar -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo">
+                <img src="images/logo%20renvox.png" alt="RENVOX">
+                <span>RENVOX AI</span>
+            </a>
+>>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
             <ul class="nav-menu" id="navMenu"></ul>
             <div class="nav-buttons" id="navButtons"></div>
             <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
         </div>
     </nav>
 
+<<<<<<< HEAD
     <!-- ═══════════ PROGRESS BANNER (logged-in users) ═══════════ -->
     <div class="progress-banner" id="progressBanner">
         <div class="pbstat"><strong id="pbEnrolled">0</strong> Enrolled</div>
@@ -936,6 +1055,31 @@
             setTimeout(() => t.classList.remove('show'), 3000);
         }
     </script>
+=======
+    <!-- Header -->
+    <section class="hero">
+        <div class="container">
+            <h1>🚀 Level Up Your AI Skills</h1>
+            <p>Enroll in industry-leading courses today. Complete the modules and earn your official RENVOX certificate for free.</p>
+        </div>
+    </section>
+
+    <!-- Course Listing -->
+    <main class="container">
+        <div class="course-grid" id="courseGrid">
+            <!-- Loading State -->
+            <div style="grid-column: 1/-1; text-align: center; padding: 50px;">
+                <i class="fas fa-circle-notch fa-spin" style="font-size: 2.5rem; color: var(--brand);"></i>
+                <p style="margin-top: 15px; color: var(--text-muted);">Getting your courses ready...</p>
+            </div>
+        </div>
+    </main>
+
+    <div class="toast" id="toast"></div>
+
+    <!-- 4. PAGE LOGIC SCRIPT (External for Security) -->
+    <script src="js/certificates.js" defer></script>
+>>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
 </body>
 
 </html>

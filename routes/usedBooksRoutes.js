@@ -122,21 +122,45 @@ router.get('/:id', async (req, res) => {
 // ──────────────────────────────────────────────────────────────────────────────
 router.post('/add', requireAuth, upload.single('image'), async (req, res) => {
     try {
+<<<<<<< HEAD
+=======
+        console.log("Incoming body:", req.body);
+        if (!req.body) {
+            return res.status(400).json({ message: "No data provided" });
+        }
+
+>>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
         const { title, author, category, condition, price, description, location, contactNumber } = req.body;
 
         if (!title || !author || !price) {
             return res.status(400).json({ ok: false, message: 'Title, author and price are required' });
         }
 
+<<<<<<< HEAD
+=======
+        // Safe fallback user
+        const userId = req.user?.id || req.userId || "guest";
+
+>>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
         // Pull user info from DB for sellerName & email (or use token payload fallback)
         let sellerName = req.userName || 'Anonymous';
         let sellerEmail = req.userEmail || '';
 
+<<<<<<< HEAD
         try {
             const User = require('../models/User');
             const user = await User.findById(req.userId).select('name email');
             if (user) { sellerName = user.name || sellerName; sellerEmail = user.email || sellerEmail; }
         } catch (_) { /* use fallback */ }
+=======
+        if (userId !== "guest") {
+            try {
+                const User = require('../models/User');
+                const user = await User.findById(userId).select('name email');
+                if (user) { sellerName = user.name || sellerName; sellerEmail = user.email || sellerEmail; }
+            } catch (_) { /* use fallback */ }
+        }
+>>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
 
         const imageFilename = req.file ? req.file.filename : '';
 
@@ -150,16 +174,30 @@ router.post('/add', requireAuth, upload.single('image'), async (req, res) => {
             image: imageFilename,
             location: location || '',
             contactNumber: contactNumber || '',
+<<<<<<< HEAD
             sellerId: req.userId,
+=======
+            sellerId: userId,
+>>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
             sellerName,
             sellerEmail,
             status: 'active'
         });
 
         await book.save();
+<<<<<<< HEAD
         res.status(201).json({ ok: true, message: 'Book listed successfully!', book });
     } catch (err) {
         res.status(500).json({ ok: false, message: err.message });
+=======
+        return res.json({ ok: true, success: true, message: 'Operation successful', book });
+    } catch (err) {
+        console.error("API ERROR:", err);
+        res.status(500).json({
+            message: err.message,
+            stack: err.stack
+        });
+>>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
     }
 });
 

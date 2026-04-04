@@ -139,16 +139,28 @@ router.get('/books', requireStoreAuth, requireProfile, async (req, res) => {
 // ─────────────────────────────────────────────────────────────
 router.post('/books', requireStoreAuth, requireProfile, async (req, res) => {
     try {
+<<<<<<< HEAD
         const user = req.storeUser;
         const { title, author, subject, category, condition, isFree, price, contact, img } = req.body;
+=======
+        console.log("Incoming body:", req.body);
+        if (!req.body) {
+            return res.status(400).json({ message: "No data provided" });
+        }
+>>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
 
-        if (!title || !title.trim()) return res.status(400).json({ ok: false, message: 'Book title is required.' });
+        const { title, author, subject, category, condition, isFree, price, contact, img } = req.body;
+
+        if (!title || !title.trim()) {
+            return res.status(400).json({ ok: false, message: 'Book title is required.' });
+        }
 
         // Validate image size (base64 ~1.37x actual; 5MB → ~7MB base64)
         if (img && img.length > 7 * 1024 * 1024) {
             return res.status(400).json({ ok: false, message: 'Image too large. Please use a photo under 5 MB.' });
         }
 
+<<<<<<< HEAD
         // ── Auto-create or find a Seller record for this user ──────────────
         let seller = await Seller.findOne({ userId: user._id });
         if (!seller) {
@@ -174,14 +186,47 @@ router.post('/books', requireStoreAuth, requireProfile, async (req, res) => {
             // Re-activate if previously inactive
             seller.status = 'active';
             await seller.save();
+=======
+        // Safe fallback user
+        const userId = req.user?.id || req.storeUser?._id || "guest";
+        const user = req.storeUser || { _id: userId, name: "Guest User", email: "", role: "college", collegeName: "" };
+
+        // ── Auto-create or find a Seller record for this user ──────────────
+        let seller = null;
+        if (userId !== "guest") {
+            seller = await Seller.findOne({ userId });
+            if (!seller) {
+                seller = await Seller.create({
+                    userId,
+                    sellerType: 'Individual',
+                    businessInfo: { businessName: user.name || 'RENVOX Store Seller' },
+                    address: { city: 'India', state: '', country: 'India' },
+                    contactInfo: {
+                        phoneNumber: contact || '0000000000',
+                        email: user.email || ''
+                    },
+                    collegeInstitute: user.collegeName || '',
+                    status: 'active'
+                });
+            } else if (seller.status !== 'active') {
+                seller.status = 'active';
+                await seller.save();
+            }
+>>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
         }
 
         // ── Calculate price fields ─────────────────────────────────────────
         const sellingPrice = isFree ? 0 : (Number(price) || 0);
+<<<<<<< HEAD
         const mrp = sellingPrice;   // for peer-to-peer store, MRP = selling price
         const discount = 0;
 
         // ── Build images array ────────────────────────────────────────────
+=======
+        const mrp = sellingPrice;
+        const discount = 0;
+
+>>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
         const images = img ? [{ imageType: 'front_cover', imageUrl: img }] : [];
 
         const book = await Book.create({
@@ -190,6 +235,7 @@ router.post('/books', requireStoreAuth, requireProfile, async (req, res) => {
             category: category || subject || 'General',
             description: (subject || '').trim(),
             condition: condition || 'Used',
+<<<<<<< HEAD
             price: {
                 mrp,
                 sellingPrice,
@@ -208,16 +254,36 @@ router.post('/books', requireStoreAuth, requireProfile, async (req, res) => {
                 contactNumber: contact || seller.contactInfo.phoneNumber,
                 email: user.email || seller.contactInfo.email,
                 address: seller.address,
+=======
+            price: { mrp, sellingPrice, discount },
+            images,
+            stock: { totalQuantity: 1, availableQuantity: 1, reorderLevel: 1 },
+            seller: {
+                sellerId: seller ? seller._id : null,
+                sellerType: seller ? seller.sellerType : 'Individual',
+                sellerName: seller ? seller.businessInfo.businessName : 'Guest',
+                contactNumber: contact || (seller ? seller.contactInfo.phoneNumber : ''),
+                email: user.email || (seller ? seller.contactInfo.email : ''),
+                address: seller ? seller.address : null,
+>>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
                 collegeInstitute: user.collegeName || ''
             },
             tags: [subject, category].filter(Boolean),
             status: 'active'
         });
 
-        res.json({ ok: true, message: 'Book listed!', book });
+        return res.json({ ok: true, success: true, message: 'Operation successful', book });
     } catch (err) {
+<<<<<<< HEAD
         console.error('Add Book Error:', err.message, err.stack);
         res.status(500).json({ ok: false, message: err.message || 'Could not list book' });
+=======
+        console.error("API ERROR:", err);
+        res.status(500).json({
+            message: err.message,
+            stack: err.stack
+        });
+>>>>>>> 50e7be1d013f899c684d287b975c9092d691640c
     }
 });
 
