@@ -36,20 +36,21 @@ async function isEnrolled(userId, courseId) {
             $or: searchOrs
         });
         if (enrollment) return true;
+
+        // Legacy: check User.enrolledCourses string array 
+        const user = String(userId).match(/^[0-9a-fA-F]{24}$/) ? await User.findById(userId) : await User.findOne({ email: String(userId) });
+        return !!(user && user.enrolledCourses &&
+            (user.enrolledCourses.includes(String(courseId)) ||
+                user.enrolledCourses.some(c =>
+                    c.toLowerCase() === String(courseId).toLowerCase() ||
+                    searchOrs.some(s => s.courseId && c.toLowerCase() === String(s.courseId).toLowerCase())
+                )
+            )
+        );
     } catch (e) {
         console.warn("isEnrolled error", e.message);
+        return false;
     }
-
-    // Legacy: check User.enrolledCourses string array 
-    const user = String(userId).match(/^[0-9a-fA-F]{24}$/) ? await User.findById(userId) : await User.findOne({ email: String(userId) });
-    return !!(user && user.enrolledCourses &&
-        (user.enrolledCourses.includes(String(courseId)) ||
-         user.enrolledCourses.some(c =>
-            c.toLowerCase() === String(courseId).toLowerCase() ||
-            searchOrs.some(s => s.courseId && c.toLowerCase() === String(s.courseId).toLowerCase())
-         )
-        )
-    );
 }
 
 // ─── GET /api/premium/courses ─────────────────────────────────────────────────

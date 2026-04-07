@@ -121,6 +121,16 @@ router.post('/:id/approve', async (req, res) => {
         );
 
         res.json({ ok: true, message: 'Payment approved. User enrolled in course.' });
+
+        // ── Real-time Dashboard Update ──
+        if (req.app && req.app.get('io')) {
+            const io = req.app.get('io');
+            io.to(`user:${payment.userId}`).emit('dashboard_update', {
+                type: 'PURCHASE_COMPLETE',
+                title: payment.courseName,
+                message: `Admin approved your payment for ${payment.courseName}!`
+            });
+        }
     } catch (err) {
         console.error('Approve Error:', err);
         res.status(500).json({ ok: false, message: err.message });

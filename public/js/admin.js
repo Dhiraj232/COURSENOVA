@@ -83,6 +83,13 @@ async function loadView(view) {
                 title.textContent = 'Question Management';
                 renderQuestionsUI();
                 break;
+
+            case 'marketplace':
+                title.textContent = 'Marketplace Overview';
+                const mktRes = await fetch(`${API_BASE}/marketplace-stats`, { headers });
+                const mktData = await mktRes.json();
+                renderMarketplace(mktData.stats);
+                break;
         }
     } catch (err) {
         contentArea.innerHTML = `<div class="error-state"><i class="fas fa-exclamation-circle"></i><p>Error loading data: ${err.message}</p></div>`;
@@ -296,4 +303,48 @@ async function handleBulkUpload() {
     } catch (e) {
         alert('Invalid JSON format. Please check your data.');
     }
+}
+function renderMarketplace(stats) {
+    const content = document.getElementById('content-area');
+    content.innerHTML = `
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon blue"><i class="fas fa-book"></i></div>
+                <div class="stat-info">
+                    <span class="stat-value">${stats.totalListings}</span>
+                    <span class="stat-label">Total Listings</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
+                <div class="stat-info">
+                    <span class="stat-value">${stats.totalSold}</span>
+                    <span class="stat-label">Books Sold</span>
+                </div>
+            </div>
+            <div class="stat-card" style="grid-column: span 2;">
+                <div class="stat-icon orange"><i class="fas fa-hand-holding-usd"></i></div>
+                <div class="stat-info">
+                    <span class="stat-value">₹${stats.totalCommissions}</span>
+                    <span class="stat-label">Total Commissions Earned</span>
+                </div>
+            </div>
+        </div>
+        
+        <div class="admin-card">
+            <div class="card-header">
+                <h3>Marketplace Performance</h3>
+            </div>
+            <div style="padding: 30px;">
+                <p>Commissions are automatically calculated (5%) when students mark their books as <strong>Sold</strong>.</p>
+                <div style="margin-top: 20px; padding: 20px; background: #f8fafc; border-radius: 12px; border: 1px solid var(--border);">
+                    <h4 style="margin-bottom: 10px;">Platform Insights</h4>
+                    <ul>
+                        <li>Conversion Rate: <strong>${stats.totalListings ? ((stats.totalSold / stats.totalListings) * 100).toFixed(1) : 0}%</strong></li>
+                        <li>Average Commission per Sale: <strong>₹${stats.totalSold ? (stats.totalCommissions / stats.totalSold).toFixed(2) : 0}</strong></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    `;
 }

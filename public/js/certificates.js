@@ -27,7 +27,18 @@
             const result = await response.json();
 
             if (result.ok && Array.isArray(result.courses)) {
-                displayCourses(result.courses);
+                // Handle URL filtering
+                const urlParams = new URLSearchParams(window.location.search);
+                const filter = urlParams.get('filter');
+                let filteredCourses = result.courses;
+
+                if (filter === 'free') {
+                    filteredCourses = result.courses.filter(c => c.isFree === true || Number(c.price) === 0);
+                } else if (filter === 'premium') {
+                    filteredCourses = result.courses.filter(c => c.isFree === false && Number(c.price) > 0);
+                }
+
+                displayCourses(filteredCourses);
             } else {
                 catalogGrid.innerHTML = '<p style="grid-column: 1/-1; text-align:center; padding: 40px;">No courses could be found. Please refresh the page.</p>';
             }

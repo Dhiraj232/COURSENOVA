@@ -84,36 +84,52 @@
                     <div class="stat-info">
                         <h4 id="enrolledCount">0</h4>
                         <p>Courses Enrolled</p>
-                        <small id="courseBreakdown" style="font-size: 0.7rem; color: #6366f1; font-weight: 600;">0 Paid • 0 Free</small>
                     </div>
                 </div>
                 <div class="stat-card glass">
-                    <div class="stat-icon blue"><i class="fas fa-users"></i></div>
+                    <div class="stat-icon green"><i class="fas fa-fire"></i></div>
                     <div class="stat-info">
-                        <h4 id="batchesCount">0</h4>
-                        <p>Batches Joined</p>
+                        <h4 id="streakDisplay">0 Days</h4>
+                        <p>Daily Streak</p>
                     </div>
                 </div>
                 <div class="stat-card glass">
-                    <div class="stat-icon orange"><i class="fas fa-book"></i></div>
-                    <div class="stat-info">
-                        <h4 id="booksCount">0</h4>
-                        <p>Books Purchased</p>
-                    </div>
-                </div>
-                <div class="stat-card glass">
-                    <div class="stat-icon red"><i class="fas fa-vial"></i></div>
+                    <div class="stat-icon blue"><i class="fas fa-vial"></i></div>
                     <div class="stat-info">
                         <h4 id="testsTakenCount">0</h4>
                         <p>Tests Attempted</p>
-                        <small id="testBreakdown" style="font-size: 0.7rem; color: #ef4444; font-weight: 600;">0 Paid • 0 Free</small>
                     </div>
                 </div>
                 <div class="stat-card glass">
-                    <div class="stat-icon green"><i class="fas fa-clock"></i></div>
+                    <div class="stat-icon orange"><i class="fas fa-clock"></i></div>
                     <div class="stat-info">
-                        <h4 id="timeSpentCount">0h</h4>
-                        <p>Time Spent</p>
+                        <h4 id="timeSpentCount">0m</h4>
+                        <p>Active Learning</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- A2. MARKETPLACE RIBBON -->
+            <section class="stats-ribbon secondary">
+                <div class="stat-card glass">
+                    <div class="stat-icon emerald"><i class="fas fa-wallet"></i></div>
+                    <div class="stat-info">
+                        <h4 id="mktEarnings">₹0</h4>
+                        <p>Total Earnings</p>
+                    </div>
+                </div>
+                <div class="stat-card glass">
+                    <div class="stat-icon blue"><i class="fas fa-list"></i></div>
+                    <div class="stat-info">
+                        <h4 id="mktListed">0</h4>
+                        <p>Books Listed</p>
+                    </div>
+                </div>
+                <div class="stat-card glass">
+                    <div class="stat-icon orange"><i class="fas fa-check-circle"></i></div>
+                    <div class="stat-info">
+                        <h4 id="mktSold">0</h4>
+                        <p>Books Sold</p>
                     </div>
                 </div>
             </section>
@@ -153,6 +169,16 @@
                         </div>
                         <div class="canvas-container" style="height: 250px; margin-top: 20px;">
                             <canvas id="performanceChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- F. WEEKLY ACTIVITY CHART -->
+                    <div class="chart-card glass">
+                        <div class="card-header">
+                            <h3><i class="fas fa-chart-line"></i> Weekly Engagement</h3>
+                        </div>
+                        <div class="canvas-container" style="height: 200px;">
+                            <canvas id="weeklyActivityChart"></canvas>
                         </div>
                     </div>
                 </div>

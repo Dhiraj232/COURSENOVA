@@ -534,137 +534,29 @@
         const API = '';
         const token = localStorage.getItem('renvox_token') || localStorage.getItem('renvoxToken') || '';
 
-        // ─── Course Definitions ───
-        const COURSES = [
-            {
-                id: 'C Programming Fundamentals',
-                title: 'C Programming Fundamentals',
-                icon: '💻', level: 'Beginner',
-                duration: '4 Weeks', assignments: 8,
-                description: 'Master C programming from scratch with practical assignments and real-world system programming projects.',
-                highlights: ['8 Assignments', 'Live Projects', '40+ Hours Content', 'Job Ready Skills'],
-                price: 799, isFree: false
-            },
-            {
-                id: 'Data Structures Advanced',
-                title: 'Data Structures Advanced',
-                icon: '🔗', level: 'Intermediate',
-                duration: '6 Weeks', assignments: 12,
-                description: 'Deep dive into data structures with interview prep, competitive programming challenges and complexity analysis.',
-                highlights: ['12 Assignments', 'Interview Questions', 'Coding Challenges', 'Certificate'],
-                price: 1199, isFree: false
-            },
-            {
-                id: 'Web Development Bootcamp',
-                title: 'Web Development Bootcamp',
-                icon: '🌐', level: 'Intermediate',
-                duration: '8 Weeks', assignments: 10,
-                description: 'Complete full-stack web development covering HTML, CSS, JavaScript, Node.js, and React with real projects.',
-                highlights: ['10 Projects', 'Portfolio Ready', 'Job Support', 'Lifetime Access'],
-                price: 1999, isFree: false
-            },
-            {
-                id: 'Python for Data Science',
-                title: 'Python for Data Science',
-                icon: '🐍', level: 'Intermediate',
-                duration: '5 Weeks', assignments: 7,
-                description: 'Learn Python with NumPy, Pandas, Matplotlib, and Scikit-Learn for real-world data science applications.',
-                highlights: ['7 Projects', 'Real Datasets', 'ML Basics', 'Career Ready'],
-                price: 999, isFree: false
-            },
-            {
-                id: 'Database Management Systems',
-                title: 'Database Management Systems',
-                icon: '🗄️', level: 'Beginner',
-                duration: '3 Weeks', assignments: 5,
-                description: 'Master DBMS concepts, SQL queries, database design, normalization and practical database management.',
-                highlights: ['5 Assignments', 'SQL Mastery', 'Database Design', 'Verified Cert'],
-                price: 599, isFree: false
-            },
-            {
-                id: 'Learning Essentials (Free)',
-                title: 'Learning Essentials',
-                icon: '📚', level: 'Beginner',
-                duration: '2 Weeks', assignments: 3,
-                description: 'Free starter course to understand the RENVOX platform, effective learning basics and study techniques.',
-                highlights: ['3 Assignments', 'Free Access', 'Digital Certificate', 'No Credit Card'],
-                price: 0, isFree: true
-            },
-            {
-                id: 'Frontend Developer',
-                title: 'Frontend Developer',
-                icon: '🎨', level: 'Intermediate',
-                duration: '6 Weeks', assignments: 10,
-                description: 'Become a job-ready frontend developer. Learn HTML5, CSS3, responsive design, JavaScript DOM, React basics and build stunning UIs.',
-                highlights: ['10 Projects', 'React Basics', 'Responsive Design', 'Portfolio Ready'],
-                price: 1499, isFree: false
-            },
-            {
-                id: 'Time Management',
-                title: 'Time Management',
-                icon: '⏰', level: 'Beginner',
-                duration: '2 Weeks', assignments: 4,
-                description: 'Master productivity techniques used by top performers. Learn Pomodoro, GTD, time-blocking and eliminate procrastination for good.',
-                highlights: ['4 Assignments', 'Productivity Tools', 'Life Skills', 'Digital Certificate'],
-                price: 399, isFree: false
-            },
-            {
-                id: 'JavaScript Advanced',
-                title: 'JavaScript Advanced',
-                icon: '⚡', level: 'Intermediate',
-                duration: '5 Weeks', assignments: 8,
-                description: 'Go beyond the basics. Master closures, async/await, Promises, ES6+, design patterns and how JavaScript works under the hood.',
-                highlights: ['8 Projects', 'ES6+ Mastery', 'Async JS', 'Interview Ready'],
-                price: 999, isFree: false
-            },
-            {
-                id: 'Web Design',
-                title: 'Web Design',
-                icon: '🖌️', level: 'Beginner',
-                duration: '3 Weeks', assignments: 6,
-                description: 'Learn modern UI/UX principles, color theory, typography, Figma wireframing and build beautiful, user-friendly websites from scratch.',
-                highlights: ['6 Assignments', 'Figma Skills', 'UI/UX Basics', 'Design Portfolio'],
-                price: 699, isFree: false
-            },
-            {
-                id: 'Communication Skills',
-                title: 'Communication Skills',
-                icon: '🗣️', level: 'Beginner',
-                duration: '2 Weeks', assignments: 4,
-                description: 'Build confidence in spoken and written English. Learn professional email writing, public speaking, body language and workplace communication.',
-                highlights: ['4 Assignments', 'Mock Interviews', 'Email Writing', 'Career Boost'],
-                price: 499, isFree: false
-            },
-            {
-                id: 'Renvox AI Masterclass',
-                title: 'Renvox AI Masterclass',
-                icon: '🚀', level: 'Beginner',
-                duration: '1 Week', assignments: 1,
-                description: 'A complete guided masterclass on using Renvox AI to its full potential. Includes hands-on projects and a verified certificate.',
-                highlights: ['One-click Unlock', 'Hands-on Projects', 'Verified Certificate', 'Special ₹1 Price'],
-                price: 1, isFree: false
-            }
-        ];
-
+        let COURSES = [];
         let enrolledIds = [];
         let completedMap = {};
         let progressMap = {};
 
         // ─── Init ───
-        document.getElementById('skeletonGrid').innerHTML = COURSES.map(() => `
-        <div class="skeleton-card">
-            <div class="skel-header"></div>
-            <div class="skel-body">
-                <div class="skel-line"></div>
-                <div class="skel-line short"></div>
-                <div class="skel-line"></div>
-                <div class="skel-line short"></div>
-            </div>
-        </div>`).join('');
-
         window.addEventListener('DOMContentLoaded', async () => {
             if (!token) document.getElementById('loginCta').style.display = 'block';
+            
+            // Show skeletons while loading
+            document.getElementById('skeletonGrid').innerHTML = Array(6).fill(0).map(() => `
+            <div class="skeleton-card">
+                <div class="skel-header"></div>
+                <div class="skel-body">
+                    <div class="skel-line"></div>
+                    <div class="skel-line short"></div>
+                    <div class="skel-line"></div>
+                    <div class="skel-line short"></div>
+                </div>
+            </div>`).join('');
+
             await loadUserStatus();
+            await fetchCoursesFromServer();
 
             // ── 0. Handle Post-Payment Verification ──────────────────────────
             const urlParams = new URLSearchParams(window.location.search);
@@ -683,6 +575,7 @@
                         const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
                         window.history.replaceState({ path: cleanUrl }, '', cleanUrl);
                         await loadUserStatus(); // Refresh dashboard
+                        await fetchCoursesFromServer(); // Refresh courses list
                     } else {
                         alert('Payment verification failed: ' + vData.message);
                     }
@@ -692,8 +585,7 @@
             }
 
             const searchQuery = urlParams.get('search');
-            // ... rest of init logic
-
+            
             if (searchQuery) {
                 const filtered = COURSES.filter(c =>
                     c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -707,34 +599,54 @@
             hideSkeleton();
         });
 
+        async function fetchCoursesFromServer() {
+            try {
+                const res = await fetch(`${API}/api/premium/courses`, {
+                    headers: token ? { Authorization: `Bearer ${token}` } : {}
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    // Map API response to local COURSES format
+                    COURSES = data.courses.map(c => ({
+                        id: c.slug || c._id,
+                        _mongodb_id: c._id,
+                        title: c.title,
+                        icon: c.icon || '🎓',
+                        level: c.level || 'Beginner',
+                        duration: c.duration || '4 Weeks',
+                        assignments: (c.quizQuestions || []).length || 1,
+                        description: c.description || '',
+                        highlights: c.highlights || ['Verified Certificate', 'Full Access'],
+                        price: c.price,
+                        isFree: c.isFree
+                    }));
+                }
+            } catch (err) {
+                console.error('Failed to fetch courses:', err);
+            }
+        }
+
         async function loadUserStatus() {
             if (!token) return;
             try {
-                const [statusRes, progResults] = await Promise.all([
-                    fetch(`${API}/api/enrollments/all-status`, { headers: { Authorization: `Bearer ${token}` } }),
-                    Promise.all(COURSES.map(c =>
-                        fetch(`${API}/api/course/progress?courseId=${encodeURIComponent(c.id)}`, { headers: { Authorization: `Bearer ${token}` } })
-                            .then(r => r.json()).catch(() => ({ ok: false }))
-                    ))
-                ]);
-
-                const status = await statusRes.json();
-                enrolledIds = status.enrolled || [];
-                completedMap = {};
-                (status.completed || []).forEach(c => { completedMap[c.courseId] = c; });
-
-                progressMap = {};
-                COURSES.forEach((c, i) => {
-                    const rec = progResults[i]?.record;
-                    if (rec) progressMap[c.id] = rec.progressPercent || 0;
+                const statusRes = await fetch(`${API}/api/enrollments/all-status`, { 
+                    headers: { Authorization: `Bearer ${token}` } 
                 });
+                const status = await statusRes.json();
+                
+                if (status.ok) {
+                    enrolledIds = status.enrolled || [];
+                    completedMap = {};
+                    (status.completed || []).forEach(c => { completedMap[c.courseId] = c; });
 
-                if (enrolledIds.length > 0) {
-                    const banner = document.getElementById('progressBanner');
-                    banner.classList.add('show');
-                    document.getElementById('pbEnrolled').textContent = enrolledIds.length;
-                    document.getElementById('pbCompleted').textContent = Object.keys(completedMap).length;
-                    document.getElementById('pbCerts').textContent = Object.keys(completedMap).length;
+                    // Banner stats
+                    if (enrolledIds.length > 0) {
+                        const banner = document.getElementById('progressBanner');
+                        banner.classList.add('show');
+                        document.getElementById('pbEnrolled').textContent = enrolledIds.length;
+                        document.getElementById('pbCompleted').textContent = Object.keys(completedMap).length;
+                        document.getElementById('pbCerts').textContent = Object.keys(completedMap).length;
+                    }
                 }
             } catch (err) {
                 console.warn('Status load:', err);

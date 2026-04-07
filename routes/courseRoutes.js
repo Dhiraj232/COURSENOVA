@@ -166,6 +166,17 @@ const handleProgress = async (req, res) => {
         record.updatedAt = new Date();
         await record.save();
         res.json({ ok: true, record });
+
+        // ── Real-time Dashboard Update ──
+        if (req.app && req.app.get('io')) {
+            const io = req.app.get('io');
+            io.to(`user:${req.userId}`).emit('dashboard_update', {
+                type: 'PROGRESS_UPDATE',
+                courseId: courseId,
+                progress: record.progressPercent,
+                message: `Progress updated: ${record.progressPercent}%`
+            });
+        }
     } catch (err) {
         console.error('Progress update error:', err);
         res.status(500).json({ ok: false, message: 'Failed to save progress' });
@@ -279,6 +290,17 @@ router.post('/submit-test', async (req, res) => {
             earnedAt: record.earnedAt,
             userName: user ? user.name : 'Student'
         });
+
+        // ── Real-time Dashboard Update ──
+        if (req.app && req.app.get('io')) {
+            const io = req.app.get('io');
+            io.to(`user:${req.userId}`).emit('dashboard_update', {
+                type: passed ? 'TEST_PASSED' : 'TEST_FAILED',
+                title: course ? course.title : courseId,
+                score: score,
+                message: passed ? `Congratulations! You passed the test for ${course ? course.title : courseId}` : `Test attempt completed for ${course ? course.title : courseId}`
+            });
+        }
     } catch (err) {
         console.error('Submit test error:', err);
         res.status(500).json({ ok: false, message: 'Failed to submit test', error: err.message });

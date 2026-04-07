@@ -5,6 +5,7 @@ const Course = require('../models/Course');
 const TestResult = require('../models/TestResult');
 const PracticeQuestion = require('../models/PracticeQuestion');
 const CourseProgress = require('../models/CourseProgress');
+const UsedBook = require('../models/UsedBook');
 const { requireAdmin } = require('../middleware/auth');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/AppError');
@@ -25,6 +26,27 @@ router.get('/stats', requireAdmin, catchAsync(async (req, res) => {
             totalCourses: courseCount,
             totalTests: testCount,
             totalCertificates: certResults
+        }
+    });
+}));
+
+// Marketplace Stats
+router.get('/marketplace-stats', requireAdmin, catchAsync(async (req, res) => {
+    const [totalListings, totalSold, commissions] = await Promise.all([
+        UsedBook.countDocuments(),
+        UsedBook.countDocuments({ status: 'sold' }),
+        UsedBook.aggregate([
+            { $match: { status: 'sold' } },
+            { $group: { _id: null, total: { $sum: "$commission" } } }
+        ])
+    ]);
+
+    res.json({
+        ok: true,
+        stats: {
+            totalListings,
+            totalSold,
+            totalCommissions: commissions.length > 0 ? commissions[0].total : 0
         }
     });
 }));

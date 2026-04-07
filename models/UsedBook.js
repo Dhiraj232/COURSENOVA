@@ -16,10 +16,18 @@ const UsedBookSchema = new mongoose.Schema({
     price: { type: Number, required: true, min: 0 },
     description: { type: String, default: '' },
     image: { type: String, default: '' },  // filename stored by Multer
-    location: { type: String, default: '' },
+    
+    // --- Marketplace Upgrades ---
+    college: { type: String, required: true, index: true }, // Required for Nearby Marketplace
+    location: {
+        type: { type: String, enum: ['Point'], default: 'Point' },
+        coordinates: { type: [Number], default: [0, 0] } // [longitude, latitude]
+    },
     contactNumber: { type: String, default: '' },
+    whatsapp: { type: String, default: '' },
+    commission: { type: Number, default: 0 }, // 5% or 10rs (calculated on SOLD)
 
-    // Seller info (stored at list-time, no separate Seller collection needed)
+    // Seller info
     sellerId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     sellerName: { type: String, required: true },
     sellerEmail: { type: String, default: '' },
@@ -28,9 +36,12 @@ const UsedBookSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 });
 
+// Indexes
+UsedBookSchema.index({ location: '2dsphere' });
 UsedBookSchema.index({ title: 'text', author: 'text', description: 'text' });
 UsedBookSchema.index({ category: 1, status: 1 });
 UsedBookSchema.index({ sellerId: 1 });
+UsedBookSchema.index({ college: 1 });
 UsedBookSchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model('UsedBook', UsedBookSchema);

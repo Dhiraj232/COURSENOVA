@@ -1052,8 +1052,18 @@
                 </div>
 
                 <div class="form-field">
-                    <label>Location *</label>
-                    <input type="text" id="fLocation" placeholder="e.g. Delhi, Connaught Place" required>
+                    <label>College Name *</label>
+                    <input type="text" id="fCollege" placeholder="e.g. IIT Delhi" required>
+                </div>
+
+                <div class="form-field">
+                    <label>Location (Auto-captured)</label>
+                    <div id="locStatus" style="font-size: 0.8rem; color: var(--muted); margin-bottom: 5px;">📍 Permission not requested</div>
+                    <button type="button" class="clear-btn" style="margin:0; width:auto; padding:5px 15px;" onclick="requestLocation()">
+                        Update Location
+                    </button>
+                    <input type="hidden" id="fLat">
+                    <input type="hidden" id="fLng">
                 </div>
 
                 <div class="form-field">
@@ -1107,10 +1117,39 @@
         let searchDebounceTimer = null;
 
         // --- INIT ---
+        let userLat = null, userLng = null, userCollege = '';
+        
         document.addEventListener('DOMContentLoaded', () => {
+            // Get user info from localStorage if available
+            try {
+                const user = JSON.parse(localStorage.getItem('renvox_user') || '{}');
+                userCollege = user.collegeName || '';
+            } catch(e){}
+
+            requestLocation(true); // Initial silent request
             loadBooks();
             document.getElementById('openSellModal').addEventListener('click', openSellModal);
         });
+
+        async function requestLocation(silent = false) {
+            if (!navigator.geolocation) {
+                if(!silent) showToast("Geolocation not supported", "error");
+                return;
+            }
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    userLat = pos.coords.latitude;
+                    userLng = pos.coords.longitude;
+                    const status = document.getElementById('locStatus');
+                    if(status) status.innerHTML = `📍 Location Captured (${userLat.toFixed(2)}, ${userLng.toFixed(2)})`;
+                    if(!silent) showToast("Location updated!", "success");
+                    if(silent && currentTab === 'browse') applyFilters(); // Refresh with location
+                },
+                (err) => {
+                    if(!silent) showToast("Please allow location for better results", "error");
+                }
+            );
+        }
 
         // --- TAB SWITCH ---
         function switchTab(tab) {
@@ -1164,6 +1203,17 @@
             container.innerHTML = books.map(book => {
                 const imgSrc = book.image ? `${IMG_BASE}${book.image}` : null;
                 const condClass = 'cond-' + (book.condition || 'used').toLowerCase().replace(/\s+/g, '');
+                
+                // Calculate Distance
+                let distHtml = '';
+                if (book.location && book.location.coordinates && userLat && userLng) {
+                    const d = calculateDistance(userLat, userLng, book.location.coordinates[1], book.location.coordinates[0]);
+                    distHtml = `<div class="book-meta" style="color:var(--brand); font-weight:600;">
+                                    <i class="fas fa-location-arrow"></i>
+                                    <span>${d.toFixed(1)} KM away</span>
+                                </div>`;
+                }
+
                 return `
                 <div class="book-card" onclick="goToBook('${book._id}')">
                     <div class="book-img">
@@ -1173,10 +1223,14 @@
                     <div class="book-body">
                         <div class="book-title">${book.title}</div>
                         <div class="book-author">by ${book.author}</div>
-                        <div class="book-meta">
-                            <i class="fas fa-map-marker-alt"></i>
-                            <span>${book.location || 'Location not set'}</span>
+                        
+                        <div class="book-meta" style="margin-bottom: 5px;">
+                            <i class="fas fa-university"></i>
+                            <span>${book.college || 'General'}</span>
                         </div>
+                        
+                        ${distHtml}
+                        
                         <div class="book-footer">
                             <div class="book-price">₹${book.price}</div>
                             <button class="view-btn" onclick="event.stopPropagation(); goToBook('${book._id}')">
@@ -1186,6 +1240,17 @@
                     </div>
                 </div>`;
             }).join('');
+        }
+
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371; // km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
         }
 
         // --- NAVIGATE TO BOOK DETAIL ---
@@ -1217,14 +1282,21 @@
             const condition = document.getElementById('filterCondition').value;
             const minPrice = document.getElementById('filterMinPrice').value;
             const maxPrice = document.getElementById('filterMaxPrice').value;
-            const location = document.getElementById('filterLocation').value.trim();
+            const college = document.getElementById('filterLocation').value.trim();
 
             if (search) params.search = search;
             if (category && category !== 'all') params.category = category;
             if (condition && condition !== 'all') params.condition = condition;
             if (minPrice) params.minPrice = minPrice;
             if (maxPrice) params.maxPrice = maxPrice;
-            if (location) params.location = location;
+            if (college) params.userCollege = college;
+            else if (userCollege) params.userCollege = userCollege;
+
+            if (userLat && userLng) {
+                params.lat = userLat;
+                params.lng = userLng;
+                params.radius = 5000; // 5km
+            }
 
             loadBooks(params);
         }
@@ -1417,8 +1489,12 @@
             fd.append('condition', document.getElementById('fCondition').value);
             fd.append('price', document.getElementById('fPrice').value);
             fd.append('contactNumber', document.getElementById('fContact').value.trim());
-            fd.append('location', document.getElementById('fLocation').value.trim());
+            fd.append('college', document.getElementById('fCollege').value.trim());
             fd.append('description', document.getElementById('fDesc').value.trim());
+            
+            if (userLat) fd.append('lat', userLat);
+            if (userLng) fd.append('lng', userLng);
+
             const imgFile = document.getElementById('fImage').files[0];
             if (imgFile) fd.append('image', imgFile);
 

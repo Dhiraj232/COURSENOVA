@@ -13,257 +13,164 @@ const Batch = require('../models/Batch');
 const Order = require('../models/Order');
 const TimeTracking = require('../models/TimeTracking');
 
-// @route   GET /api/analytics/dashboard
-// @desc    Return comprehensive student analytics for dynamic dashboard
+// ──────────────────────────────────────────────────────────────────────────────
+// GET /api/analytics/dashboard
+// ──────────────────────────────────────────────────────────────────────────────
 router.get('/dashboard', requireAuth, async (req, res) => {
     try {
         const userId = req.userId;
         const uidString = String(userId);
-        
         let queryUserId = userId;
-        if (mongoose.Types.ObjectId.isValid(userId)) {
-            queryUserId = new mongoose.Types.ObjectId(userId);
-        }
+        if (mongoose.Types.ObjectId.isValid(userId)) queryUserId = new mongoose.Types.ObjectId(userId);
 
-        // 1. User Profile
+        // 1. User & Core Analytics
         const user = await StoreUser.findById(userId);
         if (!user) return res.status(404).json({ ok: false, message: 'User not found' });
 
-        const displayName = user.name || (user.email ? user.email.split('@')[0] : 'Learner');
+        let analytics = await UserAnalytics.findOne({ userId: queryUserId });
+        if (!analytics) {
+            analytics = await UserAnalytics.create({ 
+                userId: queryUserId, 
+                dailyActivity: [{ date: new Date().toISOString().split('T')[0], minutes: 0 }] 
+            });
+        }
 
-        // 2. Performance & Test Metrics
+        // 2. Marketplace Stats (Live aggregation)
+        const UsedBook = require('../models/UsedBook');
+        const [mktListed, mktSold, mktPurchased] = await Promise.all([
+            UsedBook.countDocuments({ sellerId: queryUserId }),
+            UsedBook.countDocuments({ sellerId: queryUserId, status: 'sold' }),
+            Order.countDocuments({ 
+                $or: [{ 'buyer.buyerId': queryUserId }, { 'buyer.buyerId': uidString }], 
+                'payment.status': 'completed' 
+            })
+        ]);
+
+        const earningsResult = await UsedBook.aggregate([
+            { $match: { sellerId: queryUserId, status: 'sold' } },
+            { $group: { _id: null, total: { $sum: "$price" } } }
+        ]);
+        const mktEarnings = earningsResult.length > 0 ? earningsResult[0].total : 0;
+
+        // 3. Performance & Test metrics
         const testResults = await TestResult.find({ 
             $or: [{ userId: queryUserId }, { userId: uidString }] 
         }).sort({ timestamp: -1 });
 
         const totalTests = testResults.length;
-        const paidTestsCount = testResults.filter(t => t.paymentId || t.isPaid).length;
-        const freeTestsCount = totalTests - paidTestsCount;
-
-        const avgScore = totalTests > 0
-            ? Math.round(testResults.reduce((acc, t) => acc + (t.score || 0), 0) / totalTests)
-            : 0;
+        const avgScore = totalTests > 0 ? Math.round(testResults.reduce((acc, t) => acc + (t.score || 0), 0) / totalTests) : 0;
         const bestScore = totalTests > 0 ? Math.max(...testResults.map(t => t.score || 0)) : 0;
+        const accuracy = testResults.reduce((acc, t) => acc + (t.totalQuestions || 0), 0) > 0
+            ? Math.round((testResults.reduce((acc, t) => acc + (t.correctQuestions || 0), 0) / testResults.reduce((acc, t) => acc + (t.totalQuestions || 0), 0)) * 100)
+            : 0;
+
+        // 4. Enrollments & Progress
+        const enrollDocs = await Enrollment.find({ $or: [{ userId: queryUserId }, { userId: uidString }] });
+        const allProgress = await CourseProgress.find({ $or: [{ userId: queryUserId }, { userId: uidString }] });
         
-        const totalCorrect = testResults.reduce((acc, t) => acc + (t.correctQuestions || 0), 0);
-        const totalQuestions = testResults.reduce((acc, t) => acc + (t.totalQuestions || 0), 0);
-        const accuracy = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 0;
+        const enrollments = enrollDocs.map(e => ({
+            courseId: e.courseId,
+            courseName: e.courseName,
+            isPaid: e.amount > 0 || !!e.paymentId
+        }));
 
-        // 3. Overview Stats (Counts & Lists)
-        const [enrollDocs, allProgress, analytics, bookOrders, attendedBatches] = await Promise.all([
-            Enrollment.find({ $or: [{ userId: queryUserId }, { userId: uidString }] }),
-            CourseProgress.find({ $or: [{ userId: queryUserId }, { userId: uidString }] }),
-            UserAnalytics.findOne({ userId: queryUserId }),
-            Order.find({ 
-                $or: [{ 'buyer.buyerId': queryUserId }, { 'buyer.buyerId': uidString }], 
-                'payment.status': 'completed' 
-            }).populate('items.bookId'),
-            Batch.find({ enrolledUsers: { $in: [queryUserId, uidString] } })
-        ]);
-
-        // Deduplicate enrollments
-        const enrollMap = new Map();
-        enrollDocs.forEach(e => enrollMap.set(String(e.courseId || e.courseName), e));
-        if (user.enrolledCourses) {
-            user.enrolledCourses.forEach(c => {
-                if (!enrollMap.has(c)) enrollMap.set(c, { courseId: c, courseName: c, purchaseDate: user.createdAt });
-            });
-        }
-        const enrollments = Array.from(enrollMap.values());
-        const paidCoursesCount = enrollments.filter(e => e.amount > 0 || !!e.paymentId).length;
-        const freeCoursesCount = enrollments.length - paidCoursesCount;
-
-        // 4. Detailed content lists for "My Library"
-        const courseProgressDetails = await Promise.all(enrollments.map(async (e) => {
-            let course = await Course.findById(e.courseId);
-            if (!course) {
-                course = await Course.findOne({ $or: [{ title: String(e.courseId) }, { title: String(e.courseName) }] });
-            }
-            const p = allProgress.find(ap => 
-                String(ap.courseId) === String(e.courseId) || (course && String(ap.courseId) === String(course._id))
-            );
+        const courseDetails = await Promise.all(enrollDocs.map(async (e) => {
+            const course = await Course.findById(e.courseId) || await Course.findOne({ title: e.courseName });
+            const p = allProgress.find(ap => String(ap.courseId) === String(e.courseId) || (course && String(ap.courseId) === String(course._id)));
             return {
-                id: course ? String(course._id) : e.courseId,
-                title: course ? course.title : (e.courseName || e.courseId),
-                icon: course ? course.icon : '📚',
+                id: course ? course._id : e.courseId,
+                title: course ? course.title : e.courseName,
                 progress: p ? p.progressPercent : 0,
-                isPaid: (e.amount > 0 || !!e.paymentId || (course && course.price > 0)),
-                updatedAt: (p && p.updatedAt) ? p.updatedAt : (e.purchaseDate || user.createdAt)
+                lastWatched: p ? p.updatedAt : e.purchaseDate
             };
         }));
 
-        const purchasedBooks = bookOrders.flatMap(order => 
-            order.items.map(item => ({
-                id: item.bookId ? item.bookId._id : 'legacy',
-                title: item.bookTitle,
-                price: item.pricePerUnit,
-                purchaseDate: order.createdAt,
-                status: order.status.current
-            }))
-        );
-
-        // 5. Final Payload
         res.json({
             ok: true,
-            user: {
-                id: user._id,
-                name: displayName,
-                email: user.email,
-                avatar: user.picture,
-                role: user.role || 'student'
-            },
+            user: { id: user._id, name: user.name, email: user.email, avatar: user.picture },
             stats: {
                 totalCourses: enrollments.length,
-                paidCourses: paidCoursesCount,
-                freeCourses: freeCoursesCount,
-                totalBatches: attendedBatches.length,
-                totalBooks: purchasedBooks.length,
                 totalTestsTaken: totalTests,
-                paidTests: paidTestsCount,
-                freeTests: freeTestsCount,
-                totalTime: analytics ? analytics.totalTimeSpent : 0,
-                streak: analytics ? analytics.learningStreak : 0,
-                avgScore,
-                bestScore,
-                accuracy
+                totalTime: analytics.totalTimeSpent,
+                streak: analytics.learningStreak,
+                avgScore, bestScore, accuracy,
+                marketplace: {
+                    listed: mktListed,
+                    sold: mktSold,
+                    purchased: mktPurchased,
+                    earnings: mktEarnings
+                }
             },
-            courses: courseProgressDetails,
-            books: purchasedBooks,
-            testResults: testResults.slice(0, 10),
+            courses: courseDetails.sort((a,b) => b.lastWatched - a.lastWatched),
             recentActivities: await Activity.find({ userId: queryUserId }).sort({ timestamp: -1 }).limit(10)
         });
-
     } catch (err) {
-        console.error(' [Dashboard API] Error:', err);
-        res.status(500).json({ ok: false, message: 'Server error retrieving your dashboard data', error: err.message });
-    }
-});
-;
-
-// @route   GET /api/progress/:courseId
-// @desc    Return specific course progress details
-router.get('/progress/:courseId', requireAuth, async (req, res) => {
-    try {
-        const { courseId } = req.params;
-        const progress = await CourseProgress.findOne({ userId: req.userId, courseId });
-        const course = await Course.findOne({
-            $or: [{ title: courseId }, { slug: courseId.toLowerCase().replace(/\s+/g, '-') }]
-        });
-
-        if (!progress) return res.json({ ok: true, progress: { progressPercent: 0, completedLessons: [] } });
-
-        res.json({
-            ok: true,
-            progress: {
-                progressPercent: progress.progressPercent,
-                completedLessons: progress.completedLessons,
-                isCompleted: progress.isCompleted,
-                score: progress.score,
-                certId: progress.certId,
-                totalLessons: course ? course.lessons.length : 0
-            }
-        });
-    } catch (err) {
-        res.status(500).json({ ok: false, message: 'Failed to fetch course progress' });
+        res.status(500).json({ ok: false, message: err.message });
     }
 });
 
-// Maintain legacy /me alias for backwards compatibility
-router.get('/me', requireAuth, async (req, res) => {
-    res.redirect('/api/analytics/dashboard');
-});
-
-// @route   GET /api/analytics/activity
-// @desc    Get detailed activity timeline
-router.get('/activity', requireAuth, async (req, res) => {
+// ──────────────────────────────────────────────────────────────────────────────
+// POST /api/analytics/heartbeat
+// ──────────────────────────────────────────────────────────────────────────────
+router.post('/heartbeat', requireAuth, async (req, res) => {
     try {
-        const activities = await Activity.find({ userId: req.userId })
-            .sort({ timestamp: -1 })
-            .limit(50);
-        res.json({ ok: true, activities });
-    } catch (err) {
-        res.status(500).json({ ok: false, message: 'Failed to fetch activity timeline' });
-    }
-});
-
-// @route   GET /api/analytics/performance
-// @desc    Get detailed performance metrics
-router.get('/performance', requireAuth, async (req, res) => {
-    try {
-        const testResults = await TestResult.find({ userId: req.userId }).sort({ timestamp: -1 });
+        const userId = req.userId;
+        const today = new Date().toISOString().split('T')[0];
         
-        const metrics = {
-            totalTests: testResults.length,
-            avgScore: testResults.length > 0 ? Math.round(testResults.reduce((a, b) => a + b.score, 0) / testResults.length) : 0,
-            bestScore: testResults.length > 0 ? Math.max(...testResults.map(t => t.score)) : 0,
-            accuracy: testResults.length > 0 
-                ? Math.round((testResults.reduce((a, b) => a + (b.correctQuestions || 0), 0) / testResults.reduce((a, b) => a + (b.totalQuestions || 1), 0)) * 100) 
-                : 0,
-            history: testResults
-        };
-
-        res.json({ ok: true, metrics });
-    } catch (err) {
-        res.status(500).json({ ok: false, message: 'Failed to fetch performance data' });
-    }
-});
-
-// @route   POST /api/analytics/time/start
-// @desc    Start a time tracking session
-router.post('/time/start', requireAuth, async (req, res) => {
-    const { context, itemId } = req.body;
-    try {
-        const session = await TimeTracking.create({
-            userId: req.userId,
-            context: context || 'platform',
-            itemId: itemId || null,
-            startTime: new Date()
-        });
-        res.json({ ok: true, sessionId: session._id });
-    } catch (err) {
-        res.status(500).json({ ok: false, message: 'Failed to start tracking session' });
-    }
-});
-
-// @route   POST /api/analytics/time/stop
-// @desc    Stop a time tracking session and update analytics
-router.post('/time/stop', requireAuth, async (req, res) => {
-    const { sessionId } = req.body;
-    try {
-        const session = await TimeTracking.findById(sessionId);
-        if (!session || !session.isActive) return res.status(404).json({ ok: false, message: 'Session not found or inactive' });
-
-        session.endTime = new Date();
-        session.durationSeconds = Math.round((session.endTime - session.startTime) / 1000);
-        session.isActive = false;
-        await session.save();
-
-        // Update global analytics
-        const minutes = Math.round(session.durationSeconds / 60);
-        if (minutes > 0) {
-            let analytics = await UserAnalytics.findOne({ userId: req.userId });
-            if (!analytics) {
-                analytics = new UserAnalytics({
-                    userId: req.userId,
-                    learningStreak: 1,
-                    weeklyActivity: [
-                        { day: 'Mon', minutes: 0 }, { day: 'Tue', minutes: 0 }, { day: 'Wed', minutes: 0 },
-                        { day: 'Thu', minutes: 0 }, { day: 'Fri', minutes: 0 }, { day: 'Sat', minutes: 0 }, { day: 'Sun', minutes: 0 }
-                    ],
-                    totalTimeSpent: 0
-                });
-            }
-            analytics.totalTimeSpent += minutes;
-            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-            const todayDay = days[new Date().getDay()];
-            const todayIdx = analytics.weeklyActivity.findIndex(d => d.day === todayDay);
-            if (todayIdx !== -1) analytics.weeklyActivity[todayIdx].minutes += minutes;
-            await analytics.save();
+        let analytics = await UserAnalytics.findOne({ userId });
+        if (!analytics) {
+            analytics = new UserAnalytics({ userId, dailyActivity: [] });
         }
 
-        res.json({ ok: true, duration: session.durationSeconds });
+        // 1. Increment Time (Heartbeat is 1 minute)
+        analytics.totalTimeSpent += 1;
+        
+        let todayActivity = analytics.dailyActivity.find(a => a.date === today);
+        if (todayActivity) {
+            todayActivity.minutes += 1;
+        } else {
+            analytics.dailyActivity.push({ date: today, minutes: 1 });
+            // Cleanup to keep last 30 days
+            if (analytics.dailyActivity.length > 30) analytics.dailyActivity.shift();
+        }
+
+        // 2. Streak Logic
+        const lastDate = analytics.lastActiveDate.toISOString().split('T')[0];
+        if (lastDate !== today) {
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+            if (lastDate === yesterdayStr) {
+                analytics.learningStreak += 1;
+                if (analytics.learningStreak > analytics.longestStreak) {
+                    analytics.longestStreak = analytics.learningStreak;
+                }
+            } else {
+                analytics.learningStreak = 1; // streak broken
+            }
+            analytics.lastActiveDate = new Date();
+        }
+
+        await analytics.save();
+        res.json({ ok: true, streak: analytics.learningStreak, totalTime: analytics.totalTimeSpent });
     } catch (err) {
-        res.status(500).json({ ok: false, message: 'Failed to stop tracking session' });
+        res.status(500).json({ ok: false, message: err.message });
+    }
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// GET /api/analytics/weekly
+// ──────────────────────────────────────────────────────────────────────────────
+router.get('/weekly', requireAuth, async (req, res) => {
+    try {
+        const analytics = await UserAnalytics.findOne({ userId: req.userId });
+        if (!analytics) return res.json({ ok: true, data: [] });
+
+        // Return last 7 entries of dailyActivity
+        res.json({ ok: true, data: analytics.dailyActivity.slice(-7) });
+    } catch (err) {
+        res.status(500).json({ ok: false, message: err.message });
     }
 });
 

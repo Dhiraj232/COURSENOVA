@@ -225,7 +225,7 @@ app.use(helmet({
       "img-src": ["'self'", "data:", "blob:", "https://res.cloudinary.com", "https://images.unsplash.com", "https://*.google.com", "https://*.googleusercontent.com", "https://i.ytimg.com", "https://yt3.ggpht.com", "https://ui-avatars.com", "https://cdni.iconscout.com"],
       "script-src": ["'self'", "'unsafe-inline'", "https://www.googletagmanager.com", "https://*.google.com", "https://sdk.cashfree.com"],
       "script-src-attr": ["'unsafe-inline'"],
-      "connect-src": ["'self'", "https://*.google-analytics.com", "https://*.analytics.google.com", "https://*.googletagmanager.com", "https://sdk.cashfree.com", "https://sandbox.cashfree.com", "https://api.cashfree.com", "https://lms-backend-renvox.onrender.com", "https://renvox-ai.onrender.com"],
+      "connect-src": ["'self'", "https://*.google-analytics.com", "https://*.analytics.google.com", "https://*.googletagmanager.com", "https://sdk.cashfree.com", "https://sandbox.cashfree.com", "https://api.cashfree.com", "https://lms-backend-renvox.onrender.com", "https://renvox-ai.onrender.com", "http://localhost:5000", "http://localhost:5500", "ws://localhost:5000", "wss://renvox-ai.onrender.com"],
       "form-action": ["'self'", "https://sdk.cashfree.com", "https://sandbox.cashfree.com", "https://api.cashfree.com"]
       },
   },
@@ -565,25 +565,38 @@ app.set('io', io);
 const socketMap = new Map(); // userId -> Set of socketIds
 
 io.on('connection', (socket) => {
-  console.log('User connected');
+  console.log('⚡ New Socket Connection:', socket.id);
 
-  // Unified Identificaiton for Dashboard/Chat
+  // Unified Identification for Dashboard/Chat
   socket.on('identify', (userId) => {
-    if (!userId) return;
-    socket.userId = String(userId);
+    if (!userId) {
+        console.warn('⚠️ Identification failed: No userId provided for socket', socket.id);
+        return;
+    }
+    
+    // Ensure userId is a clean string (remove quotes if any)
+    const cleanUserId = String(userId).replace(/['"]+/g, '');
+    socket.userId = cleanUserId;
+    
     if (!socketMap.has(socket.userId)) {
       socketMap.set(socket.userId, new Set());
     }
     socketMap.get(socket.userId).add(socket.id);
-    console.log(`User ${userId} identified on socket ${socket.id}`);
     
-    // Joint a private room for this user for easy targeting
-    socket.join(`user:${userId}`);
+    const roomName = `user:${cleanUserId}`;
+    socket.join(roomName);
+    console.log(`👤 User Verified: ${cleanUserId} | Joined Room: ${roomName} | Socket: ${socket.id}`);
+    
+    // Send a welcome message to confirm link
+    socket.emit('dashboard_update', {
+        type: 'CONNECTION_STABLE',
+        message: 'Live telemetry link established.'
+    });
   });
 
   socket.on('join-room', (room) => {
     socket.join(room);
-    console.log(`User joined channel: ${room}`);
+    console.log(`📡 Socket ${socket.id} joined channel: ${room}`);
   });
 
   socket.on('send-message', (data) => {
@@ -598,7 +611,7 @@ io.on('connection', (socket) => {
         socketMap.delete(socket.userId);
       }
     }
-    console.log('User disconnected');
+    console.log('🔌 Socket Disconnected:', socket.id);
   });
 });
 

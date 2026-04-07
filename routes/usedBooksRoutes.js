@@ -68,17 +68,36 @@ router.get('/my', requireAuth, async (req, res) => {
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
-// GET /api/used-books  — all active books with optional filters
-// Query: search, category, maxPrice, minPrice, location, page, limit
+// GET /api/used-books  — all active books with Nearby Marketplace Logic
+// Query: search, category, maxPrice, minPrice, location, lat, lng, radius, userCollege
 // ──────────────────────────────────────────────────────────────────────────────
 router.get('/', async (req, res) => {
     try {
-        const { search, category, maxPrice, minPrice, location, condition, page = 1, limit = 20 } = req.query;
+        const { 
+            search, category, maxPrice, minPrice, location, condition, 
+            lat, lng, radius = 5000, userCollege,
+            page = 1, limit = 50 
+        } = req.query;
 
         let filter = { status: 'active' };
 
+        // 1. Location-based Filter (Haversine/2dsphere)
+        if (lat && lng) {
+            filter.location = {
+                $nearSphere: {
+                    $geometry: {
+                        type: "Point",
+                        coordinates: [parseFloat(lng), parseFloat(lat)]
+                    },
+                    $maxDistance: parseInt(radius) // default 5km
+                }
+            };
+        } else if (location) {
+            filter.location_name = { $regex: location, $options: 'i' }; // Fallback for old string-based location
+        }
+
+        // 2. Standard Filters
         if (search) {
-            // Use regex for search (text index also works but regex is simpler for partial match)
             filter.$or = [
                 { title: { $regex: search, $options: 'i' } },
                 { author: { $regex: search, $options: 'i' } },
@@ -87,7 +106,7 @@ router.get('/', async (req, res) => {
         }
         if (category && category !== 'all') filter.category = category;
         if (condition && condition !== 'all') filter.condition = condition;
-        if (location) filter.location = { $regex: location, $options: 'i' };
+        
         if (minPrice || maxPrice) {
             filter.price = {};
             if (minPrice) filter.price.$gte = Number(minPrice);
@@ -95,10 +114,31 @@ router.get('/', async (req, res) => {
         }
 
         const skip = (Number(page) - 1) * Number(limit);
-        const books = await UsedBook.find(filter).sort({ createdAt: -1 }).skip(skip).limit(Number(limit));
-        const total = await UsedBook.countDocuments(filter);
+        
+        // Fetch books
+        let books = await UsedBook.find(filter).lean();
 
-        res.json({ ok: true, books, total, page: Number(page), pages: Math.ceil(total / limit) });
+        // 3. College Priority System (In-memory sorting for priority + distance)
+        // If we used $nearSphere, results are already sorted by distance.
+        // We now prioritize matching college.
+        if (userCollege) {
+            books.sort((a, b) => {
+                const aMatch = a.college === userCollege ? 0 : 1;
+                const bMatch = b.college === userCollege ? 0 : 1;
+                return aMatch - bMatch;
+            });
+        }
+
+        const total = books.length;
+        const paginatedBooks = books.slice(skip, skip + Number(limit));
+
+        res.json({ 
+            ok: true, 
+            books: paginatedBooks, 
+            total, 
+            page: Number(page), 
+            pages: Math.ceil(total / limit) 
+        });
     } catch (err) {
         res.status(500).json({ ok: false, message: err.message });
     }
@@ -118,22 +158,20 @@ router.get('/:id', async (req, res) => {
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
-// POST /api/used-books/add — create a new listing (auth required)
+// POST /api/used-books/add — create a new listing (Nearby Marketplace Version)
 // ──────────────────────────────────────────────────────────────────────────────
 router.post('/add', requireAuth, upload.single('image'), async (req, res) => {
     try {
-        console.log("Incoming used book add request body:", req.body);
-        if (!req.body) {
-            return res.status(400).json({ ok: false, message: "No data provided" });
-        }
-        const { title, author, category, condition, price, description, location, contactNumber } = req.body;
+        const { 
+            title, author, category, condition, price, description, 
+            college, lat, lng, contactNumber, whatsapp 
+        } = req.body;
 
-        if (!title || !author || !price) {
-            return res.status(400).json({ ok: false, message: 'Title, author and price are required' });
+        if (!title || !author || !price || !college) {
+            return res.status(400).json({ ok: false, message: 'Title, author, price, and College are required' });
         }
 
         const userId = req.userId;
-        // Pull user info from DB for sellerName & email (or use token payload fallback)
         let sellerName = req.userName || 'Anonymous';
         let sellerEmail = req.userEmail || '';
 
@@ -148,6 +186,9 @@ router.post('/add', requireAuth, upload.single('image'), async (req, res) => {
 
         const imageFilename = req.file ? req.file.filename : '';
 
+        // Capture location
+        const locationCoords = (lat && lng) ? [parseFloat(lng), parseFloat(lat)] : [0, 0];
+
         const book = new UsedBook({
             title,
             author,
@@ -156,8 +197,13 @@ router.post('/add', requireAuth, upload.single('image'), async (req, res) => {
             price: Number(price),
             description: description || '',
             image: imageFilename,
-            location: location || '',
+            college: college.trim(),
+            location: {
+                type: 'Point',
+                coordinates: locationCoords
+            },
             contactNumber: contactNumber || '',
+            whatsapp: whatsapp || contactNumber || '',
             sellerId: userId,
             sellerName,
             sellerEmail,
@@ -166,13 +212,19 @@ router.post('/add', requireAuth, upload.single('image'), async (req, res) => {
 
         await book.save();
         res.status(201).json({ ok: true, success: true, message: 'Book listed successfully!', book });
+
+        // ── Real-time Dashboard Update ──
+        if (req.app && req.app.get('io')) {
+            const io = req.app.get('io');
+            io.to(`user:${userId}`).emit('dashboard_update', {
+                type: 'BOOK_UPLOADED',
+                title: book.title,
+                message: `Book "${book.title}" is now live in the marketplace!`
+            });
+        }
     } catch (err) {
         console.error("Store Add Used Book Error:", err);
-        res.status(500).json({
-            ok: false,
-            message: 'Could not list book',
-            error: err.message
-        });
+        res.status(500).json({ ok: false, message: 'Could not list book', error: err.message });
     }
 });
 
@@ -187,12 +239,20 @@ router.put('/:id', requireAuth, upload.single('image'), async (req, res) => {
             return res.status(403).json({ ok: false, message: 'You can only edit your own listings' });
         }
 
-        const allowed = ['title', 'author', 'category', 'condition', 'price', 'description', 'location', 'contactNumber', 'status'];
+        const updates = req.body;
+        const allowed = ['title', 'author', 'category', 'condition', 'price', 'description', 'college', 'contactNumber', 'whatsapp', 'status'];
+        
         allowed.forEach(field => {
-            if (req.body[field] !== undefined) book[field] = req.body[field];
+            if (updates[field] !== undefined) book[field] = updates[field];
         });
 
-        if (req.body.price) book.price = Number(req.body.price);
+        if (updates.lat && updates.lng) {
+            book.location = {
+                type: 'Point',
+                coordinates: [parseFloat(updates.lng), parseFloat(updates.lat)]
+            };
+        }
+
         if (req.file) book.image = req.file.filename;
 
         await book.save();
@@ -213,7 +273,6 @@ router.delete('/:id', requireAuth, async (req, res) => {
             return res.status(403).json({ ok: false, message: 'You can only delete your own listings' });
         }
 
-        // Delete image file if it exists
         if (book.image) {
             const imgPath = path.join(__dirname, '..', 'uploads', 'books', book.image);
             if (fs.existsSync(imgPath)) fs.unlinkSync(imgPath);
@@ -227,7 +286,7 @@ router.delete('/:id', requireAuth, async (req, res) => {
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
-// PATCH /api/used-books/:id/sold — mark own book as sold (or re-activate)
+// PATCH /api/used-books/:id/sold — Mark as sold + Calculate Commission
 // ──────────────────────────────────────────────────────────────────────────────
 router.patch('/:id/sold', requireAuth, async (req, res) => {
     try {
@@ -236,13 +295,40 @@ router.patch('/:id/sold', requireAuth, async (req, res) => {
         if (book.sellerId.toString() !== req.userId.toString()) {
             return res.status(403).json({ ok: false, message: 'You can only update your own listings' });
         }
+
         // Toggle between sold and active
-        book.status = book.status === 'sold' ? 'active' : 'sold';
+        const newStatus = book.status === 'sold' ? 'active' : 'sold';
+        book.status = newStatus;
+
+        // Calculate commission on SOLD (5% or fixed ₹10)
+        if (newStatus === 'sold') {
+            const commission = Math.max(book.price * 0.05, 10);
+            book.commission = commission;
+        } else {
+            book.commission = 0;
+        }
+
         await book.save();
-        res.json({ ok: true, message: book.status === 'sold' ? 'Marked as sold' : 'Relisted as active', status: book.status });
+        res.json({ 
+            ok: true, 
+            message: newStatus === 'sold' ? `Marked as sold! Commission: ₹${book.commission}` : 'Relisted as active', 
+            status: newStatus 
+        });
+
+        // ── Real-time Dashboard Update ──
+        if (req.app && req.app.get('io')) {
+            const io = req.app.get('io');
+            io.to(`user:${req.userId}`).emit('dashboard_update', {
+                type: newStatus === 'sold' ? 'BOOK_SOLD' : 'BOOK_RELISTED',
+                title: book.title,
+                message: newStatus === 'sold' ? `Congratulations! You sold "${book.title}"` : `Book "${book.title}" is active again.`
+            });
+        }
     } catch (err) {
         res.status(500).json({ ok: false, message: err.message });
     }
 });
+
+module.exports = router;
 
 module.exports = router;
