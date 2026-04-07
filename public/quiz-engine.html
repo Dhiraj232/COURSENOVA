@@ -27,25 +27,23 @@
             padding: 0;
         }
 
-        /* Platform Navbar Integration */
+        /* Platform Navbar Integration - HIDE FOR FULL SCREEN TEST */
         .navbar {
-            position: relative;
-            background: white;
-            z-index: 100;
+            display: none !important;
         }
 
-        /* Quiz Header */
+        /* Quiz Header - Top Level Now */
         .quiz-header {
             background: white;
-            padding: 20px 40px;
+            padding: 15px 40px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             border-bottom: 2px solid #eef2f6;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
             position: sticky;
             top: 0;
-            z-index: 100;
+            z-index: 1000;
         }
 
         .timer-box {
@@ -66,23 +64,25 @@
 
         /* Quiz Main Layout */
         .quiz-container {
-            max-width: 1100px;
-            margin: 40px auto;
-            padding: 0 20px;
+            max-width: 1400px;
+            margin: 30px auto;
+            padding: 0 30px;
             display: grid;
-            grid-template-columns: 1fr 320px;
-            gap: 40px;
+            grid-template-columns: 1fr 340px;
+            gap: 30px;
+            min-height: calc(100vh - 120px);
         }
 
         .question-card {
             background: white;
-            padding: 50px;
-            border-radius: 30px;
-            box-shadow: var(--card-shadow);
-            min-height: 420px;
+            padding: 40px 50px;
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            min-height: 480px;
             display: flex;
             flex-direction: column;
             position: relative;
+            border: 1px solid #e2e8f0;
         }
 
         .question-text {
@@ -141,11 +141,12 @@
         .nav-sidebar {
             background: white;
             padding: 30px;
-            border-radius: 30px;
-            box-shadow: var(--card-shadow);
+            border-radius: 20px;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
             height: fit-content;
             position: sticky;
-            top: 120px;
+            top: 90px;
         }
 
         .nav-sidebar h3 {
@@ -375,9 +376,9 @@
         </div>
     </nav>
 
-    <div class="quiz-header" style="top: 72px; z-index: 1000;">
+    <div class="quiz-header" style="top: 0; z-index: 1000;">
         <div style="display: flex; align-items: center; gap: 20px;">
-            <a href="testing-center.html"
+            <a href="mock-tests.html"
                 style="color: #64748b; font-size: 1.1rem; text-decoration: none; display: flex; align-items: center; gap: 8px; font-weight: 600; margin-right: 15px;">
                 <i class="fas fa-arrow-left"></i> Back
             </a>
@@ -422,13 +423,11 @@
             <div class="num-grid" id="numberGrid">
                 <!-- Dynamic -->
             </div>
-            <div style="margin-top: 30px; font-size: 0.8rem; color: #94a3b8; display: grid; gap: 10px;">
-                <div style="display: flex; align-items: center; gap: 10px;"><span
-                        style="width:12px; height:12px; background:#6366f1; border-radius:3px;"></span> Answered
+            <div style="margin-top: 30px; font-size: 0.8rem; color: #64748b; padding-top: 20px; border-top: 1px solid #e2e8f0;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div style="display: flex; align-items: center; gap: 8px;"><span style="width:14px; height:14px; background:#6366f1; border-radius:4px;"></span> Answered</div>
+                    <div style="display: flex; align-items: center; gap: 8px;"><span style="width:14px; height:14px; background:#f8fafc; border:2px solid #e2e8f0; border-radius:4px;"></span> Not Visited</div>
                 </div>
-                <div style="display: flex; align-items: center; gap: 10px;"><span
-                        style="width:12px; height:12px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:3px;"></span>
-                    Not Visited</div>
             </div>
         </aside>
     </div>

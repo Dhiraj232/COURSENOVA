@@ -12,7 +12,9 @@ const CourseOrderSchema = new mongoose.Schema(
     {
         // ── Core references ──────────────────────────────────────
         userId:   { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-        courseId: { type: mongoose.Schema.Types.ObjectId, ref: 'Course', required: true, index: true },
+        /** Stores either Course ID or MockTestPack ID */
+        courseId: { type: mongoose.Schema.Types.ObjectId, required: true, index: true },
+        itemType: { type: String, enum: ['course', 'mock'], default: 'course' },
 
         // ── Cashfree identifiers ─────────────────────────────────
         /** The order_id we generate and pass to Cashfree (order_<userId>_<ts>) */

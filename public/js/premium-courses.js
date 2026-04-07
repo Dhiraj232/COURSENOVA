@@ -124,7 +124,7 @@ function renderGrid(courses) {
 window.enrollFree = async function(id, title) {
     if (!token) {
         showToast('Please login to enroll. Redirecting...', 'toast-error');
-        setTimeout(() => window.location.href = 'signup.html?redirect=premium-courses.html', 2000);
+        setTimeout(() => window.location.href = 'signup.html?redirect=certificates.html', 2000);
         return;
     }
 
@@ -169,6 +169,7 @@ window.buyCourse = async function(courseId, title, price) {
     });
 
     try {
+        console.log(`[buyCourse] Initializing purchase for courseId: ${courseId} (${title})`);
         showToast('Initializing secure checkout...', 'toast-success');
 
         // 1. Create Order on backend (server validates, creates CF order)
@@ -189,15 +190,18 @@ window.buyCourse = async function(courseId, title, price) {
             throw new Error(orderData.message || 'Failed to create order. Please try again.');
         }
 
-        // 2. Verify Cashfree JS SDK loaded
+        // 2. Determine correct mode (sandbox/production)
+        const configRes = await fetch(`${API}/api/cashfree/config`);
+        const configData = await configRes.json();
+        const sdkMode = configData.mode || 'sandbox';
+
+        // 3. Verify Cashfree JS SDK loaded
         if (typeof Cashfree === 'undefined') {
             throw new Error('Payment gateway script not loaded. Disable adblockers or refresh.');
         }
 
-        // ⚠️ PRODUCTION: use "production" mode when live keys are active
-        // The mode must match your Cashfree Dashboard environment
-        const cashfreeMode = (orderData.payment_session_id || '').startsWith('session_') ? 'production' : 'sandbox';
-        const cashfree = Cashfree({ mode: cashfreeMode });
+        console.log(`[buyCourse] Launching Cashfree in ${sdkMode} mode`);
+        const cashfree = Cashfree({ mode: sdkMode });
 
         // 3. Redirect to Cashfree Hosted Checkout
         // On completion Cashfree calls our return_url:

@@ -621,7 +621,14 @@
     <script>
         const API = '';
         const params = new URLSearchParams(window.location.search);
-        const courseId = params.get('course') || 'Learning Essentials (Free)';
+        const courseIdFromUrl = params.get('course');
+        const paymentVerify = params.get('payment') === 'verify';
+        const orderIdFromUrl = params.get('order_id');
+
+        if (!courseIdFromUrl) {
+            window.location.href = 'certificates.html';
+        }
+        let courseId = courseIdFromUrl;
 
         // ── Premium state ──
         let courseIsPremium = false;
@@ -682,7 +689,9 @@
                 if (premiumData) {
                     courseIsPremium = premiumData.isPremium || (!premiumData.isFree && premiumData.price > 0);
                     coursePrice     = premiumData.price || 0;
-                    courseMongoId   = String(premiumData._id);
+                    courseMongoId   = String(premiumData._id); // CRITICAL: Always use ObjectId for payment requests
+
+                    console.log(`[Init] Premium Course Detected: ${premiumData.title} | ID: ${courseMongoId} | Enrolled: ${premiumData.enrolled}`);
 
                     if (courseIsPremium && !premiumData.enrolled && coursePrice > 0) {
                         document.getElementById('gateTitle').textContent   = premiumData.title || courseId;
@@ -1028,10 +1037,14 @@
             btn.textContent = '⏳ Creating order...';
 
             try {
+                // Use MongoId for maximum reliability; fallback to courseId if absolutely necessary
+                const targetId = courseMongoId || courseId;
+                console.log(`[gatePayNow] Initiating order for: ${targetId}`);
+
                 const orderRes = await fetch(`${API}/api/cashfree/create-order`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-                    body: JSON.stringify({ courseId: courseMongoId || courseId })
+                    body: JSON.stringify({ courseId: targetId })
                 });
                 const orderData = await orderRes.json();
 
@@ -1041,12 +1054,29 @@
                     return;
                 }
                 if (!orderData.ok) throw new Error(orderData.message || 'Order failed');
-                // Launch Cashfree
+                
+                // Launch Cashfree SDK
                 if (typeof Cashfree === 'undefined') {
-                    throw new Error('Payment gateway not loaded. Please refresh.');
+                    throw new Error('Payment gateway not loaded. Please refresh the page.');
                 }
-                const cashfree = Cashfree({ mode: "sandbox" });
-                cashfree.checkout({ paymentSessionId: orderData.payment_session_id });
+
+                // Fetch correct mode (sandbox/production) from backend
+                let sdkMode = 'sandbox';
+                try {
+                    const configRes = await fetch(`${API}/api/cashfree/config`);
+                    const configData = await configRes.json();
+                    sdkMode = configData.mode || 'sandbox';
+                } catch (e) {
+                    console.warn('[gatePayNow] Config fetch failed, defaulting to sandbox');
+                }
+
+                console.log(`[gatePayNow] Handshake Complete | Mode: ${sdkMode}`);
+                const cashfree = Cashfree({ mode: sdkMode });
+                
+                cashfree.checkout({ 
+                    paymentSessionId: orderData.payment_session_id,
+                    returnUrl: window.location.href + "&payment=verify&order_id=" + orderData.order_id
+                });
             } catch (err) {
                 console.error(err);
                 alert(err.message || 'Payment failed.');

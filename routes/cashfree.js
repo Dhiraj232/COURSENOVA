@@ -28,6 +28,12 @@ const Payment    = require('../models/Payment');
 const CourseOrder = require('../models/CourseOrder');
 
 // ─────────────────────────────────────────────────────────────────────────────
+// GET /api/cashfree/config
+// Returns the Cashfree SDK mode (sandbox/production).
+// ─────────────────────────────────────────────────────────────────────────────
+router.get('/config', controller.getCFConfig);
+
+// ─────────────────────────────────────────────────────────────────────────────
 // POST /api/cashfree/create-order
 // Creates a Cashfree order for a premium course purchase.
 // ─────────────────────────────────────────────────────────────────────────────

@@ -4,25 +4,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Analytics Dashboard | RENVOX AI</title>
+    <title>Dashboard | RENVOX AI</title>
 
     <!-- Google Fonts -->
-    <link
-        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap"
-        rel="stylesheet">
-
-    <!-- Font Awesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- Chart.js -->
+    <!-- Chart.js & Sockets -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
 
     <!-- External CSS -->
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/navigation.css">
     <link rel="stylesheet" href="css/dashboard.css">
     <script src="js/navigation.js" defer></script>
-    <script src="js/analytics.js" defer></script>
 </head>
 
 <body class="dashboard-body">
@@ -30,14 +26,10 @@
     <nav class="navbar" id="navbar">
         <div class="nav-container">
             <a href="index.html" class="logo"><img src="images/logo%20renvox.png" alt="RENVOX"> <span>RENVOX</span></a>
-
             <div class="nav-search">
-                <input type="text" id="navbarSearch" placeholder="Search for courses, subjects, or concepts...">
-                <button type="button" onclick="handleNavbarSearch()">
-                    <i class="fas fa-search"></i>
-                </button>
+                <input type="text" id="navbarSearch" placeholder="Search courses...">
+                <button type="button" onclick="handleNavbarSearch()"><i class="fas fa-search"></i></button>
             </div>
-
             <ul class="nav-menu" id="navMenu"></ul>
             <div class="nav-buttons" id="navButtons"></div>
             <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
@@ -57,13 +49,10 @@
 
             <nav class="sidebar-nav">
                 <a href="dashboard.html" class="nav-item active"><i class="fas fa-th-large"></i> Overview</a>
-                <a href="certificates.html" class="nav-item"><i class="fas fa-book"></i> Courses</a>
-                <a href="practice.html" class="nav-item"><i class="fas fa-brain"></i> Daily Practice</a>
-                <a href="testing-center.html" class="nav-item"><i class="fas fa-edit"></i> Mock Test Hub</a>
-                <a href="store.html" class="nav-item"><i class="fas fa-shopping-cart"></i> Book Store</a>
-                <a href="community.html" class="nav-item"><i class="fas fa-users"></i> Community</a>
-                <a href="my-certificates.html" class="nav-item"><i class="fas fa-award"></i> Certificates</a>
-                <a href="profile.html" class="nav-item"><i class="fas fa-user-cog"></i> Settings</a>
+                <a href="certificates.html" class="nav-item"><i class="fas fa-graduation-cap"></i> My Courses</a>
+                <a href="testing-center.html" class="nav-item"><i class="fas fa-edit"></i> Mock Tests</a>
+                <a href="store.html" class="nav-item"><i class="fas fa-book"></i> Book Store</a>
+                <a href="profile.html" class="nav-item"><i class="fas fa-user"></i> My Profile</a>
             </nav>
 
             <div class="sidebar-footer">
@@ -75,157 +64,131 @@
 
         <!-- Main Dashboard Content -->
         <main class="dashboard-main">
-            <!-- Header Section -->
+            <!-- Header -->
             <header class="dashboard-header">
                 <div class="welcome-section">
-                    <h1>Welcome back, <span id="studentFirstName">Student</span>! ??</h1>
-                    <p>You're on a <span class="highlight" id="streakCounter">0 day</span> learning streak. Keep it up!
-                    </p>
+                    <h1>Real-time Learning Dashboard ??</h1>
+                    <p>Welcome back, <span id="studentFirstName">Learner</span>! You're on a <span class="highlight" id="streakCounter">0 day</span> streak.</p>
                 </div>
                 <div class="header-actions">
-                    <button class="btn-dashboard-primary" onclick="window.location.href='testing-center.html'">
-                        <i class="fas fa-bolt"></i> Practice & Mock Tests
-                    </button>
+                    <div class="live-indicator">
+                        <span class="dot pulse"></span> LIVE Telemetry
+                    </div>
                 </div>
             </header>
 
-            <!-- Stats Ribbon -->
+            <!-- A. OVERVIEW CARDS -->
             <section class="stats-ribbon">
-                <div class="stat-card glass shadow-sm">
+                <div class="stat-card glass">
                     <div class="stat-icon purple"><i class="fas fa-graduation-cap"></i></div>
                     <div class="stat-info">
                         <h4 id="enrolledCount">0</h4>
                         <p>Courses Enrolled</p>
                     </div>
                 </div>
-                <div class="stat-card glass shadow-sm">
-                    <div class="stat-icon orange"><i class="fas fa-trophy"></i></div>
+                <div class="stat-card glass">
+                    <div class="stat-icon blue"><i class="fas fa-users"></i></div>
                     <div class="stat-info">
-                        <h4 id="certificatesCount">0</h4>
-                        <p>Certificates Earned</p>
+                        <h4 id="batchesCount">0</h4>
+                        <p>Batches Joined</p>
                     </div>
                 </div>
-                <div class="stat-card glass shadow-sm">
-                    <div class="stat-icon blue"><i class="fas fa-clock"></i></div>
+                <div class="stat-card glass">
+                    <div class="stat-icon orange"><i class="fas fa-book"></i></div>
+                    <div class="stat-info">
+                        <h4 id="booksCount">0</h4>
+                        <p>Books Purchased</p>
+                    </div>
+                </div>
+                <div class="stat-card glass">
+                    <div class="stat-icon red"><i class="fas fa-vial"></i></div>
+                    <div class="stat-info">
+                        <h4 id="testsTakenCount">0</h4>
+                        <p>Tests Attempted</p>
+                    </div>
+                </div>
+                <div class="stat-card glass">
+                    <div class="stat-icon green"><i class="fas fa-clock"></i></div>
                     <div class="stat-info">
                         <h4 id="timeSpentCount">0h</h4>
                         <p>Time Spent</p>
                     </div>
                 </div>
-                <div class="stat-card glass shadow-sm">
-                    <div class="stat-icon green"><i class="fas fa-star"></i></div>
-                    <div class="stat-info">
-                        <h4 id="avgScoreCount">0%</h4>
-                        <p>Avg. Test Score</p>
-                    </div>
-                </div>
-                <!-- 5th Card added: Tests Taken -->
-                <div class="stat-card glass shadow-sm">
-                    <div class="stat-icon red"><i class="fas fa-file-alt"></i></div>
-                    <div class="stat-info">
-                        <h4 id="testsTakenCount">0</h4>
-                        <p>Tests Taken</p>
-                    </div>
-                </div>
             </section>
 
-            <!-- Grid Layout for Charts & Analytics -->
             <div class="dashboard-grid">
-                <!-- Left Column: Activity & Performance -->
+                <!-- LEFT COLUMN -->
                 <div class="grid-left">
-                    <!-- Weekly Activity Chart -->
-                    <div class="chart-card glass">
+                    <!-- B. PROGRESS SECTION -->
+                    <div class="analytics-card glass">
                         <div class="card-header">
-                            <h3><i class="fas fa-chart-line"></i> Weekly Learning Activity</h3>
-                            <span class="card-badge">Last 7 Days</span>
+                            <h3><i class="fas fa-tasks"></i> Learning Progress</h3>
+                            <button class="btn-sm-view" onclick="window.location.href='certificates.html'">View All</button>
                         </div>
-                        <div class="canvas-container">
-                            <canvas id="weeklyActivityChart"></canvas>
+                        <div class="topic-grid" id="courseProgressGrid">
+                            <!-- Injected by JS -->
                         </div>
                     </div>
 
-                    <!-- Performance Analytics -->
-                    <div class="analytics-card glass">
+                    <!-- D. PERFORMANCE SECTION -->
+                    <div class="chart-card glass">
                         <div class="card-header">
-                            <h3><i class="fas fa-brain"></i> Topic Mastery</h3>
+                            <h3><i class="fas fa-chart-bar"></i> Performance Analytics</h3>
                         </div>
-                        <div class="topic-grid" id="topicGrid">
-                            <!-- Injected by JS -->
-                            <div class="topic-item">
-                                <div class="topic-info">
-                                    <span>Data Structures</span>
-                                    <span>85%</span>
-                                </div>
-                                <div class="progress-bar-bg">
-                                    <div class="progress-bar-fill" style="width: 85%;"></div>
-                                </div>
+                        <div class="perf-stats-row">
+                            <div class="perf-box">
+                                <span class="label">Average Score</span>
+                                <span class="value" id="avgScoreDisplay">0%</span>
                             </div>
+                            <div class="perf-box">
+                                <span class="label">Best Score</span>
+                                <span class="value" id="bestScoreDisplay">0%</span>
+                            </div>
+                            <div class="perf-box">
+                                <span class="label">Accuracy</span>
+                                <span class="value" id="accuracyDisplay">0%</span>
+                            </div>
+                        </div>
+                        <div class="canvas-container" style="height: 250px; margin-top: 20px;">
+                            <canvas id="performanceChart"></canvas>
                         </div>
                     </div>
                 </div>
 
-                <!-- Right Column: Progress & Recommendations -->
+                <!-- RIGHT COLUMN -->
                 <div class="grid-right">
-                    <!-- Continue Learning Card -->
-                    <div class="continue-card glass">
-                        <h3>Continue Learning</h3>
-                        <div id="activeCourse">
-                            <div class="course-mini">
-                                <div class="course-icon"><i class="fas fa-laptop-code"></i></div>
-                                <div class="course-details">
-                                    <h4>Full-Stack Development</h4>
-                                    <p>Module 4: Express.js Routing</p>
-                                    <div class="progress-text">65% Completed</div>
-                                    <div class="progress-bar-bg">
-                                        <div class="progress-bar-fill" style="width: 65%;"></div>
-                                    </div>
-                                </div>
-                                <button class="btn-resume" onclick="window.location.href='course-content.html'">
-                                    <i class="fas fa-play"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Test Performance Radar -->
-                    <div class="chart-card glass">
-                        <div class="card-header">
-                            <h3>Performance Radar</h3>
-                        </div>
-                        <div class="canvas-container-sm">
-                            <canvas id="performanceRadarChart"></canvas>
-                        </div>
-                    </div>
-
-                    <!-- Recent Activity -->
+                    <!-- C. ACTIVITY TIMELINE -->
                     <div class="activity-card glass">
                         <div class="card-header">
-                            <h3>Recent Activity</h3>
+                            <h3><i class="fas fa-history"></i> Activity Timeline</h3>
                         </div>
-                        <ul class="activity-list" id="activityList">
-                            <li>
-                                <div class="activity-dot blue"></div>
-                                <div class="activity-text">
-                                    <p><strong>Completed Quiz:</strong> Arrays & Objects</p>
-                                    <span>2 hours ago</span>
-                                </div>
-                            </li>
-                            <li>
-                                <div class="activity-dot green"></div>
-                                <div class="activity-text">
-                                    <p><strong>Earned Certificate:</strong> Java Basics</p>
-                                    <span>Yesterday</span>
-                                </div>
-                            </li>
+                        <ul class="activity-list" id="activityTimeline">
+                            <!-- Injected by JS -->
                         </ul>
+                    </div>
+
+                    <!-- E. PURCHASED CONTENT -->
+                    <div class="purchased-card glass">
+                        <div class="card-header">
+                            <h3><i class="fas fa-shopping-bag"></i> My Library</h3>
+                        </div>
+                        <div class="library-tabs">
+                            <button class="lib-tab active" data-type="course">Courses</button>
+                            <button class="lib-tab" data-type="book">Books</button>
+                        </div>
+                        <div id="libraryContent" class="library-list">
+                            <!-- Injected by JS -->
+                        </div>
                     </div>
                 </div>
             </div>
         </main>
     </div>
 
+    <!-- Live Notification UI -->
+    <div id="liveNotif" class="live-notif"></div>
+
     <!-- Scripts -->
-    <script src="js/navigation.js"></script>
     <script src="js/dashboard.js"></script>
 </body>
 

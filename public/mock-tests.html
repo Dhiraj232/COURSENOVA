@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mock Tests | RENVOX AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/navigation.css">
+    <style>
+        :root {
+            --tb-blue-dark: #002244;
+            --tb-blue: #1C52A0; /* Testbook style blue */
+            --tb-green: #10B981;
+            --tb-green-hover: #059669;
+            --tb-gray-100: #F3F4F6;
+            --tb-gray-200: #E5E7EB;
+            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            --card-hover-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+            padding-top: 70px;
+        }
+
+        /* Hero Banner */
+        .mock-hero {
+            background: linear-gradient(135deg, var(--tb-blue-dark) 0%, var(--tb-blue) 100%);
+            padding: 60px 20px;
+            color: white;
+            text-align: center;
+        }
+
+        .mock-hero h1 {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+        }
+
+        .mock-hero p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Filter Section */
+        .filter-section {
+            background: white;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            position: sticky;
+            top: 70px; /* Under navbar */
+            z-index: 100;
+            border-bottom: 1px solid var(--tb-gray-200);
+        }
+
+        .filter-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            position: relative;
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 20px 12px 45px;
+            border-radius: 8px;
+            border: 1px solid var(--tb-gray-200);
+            font-family: 'Inter';
+            font-size: 0.95rem;
+            background: #f9fafb;
+            transition: all 0.3s;
+        }
+
+        .search-box input:focus {
+            background: white;
+            border-color: var(--tb-blue);
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(28, 82, 160, 0.1);
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+        }
+
+        .filters-group {
+            display: flex;
+            gap: 15px;
+        }
+
+        .filter-select {
+            padding: 12px 20px;
+            border-radius: 8px;
+            border: 1px solid var(--tb-gray-200);
+            background: white;
+            font-family: 'Inter';
+            font-size: 0.95rem;
+            color: #374151;
+            cursor: pointer;
+            outline: none;
+            min-width: 160px;
+        }
+
+        .filter-select:focus {
+            border-color: var(--tb-blue);
+        }
+
+        /* Main Content */
+        .content-container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 25px;
+            margin-top: 40px;
+        }
+
+        .section-header h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #111827;
+            border-left: 5px solid var(--tb-blue);
+            padding-left: 15px;
+        }
+
+        .view-all {
+            color: var(--tb-blue);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .view-all:hover {
+            text-decoration: underline;
+        }
+
+        /* Test Cards Grid */
+        .packs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+        }
+
+        /* Test Card UI */
+        .test-card {
+            background: white;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            box-shadow: var(--card-shadow);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .test-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--card-hover-shadow);
+            border-color: #d1d5db;
+        }
+
+        /* Badges */
+        .badge-premium {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: linear-gradient(to right, #fbbf24, #f59e0b);
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 20px;
+            z-index: 2;
+            box-shadow: 0 2px 5px rgba(245, 158, 11, 0.4);
+        }
+
+        .badge-free {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(16, 185, 129, 0.15);
+            color: #059669;
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 20px;
+            z-index: 2;
+        }
+
+        .card-header {
+            padding: 20px 20px 15px;
+            background: #f8fafc;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .card-header .subject-tag {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--tb-blue);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .card-header h3 {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            font-size: 1.15rem;
+            color: #1f2937;
+            margin: 0;
+            line-height: 1.4;
+        }
+
+        .card-body {
+            padding: 20px;
+            flex-grow: 1;
+        }
+
+        .test-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #4b5563;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .stat-item i {
+            color: #9ca3af;
+            width: 16px;
+            text-align: center;
+        }
+
+        .difficulty-bar {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .difficulty-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #6b7280;
+        }
+
+        .diff-dots {
+            display: flex;
+            gap: 3px;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #e5e7eb;
+        }
+
+        .diff-easy .dot:nth-child(1) { background: #10b981; }
+        .diff-medium .dot:nth-child(1), .diff-medium .dot:nth-child(2) { background: #f59e0b; }
+        .diff-hard .dot { background: #ef4444; }
+
+        .card-footer {
+            padding: 15px 20px;
+            border-top: 1px solid var(--tb-gray-200);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .price-display {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 1.25rem;
+            color: #1f2937;
+        }
+
+        .original-price {
+            text-decoration: line-through;
+            color: #9ca3af;
+            font-size: 0.9rem;
+            font-weight: 500;
+            margin-left: 5px;
+        }
+
+        .btn-action {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-start {
+            background: var(--tb-blue);
+            color: white;
+        }
+
+        .btn-start:hover {
+            background: #154284;
+        }
+
+        .btn-unlock {
+            background: #fdf2f8;
+            color: #db2777;
+            border: 1px solid #fbcfe8;
+        }
+
+        .btn-unlock:hover {
+            background: #fce7f3;
+            color: #be185d;
+        }
+        
+        .loading-skeleton {
+            background: #e2e8f0;
+            animation: pulse 1.5s infinite ease-in-out;
+            border-radius: 4px;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+
+        /* Toast Notifications */
+        .toast-container {
+            position: fixed;
+            bottom: 20px; left: 50%; transform: translateX(-50%);
+            z-index: 10000; display: flex; flex-direction: column; gap: 10px;
+        }
+        
+        .toast {
+            background: #1f2937; color: white; padding: 12px 24px;
+            border-radius: 8px; font-weight: 500; font-size: 0.95rem;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 10px;
+            animation: slideUp 0.3s ease;
+        }
+
+        @media (max-width: 768px) {
+            .filter-container {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .filters-group {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- NAVBAR INJECTED -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo"><img src="images/logo%20renvox.png" alt="RENVOX"> <span>RENVOX AI</span></a>
+            <div class="nav-search">
+                <input type="text" id="navbarSearch" placeholder="Search for courses, subjects...">
+                <button type="button" onclick="handleNavbarSearch()"><i class="fas fa-search"></i></button>
+            </div>
+            <ul class="nav-menu" id="navMenu"></ul>
+            <div class="nav-buttons" id="navButtons"></div>
+            <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <div class="mock-hero">
+        <h1>Premium Test Series & Mock Exams</h1>
+        <p>Boost your score with exam-level practice tests. Detailed analytics, all India ranking, and high-quality solutions.</p>
+    </div>
+
+    <!-- Filters -->
+    <div class="filter-section">
+        <div class="filter-container">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="testSearch" placeholder="Search for SSC, JEE, NEET tests...">
+            </div>
+            <div class="filters-group">
+                <select class="filter-select" id="subjectFilter">
+                    <option value="">All Categories</option>
+                    <option value="School Classes">School Level (9-12)</option>
+                    <option value="Competitive Exams">Competitive Exams</option>
+                </select>
+                <select class="filter-select" id="difficultyFilter">
+                    <option value="">All Difficulties</option>
+                    <option value="easy">Easy</option>
+                    <option value="medium">Medium</option>
+                    <option value="hard">Hard</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="content-container">
+        
+        <div id="freeTestsSection">
+            <div class="section-header" id="free">
+                <h2>Free Mock Tests</h2>
+                <a href="#" class="view-all">View All</a>
+            </div>
+            <div class="packs-grid" id="freeTestsGrid">
+                <!-- Skeleton loader -->
+                <div class="test-card"><div class="card-header"><div class="loading-skeleton" style="height:15px;width:60px;margin-bottom:10px;"></div><div class="loading-skeleton" style="height:25px;width:80%;"></div></div><div class="card-body"><div class="loading-skeleton" style="height:60px;width:100%;"></div></div></div>
+                <div class="test-card"><div class="card-header"><div class="loading-skeleton" style="height:15px;width:60px;margin-bottom:10px;"></div><div class="loading-skeleton" style="height:25px;width:80%;"></div></div><div class="card-body"><div class="loading-skeleton" style="height:60px;width:100%;"></div></div></div>
+                <div class="test-card"><div class="card-header"><div class="loading-skeleton" style="height:15px;width:60px;margin-bottom:10px;"></div><div class="loading-skeleton" style="height:25px;width:80%;"></div></div><div class="card-body"><div class="loading-skeleton" style="height:60px;width:100%;"></div></div></div>
+            </div>
+        </div>
+
+        <div id="premiumSeriesSection">
+            <div class="section-header" id="paid">
+                <h2>Premium Test Series</h2>
+                <span style="font-size: 0.9rem; color: #6b7280; font-weight:500;">Unlock unlimited access</span>
+            </div>
+            <div class="packs-grid" id="premiumTestsGrid">
+                <!-- Filled via JS -->
+            </div>
+        </div>
+        
+    </main>
+
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/navigation.js"></script>
+    <script src="js/mock-tests.js"></script>
+</body>
+</html>

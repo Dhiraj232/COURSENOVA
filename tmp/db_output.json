@@ -1,0 +1,114 @@
+[
+  {
+    "_id": "69d0e21d7cda0f2751c7ade0",
+    "slug": "dsa-mastery",
+    "title": "DSA Mastery",
+    "price": 499,
+    "isFree": false,
+    "isPremium": true
+  },
+  {
+    "_id": "69d0e21d7cda0f2751c7ade3",
+    "slug": "anger-management",
+    "title": "Anger Management & Emotional Intelligence",
+    "price": 299,
+    "isFree": false,
+    "isPremium": true
+  },
+  {
+    "_id": "69d0e21d7cda0f2751c7ade6",
+    "slug": "communication-skills",
+    "title": "Professional Communication Skills",
+    "price": 399,
+    "isFree": false,
+    "isPremium": true
+  },
+  {
+    "_id": "69d0e21d7cda0f2751c7ade9",
+    "slug": "ai-prompt-engineering",
+    "title": "Introduction to AI & Prompt Engineering",
+    "price": 0,
+    "isFree": true,
+    "isPremium": false
+  },
+  {
+    "_id": "69d0e21d7cda0f2751c7adec",
+    "slug": "web-dev-quickstart",
+    "title": "Web Development Quickstart",
+    "price": 0,
+    "isFree": true,
+    "isPremium": false
+  },
+  {
+    "_id": "69d0e21d7cda0f2751c7adef",
+    "slug": "python-beginners",
+    "title": "Python for Absolute Beginners",
+    "price": 0,
+    "isFree": true,
+    "isPremium": false
+  },
+  {
+    "_id": "69d0e21d7cda0f2751c7adf2",
+    "slug": "js-essentials",
+    "title": "JavaScript Essentials",
+    "price": 0,
+    "isFree": true,
+    "isPremium": false
+  },
+  {
+    "_id": "69d0e21d7cda0f2751c7adf5",
+    "slug": "digital-marketing",
+    "title": "Digital Marketing Fundamentals",
+    "price": 0,
+    "isFree": true,
+    "isPremium": false
+  },
+  {
+    "_id": "69d0e21e7cda0f2751c7adf8",
+    "slug": "graphic-design-canva",
+    "title": "Graphic Design with Canva",
+    "price": 0,
+    "isFree": true,
+    "isPremium": false
+  },
+  {
+    "_id": "69d0e21e7cda0f2751c7adfb",
+    "slug": "cyber-security",
+    "title": "Cyber Security Awareness",
+    "price": 0,
+    "isFree": true,
+    "isPremium": false
+  },
+  {
+    "_id": "69d4847201a0d18095dc91b1",
+    "slug": "web-development-bootcamp",
+    "title": "Web Development Bootcamp",
+    "price": 499,
+    "isFree": false,
+    "isPremium": true
+  },
+  {
+    "_id": "69d4847201a0d18095dc91b4",
+    "slug": "c-programming-fundamentals",
+    "title": "C Programming Fundamentals",
+    "price": 399,
+    "isFree": false,
+    "isPremium": true
+  },
+  {
+    "_id": "69d4847201a0d18095dc91b7",
+    "slug": "python-data-science",
+    "title": "Python for Data Science",
+    "price": 599,
+    "isFree": false,
+    "isPremium": true
+  },
+  {
+    "_id": "69d4847201a0d18095dc91ba",
+    "slug": "database-management-systems",
+    "title": "Database Management Systems",
+    "price": 449,
+    "isFree": false,
+    "isPremium": true
+  }
+]

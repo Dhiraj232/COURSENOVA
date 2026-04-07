@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="css/navigation.css">
     <script src="js/navigation.js?v=1.3" defer></script>
     <script src="js/analytics.js" defer></script>
+    <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
     <style>
         :root {
             --brand: #4f46e5;
@@ -514,8 +515,16 @@
         <!-- Skeleton loading state -->
         <div class="skeleton-grid" id="skeletonGrid"></div>
 
-        <!-- Actual grid -->
-        <div class="certs-grid" id="certsGrid" style="display:none;"></div>
+        <!-- Actual grids grouped by free / premium -->
+        <div id="freeSection" style="display:none; margin-bottom: 50px;">
+            <h2 style="font-size: 1.6rem; font-weight: 800; margin-bottom: 24px; color: #1e293b;">✨ Free Foundation Courses</h2>
+            <div class="certs-grid" id="freeCoursesGrid"></div>
+        </div>
+
+        <div id="premiumSection" style="display:none;">
+            <h2 style="font-size: 1.6rem; font-weight: 800; margin-bottom: 24px; color: #1e293b;">💎 Premium Course Tracks</h2>
+            <div class="certs-grid" id="premiumCoursesGrid"></div>
+        </div>
     </div>
 
     <!-- TOAST -->
@@ -625,6 +634,15 @@
                 description: 'Build confidence in spoken and written English. Learn professional email writing, public speaking, body language and workplace communication.',
                 highlights: ['4 Assignments', 'Mock Interviews', 'Email Writing', 'Career Boost'],
                 price: 499, isFree: false
+            },
+            {
+                id: 'Renvox AI Masterclass',
+                title: 'Renvox AI Masterclass',
+                icon: '🚀', level: 'Beginner',
+                duration: '1 Week', assignments: 1,
+                description: 'A complete guided masterclass on using Renvox AI to its full potential. Includes hands-on projects and a verified certificate.',
+                highlights: ['One-click Unlock', 'Hands-on Projects', 'Verified Certificate', 'Special ₹1 Price'],
+                price: 1, isFree: false
             }
         ];
 
@@ -648,25 +666,40 @@
             if (!token) document.getElementById('loginCta').style.display = 'block';
             await loadUserStatus();
 
+            // ── 0. Handle Post-Payment Verification ──────────────────────────
             const urlParams = new URLSearchParams(window.location.search);
+            const paymentVerify = urlParams.get('payment') === 'verify';
+            const orderIdFromUrl = urlParams.get('order_id');
+
+            if (paymentVerify && orderIdFromUrl) {
+                try {
+                    const vRes = await fetch(`${API}/api/cashfree/verify`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+                        body: JSON.stringify({ orderId: orderIdFromUrl, courseId: 'placeholder' })
+                    });
+                    const vData = await vRes.json();
+                    if (vData.ok) {
+                        const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+                        window.history.replaceState({ path: cleanUrl }, '', cleanUrl);
+                        await loadUserStatus(); // Refresh dashboard
+                    } else {
+                        alert('Payment verification failed: ' + vData.message);
+                    }
+                } catch (ve) {
+                    console.error('Verification error:', ve);
+                }
+            }
+
             const searchQuery = urlParams.get('search');
+            // ... rest of init logic
 
             if (searchQuery) {
                 const filtered = COURSES.filter(c =>
                     c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                     c.description.toLowerCase().includes(searchQuery.toLowerCase())
                 );
-                const grid = document.getElementById('certsGrid');
-                if (filtered.length > 0) {
-                    grid.innerHTML = filtered.map(c => buildCard(c)).join('');
-                } else {
-                    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--muted);">
-                        <div style="font-size:3rem;margin-bottom:12px;">🔍</div>
-                        <h3 style="color:var(--text);margin-bottom:8px;">No courses found for "${searchQuery}"</h3>
-                        <p>Try searching for different keywords or browse all courses.</p>
-                        <a href="certificates.html" style="color:var(--brand);text-decoration:underline;">View all courses</a>
-                    </div>`;
-                }
+                renderGrids(filtered);
                 document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
             } else {
                 renderCards('all');
@@ -709,22 +742,37 @@
         }
 
         function renderCards(filter) {
-            const grid = document.getElementById('certsGrid');
             let courses = COURSES;
             if (filter === 'free') courses = COURSES.filter(c => c.isFree);
             if (filter === 'Beginner') courses = COURSES.filter(c => c.level === 'Beginner');
             if (filter === 'Intermediate') courses = COURSES.filter(c => c.level === 'Intermediate');
             if (filter === 'completed') courses = COURSES.filter(c => !!completedMap[c.id]);
 
-            if (!courses.length) {
-                grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:60px 20px;color:var(--muted);">
-                    <div style="font-size:3rem;margin-bottom:12px;">📭</div>
-                    <h3 style="color:var(--text);margin-bottom:8px;">Nothing here yet</h3>
-                    <p>Try exploring our available courses!</p>
+            renderGrids(courses);
+        }
+
+        function renderGrids(coursesList) {
+            const freeGrid = document.getElementById('freeCoursesGrid');
+            const premiumGrid = document.getElementById('premiumCoursesGrid');
+            
+            const freeCourses = coursesList.filter(c => c.isFree);
+            const premiumCourses = coursesList.filter(c => !c.isFree);
+
+            const getEmptyHtml = (msg) => `<div style="grid-column:1/-1;text-align:center;padding:40px 20px;color:var(--muted);">
+                    <div style="font-size:2.5rem;margin-bottom:12px;">📭</div>
+                    <p style="font-size: 1.1rem">${msg}</p>
                 </div>`;
-                return;
+
+            if (freeGrid) {
+                freeGrid.innerHTML = freeCourses.length 
+                    ? freeCourses.map(c => buildCard(c)).join('') 
+                    : getEmptyHtml("No free courses found matching your criteria.");
             }
-            grid.innerHTML = courses.map(c => buildCard(c)).join('');
+            if (premiumGrid) {
+                premiumGrid.innerHTML = premiumCourses.length 
+                    ? premiumCourses.map(c => buildCard(c)).join('') 
+                    : getEmptyHtml("No premium courses found matching your criteria.");
+            }
         }
 
         function isEnrolled(id) {
@@ -737,9 +785,16 @@
             const progress = progressMap[c.id] || 0;
             const headerCls = c.level.toLowerCase();
 
-            let badge = completed
-                ? `<span class="status-badge badge-completed">✅ Completed</span>`
-                : (enrolled ? `<span class="status-badge badge-free" style="background:#10b981">🎓 Enrolled</span>` : `<span class="status-badge badge-free">🆓 Free</span>`);
+            let badge = '';
+            if (completed) {
+                badge = `<span class="status-badge badge-completed">✅ Completed</span>`;
+            } else if (enrolled) {
+                badge = `<span class="status-badge badge-free" style="background:#10b981">🎓 Enrolled</span>`;
+            } else {
+                badge = c.isFree 
+                    ? `<span class="status-badge badge-free">🆓 Free</span>` 
+                    : `<span class="status-badge" style="background:#7c3aed; color:white;">💎 Premium</span>`;
+            }
 
             const progressHTML = (enrolled && !completed && progress > 0)
                 ? `<div class="progress-wrap">
@@ -756,7 +811,11 @@
             } else if (enrolled) {
                 btnHTML = `<a href="course-content.html?course=${encodeURIComponent(c.id)}" class="btn-action btn-continue"><i class="fas fa-play"></i> Continue</a>`;
             } else {
-                btnHTML = `<a href="course-content.html?course=${encodeURIComponent(c.id)}" class="btn-action btn-free">Start for FREE</a>`;
+                if (c.isFree) {
+                    btnHTML = `<a href="course-content.html?course=${encodeURIComponent(c.id)}" class="btn-action btn-free">Start for FREE</a>`;
+                } else {
+                    btnHTML = `<button onclick="initiateCoursePurchase('${c.id}')" class="btn-action" style="background: linear-gradient(135deg, #7c3aed, #4f46e5); color: white; border: none;">Unlock for ₹${c.price}</button>`;
+                }
             }
 
             return `
@@ -789,7 +848,52 @@
 
         function hideSkeleton() {
             document.getElementById('skeletonGrid').style.display = 'none';
-            document.getElementById('certsGrid').style.display = 'grid';
+            document.getElementById('freeSection').style.display = 'block';
+            document.getElementById('premiumSection').style.display = 'block';
+        }
+
+        async function initiateCoursePurchase(courseId) {
+            if (!token) {
+                window.location.href = 'signup.html?redirect=certificates.html';
+                return;
+            }
+            try {
+                // Determine correct mode (sandbox/production)
+                const configRes = await fetch(`${API}/api/cashfree/config`);
+                const configData = await configRes.json();
+                const sdkMode = configData.mode || 'sandbox';
+
+                // Create Order
+                const res = await fetch(`${API}/api/cashfree/create-order`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ courseId })
+                });
+                const orderData = await res.json();
+                
+                if (!orderData.ok) {
+                    alert(orderData.message || "Failed to create order");
+                    return;
+                }
+
+                // Launch Cashfree
+                if (typeof Cashfree === 'undefined') {
+                    alert('Payment gateway not loaded. Please refresh the page.');
+                    return;
+                }
+
+                console.log(`[Certificates] Launching Cashfree in ${sdkMode} mode`);
+                const cashfreeInstance = Cashfree({ mode: sdkMode });
+                
+                cashfreeInstance.checkout({ 
+                    paymentSessionId: orderData.payment_session_id,
+                    returnUrl: window.location.href + (window.location.href.includes('?') ? '&' : '?') + "payment=verify&order_id=" + orderData.order_id
+                });
+
+            } catch (err) {
+                console.error('Purchase Error:', err);
+                alert('Purchase error: ' + err.message);
+            }
         }
     </script>
 </body>

@@ -28,6 +28,7 @@ const Course       = require('../models/Course');
 const User         = require('../models/User');
 const Transaction  = require('../models/Transaction');
 const Activity     = require('../models/Activity');
+const MockTestPack = require('../models/MockTestPack');
 
 // ── Environment / Credentials ─────────────────────────────────────────────────
 const CF_APP_ID    = (process.env.CASHFREE_APP_ID    || '').trim();
@@ -39,21 +40,35 @@ if (!CF_APP_ID || !CF_SECRET) {
 }
 
 // ── Detect environment from APP_ID prefix (crash-safe) ───────────────────────
-let resolvedEnv;
+let resolvedEnv, sdkMode;
 if (CF_APP_ID.startsWith('TEST')) {
     if (CF_ENV_RAW === 'PRODUCTION') {
         console.warn('⚠️  Test APP_ID detected but CASHFREE_ENV=PRODUCTION — enforcing SANDBOX.');
     }
-    resolvedEnv = CFEnvironment ? CFEnvironment.SANDBOX : 1;
-    console.log('ℹ️  Cashfree: Running in SANDBOX (Test) mode.');
+    resolvedEnv = CFEnvironment ? CFEnvironment.SANDBOX : 0;
+    sdkMode     = 'sandbox';
+    console.log('🧪 Cashfree: Running in TEST SANDBOX mode.');
 } else {
-    resolvedEnv = CFEnvironment ? CFEnvironment.PRODUCTION : 2;
+    resolvedEnv = CFEnvironment ? CFEnvironment.PRODUCTION : 1;
+    sdkMode     = 'production';
     console.log('🟢 Cashfree: Running in LIVE PRODUCTION mode.');
 }
 
-Cashfree.XClientId     = CF_APP_ID;
-Cashfree.XClientSecret = CF_SECRET;
-Cashfree.XEnvironment  = resolvedEnv;
+/**
+ * ── SDK v5 Initialization ────────────────────────────────────────────────────
+ * Since version 5.1.0, the Cashfree object is a Class, not a static namespace.
+ */
+const cashfree = new Cashfree(resolvedEnv, CF_APP_ID, CF_SECRET);
+console.log('🚀 Cashfree: Initialized (v5.1.0 SDK)');
+
+/**
+ * ── GET SDK CONFIG ────────────────────────────────────────────────────────
+ * Returns mode (sandbox/production) for the frontend SDK initialization.
+ * GET /api/cashfree/config
+ */
+exports.getCFConfig = (req, res) => {
+    res.json({ ok: true, mode: sdkMode });
+};
 
 // ── Cashfree API version (use a stable date) ──────────────────────────────────
 const CF_API_VERSION = '2023-08-01';
@@ -66,15 +81,8 @@ const CF_API_VERSION = '2023-08-01';
 function verifyWebhookSignature(rawBody, signature, timestamp) {
     if (!signature || !timestamp) return false;
     try {
-        const signedPayload    = timestamp + rawBody;
-        const expectedSig      = crypto
-            .createHmac('sha256', CF_SECRET)
-            .update(signedPayload)
-            .digest('base64');
-        return crypto.timingSafeEqual(
-            Buffer.from(expectedSig),
-            Buffer.from(signature)
-        );
+        cashfree.PGVerifyWebhookSignature(signature, rawBody, timestamp);
+        return true;
     } catch (err) {
         console.error('[Webhook] Signature computation error:', err.message);
         return false;
@@ -82,16 +90,74 @@ function verifyWebhookSignature(rawBody, signature, timestamp) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// HELPER — find course by ObjectId, slug, or title (flexible input)
+// HELPER — find course or mock test (flexible input)
 // ─────────────────────────────────────────────────────────────────────────────
-async function findCourse(courseId) {
-    if (String(courseId).match(/^[0-9a-fA-F]{24}$/)) {
-        const byId = await Course.findById(courseId);
-        if (byId) return byId;
+async function findItem(itemId) {
+    console.log(`[findItem] Searching for item with input: "${itemId}"`);
+    
+    // 1. Try by MongoDB ObjectId
+    if (String(itemId).match(/^[0-9a-fA-F]{24}$/)) {
+        const byId = await Course.findById(itemId);
+        if (byId) {
+            console.log(`[findItem] ✅ Found course by ObjectId: ${byId.title}`);
+            return { doc: byId, type: 'course' };
+        }
+        const testById = await MockTestPack.findById(itemId);
+        if (testById) {
+            console.log(`[findItem] ✅ Found mock pack by ObjectId: ${testById.title}`);
+            return { doc: testById, type: 'mock' };
+        }
     }
-    const bySlug = await Course.findOne({ slug: String(courseId).toLowerCase().replace(/\s+/g, '-') });
-    if (bySlug) return bySlug;
-    return Course.findOne({ title: { $regex: new RegExp(`^${courseId}$`, 'i') } });
+
+    // 2. Try by Slug (lowercase, hyphenated)
+    const slugValue = String(itemId).toLowerCase().trim().replace(/\s+/g, '-');
+    const bySlug = await Course.findOne({ slug: slugValue });
+    if (bySlug) {
+        console.log(`[findItem] ✅ Found course by slug "${slugValue}": ${bySlug.title}`);
+        return { doc: bySlug, type: 'course' };
+    }
+
+    // 3. Try by Mock Pack custom ID field
+    const packByIdStr = await MockTestPack.findOne({ id: String(itemId).trim() });
+    if (packByIdStr) {
+        console.log(`[findItem] ✅ Found mock pack by custom ID: ${packByIdStr.title}`);
+        return { doc: packByIdStr, type: 'mock' };
+    }
+
+    // 4. Try by Title (Case-insensitive, Trimmed)
+    const escapedTitle = String(itemId).trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const titleRegex = new RegExp(`^${escapedTitle}$`, 'i');
+    
+    const courseByTitle = await Course.findOne({ title: { $regex: titleRegex } });
+    if (courseByTitle) {
+        console.log(`[findItem] ✅ Found course by title exact match: ${courseByTitle.title}`);
+        return { doc: courseByTitle, type: 'course' };
+    }
+
+    const packByTitle = await MockTestPack.findOne({ title: { $regex: titleRegex } });
+    if (packByTitle) {
+        console.log(`[findItem] ✅ Found mock pack by title exact match: ${packByTitle.title}`);
+        return { doc: packByTitle, type: 'mock' };
+    }
+
+    console.warn(`[findItem] ❌ No item found for "${itemId}" after all lookup attempts.`);
+    return null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// HELPER — quick item look up specifically by courseId or string pack id
+// ─────────────────────────────────────────────────────────────────────────────
+async function getItemById(itemId) {
+    if (String(itemId).match(/^[0-9a-fA-F]{24}$/)) {
+        const c = await Course.findById(itemId);
+        if (c) return { title: c.title };
+        const m = await MockTestPack.findById(itemId);
+        if (m) return { title: m.title };
+    }
+    const p = await MockTestPack.findOne({ id: String(itemId) }) || 
+              await MockTestPack.findOne({ title: String(itemId) });
+    if (p) return { title: p.title };
+    return null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -163,14 +229,20 @@ exports.createOrder = async (req, res) => {
             return res.status(400).json({ ok: false, message: 'courseId is required' });
         }
 
-        const course = await findCourse(courseId);
-        if (!course) {
-            return res.status(404).json({ ok: false, message: 'Course not found. Check the courseId.' });
+        const found = await findItem(courseId);
+        if (!found) {
+            console.warn(`[createOrder] Item not found for ID: ${courseId}`);
+            return res.status(404).json({ ok: false, message: `Course or Mock Test not found: ${courseId}. Please check the ID.` });
         }
+        
+        const course = found.doc;
+        const itemType = found.type;
+
+        console.log(`[createOrder] Found ${itemType}: ${course.title} (Price: ₹${course.price})`);
 
         const isPaid = course.price > 0 && !course.isFree;
         if (!isPaid) {
-            return res.status(400).json({ ok: false, message: 'This course is free — use the Enroll Free button.' });
+            return res.status(400).json({ ok: false, message: 'This item is free — use the direct start button.' });
         }
 
         // Check if user is already enrolled (prevent duplicate purchases)
@@ -183,13 +255,23 @@ exports.createOrder = async (req, res) => {
         const user = await User.findById(userId);
         const customerEmail = user?.email || 'user@renvox.in';
         const customerName  = user?.name  || 'Course User';
-        const customerPhone = user?.phone || '9999999999';
+        
+        // ── Phone Sanitization (Cashfree requires exactly 10 digits) ──
+        let rawPhone = user?.phone || '9999999999';
+        const customerPhone = rawPhone.replace(/\D/g, '').slice(-10); // Keep last 10 digits
+        
+        console.log(`[createOrder] Sanitized Phone: "${rawPhone}" -> "${customerPhone}"`);
 
         // ── Generate unique order ID ─────────────────────────────
         const orderId = `renvox_${String(userId).slice(-6)}_${Date.now()}`;
 
         const baseUrl   = process.env.BASE_URL || 'https://renvox-ai.onrender.com';
-        const returnUrl = `${baseUrl}/premium-course-player.html?course=${course._id}&payment=verify&order_id=${orderId}`;
+        
+        let returnUrl = `${baseUrl}/premium-course-player.html?course=${course._id}&payment=verify&order_id=${orderId}`;
+        if (itemType === 'mock') {
+            returnUrl = `${baseUrl}/mock-tests.html?payment=verify&order_id=${orderId}`;
+        }
+        
         const notifyUrl = `${baseUrl}/api/cashfree/webhook`;
 
         const cfRequest = {
@@ -213,23 +295,31 @@ exports.createOrder = async (req, res) => {
 
         let cfResponse;
         try {
-            cfResponse = await Cashfree.PGCreateOrder(CF_API_VERSION, cfRequest);
+            // Note: v5.1.0 handles the API version internally or via config. 
+            // The method signature for PGCreateOrder typically only takes the request object.
+            cfResponse = await cashfree.PGCreateOrder(cfRequest);
         } catch (cfErr) {
             const errData = cfErr.response?.data;
-            console.error('[createOrder] Cashfree API error:', JSON.stringify(errData || cfErr.message, null, 2));
+            const errMsg = errData?.message || errData?.error_detail || cfErr.message;
+            const errCode = errData?.code || 'CF_ERROR';
+            
+            console.error(`[createOrder] ❌ Cashfree [${errCode}] Rejection:`, JSON.stringify(errData || cfErr.message, null, 2));
+            
             return res.status(502).json({
                 ok:      false,
                 message: 'Cashfree API rejected the order.',
-                details: errData?.message || errData?.error_detail || cfErr.message,
+                details: errMsg,
+                code:    errCode
             });
         }
 
         const { payment_session_id } = cfResponse.data;
 
-        // ── Persist order in DB ──────────────────────────────────
+        // ── PERSIST ORDER IN DB (GROUND TRUTH) ───────────────────
         await CourseOrder.create({
             userId,
             courseId:         course._id,
+            itemType:         itemType === 'mock' ? 'mock' : 'course', // Store item type
             orderId,
             paymentSessionId: payment_session_id,
             amount:           course.price,
@@ -259,7 +349,7 @@ exports.createOrder = async (req, res) => {
             payment_session_id,
             orderId,
             amount:            course.price,
-            courseId:          course._id,
+            courseId:          itemType === 'mock' ? course.id : course._id,
         });
 
     } catch (error) {
@@ -284,26 +374,38 @@ exports.verifyPayment = async (req, res) => {
             return res.status(400).json({ ok: false, message: 'Missing orderId or courseId' });
         }
 
-        const course = await Course.findById(courseId);
-        if (!course) return res.status(404).json({ ok: false, message: 'Course not found' });
-
         // Check for idempotency — webhook may have already processed this
-        const orderRecord = await CourseOrder.findOne({ orderId });
-        if (orderRecord && orderRecord.status === 'paid') {
-            console.log(`[verifyPayment] ✅ Order ${orderId} already paid & enrolled.`);
-            return res.json({ ok: true, message: 'Payment already verified.', courseName: course.title });
+        const orderRecord = await CourseOrder.findOne({ orderId }).populate('userId');
+        
+        if (!orderRecord) {
+            console.error(`[verifyPayment] Order not found in database: ${orderId}`);
+            return res.status(404).json({ ok: false, message: `Order record is missing: ${orderId}` });
+        }
+
+        if (orderRecord.status === 'paid') {
+            console.log(`[verifyPayment] 🎉 Order ${orderId} already marked as paid.`);
+            return res.json({ ok: true, message: 'Payment successful', courseName: orderRecord.courseId?.title || 'Course' });
+        }
+
+        const actualCourseId = orderRecord.courseId;
+        const itemMeta = await getItemById(actualCourseId);
+
+        if (!itemMeta) {
+            console.error(`[verifyPayment] Course data is missing for ID ${actualCourseId} in order ${orderId}`);
+            return res.status(404).json({ ok: false, message: 'Purchased course data not found in catalog.' });
         }
 
         // ── Ask Cashfree for ground truth ────────────────────────
-        let payments;
+        let cfResponse;
         try {
-            const cfResp = await Cashfree.PGOrderFetchPayments(CF_API_VERSION, orderId);
-            payments = cfResp.data;
+            // v5.1.0 Fetch Order usage
+            cfResponse = await cashfree.PGFetchOrder(orderId);
         } catch (cfErr) {
-            console.error('[verifyPayment] Cashfree fetch error:', cfErr.response?.data || cfErr.message);
+            console.error('[verifyPayment] Cashfree API error:', cfErr.response?.data || cfErr.message);
             return res.status(502).json({ ok: false, message: 'Unable to verify payment with Cashfree.' });
         }
 
+        const payments = cfResponse.data;
         const successPayment = Array.isArray(payments)
             ? payments.find(p => p.payment_status === 'SUCCESS')
             : null;
@@ -333,17 +435,19 @@ exports.verifyPayment = async (req, res) => {
         // ── Update legacy Payment record ─────────────────────────
         await Payment.findOneAndUpdate({ orderId }, { status: 'SUCCESS', paymentId });
 
-        // ── Enroll user ──────────────────────────────────────────
+        // ── ENROLL USER ──────────────────────────────────────────
         await enrollUser({
             userId,
-            courseId:    course._id,
+            courseId:    actualCourseId,
             paymentId,
             amount:      paidAmount,
             orderId,
-            courseTitle: course.title,
+            courseTitle: itemMeta.title,
         });
 
-        return res.json({ ok: true, message: 'Payment verified successfully!', courseName: course.title });
+        console.log(`[verifyPayment] ✅ Verified & Enrolled: ${itemMeta.title} for user ${userId}`);
+
+        return res.json({ ok: true, message: 'Payment verified successfully!', courseName: itemMeta.title });
 
     } catch (error) {
         console.error('[verifyPayment] Unexpected error:', error.message, error.stack);
@@ -368,8 +472,10 @@ exports.webhookHandler = async (req, res) => {
 
     // ── 2. Signature Verification ─────────────────────────────────────────────
     if (!verifyWebhookSignature(rawBody, signature, timestamp)) {
-        console.error(`[Webhook] ❌ Invalid signature | ts=${timestamp} | sig=${signature?.slice(0, 20)}...`);
-        return res.status(401).json({ ok: false, message: 'Unauthorized: Invalid webhook signature.' });
+        console.error(`[Webhook] ❌ INVALID SIGNATURE | ts=${timestamp} | sig=${signature?.slice(0, 10)}...`);
+        // We log detailed headers to help debug production mismatches
+        console.debug('[Webhook] Raw Payload Snippet:', rawBody.slice(0, 50));
+        return res.status(401).json({ ok: false, message: 'Unauthorized: Invalid signature.' });
     }
 
     // ── 3. Parse payload ──────────────────────────────────────────────────────
@@ -399,9 +505,9 @@ exports.webhookHandler = async (req, res) => {
     // ── 5. Route by event type ────────────────────────────────────────────────
     try {
         if (eventType === 'PAYMENT_SUCCESS_WEBHOOK') {
-            await handlePaymentSuccess({ orderRecord, orderId, paymentId, amount, payload });
+            await handlePaymentSuccess({ orderRecord, orderId, paymentId, amount, payload, app: req.app });
         } else if (eventType === 'PAYMENT_FAILED_WEBHOOK') {
-            await handlePaymentFailed({ orderRecord, orderId, payload });
+            await handlePaymentFailed({ orderRecord, orderId, payload, app: req.app });
         } else {
             console.log(`[Webhook] ℹ️  Unhandled event type: ${eventType} — ignoring.`);
         }
@@ -417,7 +523,7 @@ exports.webhookHandler = async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // WEBHOOK SUB-HANDLER — PAYMENT_SUCCESS_WEBHOOK
 // ─────────────────────────────────────────────────────────────────────────────
-async function handlePaymentSuccess({ orderRecord, orderId, paymentId, amount, payload }) {
+async function handlePaymentSuccess({ orderRecord, orderId, paymentId, amount, payload, app }) {
     console.log(`[Webhook] ✅ PAYMENT_SUCCESS for order: ${orderId}`);
 
     if (!orderRecord) {
@@ -438,10 +544,10 @@ async function handlePaymentSuccess({ orderRecord, orderId, paymentId, amount, p
     // Update legacy Payment record
     await Payment.findOneAndUpdate({ orderId }, { status: 'SUCCESS', paymentId });
 
-    // Fetch course title for logs/activity
-    const course = await Course.findById(orderRecord.courseId);
-    if (!course) {
-        console.error(`[Webhook] Course ${orderRecord.courseId} not found! Cannot enroll.`);
+    // Fetch course or mock title for logs/activity
+    const itemMeta = await getItemById(orderRecord.courseId);
+    if (!itemMeta) {
+        console.error(`[Webhook] Item ${orderRecord.courseId} not found! Cannot enroll.`);
         return;
     }
 
@@ -452,10 +558,20 @@ async function handlePaymentSuccess({ orderRecord, orderId, paymentId, amount, p
         paymentId,
         amount:      amount || orderRecord.amount,
         orderId,
-        courseTitle: course.title,
+        courseTitle: itemMeta.title,
     });
 
-    console.log(`[Webhook] 🎉 User ${orderRecord.userId} successfully enrolled in "${course.title}"`);
+    console.log(`[Webhook] 🎉 User ${orderRecord.userId} successfully enrolled in "${itemMeta.title}"`);
+
+    // ── Real-time Dashboard Update ──
+    if (app && app.get('io')) {
+        const io = app.get('io');
+        io.to(`user:${orderRecord.userId}`).emit('dashboard_update', {
+            type: 'PURCHASE_COMPLETE',
+            title: itemMeta.title,
+            message: `Successfully unlocked ${itemMeta.title}!`
+        });
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

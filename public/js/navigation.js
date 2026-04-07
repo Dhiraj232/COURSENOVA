@@ -66,17 +66,8 @@ function setupNavigation() {
 
     const links = [
         { name: 'Home', href: 'index.html', key: 'home' },
-        { 
-            name: 'Courses', 
-            href: 'certificates.html', 
-            key: 'courses',
-            dropdown: [
-                { name: 'Explore All', href: 'certificates.html' },
-                { name: 'Premium Courses', href: 'premium-courses.html' },
-                { name: 'My Certificates', href: 'my-certificates.html' }
-            ]
-        },
-        { name: 'Mock Tests', href: 'testing-center.html', key: 'tests' },
+        { name: 'Courses', href: 'certificates.html', key: 'courses' },
+        { name: 'Mock Tests', href: 'mock-tests.html', key: 'tests' },
         { name: 'Community', href: 'community.html', key: 'community' },
         { name: 'Store', href: 'store.html', key: 'store' }
     ];

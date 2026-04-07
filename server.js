@@ -221,12 +221,12 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-      "frame-src": ["'self'", "https://www.youtube.com", "https://youtube.com", "https://docs.google.com"],
+      "frame-src": ["'self'", "https://www.youtube.com", "https://youtube.com", "https://docs.google.com", "https://sdk.cashfree.com", "https://sandbox.cashfree.com", "https://api.cashfree.com"],
       "img-src": ["'self'", "data:", "blob:", "https://res.cloudinary.com", "https://images.unsplash.com", "https://*.google.com", "https://*.googleusercontent.com", "https://i.ytimg.com", "https://yt3.ggpht.com", "https://ui-avatars.com", "https://cdni.iconscout.com"],
       "script-src": ["'self'", "'unsafe-inline'", "https://www.googletagmanager.com", "https://*.google.com", "https://sdk.cashfree.com"],
       "script-src-attr": ["'unsafe-inline'"],
-      "connect-src": ["'self'", "https://*.google-analytics.com", "https://*.analytics.google.com", "https://*.googletagmanager.com", "https://sdk.cashfree.com", "https://sandbox.cashfree.com", "https://api.cashfree.com", "https://lms-backend-renvox.onrender.com", "https://renvox-ai.onrender.com"]
-
+      "connect-src": ["'self'", "https://*.google-analytics.com", "https://*.analytics.google.com", "https://*.googletagmanager.com", "https://sdk.cashfree.com", "https://sandbox.cashfree.com", "https://api.cashfree.com", "https://lms-backend-renvox.onrender.com", "https://renvox-ai.onrender.com"],
+      "form-action": ["'self'", "https://sdk.cashfree.com", "https://sandbox.cashfree.com", "https://api.cashfree.com"]
       },
   },
 }));
@@ -348,7 +348,9 @@ app.use('/api/payments', paymentRoutes);
 app.use('/api/enrollments', enrollmentRoutes);
 app.use('/api/certificates', certificateRoutes);
 app.use('/api/course', courseRoutes);     // progress, access-check, submit-test, details
-app.use('/api/my-courses', enrollmentRoutes); // Udemy-style alias → GET /api/my-courses/my-courses
+app.use('/api/enroll', enrollmentRoutes);    // Aligned with frontend expectation
+app.use('/api/enrollments', enrollmentRoutes); // Standard plural alias
+app.use('/api/my-courses', enrollmentRoutes); // Udemy-style alias
 app.use('/api/test', require('./routes/testRoutes')); // New test endpoint
 
 // ─── Practice & AI Routes (New) ──────────────────────────────
@@ -559,9 +561,25 @@ const io = require('socket.io')(server, {
 });
 app.set('io', io);
 
-// Community Chat Logic (Socket.io)
+// Community Chat & Real-Time Dashboard Logic (Socket.io)
+const socketMap = new Map(); // userId -> Set of socketIds
+
 io.on('connection', (socket) => {
-  console.log('User connected to chat');
+  console.log('User connected');
+
+  // Unified Identificaiton for Dashboard/Chat
+  socket.on('identify', (userId) => {
+    if (!userId) return;
+    socket.userId = String(userId);
+    if (!socketMap.has(socket.userId)) {
+      socketMap.set(socket.userId, new Set());
+    }
+    socketMap.get(socket.userId).add(socket.id);
+    console.log(`User ${userId} identified on socket ${socket.id}`);
+    
+    // Joint a private room for this user for easy targeting
+    socket.join(`user:${userId}`);
+  });
 
   socket.on('join-room', (room) => {
     socket.join(room);
@@ -574,9 +592,18 @@ io.on('connection', (socket) => {
   });
 
   socket.on('disconnect', () => {
+    if (socket.userId && socketMap.has(socket.userId)) {
+      socketMap.get(socket.userId).delete(socket.id);
+      if (socketMap.get(socket.userId).size === 0) {
+        socketMap.delete(socket.userId);
+      }
+    }
     console.log('User disconnected');
   });
 });
+
+// Attach socketMap to app for use in routes
+app.set('socketMap', socketMap);
 
 server.listen(PORT, () => console.log('RENVOX Community API & Chat listening on port', PORT));
 

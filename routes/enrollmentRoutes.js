@@ -62,8 +62,13 @@ router.get('/all-status', async (req, res) => {
             CourseProgress.find({ userId, testPassed: true }).select('courseId certId earnedAt -_id')
         ]);
 
-        // Build sets of all enrolled course names / IDs
-        const enrolledIds = enrollments.map(e => e.courseId || e.courseName).filter(Boolean);
+        // Build sets of all enrolled course names / IDs (to support both ObjectId indexing and static title UI mapping)
+        const enrolledIds = [];
+        enrollments.forEach(e => {
+            if (e.courseId) enrolledIds.push(e.courseId);
+            if (e.courseName) enrolledIds.push(e.courseName);
+        });
+
         const completedList = progRecords.map(p => ({
             courseId: p.courseId,
             certId: p.certId,

@@ -5,6 +5,7 @@ const Course = require('../models/Course');
 const Enrollment = require('../models/Enrollment');
 const User = require('../models/User');
 const CourseProgress = require('../models/CourseProgress');
+const ExamAttempt = require('../models/ExamAttempt');
 
 const MAX_EXAM_ATTEMPTS = 3;
 

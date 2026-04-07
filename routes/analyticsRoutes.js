@@ -9,6 +9,9 @@ const StoreUser = require('../models/User');
 const Activity = require('../models/Activity');
 const TestResult = require('../models/TestResult');
 const Course = require('../models/Course');
+const Batch = require('../models/Batch');
+const Order = require('../models/Order');
+const TimeTracking = require('../models/TimeTracking');
 
 // @route   GET /api/dashboard
 // @desc    Return comprehensive student analytics for dashboard
@@ -16,12 +19,17 @@ router.get('/dashboard', requireAuth, async (req, res) => {
     try {
         const userId = req.userId;
 
-        // 1. Basic User Info
+        // 1. Basic User Info & Personalized Display Name
         const user = await StoreUser.findById(userId);
         if (!user) return res.status(404).json({ ok: false, message: 'User not found' });
 
+        // Logic: Fallback to email prefix if name is default "RenVox Learner" or missing
+        let displayName = user.name || (user.email ? user.email.split('@')[0] : 'Learner');
+        if (displayName === 'RenVox Learner' && user.email) {
+            displayName = user.email.split('@')[0];
+        }
+
         // 2. Fetch/Create User Analytics (streak, time, daily activity)
-        // Ensure userId is handled correctly for both String (Enrollment) and ObjectId (others)
         const uidString = String(userId);
         let queryUserId = userId;
         try {
@@ -46,10 +54,27 @@ router.get('/dashboard', requireAuth, async (req, res) => {
             await analytics.save();
         }
 
-        // 3. Course Progress & Metrics
-        const enrollments = await Enrollment.find({ userId: uidString });
-        const allProgress = await CourseProgress.find({ userId: queryUserId });
+        // 3. Course Progress & Metrics (Capture all formats)
+        const [enrollDocStr, enrollDocObj, allProgress] = await Promise.all([
+            Enrollment.find({ userId: uidString }),
+            Enrollment.find({ userId: queryUserId }),
+            CourseProgress.find({ $or: [{ userId: queryUserId }, { userId: uidString }] })
+        ]);
 
+        // Merge and deduplicate enrollments
+        const enrollMap = new Map();
+        [...enrollDocStr, ...enrollDocObj].forEach(e => enrollMap.set(String(e.courseId || e.courseName), e));
+        
+        // Add legacy enrollments from user.enrolledCourses array
+        if (user.enrolledCourses && user.enrolledCourses.length > 0) {
+            user.enrolledCourses.forEach(title => {
+                if (!enrollMap.has(title)) {
+                    enrollMap.set(title, { courseId: title, courseName: title, purchaseDate: user.createdAt });
+                }
+            });
+        }
+
+        const enrollments = Array.from(enrollMap.values());
         const totalCourses = enrollments.length;
         const completedCourses = allProgress.filter(p => p.isCompleted).length;
         const certificatesCount = allProgress.filter(p => p.certId).length;
@@ -91,18 +116,35 @@ router.get('/dashboard', requireAuth, async (req, res) => {
             };
         }));
 
-        // 4. Test Performance Analytics
-        const testResults = await TestResult.find({ userId: queryUserId }).sort({ timestamp: -1 });
+        // 4. Test Performance Analytics (Support both ID formats)
+        const testResults = await TestResult.find({ 
+            $or: [{ userId: queryUserId }, { userId: uidString }] 
+        }).sort({ timestamp: -1 });
+
         const testsPassed = testResults.filter(t => t.passed).length;
         const testsFailed = testResults.filter(t => !t.passed).length;
         const avgScore = testResults.length > 0
             ? Math.round(testResults.reduce((acc, t) => acc + t.score, 0) / testResults.length)
             : 0;
 
+        const bestScore = testResults.length > 0 ? Math.max(...testResults.map(t => t.score)) : 0;
+        const accuracy = testResults.length > 0 
+            ? Math.round((testResults.reduce((acc, t) => acc + (t.correctQuestions || 0), 0) / testResults.reduce((acc, t) => acc + (t.totalQuestions || 1), 0)) * 100)
+            : 0;
+
         // Weak topics (those with scores < 60%)
         const weakTopics = [...new Set(testResults.filter(t => t.score < 60).map(t => t.courseName || t.topic))];
 
-        // 5. Recent Activity Feed
+        // 5. Total Books & Batches
+        const [booksPurchased, batchesJoined] = await Promise.all([
+            Order.countDocuments({ 
+                $or: [{ 'buyer.buyerId': queryUserId }, { 'buyer.buyerId': uidString }], 
+                'payment.status': 'completed' 
+            }),
+            Batch.countDocuments({ enrolledUsers: { $in: [queryUserId, uidString] } })
+        ]);
+
+        // 6. Recent Activity Feed
         const recentActivities = await Activity.find({ userId: queryUserId })
             .sort({ timestamp: -1 })
             .limit(10);
@@ -110,10 +152,10 @@ router.get('/dashboard', requireAuth, async (req, res) => {
         res.json({
             ok: true,
             user: {
-                name: user.name,
+                name: displayName,
                 email: user.email,
                 avatar: user.picture,
-                role: user.role || 'student' // Added for rank mapping
+                role: user.role || 'student'
             },
             stats: {
                 totalCourses,
@@ -121,13 +163,15 @@ router.get('/dashboard', requireAuth, async (req, res) => {
                 certificates: certificatesCount,
                 streak: analytics.learningStreak,
                 avgScore,
-                testsPassed,
-                testsFailed,
-                totalTestsTaken: testResults.length, // Added
-                totalTime: analytics.totalTimeSpent
+                bestScore,
+                accuracy,
+                totalTestsTaken: testResults.length,
+                totalTime: analytics.totalTimeSpent,
+                totalBooks: booksPurchased,
+                totalBatches: batchesJoined
             },
             courses: courseProgressDetails,
-            testResults, // Added all tests history
+            testResults: testResults.slice(0, 5), // Only last 5 for overview
             weeklyActivity: analytics.weeklyActivity,
             recentActivities,
             weakTopics
@@ -178,43 +222,97 @@ router.get('/me', requireAuth, async (req, res) => {
     res.redirect('/api/analytics/dashboard');
 });
 
-// @route   POST /api/track-time
-// @desc    Increments live time spent correctly every minute
-router.post('/track-time', requireAuth, async (req, res) => {
+// @route   GET /api/analytics/activity
+// @desc    Get detailed activity timeline
+router.get('/activity', requireAuth, async (req, res) => {
     try {
-        const userId = req.userId;
-        let queryUserId = userId;
-        if (mongoose.Types.ObjectId.isValid(userId)) {
-            queryUserId = new mongoose.Types.ObjectId(userId);
-        }
-
-        let analytics = await UserAnalytics.findOne({ userId: queryUserId });
-        if (!analytics) {
-            analytics = new UserAnalytics({
-                userId: queryUserId,
-                learningStreak: 1,
-                weeklyActivity: [
-                    { day: 'Mon', minutes: 0 }, { day: 'Tue', minutes: 0 }, { day: 'Wed', minutes: 0 },
-                    { day: 'Thu', minutes: 0 }, { day: 'Fri', minutes: 0 }, { day: 'Sat', minutes: 0 }, { day: 'Sun', minutes: 0 }
-                ],
-                totalTimeSpent: 0
-            });
-        }
-        
-        analytics.totalTimeSpent += 1;
-        
-        // Update today's weekly graph
-        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-        const todayDay = days[new Date().getDay()];
-        const todayIdx = analytics.weeklyActivity.findIndex(d => d.day === todayDay);
-        if (todayIdx !== -1) {
-            analytics.weeklyActivity[todayIdx].minutes += 1;
-        }
-
-        await analytics.save();
-        res.json({ ok: true, totalTime: analytics.totalTimeSpent, weeklyActivity: analytics.weeklyActivity });
+        const activities = await Activity.find({ userId: req.userId })
+            .sort({ timestamp: -1 })
+            .limit(50);
+        res.json({ ok: true, activities });
     } catch (err) {
-        res.status(500).json({ ok: false, message: 'Server error tracking time' });
+        res.status(500).json({ ok: false, message: 'Failed to fetch activity timeline' });
+    }
+});
+
+// @route   GET /api/analytics/performance
+// @desc    Get detailed performance metrics
+router.get('/performance', requireAuth, async (req, res) => {
+    try {
+        const testResults = await TestResult.find({ userId: req.userId }).sort({ timestamp: -1 });
+        
+        const metrics = {
+            totalTests: testResults.length,
+            avgScore: testResults.length > 0 ? Math.round(testResults.reduce((a, b) => a + b.score, 0) / testResults.length) : 0,
+            bestScore: testResults.length > 0 ? Math.max(...testResults.map(t => t.score)) : 0,
+            accuracy: testResults.length > 0 
+                ? Math.round((testResults.reduce((a, b) => a + (b.correctQuestions || 0), 0) / testResults.reduce((a, b) => a + (b.totalQuestions || 1), 0)) * 100) 
+                : 0,
+            history: testResults
+        };
+
+        res.json({ ok: true, metrics });
+    } catch (err) {
+        res.status(500).json({ ok: false, message: 'Failed to fetch performance data' });
+    }
+});
+
+// @route   POST /api/analytics/time/start
+// @desc    Start a time tracking session
+router.post('/time/start', requireAuth, async (req, res) => {
+    const { context, itemId } = req.body;
+    try {
+        const session = await TimeTracking.create({
+            userId: req.userId,
+            context: context || 'platform',
+            itemId: itemId || null,
+            startTime: new Date()
+        });
+        res.json({ ok: true, sessionId: session._id });
+    } catch (err) {
+        res.status(500).json({ ok: false, message: 'Failed to start tracking session' });
+    }
+});
+
+// @route   POST /api/analytics/time/stop
+// @desc    Stop a time tracking session and update analytics
+router.post('/time/stop', requireAuth, async (req, res) => {
+    const { sessionId } = req.body;
+    try {
+        const session = await TimeTracking.findById(sessionId);
+        if (!session || !session.isActive) return res.status(404).json({ ok: false, message: 'Session not found or inactive' });
+
+        session.endTime = new Date();
+        session.durationSeconds = Math.round((session.endTime - session.startTime) / 1000);
+        session.isActive = false;
+        await session.save();
+
+        // Update global analytics
+        const minutes = Math.round(session.durationSeconds / 60);
+        if (minutes > 0) {
+            let analytics = await UserAnalytics.findOne({ userId: req.userId });
+            if (!analytics) {
+                analytics = new UserAnalytics({
+                    userId: req.userId,
+                    learningStreak: 1,
+                    weeklyActivity: [
+                        { day: 'Mon', minutes: 0 }, { day: 'Tue', minutes: 0 }, { day: 'Wed', minutes: 0 },
+                        { day: 'Thu', minutes: 0 }, { day: 'Fri', minutes: 0 }, { day: 'Sat', minutes: 0 }, { day: 'Sun', minutes: 0 }
+                    ],
+                    totalTimeSpent: 0
+                });
+            }
+            analytics.totalTimeSpent += minutes;
+            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            const todayDay = days[new Date().getDay()];
+            const todayIdx = analytics.weeklyActivity.findIndex(d => d.day === todayDay);
+            if (todayIdx !== -1) analytics.weeklyActivity[todayIdx].minutes += minutes;
+            await analytics.save();
+        }
+
+        res.json({ ok: true, duration: session.durationSeconds });
+    } catch (err) {
+        res.status(500).json({ ok: false, message: 'Failed to stop tracking session' });
     }
 });
 

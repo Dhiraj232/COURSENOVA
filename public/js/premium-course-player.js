@@ -11,7 +11,7 @@ let examAttemptsLeft = 3;
 
 document.addEventListener('DOMContentLoaded', async () => {
     if (!courseId) {
-        window.location.href = 'premium-courses.html';
+        window.location.href = 'certificates.html';
         return;
     }
 

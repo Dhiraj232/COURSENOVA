@@ -106,6 +106,18 @@ router.post('/submit', requireAuth, async (req, res) => {
         });
 
         res.json({ ok: true, result });
+
+        // ── Real-time Dashboard Update ──
+        const io = req.app.get('io');
+        if (io) {
+            io.to(`user:${req.userId}`).emit('dashboard_update', {
+                type: 'TEST_COMPLETE',
+                title: packId,
+                score: (score / total) * 100,
+                passed: (score / total) >= 0.4,
+                message: `Finished ${packId} with ${(score / total) * 100}%`
+            });
+        }
     } catch (err) {
         res.status(500).json({ ok: false, message: 'Submission failed' });
     }
