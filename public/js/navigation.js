@@ -556,7 +556,7 @@ function setupUserDropdown() {
         <div class="user-menu-wrapper">
             <button class="btn-user-menu" id="userMenuBtn" onclick="window.toggleUserDropdown(event)">
                 <div class="user-avatar-small">${initial}</div>
-                <span class="user-name-display">${email || 'User'}</span>
+                <span class="user-name-display">${user.name || firstName || 'User'}</span>
                 <i class="fas fa-chevron-down ChevronIcon"></i>
             </button>
             

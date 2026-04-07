@@ -251,8 +251,16 @@ exports.createOrder = async (req, res) => {
             return res.status(409).json({ ok: false, message: 'Already enrolled in this course.' });
         }
 
-        // ── Fetch user details ───────────────────────────────────
-        const user = await User.findById(userId);
+        // ── Safe User Lookup (Fixes CastError) ───────────────────
+        async function findUserByIdOrEmail(uid) {
+            if (String(uid).match(/^[0-9a-fA-F]{24}$/)) {
+                return await User.findById(uid);
+            }
+            // Fallback: Check if it's an email
+            return await User.findOne({ email: String(uid) });
+        }
+
+        const user = await findUserByIdOrEmail(userId);
         const customerEmail = user?.email || 'user@renvox.in';
         const customerName  = user?.name  || 'Course User';
         
@@ -446,6 +454,16 @@ exports.verifyPayment = async (req, res) => {
         });
 
         console.log(`[verifyPayment] ✅ Verified & Enrolled: ${itemMeta.title} for user ${userId}`);
+
+        // ── Real-time Dashboard Update ──
+        if (req.app && req.app.get('io')) {
+            const io = req.app.get('io');
+            io.to(`user:${userId}`).emit('dashboard_update', {
+                type: 'PURCHASE_COMPLETE',
+                title: itemMeta.title,
+                message: `Successfully unlocked ${itemMeta.title}!`
+            });
+        }
 
         return res.json({ ok: true, message: 'Payment verified successfully!', courseName: itemMeta.title });
 

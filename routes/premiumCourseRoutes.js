@@ -40,8 +40,8 @@ async function isEnrolled(userId, courseId) {
         console.warn("isEnrolled error", e.message);
     }
 
-    // Legacy: check User.enrolledCourses string array
-    const user = await User.findById(userId);
+    // Legacy: check User.enrolledCourses string array 
+    const user = String(userId).match(/^[0-9a-fA-F]{24}$/) ? await User.findById(userId) : await User.findOne({ email: String(userId) });
     return !!(user && user.enrolledCourses &&
         (user.enrolledCourses.includes(String(courseId)) ||
          user.enrolledCourses.some(c =>
@@ -269,7 +269,7 @@ router.post('/submit-exam', requireAuth, async (req, res) => {
             }
         } catch (e) { console.warn('Log error:', e.message); }
 
-        const user = await User.findById(userId);
+        const user = String(userId).match(/^[0-9a-fA-F]{24}$/) ? await User.findById(userId) : await User.findOne({ email: String(userId) });
         res.json({
             ok: true,
             passed,
@@ -299,7 +299,7 @@ router.get('/certificate/:courseId', requireAuth, async (req, res) => {
             return res.status(404).json({ ok: false, message: 'Certificate not found. Pass the exam first.' });
         }
 
-        const user   = await User.findById(userId).lean();
+        const user = String(userId).match(/^[0-9a-fA-F]{24}$/) ? await User.findById(userId) : await User.findOne({ email: String(userId) });
         const course = await Course.findById(courseId).lean()
             || await Course.findOne({ slug: courseId }).lean()
             || await Course.findOne({ title: courseId }).lean();

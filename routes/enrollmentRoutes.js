@@ -150,6 +150,17 @@ router.post('/enroll-free', async (req, res) => {
             console.warn('Silent Enrollment Log Error:', logErr);
         }
 
+        // ── Real-time Dashboard Update ──
+        if (req.app && req.app.get('io')) {
+            const io = req.app.get('io');
+            const uid = String(userId);
+            io.to(`user:${uid}`).emit('dashboard_update', {
+                type: 'PURCHASE_COMPLETE',
+                title: course.title,
+                message: `Successfully enrolled in ${course.title}!`
+            });
+        }
+
         res.status(201).json({ ok: true, message: 'Enrolled successfully!' });
     } catch (err) {
         res.status(500).json({ ok: false, message: err.message });
