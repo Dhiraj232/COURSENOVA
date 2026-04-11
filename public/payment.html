@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Complete Payment - RENVOX</title>
+    <title>Complete Payment - COURSENOVA</title>
 
     <!-- Google Fonts -->
     <link
@@ -200,7 +200,7 @@
     <!-- standard navbar -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
-            <a href="index.html" class="logo"><img src="images/logo%20renvox.png" alt="RENVOX"> <span>RENVOX</span></a>
+            <a href="index.html" class="logo"><img src="images/logo%20coursenova.png" alt="COURSENOVA"> <span>COURSENOVA</span></a>
             <ul class="nav-menu" id="navMenu"></ul>
             <div class="nav-buttons" id="navButtons"></div>
             <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
@@ -279,7 +279,7 @@
     <!-- ==================== FOOTER ==================== -->
     <footer class="footer">
         <div class="footer-bottom">
-            <p>&copy; 2025 RENVOX – All rights reserved.</p>
+            <p>&copy; 2025 COURSENOVA ï¿½ All rights reserved.</p>
         </div>
     </footer>
 
@@ -287,7 +287,7 @@
         let currentCourseName = "";
         let currentCourseId = "";
 
-        // Course catalog — add more courses here as needed
+        // Course catalog ï¿½ add more courses here as needed
         const COURSE_CATALOG = [
             { id: 'c-programming-fundamentals', title: 'C Programming Fundamentals', price: 799 },
             { id: 'data-structures-advanced', title: 'Data Structures Advanced', price: 1199 },
@@ -320,7 +320,7 @@
                     currentCourseName = decoded;
                     currentCourseId = decoded;
                     document.getElementById('displayCourseName').innerText = decoded;
-                    document.getElementById('displayCoursePrice').innerText = '? —';
+                    document.getElementById('displayCoursePrice').innerText = '? ï¿½';
                 }
             } else {
                 document.getElementById('displayCourseName').innerText = "No course selected";
@@ -328,7 +328,7 @@
 
             // Pre-fill user info from localStorage if available
             try {
-                const storedUser = JSON.parse(localStorage.getItem('renvox_user') || '{}');
+                const storedUser = JSON.parse(localStorage.getItem('coursenova_user') || '{}');
                 if (storedUser.fullName) document.getElementById('applicantName').value = storedUser.fullName;
                 if (storedUser.email) document.getElementById('applicantEmail').value = storedUser.email;
             } catch { }
@@ -385,7 +385,7 @@
             formData.append('utr', utr);
             formData.append('screenshot', screenshotInput.files[0]);
 
-            const token = localStorage.getItem('renvox_token') || localStorage.getItem('renvoxToken');
+            const token = localStorage.getItem('coursenova_token') || localStorage.getItem('coursenovaToken');
 
             if (!token) {
                 alert("You need to log in before submitting payment.");

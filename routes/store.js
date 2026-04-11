@@ -1,5 +1,5 @@
 /**
- * RENVOX Store API Routes
+ * COURSENOVA Store API Routes
  * Private Book Exchange — College & Children groups
  * All routes prefixed /api/store
  */
@@ -158,7 +158,7 @@ router.post('/books', requireStoreAuth, requireProfile, async (req, res) => {
                 userId: user._id,
                 sellerType: 'Individual',
                 businessInfo: {
-                    businessName: user.name || 'RENVOX Store Seller'
+                    businessName: user.name || 'COURSENOVA Store Seller'
                 },
                 address: {
                     city: 'India',

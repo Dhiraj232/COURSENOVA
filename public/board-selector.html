@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Select Subject & Language | COURSENOVA</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/navigation.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .selector-header {
+            padding: 60px 5%;
+            background: #f8fafc;
+            text-align: center;
+        }
+        .subject-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 25px;
+            padding: 40px 5%;
+        }
+        .subject-card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            border: 2px solid #e2e8f0;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        .subject-card:hover { border-color: #3b82f6; background: #eff6ff; }
+        .subject-card i { font-size: 1.5rem; color: #3b82f6; }
+
+        /* Modal / Pop-over for Language Selection */
+        .language-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+        .lang-options {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 25px;
+        }
+        .lang-btn {
+            padding: 15px 30px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            flex: 1;
+            transition: 0.3s;
+        }
+        .lang-btn:hover { border-color: #3b82f6; color: #3b82f6; }
+        .lang-btn.active { background: #3b82f6; color: white; border-color: #3b82f6; }
+    </style>
+</head>
+<body>
+    <nav class="navbar" id="navbar"></nav>
+
+    <header class="selector-header">
+        <h1 id="boardTitle">State Board Mock Tests</h1>
+        <p>Choose a subject to begin your 30-minute practice session.</p>
+    </header>
+
+    <main class="container">
+        <div class="subject-grid" id="subjectGrid">
+            <!-- Subjects injected by JS -->
+        </div>
+    </main>
+
+    <!-- Language Selection Modal -->
+    <div class="language-modal" id="langModal">
+        <div class="modal-content">
+            <h2>Choose Your Language</h2>
+            <p>Select the language you want the questions to appear in.</p>
+            <div class="lang-options">
+                <div class="lang-btn" onclick="selectLang('en')">English</div>
+                <div class="lang-btn" onclick="selectLang('hi')">Hindi</div>
+            </div>
+            <button class="btn-primary" style="margin-top: 30px; width: 100%;" id="startBtn">Start Test</button>
+        </div>
+    </div>
+
+    <script src="js/navigation.js"></script>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const selectedBoard = urlParams.get('board') || 'State Board';
+        const urlPackId = urlParams.get('packId');
+        let selectedSubject = null;
+        let selectedLanguage = 'en';
+
+        document.getElementById('boardTitle').innerText = selectedBoard;
+
+        async function init() {
+            const token = localStorage.getItem('token') || localStorage.getItem('coursenova_token') || localStorage.getItem('coursenovaToken');
+            if (!token) { window.location.href = 'signup.html'; return; }
+
+            try {
+                let subjects = [];
+                if (urlPackId) {
+                    const res = await fetch(`/api/mocktest/packs/${urlPackId}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    const data = await res.json();
+                    if (data.ok && data.pack) {
+                        subjects = data.pack.tests.map(t => t.testTitle);
+                    }
+                } else {
+                    const res = await fetch('/api/mocktest/categories');
+                    const data = await res.json();
+                    subjects = data.subjects['defaultBoard'] || [];
+                }
+                
+                renderSubjects(subjects);
+            } catch (e) { console.error(e); }
+        }
+
+        function renderSubjects(subjects) {
+            const grid = document.getElementById('subjectGrid');
+            grid.innerHTML = subjects.map(s => `
+                <div class="subject-card" onclick="openLangModal('${s}')">
+                    <i class="fas fa-book"></i>
+                    <h3>${s}</h3>
+                </div>
+            `).join('');
+        }
+
+        function openLangModal(subject) {
+            selectedSubject = subject;
+            document.getElementById('langModal').style.display = 'flex';
+        }
+
+        function selectLang(lang) {
+            selectedLanguage = lang;
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.innerText.toLowerCase() === (lang === 'en' ? 'english' : 'hindi')) {
+                    btn.classList.add('active');
+                }
+            });
+        }
+
+        document.getElementById('startBtn').onclick = () => {
+            const finalPackId = urlPackId || selectedBoard.toLowerCase().replace(/\s+/g, '-');
+            window.location.href = `test-player.html?board=${encodeURIComponent(selectedBoard)}&subject=${encodeURIComponent(selectedSubject)}&lang=${selectedLanguage}&packId=${encodeURIComponent(finalPackId)}`;
+        };
+
+        init();
+    </script>
+</body>
+</html>

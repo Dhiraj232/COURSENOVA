@@ -20,17 +20,17 @@ async function sendCertificateEmail({ toEmail, userName, courseName, certFilePat
         }
     });
 
-    const subject = 'Your Course Certificate - RENVOX AI';
+    const subject = 'Your Course Certificate - COURSENOVA';
 
     const html = `
     <div style="font-family: 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; background: #0f172a; color: #e2e8f0; border-radius: 12px; overflow: hidden;">
         <div style="background: #6366f1; padding: 24px; text-align: center;">
-            <h1 style="margin: 0; color: #fff; font-size: 24px;">🎓 RENVOX AI</h1>
+            <h1 style="margin: 0; color: #fff; font-size: 24px;">🎓 COURSENOVA</h1>
         </div>
         <div style="padding: 32px;">
             <h2 style="color: #fbbf24; margin-top: 0;">Congratulations, ${userName}! 🎉</h2>
             <p style="color: #94a3b8; line-height: 1.7;">
-                You have successfully completed the course <strong style="color:#fff;">${courseName}</strong> on RENVOX AI.<br><br>
+                You have successfully completed the course <strong style="color:#fff;">${courseName}</strong> on COURSENOVA.<br><br>
                 Your certificate of completion is attached to this email. You can also download it from your dashboard.
             </p>
             <div style="background: #1e293b; border-radius: 8px; padding: 16px; margin: 24px 0;">
@@ -38,14 +38,14 @@ async function sendCertificateEmail({ toEmail, userName, courseName, certFilePat
                 <p style="margin: 4px 0 0; color: #6366f1; font-weight: bold; font-size: 16px;">${certId}</p>
             </div>
             <p style="color: #64748b; font-size: 13px; margin-bottom: 0;">
-                Keep learning, keep growing. — The RENVOX AI Team
+                Keep learning, keep growing. — The COURSENOVA Team
             </p>
         </div>
     </div>
     `;
 
     const mailOptions = {
-        from: `"RENVOX AI" <${process.env.EMAIL_USER}>`,
+        from: `"COURSENOVA" <${process.env.EMAIL_USER}>`,
         to: toEmail,
         subject,
         html,

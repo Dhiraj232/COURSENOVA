@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Course Content | RENVOX AI</title>
+    <title>Course Content | COURSENOVA</title>
     <link
         href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap"
         rel="stylesheet">
@@ -486,7 +486,7 @@
     <!-- Navbar -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
-            <a href="index.html" class="logo"><img src="images/logo%20renvox.png" alt="RENVOX"> <span>RENVOX AI</span></a>
+            <a href="index.html" class="logo"><img src="images/logo%20coursenova.png" alt="COURSENOVA"> <span>COURSENOVA</span></a>
 
             <div class="nav-search">
                 <input type="text" id="navbarSearch" placeholder="Search for courses, subjects, or concepts...">
@@ -658,7 +658,7 @@
         };
 
         function getToken() {
-            return localStorage.getItem('renvox_token') || localStorage.getItem('renvoxToken') || '';
+            return localStorage.getItem('coursenova_token') || localStorage.getItem('coursenovaToken') || '';
         }
 
         async function init() {
@@ -667,6 +667,31 @@
                 alert('Please sign in to access course content.');
                 window.location.href = 'signup.html';
                 return;
+            }
+
+            // ── 0. Handle Post-Payment Verification ──────────────────────────
+            if (paymentVerify && orderIdFromUrl) {
+                try {
+                    console.log(`[Init] Verifying payment for order: ${orderIdFromUrl}`);
+                    const vRes = await fetch(`${API}/api/cashfree/verify`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+                        body: JSON.stringify({ orderId: orderIdFromUrl, courseId: courseId })
+                    });
+                    const vData = await vRes.json();
+                    
+                    if (vData.ok) {
+                        console.log('[Init] Payment verified! Removing gate and reloading...');
+                        // Clean URL to prevent re-verification on refresh
+                        const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + "?course=" + courseId;
+                        window.history.replaceState({ path: cleanUrl }, '', cleanUrl);
+                    } else {
+                        console.error('[Init] Verification failed:', vData.message);
+                        alert('Payment verification failed. If you paid, please contact support with Order ID: ' + orderIdFromUrl);
+                    }
+                } catch (ve) {
+                    console.error('[Init] Verification error:', ve);
+                }
             }
 
             try {

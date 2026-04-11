@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Signing you in... – COURSENOVA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0f172a;
+            color: #f1f5f9;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .callback-box {
+            text-align: center;
+            padding: 2rem;
+            max-width: 400px;
+        }
+        .spinner {
+            width: 56px;
+            height: 56px;
+            border: 4px solid rgba(99, 102, 241, 0.2);
+            border-top-color: #6366f1;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 1.5rem;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        h2 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+        p {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+        .error-box {
+            display: none;
+            margin-top: 1.5rem;
+            padding: 1rem;
+            background: rgba(248, 113, 113, 0.1);
+            border: 1px solid rgba(248, 113, 113, 0.3);
+            border-radius: 10px;
+            color: #f87171;
+            font-size: 0.88rem;
+        }
+        .error-box a {
+            color: #a5b4fc;
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="callback-box">
+        <div class="spinner" id="spinner"></div>
+        <h2 id="statusTitle">Completing sign-in…</h2>
+        <p id="statusMsg">Please wait while we verify your account.</p>
+        <div class="error-box" id="errorBox">
+            <strong>Sign-in failed.</strong><br>
+            <span id="errorDetail">Could not complete authentication.</span><br><br>
+            <a href="signup.html">← Back to Sign In</a>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * ✅ auth-callback.html
+         *
+         * This page is the landing point after a successful Google OAuth flow.
+         * The backend (routes/auth.js) redirects here with:
+         *   ?token=<JWT>&user=<encoded-JSON>
+         *
+         * This page:
+         *  1. Reads token and user from the URL
+         *  2. Saves them to localStorage (keys used by dashboard.js)
+         *  3. Clears the sensitive URL params from browser history
+         *  4. Redirects to dashboard.html
+         *
+         * If params are missing, redirects back to signup with an error.
+         */
+        (function () {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const token = params.get('token');
+                const userRaw = params.get('user');
+
+                if (!token || !userRaw) {
+                    throw new Error('Missing token or user in callback URL');
+                }
+
+                const user = JSON.parse(decodeURIComponent(userRaw));
+
+                if (!user || !user.id) {
+                    throw new Error('Invalid user data received');
+                }
+
+                // ── Save to localStorage — same keys used by dashboard.js ──
+                localStorage.setItem('coursenovaToken', token);
+                localStorage.setItem('coursenova_token', token);   // legacy alias
+                localStorage.setItem('coursenovaUser', JSON.stringify(user));
+                localStorage.setItem('coursenova_user', JSON.stringify(user)); // legacy alias
+
+                // ── Clean the URL so the token doesn't stay in browser history ──
+                if (window.history && window.history.replaceState) {
+                    window.history.replaceState({}, document.title, '/auth-callback.html');
+                }
+
+                // ── Quick status update then redirect ──
+                document.getElementById('statusTitle').textContent = '✅ Signed in!';
+                document.getElementById('statusMsg').textContent = `Welcome back, ${user.fullName || 'Learner'}! Redirecting to your dashboard…`;
+                document.getElementById('spinner').style.borderTopColor = '#10b981';
+
+                setTimeout(() => {
+                    window.location.replace('index.html');
+                }, 1200);
+
+            } catch (err) {
+                console.error('Auth callback error:', err);
+                document.getElementById('spinner').style.display = 'none';
+                document.getElementById('statusTitle').textContent = 'Sign-in Failed';
+                document.getElementById('statusMsg').textContent = '';
+                const errorBox = document.getElementById('errorBox');
+                document.getElementById('errorDetail').textContent = err.message || 'An unexpected error occurred.';
+                errorBox.style.display = 'block';
+
+                // Auto-redirect to signup after 4 seconds
+                setTimeout(() => {
+                    window.location.href = 'signup.html?error=google_auth_failed';
+                }, 4000);
+            }
+        })();
+    </script>
+</body>
+</html>

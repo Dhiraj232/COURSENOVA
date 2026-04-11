@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Book Details - RENVOX Store</title>
+    <title>Book Details - COURSENOVA Store</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -428,10 +428,10 @@
 </head>
 
 <body>
-    <!-- --------------- RENVOX NAVBAR --------------- -->
+    <!-- --------------- COURSENOVA NAVBAR --------------- -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
-            <a href="index.html" class="logo"><img src="images/logo%20renvox.png" alt="RENVOX"> <span>RENVOX</span></a>
+            <a href="index.html" class="logo"><img src="images/logo%20coursenova.png" alt="COURSENOVA"> <span>COURSENOVA</span></a>
             <div class="nav-search">
                 <input type="text" id="navbarSearch" placeholder="Search courses, subjects...">
                 <button type="button" onclick="handleNavbarSearch()"><i class="fas fa-search"></i></button>
@@ -503,7 +503,7 @@
 
         // --- RENDER BOOK ---
         function renderBook(b) {
-            document.title = `${b.title} - RENVOX Store`;
+            document.title = `${b.title} - COURSENOVA Store`;
             document.getElementById('breadcrumbTitle').textContent = b.title;
 
             const imgSrc = b.image ? `${IMG_BASE}${b.image}` : null;
@@ -623,7 +623,7 @@
             if (!phone) { alert('Contact number not provided by seller'); return; }
             const cleaned = phone.replace(/\D/g, '');
             const number = cleaned.length === 10 ? '91' + cleaned : cleaned;
-            const message = encodeURIComponent(`Hi! I'm interested in your book "${bookTitle}" listed on RENVOX. Is it still available?`);
+            const message = encodeURIComponent(`Hi! I'm interested in your book "${bookTitle}" listed on COURSENOVA. Is it still available?`);
             window.open(`https://wa.me/${number}?text=${message}`, '_blank');
         }
 
@@ -647,7 +647,7 @@
 
             const myName = (() => {
                 try {
-                    const u = JSON.parse(localStorage.getItem('renvox_user') || localStorage.getItem('renvoxUser') || '{}');
+                    const u = JSON.parse(localStorage.getItem('coursenova_user') || localStorage.getItem('coursenovaUser') || '{}');
                     return u.fullName || u.name || '';
                 } catch { return ''; }
             })();
@@ -670,7 +670,7 @@
 
             let fromName = 'Anonymous';
             try {
-                const u = JSON.parse(localStorage.getItem('renvox_user') || localStorage.getItem('renvoxUser') || '{}');
+                const u = JSON.parse(localStorage.getItem('coursenova_user') || localStorage.getItem('coursenovaUser') || '{}');
                 fromName = u.fullName || u.name || 'Anonymous';
             } catch (_) { }
 

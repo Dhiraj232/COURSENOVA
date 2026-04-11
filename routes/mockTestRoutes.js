@@ -5,12 +5,19 @@ const MockTestPack = require('../models/MockTestPack');
 const Transaction = require('../models/Transaction');
 const TestResult = require('../models/TestResult');
 const { requireAuth } = require('../middleware/auth');
+const { checkAccess } = require('../utils/accessControl');
 
 // ── 1. GET Test Categories ──────────────────────────────────────────────
 router.get('/categories', (req, res) => {
     const categories = {
         "School Classes": ["Class 9", "Class 10", "Class 11", "Class 12"],
-        "Competitive Exams": ["JEE Main", "NEET", "SSC", "CUET", "UPSC", "Banking"]
+        "Competitive Exams": ["JEE Main", "NEET", "SSC", "CUET", "UPSC", "Banking"],
+        "State Boards": [
+            "Bihar Board", "UP Board", "CBSE", "ICSE", "Rajasthan Board",
+            "MP Board", "Maharashtra Board", "West Bengal Board", "Tamil Nadu Board",
+            "Karnataka Board", "Jharkhand Board", "Haryana Board", "Punjab Board",
+            "Gujarat Board", "Odisha Board"
+        ]
     };
     const subjectMap = {
         "Class 9": ["Mathematics", "Science", "English", "Social Science"],
@@ -22,7 +29,9 @@ router.get('/categories', (req, res) => {
         "SSC": ["Quantitative Aptitude", "Reasoning", "English", "General Awareness"],
         "CUET": ["Section I (Languages)", "Section II (Domain)", "Section III (General)"],
         "UPSC": ["History", "Geography", "Polity", "Economy", "CSAT"],
-        "Banking": ["Quantitative Aptitude", "Reasoning", "English", "General Awareness"]
+        "Banking": ["Quantitative Aptitude", "Reasoning", "English", "General Awareness"],
+        // State Boards share a standard subjects map
+        "defaultBoard": ["Mathematics", "Science", "English", "Social Science", "Hindi"]
     };
     res.json({ ok: true, categories, subjects: subjectMap });
 });
@@ -58,16 +67,8 @@ router.get('/packs/:id', requireAuth, async (req, res) => {
         const pack = await MockTestPack.findOne({ id: req.params.id }).populate('tests.questions');
         if (!pack) return res.status(404).json({ ok: false, message: 'Pack not found' });
 
-        // Check if user has access
-        let hasAccess = pack.isFree;
-        if (!hasAccess) {
-            const purchase = await Transaction.findOne({
-                userId: req.userId,
-                courseId: pack.id,
-                status: 'success'
-            });
-            if (purchase) hasAccess = true;
-        }
+        // Check if user has access using unified utility
+        const hasAccess = await checkAccess(req.userId, pack.id);
 
         if (!hasAccess) {
             // Return limited info

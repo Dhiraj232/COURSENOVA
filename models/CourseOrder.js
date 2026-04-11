@@ -11,9 +11,9 @@ const mongoose = require('mongoose');
 const CourseOrderSchema = new mongoose.Schema(
     {
         // ── Core references ──────────────────────────────────────
-        userId:   { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
+        userId:   { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
         /** Stores either Course ID or MockTestPack ID */
-        courseId: { type: mongoose.Schema.Types.ObjectId, required: true, index: true },
+        courseId: { type: mongoose.Schema.Types.ObjectId, required: true },
         itemType: { type: String, enum: ['course', 'mock'], default: 'course' },
 
         // ── Cashfree identifiers ─────────────────────────────────

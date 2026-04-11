@@ -1,6 +1,6 @@
 // API base is auto-detected by config.js (localhost in dev, Render in prod)
-const API = window.RENVOX_API || 'https://renvox-ai.onrender.com';
-const token = localStorage.getItem('renvoxToken') || localStorage.getItem('renvox_token') || '';
+const API = window.COURSENOVA_API || 'https://coursenova-ai.onrender.com';
+const token = localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token') || '';
 
 let courses = [];
 
@@ -89,6 +89,13 @@ function renderGrid(courses) {
             </div>
         `;
 
+        const user = getAuthUser();
+        const hasPurchased = user && (
+            (user.purchasedCourses && user.purchasedCourses.includes(id)) || 
+            (user.purchasedCourses && user.purchasedCourses.includes(c.title)) ||
+            enrolled
+        );
+
         const btnContainer = card.querySelector('.btn-container');
         if (completed) {
             const btn = document.createElement('button');
@@ -96,7 +103,7 @@ function renderGrid(courses) {
             btn.innerHTML = '🏆 View Course';
             btn.onclick = () => window.location.href = `premium-course-player.html?course=${id}`;
             btnContainer.appendChild(btn);
-        } else if (enrolled) {
+        } else if (hasPurchased) {
             const btn = document.createElement('button');
             btn.className = 'btn-continue';
             btn.innerHTML = `<i class="fas fa-play"></i> Continue (${prog}%)`;

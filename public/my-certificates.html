@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Certificates | RENVOX AI</title>
+    <title>My Certificates | COURSENOVA</title>
     <link
         href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700;800&display=swap"
         rel="stylesheet">
@@ -239,10 +239,6 @@
             }
         }
 
-        #certCanvas {
-            display: none;
-        }
-
         @media (max-width: 768px) {
             .hero, .certs-grid {
                 padding-left: 1rem;
@@ -259,7 +255,7 @@
 <body class="dark-theme">
     <nav class="navbar" id="navbar">
         <div class="nav-container">
-            <a href="index.html" class="logo"><img src="images/logo%20renvox.png" alt="RENVOX"> <span>RENVOX</span></a>
+            <a href="index.html" class="logo"><img src="images/logo%20coursenova.png" alt="COURSENOVA"> <span>COURSENOVA</span></a>
             <ul class="nav-menu" id="navMenu"></ul>
             <div class="nav-buttons" id="navButtons"></div>
             <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
@@ -280,12 +276,12 @@
         <a href="certificates.html">Go to Courses</a>
     </div>
 
-    <canvas id="certCanvas" width="1200" height="850"></canvas>
+    <div class="certs-grid" id="certsGrid" style="display:none;"></div>
 
     <script src="js/navigation.js"></script>
     <script>
         const API = ''; 
-        const token = localStorage.getItem('renvoxToken') || localStorage.getItem('renvox_token');
+        const token = localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token');
         if (!token) window.location.href = 'signup.html?redirect=my-certificates.html';
 
         let currentUserName = 'Student';
@@ -324,18 +320,16 @@
                     <div class="cert-card">
                         <div class="cert-thumb">
                             <span class="cert-thumb-icon">🏆</span>
-                            <span class="cert-thumb-badge">CERTIFICATE OF COMPLETION</span>
+                            <span class="cert-thumb-badge">PROFESSIONAL CERTIFICATE</span>
                         </div>
                         <div class="cert-body">
-                            <div class="cert-title">${escHtml(cert.courseId)}</div>
+                            <div class="cert-title">${escHtml(cert.courseName || cert.courseId)}</div>
                             <div class="cert-meta">
                                 <span><i class="fas fa-calendar-check"></i> Earned on ${date}</span>
-                                <span><i class="fas fa-user-graduate"></i> ${escHtml(currentUserName)}</span>
                             </div>
-                            <div class="cert-id"><i class="fas fa-fingerprint"></i> ${escHtml(cert.certId)}</div>
-                            <div class="score-badge"><i class="fas fa-star"></i> Score: ${score}</div>
-                            <button class="btn-download-cert" onclick="downloadCertificate('${escAttr(cert.certId)}','${escAttr(cert.courseId)}','${escAttr(date)}')">
-                                <i class="fas fa-download"></i> Download Certificate
+                            <div class="cert-id" style="font-size: 0.65rem; color: #64748b;">ID: ${escHtml(cert.certId)}</div>
+                            <button class="btn-download-cert" onclick="window.open('view-certificate.html?id=${cert.certId}', '_blank')">
+                                <i class="fas fa-external-link-alt"></i> View & Download Certificate
                             </button>
                         </div>
                     </div>`;
@@ -345,121 +339,6 @@
                 document.getElementById('emptyState').style.display = 'block';
                 console.error('Error loading certificates:', err);
             }
-        }
-
-        function downloadCertificate(certId, courseName, dateStr) {
-            const canvas = document.getElementById('certCanvas');
-            const ctx = canvas.getContext('2d');
-            const W = canvas.width, H = canvas.height;
-
-            ctx.clearRect(0, 0, W, H);
-            const bgGrad = ctx.createLinearGradient(0, 0, W, H);
-            bgGrad.addColorStop(0, '#0f172a');
-            bgGrad.addColorStop(1, '#1e293b');
-            ctx.fillStyle = bgGrad;
-            ctx.fillRect(0, 0, W, H);
-
-            ctx.strokeStyle = '#10b981';
-            ctx.lineWidth = 6;
-            ctx.strokeRect(30, 30, W - 60, H - 60);
-
-            ctx.strokeStyle = 'rgba(16,185,129,0.3)';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(46, 46, W - 92, H - 92);
-
-            const topGrad = ctx.createLinearGradient(0, 60, W, 60);
-            topGrad.addColorStop(0, 'transparent');
-            topGrad.addColorStop(0.2, '#10b981');
-            topGrad.addColorStop(0.8, '#10b981');
-            topGrad.addColorStop(1, 'transparent');
-            ctx.fillStyle = topGrad;
-            ctx.fillRect(50, 70, W - 100, 4);
-
-            ctx.font = '80px serif';
-            ctx.textAlign = 'center';
-            ctx.fillText('🏆', W / 2, 180);
-
-            ctx.font = '600 22px Inter, sans-serif';
-            ctx.fillStyle = '#10b981';
-            ctx.letterSpacing = '6px';
-            ctx.fillText('CERTIFICATE OF COMPLETION', W / 2, 230);
-            ctx.letterSpacing = '0px';
-
-            ctx.fillStyle = 'rgba(16,185,129,0.4)';
-            ctx.fillRect(W / 2 - 200, 248, 400, 1);
-
-            ctx.font = '18px Inter, sans-serif';
-            ctx.fillStyle = '#94a3b8';
-            ctx.fillText('This is to certify that', W / 2, 300);
-
-            ctx.font = 'bold 48px serif';
-            ctx.fillStyle = '#ffffff';
-            ctx.fillText(currentUserName, W / 2, 370);
-
-            const nameW = ctx.measureText(currentUserName).width;
-            ctx.fillStyle = '#6366f1';
-            ctx.fillRect(W / 2 - nameW / 2, 380, nameW, 2);
-
-            ctx.font = '18px Inter, sans-serif';
-            ctx.fillStyle = '#94a3b8';
-            ctx.fillText('has successfully completed', W / 2, 430);
-
-            ctx.font = 'bold 34px Inter, sans-serif';
-            ctx.fillStyle = '#e2e8f0';
-            const maxWidth = W - 200;
-            const words = courseName.split(' ');
-            let line = '', lineY = 490;
-            for (const word of words) {
-                const test = line + (line ? ' ' : '') + word;
-                if (ctx.measureText(test).width > maxWidth && line) {
-                    ctx.fillText(line, W / 2, lineY);
-                    line = word; lineY += 44;
-                } else { line = test; }
-            }
-            ctx.fillText(line, W / 2, lineY);
-
-            const infoY = H - 160;
-            ctx.font = '600 14px Inter, sans-serif';
-            ctx.fillStyle = '#64748b';
-            ctx.textAlign = 'left';
-            ctx.fillText('DATE ISSUED', 100, infoY);
-            ctx.font = '18px Inter, sans-serif';
-            ctx.fillStyle = '#e2e8f0';
-            ctx.fillText(dateStr, 100, infoY + 28);
-
-            ctx.textAlign = 'center';
-            ctx.font = '600 14px Inter, sans-serif';
-            ctx.fillStyle = '#64748b';
-            ctx.fillText('CERTIFICATE ID', W / 2, infoY);
-            ctx.font = '16px monospace';
-            ctx.fillStyle = '#6366f1';
-            ctx.fillText(certId, W / 2, infoY + 28);
-
-            ctx.textAlign = 'right';
-            ctx.font = '600 14px Inter, sans-serif';
-            ctx.fillStyle = '#64748b';
-            ctx.fillText('ISSUED BY', W - 100, infoY);
-            ctx.font = 'bold 18px Inter, sans-serif';
-            ctx.fillStyle = '#10b981';
-            ctx.fillText('RENVOX AI', W - 100, infoY + 28);
-
-            const botGrad = ctx.createLinearGradient(0, H - 100, W, H - 100);
-            botGrad.addColorStop(0, 'transparent');
-            botGrad.addColorStop(0.2, '#10b981');
-            botGrad.addColorStop(0.8, '#10b981');
-            botGrad.addColorStop(1, 'transparent');
-            ctx.fillStyle = botGrad;
-            ctx.fillRect(50, H - 100, W - 100, 2);
-
-            ctx.textAlign = 'center';
-            ctx.font = '13px Inter, sans-serif';
-            ctx.fillStyle = '#475569';
-            ctx.fillText('This certificate is digitally issued by RENVOX AI Learning Platform', W / 2, H - 55);
-
-            const link = document.createElement('a');
-            link.download = `RENVOX_Certificate_${certId}.png`;
-            link.href = canvas.toDataURL('image/png');
-            link.click();
         }
 
         function escHtml(str) {

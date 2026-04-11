@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Mock Test Series | COURSENOVA</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/navigation.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .hub-hero {
+            padding: 100px 5%;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: white;
+            text-align: center;
+            border-bottom: 4px solid #3b82f6;
+        }
+        .hub-hero h1 { font-size: 3rem; margin-bottom: 20px; }
+        .pricing-card {
+            max-width: 400px;
+            margin: -50px auto 50px;
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            color: #1e293b;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            text-align: center;
+            position: relative;
+            z-index: 10;
+        }
+        .price { font-size: 4rem; font-weight: 800; color: #3b82f6; }
+        .price span { font-size: 1.5rem; color: #64748b; text-decoration: line-through; }
+        .features-list { text-align: left; margin: 30px 0; }
+        .features-list li { margin-bottom: 12px; font-size: 1.1rem; list-style: none; }
+        .features-list i { color: #10b981; margin-right: 10px; }
+        
+        .board-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 50px 5%;
+        }
+        .board-card {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+            transition: 0.3s;
+            cursor: pointer;
+        }
+        .board-card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1); border-color: #3b82f6; }
+        .board-card i { font-size: 2.5rem; color: #3b82f6; margin-bottom: 15px; }
+        .board-card h3 { font-size: 1.2rem; margin-bottom: 10px; }
+        
+        .locked-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 15px;
+            z-index: 5;
+        }
+        .locked-overlay i { font-size: 2rem; color: #ef4444; }
+    </style>
+</head>
+<body>
+    <nav class="navbar" id="navbar"></nav>
+
+    <header class="hub-hero">
+        <div class="container">
+            <h1>All-In-One Mock Test Series</h1>
+            <p>Master your State Board exams with our expert-designed bilingual test series.</p>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="pricing-card" id="purchaseCard">
+            <div class="price">₹59 <span>₹299</span></div>
+            <p>One-time purchase. Lifetime validity.</p>
+            <ul class="features-list">
+                <li><i class="fas fa-check-circle"></i> 15+ State Boards covered</li>
+                <li><i class="fas fa-check-circle"></i> Bilingual (Hindi + English)</li>
+                <li><i class="fas fa-check-circle"></i> All Subjects included</li>
+                <li><i class="fas fa-check-circle"></i> 35+ MCQs per test</li>
+                <li><i class="fas fa-check-circle"></i> Real-time Results & Leaderboard</li>
+            </ul>
+            <button class="btn-primary" style="width: 100%; padding: 15px;" id="buyBtn">Unlock All Boards Now</button>
+        </section>
+
+        <section>
+            <h2 style="text-align: center; margin-bottom: 30px;">Explore Boards</h2>
+            <div class="board-grid" id="boardGrid">
+                <!-- Boards injected by JS -->
+            </div>
+        </section>
+    </main>
+
+    <script src="js/navigation.js"></script>
+    <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
+    <script>
+        const boards = [
+            "Bihar Board", "UP Board", "CBSE", "ICSE", "Rajasthan Board",
+            "MP Board", "Maharashtra Board", "West Bengal Board", "Tamil Nadu Board",
+            "Karnataka Board", "Jharkhand Board", "Haryana Board", "Punjab Board",
+            "Gujarat Board", "Odisha Board"
+        ];
+
+        async function init() {
+            let token = localStorage.getItem('coursenova_token') || localStorage.getItem('coursenovaToken') || localStorage.getItem('token');
+            if (!token) {
+                alert('Please login to view tests.');
+                window.location.href = 'signup.html';
+                return;
+            }
+
+            // 1. Verify Payment if coming back from Cashfree
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('payment') === 'verify' && urlParams.get('order_id')) {
+                alert('Verifying your payment, please wait...');
+                try {
+                    const res = await fetch('/api/cashfree/verify', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                        body: JSON.stringify({ 
+                            orderId: urlParams.get('order_id'), 
+                            courseId: urlParams.get('course') || 'state-board-master' 
+                        })
+                    });
+                    const data = await res.json();
+                    if (data.ok) {
+                        alert('🎉 Payment verified! Series unlocked.');
+                        if (typeof window.refreshUserData === 'function') await window.refreshUserData();
+                    } else {
+                        alert(data.message || 'Payment not confirmed yet. It will unlock within minutes if paid.');
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+
+            // 2. Fetch fresh user data to see if purchased
+            try {
+                if (typeof window.refreshUserData === 'function') {
+                    await window.refreshUserData();
+                }
+                
+                const userStr = localStorage.getItem('coursenova_user') || localStorage.getItem('coursenovaUser');
+                const user = userStr ? JSON.parse(userStr) : null;
+                const hasAccess = user && (user.purchasedMockTest || user.hasMockSeriesAccess);
+                
+                if (hasAccess) {
+                    const card = document.getElementById('purchaseCard'); // Corrected ID
+                    if (card) card.style.display = 'none';
+                }
+
+                renderBoards(hasAccess);
+            } catch (e) { console.error('Error fetching user access:', e); }
+        }
+
+        function renderBoards(hasAccess) {
+            const grid = document.getElementById('boardGrid');
+            grid.innerHTML = boards.map(board => `
+                <div class="board-card" onclick="handleBoardClick('${board}', ${hasAccess})">
+                    ${!hasAccess ? '<div class="locked-overlay"><i class="fas fa-lock"></i><p>Locked</p></div>' : ''}
+                    <i class="fas fa-university"></i>
+                    <h3>${board}</h3>
+                    <p>35+ Practice Tests</p>
+                </div>
+            `).join('');
+        }
+
+        function handleBoardClick(board, hasAccess) {
+            if (!hasAccess) {
+                alert('Please purchase the series to unlock this board.');
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                return;
+            }
+            window.location.href = `board-selector.html?board=${encodeURIComponent(board)}`;
+        }
+
+        document.getElementById('buyBtn').onclick = async () => {
+            const token = localStorage.getItem('token');
+            try {
+                const res = await fetch('/api/cashfree/create-order', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ courseId: 'state-board-master' })
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    const cashfree = Cashfree({ mode: "sandbox" }); 
+                    await cashfree.checkout({ paymentSessionId: data.payment_session_id });
+                } else {
+                    alert(data.message);
+                }
+            } catch (e) { alert('Checkout failed'); }
+        };
+
+        init();
+    </script>
+</body>
+</html>

@@ -6,52 +6,11 @@ const Enrollment = require('../models/Enrollment');
 const User = require('../models/User');
 const CourseProgress = require('../models/CourseProgress');
 const ExamAttempt = require('../models/ExamAttempt');
+const { checkAccess } = require('../utils/accessControl');
 
 const MAX_EXAM_ATTEMPTS = 3;
 
-// ─── Helper: check if a user is enrolled in a course ─────────────────────────
-async function isEnrolled(userId, courseId) {
-    if (!userId || !courseId) return false;
-    
-    try {
-        const course = await Course.findOne({
-            $or: [
-                { _id: String(courseId).match(/^[0-9a-fA-F]{24}$/) ? courseId : null },
-                { slug: String(courseId).toLowerCase().replace(/\s+/g, '-') },
-                { title: String(courseId) }
-            ]
-        });
-        if (course && course.isFree) return true;
-
-        const searchOrs = [{ courseId: String(courseId) }, { courseName: String(courseId) }];
-        if (course) {
-            searchOrs.push({ courseId: course.title });
-            searchOrs.push({ courseName: course.title });
-            if (course.slug) searchOrs.push({ courseId: course.slug });
-            searchOrs.push({ courseId: String(course._id) });
-        }
-
-        const enrollment = await Enrollment.findOne({ 
-            userId: String(userId), 
-            $or: searchOrs
-        });
-        if (enrollment) return true;
-
-        // Legacy: check User.enrolledCourses string array 
-        const user = String(userId).match(/^[0-9a-fA-F]{24}$/) ? await User.findById(userId) : await User.findOne({ email: String(userId) });
-        return !!(user && user.enrolledCourses &&
-            (user.enrolledCourses.includes(String(courseId)) ||
-                user.enrolledCourses.some(c =>
-                    c.toLowerCase() === String(courseId).toLowerCase() ||
-                    searchOrs.some(s => s.courseId && c.toLowerCase() === String(s.courseId).toLowerCase())
-                )
-            )
-        );
-    } catch (e) {
-        console.warn("isEnrolled error", e.message);
-        return false;
-    }
-}
+// Helper is no longer needed locally as we use utils/accessControl.js
 
 // ─── GET /api/premium/courses ─────────────────────────────────────────────────
 // Public — lists all active premium courses. Strips quiz answers.
@@ -71,7 +30,7 @@ router.get('/courses', optionalAuth, async (req, res) => {
         // If user is logged in, annotate each course with enrollment status
         const userId = req.userId || null;
         const annotated = await Promise.all(courses.map(async c => {
-            const enrolled = userId ? await isEnrolled(userId, String(c._id)) : false;
+            const enrolled = userId ? await checkAccess(userId, String(c._id)) : false;
             let progress = null;
             if (enrolled) {
                 const p = await CourseProgress.findOne({ userId: String(userId), courseId: String(c._id) }).lean();
@@ -103,7 +62,7 @@ router.get('/course/:id', optionalAuth, async (req, res) => {
         if (!course) return res.status(404).json({ ok: false, message: 'Course not found' });
 
         const userId = req.userId || null;
-        let enrolled = await isEnrolled(userId, String(course._id));
+        let enrolled = await checkAccess(userId, String(course._id));
 
         // ── AUTO-ENROLL for FREE courses if not already enrolled ───────
         if (!enrolled && userId && course.isFree) {
@@ -165,7 +124,7 @@ router.get('/access/:courseId', requireAuth, async (req, res) => {
     try {
         const { courseId } = req.params;
         const userId = String(req.userId);
-        const enrolled = await isEnrolled(userId, courseId);
+        const enrolled = await checkAccess(userId, courseId);
 
         let progress = null;
         let examAttemptsLeft = MAX_EXAM_ATTEMPTS;
@@ -196,7 +155,7 @@ router.post('/submit-exam', requireAuth, async (req, res) => {
         const userId = String(req.userId);
 
         // Enrollment guard
-        const enrolled = await isEnrolled(userId, courseId);
+        const enrolled = await checkAccess(userId, courseId);
         if (!enrolled) return res.status(403).json({ ok: false, message: 'Not enrolled in this course' });
 
         // Retry limit
@@ -251,6 +210,7 @@ router.post('/submit-exam', requireAuth, async (req, res) => {
         if (passed) {
             if (!progress.certId) {
                 progress.certId   = 'RENV-' + Date.now().toString(36).toUpperCase();
+                progress.courseName = course.title;
                 progress.earnedAt = new Date();
             }
             progress.isCompleted    = true;
@@ -337,7 +297,7 @@ router.get('/all-courses', optionalAuth, async (req, res) => {
             let progress = null;
 
             if (userId) {
-                enrolled = await isEnrolled(userId, String(c._id));
+                enrolled = await checkAccess(userId, String(c._id));
                 if (enrolled) {
                     const p = await CourseProgress.findOne({
                         userId: String(userId),

@@ -1,5 +1,5 @@
-# robots.txt for RENVOX AI
-# Website URL: https://renvox-ai.com/
+# robots.txt for COURSENOVA
+# Website URL: https://coursenova-ai.com/
 
 # Allow all search engines to crawl public content
 User-agent: *
@@ -26,4 +26,4 @@ Disallow: /api/
 Disallow: /auth/
 
 # Path to sitemap
-Sitemap: https://renvox-ai.com/sitemap.xml
+Sitemap: https://coursenova-ai.com/sitemap.xml

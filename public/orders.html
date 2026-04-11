@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Orders - RENVOX Book Store</title>
+    <title>My Orders - COURSENOVA Book Store</title>
     <style>
         * {
             margin: 0;
@@ -316,7 +316,7 @@
     <!-- standard navbar -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
-            <a href="index.html" class="logo"><img src="images/logo%20renvox.png" alt="RENVOX"> <span>RENVOX</span></a>
+            <a href="index.html" class="logo"><img src="images/logo%20coursenova.png" alt="COURSENOVA"> <span>COURSENOVA</span></a>
             <ul class="nav-menu" id="navMenu"></ul>
             <div class="nav-buttons" id="navButtons"></div>
             <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
@@ -349,7 +349,7 @@
 
         async function loadOrders() {
             try {
-                const token = localStorage.getItem('renvoxToken') || localStorage.getItem('renvox_token');
+                const token = localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token');
                 if (!token) {
                     document.getElementById('active-orders').innerHTML = `
                         <div class="empty-state">
@@ -519,7 +519,7 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('renvoxToken') || localStorage.getItem('renvox_token')}`
+                        'Authorization': `Bearer ${localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token')}`
                     },
                     body: JSON.stringify({ reason })
                 }).then(r => r.json()).then(data => {

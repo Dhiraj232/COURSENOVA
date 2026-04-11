@@ -1,13 +1,13 @@
 /**
- * RENVOX AI - Practice Hub Logic
+ * COURSENOVA - Practice Hub Logic
  * Handles MCQ, Coding, Daily Quiz, Leaderboard, and AI Chat Integration
  */
 
 // ==========================================
 // 🛡️ AUTH & STATE
 // ==========================================
-const token = localStorage.getItem('renvoxToken') || localStorage.getItem('renvox_token');
-const user = JSON.parse(localStorage.getItem('renvoxUser') || localStorage.getItem('renvox_user') || '{}');
+const token = localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token');
+const user = JSON.parse(localStorage.getItem('coursenovaUser') || localStorage.getItem('coursenova_user') || '{}');
 const isLoggedIn = !!token;
 
 let currentQuestions = [];

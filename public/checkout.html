@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Checkout - RENVOX Book Store</title>
+    <title>Checkout - COURSENOVA Book Store</title>
     <style>
         * {
             margin: 0;
@@ -242,7 +242,7 @@
     <!-- standard navbar -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
-            <a href="index.html" class="logo"><img src="images/logo%20renvox.png" alt="RENVOX"> <span>RENVOX</span></a>
+            <a href="index.html" class="logo"><img src="images/logo%20coursenova.png" alt="COURSENOVA"> <span>COURSENOVA</span></a>
             <ul class="nav-menu" id="navMenu"></ul>
             <div class="nav-buttons" id="navButtons"></div>
             <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
@@ -376,7 +376,7 @@
 
         async function loadCartSummary() {
             try {
-                const token = localStorage.getItem('renvoxToken') || localStorage.getItem('renvox_token');
+                const token = localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token');
                 if (!token) {
                     window.location.href = 'signup.html';
                     return;
@@ -418,7 +418,7 @@
         }
 
         function prefillUserInfo() {
-            const token = localStorage.getItem('renvoxToken') || localStorage.getItem('renvox_token');
+            const token = localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token');
             if (token) {
                 try {
                     const decoded = JSON.parse(atob(token.split('.')[1]));
@@ -472,7 +472,7 @@
             };
 
             try {
-                const token = localStorage.getItem('renvoxToken') || localStorage.getItem('renvox_token');
+                const token = localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token');
                 document.getElementById('place-order-btn').disabled = true;
                 document.getElementById('place-order-btn').textContent = 'Creating Order...';
 

@@ -12,6 +12,7 @@ const Course = require('../models/Course');
 const Batch = require('../models/Batch');
 const Order = require('../models/Order');
 const TimeTracking = require('../models/TimeTracking');
+const Book = require('../models/Book');
 
 // ──────────────────────────────────────────────────────────────────────────────
 // GET /api/analytics/dashboard
@@ -23,8 +24,8 @@ router.get('/dashboard', requireAuth, async (req, res) => {
         let queryUserId = userId;
         if (mongoose.Types.ObjectId.isValid(userId)) queryUserId = new mongoose.Types.ObjectId(userId);
 
-        // 1. User & Core Analytics
-        const user = await StoreUser.findById(userId);
+        // 1. User & Core Analytics & Purchases
+        const user = await StoreUser.findById(userId).populate('purchasedBooks');
         if (!user) return res.status(404).json({ ok: false, message: 'User not found' });
 
         let analytics = await UserAnalytics.findOne({ userId: queryUserId });
@@ -75,12 +76,20 @@ router.get('/dashboard', requireAuth, async (req, res) => {
         }));
 
         const courseDetails = await Promise.all(enrollDocs.map(async (e) => {
-            const course = await Course.findById(e.courseId) || await Course.findOne({ title: e.courseName });
+            // Guard: only call findById with a valid ObjectId to avoid CastError
+            let course = null;
+            if (e.courseId && String(e.courseId).match(/^[0-9a-fA-F]{24}$/)) {
+                course = await Course.findById(e.courseId).catch(() => null);
+            }
+            if (!course) {
+                course = await Course.findOne({ $or: [{ title: e.courseName }, { slug: (e.courseName || '').toLowerCase().replace(/\s+/g, '-') }] }).catch(() => null);
+            }
             const p = allProgress.find(ap => String(ap.courseId) === String(e.courseId) || (course && String(ap.courseId) === String(course._id)));
             return {
                 id: course ? course._id : e.courseId,
                 title: course ? course.title : e.courseName,
-                progress: p ? p.progressPercent : 0,
+                thumbnail: course ? course.thumbnail : '',
+                progress: p ? (p.progressPercent || 0) : 0,
                 lastWatched: p ? p.updatedAt : e.purchaseDate
             };
         }));
@@ -102,6 +111,8 @@ router.get('/dashboard', requireAuth, async (req, res) => {
                 }
             },
             courses: courseDetails.sort((a,b) => b.lastWatched - a.lastWatched),
+            mockTestAccess: user.purchasedMockTest === true || user.hasMockSeriesAccess === true,
+            books: user.purchasedBooks || [],
             recentActivities: await Activity.find({ userId: queryUserId }).sort({ timestamp: -1 }).limit(10)
         });
     } catch (err) {

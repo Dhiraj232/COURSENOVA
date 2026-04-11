@@ -1,7 +1,7 @@
 {
-  "name": "renvox-backend",
+  "name": "coursenova-platform",
   "version": "1.0.0",
-  "description": "Simple Express backend for RENVOX demo (auth + OTP)",
+  "description": "Simple Express backend for CourseNova demo (auth + OTP)",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
@@ -30,14 +30,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Dhiraj232/RENVOX-AI.git"
+    "url": "git+https://github.com/Dhiraj232/CourseNova.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "bugs": {
-    "url": "https://github.com/Dhiraj232/RENVOX-AI/issues"
+    "url": "https://github.com/Dhiraj232/CourseNova/issues"
   },
-  "homepage": "https://github.com/Dhiraj232/RENVOX-AI#readme"
+  "homepage": "https://github.com/Dhiraj232/CourseNova#readme"
 }

@@ -1,6 +1,6 @@
 /**
  * seed_final_v3.js
- * Round 3 bulk seeding for Renvox AI platform
+ * Round 3 bulk seeding for CourseNova platform
  * Focus: English & Professional Skills
  */
 require('dotenv').config();
@@ -44,7 +44,7 @@ async function seed() {
                 { 
                     $set: { 
                         ...c, 
-                        description: `A masterclass in ${c.title} designed by RENVOX experts. Boost your career with these highly specialized ${c.category} skills.`,
+                        description: `A masterclass in ${c.title} designed by COURSENOVA experts. Boost your career with these highly specialized ${c.category} skills.`,
                         duration: '4-10 Weeks',
                         level: 'Advanced',
                         isActive: true,
@@ -54,7 +54,7 @@ async function seed() {
                         ],
                         quizQuestions: [
                             { question: 'What is the primary focus of this course?', options: ['Option A', 'Option B', 'Option C', 'Option D'], correctIndex: 2 },
-                            { question: 'Why choose RENVOX AI?', options: ['Quality', 'Excellence', 'Everything', 'None'], correctIndex: 2 }
+                            { question: 'Why choose COURSENOVA?', options: ['Quality', 'Excellence', 'Everything', 'None'], correctIndex: 2 }
                         ]
                     } 
                 },

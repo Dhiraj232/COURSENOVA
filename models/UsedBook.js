@@ -18,7 +18,7 @@ const UsedBookSchema = new mongoose.Schema({
     image: { type: String, default: '' },  // filename stored by Multer
     
     // --- Marketplace Upgrades ---
-    college: { type: String, required: true, index: true }, // Required for Nearby Marketplace
+    college: { type: String, required: true }, // Required for Nearby Marketplace
     location: {
         type: { type: String, enum: ['Point'], default: 'Point' },
         coordinates: { type: [Number], default: [0, 0] } // [longitude, latitude]

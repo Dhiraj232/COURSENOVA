@@ -1,6 +1,6 @@
 /**
  * seed_extra_courses.js
- * Additional bulk seeding for Renvox AI platform
+ * Additional bulk seeding for CourseNova platform
  */
 require('dotenv').config();
 const mongoose = require('mongoose');
@@ -48,7 +48,7 @@ async function seed() {
                         ],
                         quizQuestions: [
                             { question: 'What is the core focus of this module?', options: ['Option A', 'Option B', 'Option C', 'Option D'], correctIndex: 1 },
-                            { question: 'Who designed this curriculum?', options: ['Experts', 'AI', 'RENVOX Team', 'John Doe'], correctIndex: 2 }
+                            { question: 'Who designed this curriculum?', options: ['Experts', 'AI', 'COURSENOVA Team', 'John Doe'], correctIndex: 2 }
                         ]
                     } 
                 },

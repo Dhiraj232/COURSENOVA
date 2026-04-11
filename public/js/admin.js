@@ -1,5 +1,5 @@
 /**
- * RENVOX AI - Admin Panel Logic
+ * COURSENOVA - Admin Panel Logic
  */
 
 const API_BASE = '/api/admin';
@@ -11,8 +11,8 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function checkAdminAuth() {
-    const userStr = localStorage.getItem('renvoxUser') || localStorage.getItem('renvox_user');
-    const token = localStorage.getItem('renvoxToken') || localStorage.getItem('renvox_token');
+    const userStr = localStorage.getItem('coursenovaUser') || localStorage.getItem('coursenova_user');
+    const token = localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token');
 
     if (!token || !userStr) {
         window.location.href = 'signup.html';
@@ -47,7 +47,7 @@ async function loadView(view) {
     contentArea.innerHTML = `<div class="loading-state"><div class="spinner"></div><p>Fetching ${view} data...</p></div>`;
 
     try {
-        const token = localStorage.getItem('renvoxToken') || localStorage.getItem('renvox_token');
+        const token = localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token');
         const headers = { 'Authorization': `Bearer ${token}` };
 
         switch (view) {
@@ -288,7 +288,7 @@ async function handleBulkUpload() {
     const jsonStr = document.getElementById('json-upload').value;
     try {
         const data = JSON.parse(jsonStr);
-        const token = localStorage.getItem('renvoxToken') || localStorage.getItem('renvox_token');
+        const token = localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token');
         const res = await fetch(`${API_BASE}/questions`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },

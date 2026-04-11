@@ -128,7 +128,7 @@ const testPacks = [
 
 async function seedAll() {
     try {
-        await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/renvox-bookstore');
+        await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/coursenova-bookstore');
         
         // 1. Clear practice questions to avoid duplicates
         await PracticeQuestion.deleteMany({});

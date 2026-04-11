@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const Course = require('./models/Course');
 require('dotenv').config();
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/renvox-bookstore';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/coursenova-bookstore';
 
 const FALLBACK_DATA = {
     'C Programming Fundamentals': { video: 'https://www.youtube.com/embed/KJgsSFOSQv0?rel=0', pdf: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf' },

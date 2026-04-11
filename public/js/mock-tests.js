@@ -1,218 +1,283 @@
+/**
+ * mock-tests.js — CourseNova Mock Test Hub
+ * Handles: Loading packs from API, Rendering cards, Payment (Cashfree), Quiz launch
+ */
+
 document.addEventListener('DOMContentLoaded', () => {
     loadMockPacks();
     setupFilters();
+    checkPaymentReturn();
 });
 
 let allPacks = [];
+const TOKEN = localStorage.getItem('coursenova_token') || localStorage.getItem('coursenovaToken') || '';
+const API   = window.COURSENOVA_API || '';
 
+// ─── Toast ─────────────────────────────────────────────────────────────────
 function showToast(message, type = 'info') {
     const container = document.getElementById('toastContainer');
+    if (!container) return;
     const toast = document.createElement('div');
     toast.className = 'toast';
-    
-    let icon = 'fa-info-circle';
-    if(type === 'success') icon = 'fa-check-circle';
-    if(type === 'error') icon = 'fa-exclamation-circle';
-    
-    toast.innerHTML = `<i class="fas ${icon}" style="color: ${type==='error'?'#ef4444':'#10b981'}"></i> ${message}`;
+    const icons = { success: 'fa-check-circle', error: 'fa-exclamation-circle', info: 'fa-info-circle' };
+    const colors = { success: '#10b981', error: '#ef4444', info: '#6366f1' };
+    toast.innerHTML = `<i class="fas ${icons[type] || icons.info}" style="color:${colors[type] || colors.info}"></i> ${message}`;
     container.appendChild(toast);
-    
     setTimeout(() => {
-        toast.style.animation = 'slideUp 0.3s ease reverse forwards';
-        setTimeout(() => toast.remove(), 300);
-    }, 3000);
+        toast.style.opacity = '0';
+        toast.style.transition = 'opacity 0.5s';
+        setTimeout(() => toast.remove(), 500);
+    }, 3500);
 }
 
-async function loadMockPacks() {
+// ─── Payment Return Check ────────────────────────────────────────────────────
+async function checkPaymentReturn() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('payment') !== 'verify' || !params.get('order_id')) return;
+
+    showToast('Verifying your payment...', 'info');
     try {
-        const res = await fetch(`${window.RENVOX_API || ''}/api/mocktest/packs`);
+        const res = await fetch(`${API}/api/cashfree/verify`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${TOKEN}` },
+            body: JSON.stringify({ orderId: params.get('order_id'), courseId: params.get('pack_id') || 'test' })
+        });
         const data = await res.json();
         if (data.ok) {
+            showToast('✅ Payment successful! Test pack unlocked.', 'success');
+            history.replaceState({}, '', window.location.pathname);
+            setTimeout(() => loadMockPacks(), 1000);
+        } else {
+            showToast('Payment verification failed: ' + (data.message || 'Try again'), 'error');
+        }
+    } catch (e) {
+        console.error('Verification error:', e);
+        showToast('Error verifying payment.', 'error');
+    }
+}
+
+// ─── Load Packs ─────────────────────────────────────────────────────────────
+async function loadMockPacks() {
+    try {
+        const res = await fetch(`${API}/api/mocktest/packs`);
+        const data = await res.json();
+        if (data.ok && data.packs) {
             allPacks = data.packs;
             renderPacks(allPacks);
         } else {
-            showToast('Failed to fetch tests', 'error');
+            document.getElementById('freeTestsGrid').innerHTML  = '<p style="color:#ef4444;padding:20px;">Failed to load tests. Please refresh.</p>';
+            document.getElementById('premiumTestsGrid').innerHTML = '';
         }
     } catch (err) {
-        console.error('Error fetching mock tests:', err);
+        console.error('Error loading mock packs:', err);
         showToast('Network error loading test packs', 'error');
     }
 }
 
-function getDifficultyData(pack) {
-    // Determine difficulty (Mocking logic; you can add 'difficulty' to Mongo later)
-    // If it's a JEE/NEET test, likely Hard. If School, Medium/Easy
-    if (pack.category && ['JEE Main', 'NEET', 'UPSC'].includes(pack.category)) {
-        return { diff: 'Hard', class: 'diff-hard' };
-    }
-    if (pack.category && ['Class 9', 'Class 10'].includes(pack.category)) {
-        return { diff: 'Easy', class: 'diff-easy' };
-    }
-    return { diff: 'Medium', class: 'diff-medium' };
+// ─── Difficulty Helper ───────────────────────────────────────────────────────
+function getDiff(pack) {
+    const hard  = ['JEE Main', 'NEET', 'UPSC', 'NDA', 'CA Foundation'];
+    const easy  = ['Coding & DSA', 'Typing & English', 'Communication Skills'];
+    if (hard.some(h => (pack.category || '').includes(h))) return { label: 'Hard',   cls: 'diff-hard' };
+    if (easy.some(e => (pack.category || '').includes(e))) return { label: 'Easy',   cls: 'diff-easy' };
+    return { label: 'Medium', cls: 'diff-medium' };
 }
 
+// ─── Category Icon ───────────────────────────────────────────────────────────
+function getCatIcon(category) {
+    const map = {
+        'CBSE Board': '📚', 'ICSE Board': '📖', 'State Board': '🏫',
+        'JEE Main': '⚗️', 'NEET': '🩺', 'CUET': '🎓',
+        'NDA': '🎖️', 'CA Foundation': '💼', 'UPSC': '🏛️',
+        'SSC CGL': '📋', 'SSC CHSL': '📝', 'Coding & DSA': '💻',
+        'English & IELTS': '🇬🇧', 'Aptitude & Reasoning': '🧠',
+        'Typing & English': '⌨️', 'Communication Skills': '🗣️'
+    };
+    for (const [k, v] of Object.entries(map)) {
+        if ((category || '').includes(k)) return v;
+    }
+    return '📋';
+}
+
+// ─── Render Packs ────────────────────────────────────────────────────────────
 function renderPacks(packs) {
-    const freeGrid = document.getElementById('freeTestsGrid');
+    const freeGrid    = document.getElementById('freeTestsGrid');
     const premiumGrid = document.getElementById('premiumTestsGrid');
-    
-    freeGrid.innerHTML = '';
+
+    freeGrid.innerHTML    = '';
     premiumGrid.innerHTML = '';
-    
-    let freeCount = 0;
-    let premiumCount = 0;
+
+    let freeCount = 0, paidCount = 0;
 
     packs.forEach(pack => {
-        const d = getDifficultyData(pack);
-        // Estimate Qs and Time
-        const totalQs = pack.tests && pack.tests[0] ? pack.tests[0].numQuestions : 0;
-        const totalTime = pack.tests && pack.tests[0] ? pack.tests[0].durationMinutes : 0;
-        
-        let marks = totalQs * 4; // Mock assumption 4 marks per Q
-        
+        const d        = getDiff(pack);
+        const totalQs  = pack.tests && pack.tests[0] ? pack.tests[0].numQuestions : 35;
+        const totalTime= pack.tests && pack.tests[0] ? pack.tests[0].durationMinutes : 60;
+        const icon     = getCatIcon(pack.category);
+        const marks    = totalQs * 4;
+
         const cardHTML = `
-            <div class="test-card">
-                ${pack.isFree ? '<div class="badge-free"><i class="fas fa-gift"></i> FREE</div>' : '<div class="badge-premium"><i class="fas fa-crown"></i> PREMIUM</div>'}
-                <div class="card-header">
-                    <span class="subject-tag">${pack.category || 'Competative'}</span>
-                    <h3>${pack.title}</h3>
-                </div>
-                <div class="card-body">
-                    <div class="difficulty-bar">
-                        <span class="difficulty-label">Difficulty: ${d.diff}</span>
-                        <div class="diff-dots ${d.class}">
-                            <div class="dot"></div><div class="dot"></div><div class="dot"></div>
-                        </div>
-                    </div>
-                    <div class="test-stats">
-                        <div class="stat-item"><i class="far fa-question-circle"></i> ${totalQs || 30} Questions</div>
-                        <div class="stat-item"><i class="far fa-clock"></i> ${totalTime || 30} Mins</div>
-                        <div class="stat-item"><i class="far fa-star"></i> ${marks || 120} Marks</div>
-                        <div class="stat-item"><i class="fas fa-layer-group"></i> ${pack.totalTests || 1} Tests</div>
+        <div class="test-card" data-id="${pack.id}" data-free="${pack.isFree}" data-cat="${pack.category || ''}">
+            ${pack.isFree
+                ? '<div class="badge-free"><i class="fas fa-gift"></i> FREE</div>'
+                : '<div class="badge-premium"><i class="fas fa-crown"></i> PREMIUM</div>'
+            }
+            <div class="card-header">
+                <span class="subject-tag">${icon} ${pack.category || 'Test Series'}</span>
+                <h3>${pack.title}</h3>
+            </div>
+            <div class="card-body">
+                <div class="difficulty-bar">
+                    <span class="difficulty-label">Difficulty: ${d.label}</span>
+                    <div class="diff-dots ${d.cls}">
+                        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
                     </div>
                 </div>
-                <div class="card-footer">
-                    <div class="price-box">
-                        ${pack.isFree ? `<span class="price-display">₹0</span> <span class="original-price">₹${pack.price || 199}</span>` 
-                                      : `<span class="price-display">₹${pack.price || 199}</span>`}
-                    </div>
-                    ${pack.isFree 
-                        ? `<button class="btn-action btn-start" onclick="handleCardAction('${pack.id}', true)">Start Test <i class="fas fa-arrow-right"></i></button>`
-                        : `<button class="btn-action btn-unlock" onclick="handleCardAction('${pack.id}', false)">Unlock Now <i class="fas fa-lock-open"></i></button>`
-                    }
+                <div class="test-stats">
+                    <div class="stat-item"><i class="far fa-question-circle"></i> ${totalQs} Questions</div>
+                    <div class="stat-item"><i class="far fa-clock"></i> ${totalTime} Mins</div>
+                    <div class="stat-item"><i class="far fa-star"></i> ${marks} Marks</div>
+                    <div class="stat-item"><i class="fas fa-layer-group"></i> ${pack.totalTests || 1} Tests</div>
                 </div>
             </div>
-        `;
-        
-        if (pack.isFree) {
-            freeGrid.innerHTML += cardHTML;
-            freeCount++;
-        } else {
-            premiumGrid.innerHTML += cardHTML;
-            premiumCount++;
-        }
+            <div class="card-footer">
+                <div class="price-box">
+                    ${pack.isFree
+                        ? `<span class="price-display" style="color:#10b981;">FREE</span> <span class="original-price">₹${pack.price || 199}</span>`
+                        : `<span class="price-display">₹${pack.price}</span>`
+                    }
+                </div>
+                ${pack.isFree
+                    ? `<button class="btn-action btn-start" onclick="handleStart('${pack.id}', true)">
+                          Start Now <i class="fas fa-arrow-right"></i>
+                       </button>`
+                    : `<button class="btn-action btn-unlock" onclick="handleStart('${pack.id}', false)">
+                          Unlock ₹${pack.price} <i class="fas fa-lock-open"></i>
+                       </button>`
+                }
+            </div>
+        </div>`;
+
+        if (pack.isFree) { freeGrid.innerHTML  += cardHTML; freeCount++; }
+        else             { premiumGrid.innerHTML += cardHTML; paidCount++; }
     });
-    
-    if(freeCount === 0) freeGrid.innerHTML = '<p style="color:#6b7280;">No free tests match your filter.</p>';
-    if(premiumCount === 0) premiumGrid.innerHTML = '<p style="color:#6b7280;">No premium tests match your filter.</p>';
+
+    if (freeCount  === 0) freeGrid.innerHTML    = '<p style="color:#6b7280;padding:20px;text-align:center;">No free tests match your filter.</p>';
+    if (paidCount  === 0) premiumGrid.innerHTML = '<p style="color:#6b7280;padding:20px;text-align:center;">No premium tests match your filter.</p>';
 }
 
+// ─── Filter Setup ────────────────────────────────────────────────────────────
 function setupFilters() {
     const searchInp = document.getElementById('testSearch');
-    const catSel = document.getElementById('subjectFilter');
-    const diffSel = document.getElementById('difficultyFilter');
-    
+    const catSel    = document.getElementById('subjectFilter');
+    const diffSel   = document.getElementById('difficultyFilter');
+
+    if (!searchInp) return;
+
     const apply = () => {
         const s = searchInp.value.toLowerCase();
-        const c = catSel.value;
+        const c = catSel.value.toLowerCase();
         const d = diffSel.value.toLowerCase();
-        
+
         const filtered = allPacks.filter(p => {
-            const matchesSearch = p.title.toLowerCase().includes(s) || (p.category || '').toLowerCase().includes(s);
-            const diffData = getDifficultyData(p).diff.toLowerCase();
-            const matchesDiff = d === '' || d === diffData;
-            
-            // basic category loosely mapping 
-            let matchesCat = true;
-            if (c === 'School Classes' && p.category && !p.category.includes('Class')) matchesCat = false;
-            if (c === 'Competitive Exams' && p.category && p.category.includes('Class')) matchesCat = false;
-            
-            return matchesSearch && matchesDiff && matchesCat;
+            const matchSearch = p.title.toLowerCase().includes(s) || (p.category || '').toLowerCase().includes(s);
+            const diff        = getDiff(p).label.toLowerCase();
+            const matchDiff   = !d || d === diff;
+            const matchCat    = !c || (p.category || '').toLowerCase().includes(c);
+            return matchSearch && matchDiff && matchCat;
         });
         renderPacks(filtered);
     };
-    
+
     searchInp.addEventListener('input', apply);
     catSel.addEventListener('change', apply);
     diffSel.addEventListener('change', apply);
 }
 
-// Handler for Unlock or Start
-async function handleCardAction(packId, isFree) {
-    const token = localStorage.getItem('renvox_token') || localStorage.getItem('renvoxToken');
-    if (!token) {
-        showToast('Please login to access mock tests', 'error');
-        setTimeout(() => window.location.href = 'index.html#login', 1500);
+// ─── Start/Unlock ────────────────────────────────────────────────────────────
+async function handleStart(packId, isFree) {
+    if (!TOKEN) {
+        showToast('Please login to access tests', 'error');
+        setTimeout(() => window.location.href = 'signup.html', 1500);
         return;
     }
 
+    if (isFree) {
+        // If it's a Board pack with multiple subjects, go to selector
+        const pack = allPacks.find(p => p.id === packId);
+        if (pack && (pack.totalTests > 1 || (pack.category || '').includes('Board'))) {
+            window.location.href = `board-selector.html?board=${encodeURIComponent(pack.title)}&packId=${encodeURIComponent(packId)}`;
+            return;
+        }
+        // Otherwise direct launch
+        window.location.href = `quiz-engine.html?packId=${encodeURIComponent(packId)}&mode=mock`;
+        return;
+    }
+
+    // Paid — check access first
     try {
-        const res = await fetch(`${window.RENVOX_API || ''}/api/mocktest/packs/${packId}`, {
-            headers: { 'Authorization': `Bearer ${token}` }
+        showToast('Checking access...', 'info');
+        const res  = await fetch(`${API}/api/mocktest/packs/${packId}`, {
+            headers: { 'Authorization': `Bearer ${TOKEN}` }
         });
         const data = await res.json();
 
-        if (data.ok) {
-            // If API says it's locked, we must purchase
-            if (data.locked) {
-                initiateMockPurchase(packId);
-            } else {
-                // Unlocked or Free -> Redirect to quiz engine
-                window.location.href = `quiz-engine.html?packId=${packId}&mode=mock`;
-            }
+        if (data.ok && !data.locked) {
+            // Already unlocked
+            window.location.href = `quiz-engine.html?packId=${encodeURIComponent(packId)}&mode=mock`;
+        } else {
+            // Need to pay
+            initiateMockPayment(packId);
         }
-    } catch (err) { 
-        console.error('Pack act err:', err); 
-        showToast('Error validating pack access', 'error');
+    } catch (err) {
+        console.error('Access check error:', err);
+        initiateMockPayment(packId); // Attempt payment
     }
 }
 
-async function initiateMockPurchase(packId) {
-    const token = localStorage.getItem('renvox_token') || localStorage.getItem('renvoxToken');
+// ─── Cashfree Payment ────────────────────────────────────────────────────────
+async function initiateMockPayment(packId) {
+    if (!TOKEN) {
+        showToast('Please login first.', 'error');
+        return;
+    }
+
     showToast('Initializing secure payment...', 'info');
 
     try {
-        // Fetch correct mode (sandbox/production)
-        const configRes = await fetch(`${window.RENVOX_API || ''}/api/cashfree/config`);
-        const configData = await configRes.json();
-        const sdkMode = configData.mode || 'sandbox';
-
-        console.log(`[initiateMockPurchase] Launching Cashfree in ${sdkMode} mode`);
-        const cashfreeInstance = Cashfree({ mode: sdkMode });
-
-        const res = await fetch(`${window.RENVOX_API || ''}/api/cashfree/create-order`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ courseId: packId }) 
-        });
-        
-        const orderData = await res.json();
-        
-        if (!orderData.ok) {
-            showToast(orderData.message || "Failed to create order", 'error');
-            return;
-        }
+        // 1. Get Cashfree mode
+        const cfgRes  = await fetch(`${API}/api/cashfree/config`);
+        const cfgData = await cfgRes.json();
+        const sdkMode = cfgData.mode || 'sandbox';
 
         if (typeof Cashfree === 'undefined') {
-            showToast('Payment system not loaded. Please refresh the page.', 'error');
+            showToast('Payment SDK not loaded. Try refreshing.', 'error');
+            return;
+        }
+        const cashfree = Cashfree({ mode: sdkMode });
+
+        // 2. Create order — reuse /api/cashfree/create-order with courseId = packId
+        const orderRes = await fetch(`${API}/api/cashfree/create-order`, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${TOKEN}` },
+            body:    JSON.stringify({ courseId: packId })
+        });
+        const orderData = await orderRes.json();
+
+        if (!orderData.ok) {
+            showToast(orderData.message || 'Failed to create payment order.', 'error');
             return;
         }
 
-        cashfreeInstance.checkout({ 
+        // 3. Launch Cashfree checkout
+        const returnBase = window.location.href.split('?')[0];
+        cashfree.checkout({
             paymentSessionId: orderData.payment_session_id,
-            returnUrl: window.location.href + (window.location.href.includes('?') ? '&' : '?') + "payment=verify&order_id=" + orderData.order_id
+            returnUrl: `${returnBase}?payment=verify&order_id=${orderData.order_id}&pack_id=${packId}`
         });
-        
+
     } catch (err) {
-        showToast('Purchase error: ' + err.message, 'error');
+        console.error('Payment error:', err);
+        showToast('Payment error: ' + err.message, 'error');
     }
 }

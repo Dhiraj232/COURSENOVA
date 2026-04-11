@@ -1,5 +1,5 @@
 /**
- * RENVOX AI — API Base URL Configuration
+ * COURSENOVA — API Base URL Configuration
  *
  * This file is included in every HTML page that makes API calls.
  * It automatically detects whether we are running locally or on a
@@ -10,19 +10,16 @@
  * as the website itself, which works for same-server deployments.
  */
 (function () {
-    const PRODUCTION_API = 'https://renvox-ai.onrender.com';
-
-    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-        window.RENVOX_API = 'http://localhost:5000';
-    } else {
-        // Fallback to same-origin if PRODUCTION_API is empty
-        window.RENVOX_API = PRODUCTION_API || window.location.origin;
-    }
+    // ✅ PORT 5000 UNIFICATION
+    window.COURSENOVA_API = 'http://localhost:5000';
+    window.FRONTEND_URL   = 'http://localhost:5000';
 
     // Also expose a convenience function for building API URLs
     window.apiUrl = function (path) {
-        const base = window.RENVOX_API;
+        const base = window.COURSENOVA_API;
         const cleanPath = path.startsWith('/') ? path : '/' + path;
         return base + cleanPath;
     };
+
+    console.log(`[Config] Local-Only Mode | API: ${window.COURSENOVA_API}`);
 })();

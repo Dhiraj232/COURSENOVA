@@ -8,7 +8,7 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 const Course   = require('./models/Course');
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/renvox';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/coursenova';
 
 const premiumCourses = [
   {
@@ -34,21 +34,21 @@ const premiumCourses = [
         lessonId: 'dsa-l1',
         title: 'Arrays & Strings',
         videoUrl: 'https://www.youtube.com/embed/8hly31xKli0',
-        pdfUrl: 'https://docs.google.com/viewer?url=https://renvox-ai.onrender.com/dummy_document.pdf&embedded=true',
+        pdfUrl: 'https://docs.google.com/viewer?url=https://coursenova-ai.onrender.com/dummy_document.pdf&embedded=true',
         order: 1
       },
       {
         lessonId: 'dsa-l2',
         title: 'Linked Lists & Stacks',
         videoUrl: 'https://www.youtube.com/embed/R9PTBwOzceo',
-        pdfUrl: 'https://docs.google.com/viewer?url=https://renvox-ai.onrender.com/dummy_document.pdf&embedded=true',
+        pdfUrl: 'https://docs.google.com/viewer?url=https://coursenova-ai.onrender.com/dummy_document.pdf&embedded=true',
         order: 2
       },
       {
         lessonId: 'dsa-l3',
         title: 'Trees & Graphs',
         videoUrl: 'https://www.youtube.com/embed/oSWTXtMglKE',
-        pdfUrl: 'https://docs.google.com/viewer?url=https://renvox-ai.onrender.com/dummy_document.pdf&embedded=true',
+        pdfUrl: 'https://docs.google.com/viewer?url=https://coursenova-ai.onrender.com/dummy_document.pdf&embedded=true',
         order: 3
       }
     ],
@@ -90,21 +90,21 @@ const premiumCourses = [
         lessonId: 'am-l1',
         title: 'Understanding Anger',
         videoUrl: 'https://www.youtube.com/embed/RVA2N6tX2cg',
-        pdfUrl: 'https://docs.google.com/viewer?url=https://renvox-ai.onrender.com/dummy_document.pdf&embedded=true',
+        pdfUrl: 'https://docs.google.com/viewer?url=https://coursenova-ai.onrender.com/dummy_document.pdf&embedded=true',
         order: 1
       },
       {
         lessonId: 'am-l2',
         title: 'Breathing & Mindfulness',
         videoUrl: 'https://www.youtube.com/embed/ihwcw_ofuME',
-        pdfUrl: 'https://docs.google.com/viewer?url=https://renvox-ai.onrender.com/dummy_document.pdf&embedded=true',
+        pdfUrl: 'https://docs.google.com/viewer?url=https://coursenova-ai.onrender.com/dummy_document.pdf&embedded=true',
         order: 2
       },
       {
         lessonId: 'am-l3',
         title: 'Conflict Resolution',
         videoUrl: 'https://www.youtube.com/embed/KY5TWVz5ZDU',
-        pdfUrl: 'https://docs.google.com/viewer?url=https://renvox-ai.onrender.com/dummy_document.pdf&embedded=true',
+        pdfUrl: 'https://docs.google.com/viewer?url=https://coursenova-ai.onrender.com/dummy_document.pdf&embedded=true',
         order: 3
       }
     ],
@@ -146,21 +146,21 @@ const premiumCourses = [
         lessonId: 'cs-l1',
         title: 'Foundations of Communication',
         videoUrl: 'https://www.youtube.com/embed/HAnw168huqA',
-        pdfUrl: 'https://docs.google.com/viewer?url=https://renvox-ai.onrender.com/dummy_document.pdf&embedded=true',
+        pdfUrl: 'https://docs.google.com/viewer?url=https://coursenova-ai.onrender.com/dummy_document.pdf&embedded=true',
         order: 1
       },
       {
         lessonId: 'cs-l2',
         title: 'Public Speaking & Presentations',
         videoUrl: 'https://www.youtube.com/embed/JNOXZumCXNM',
-        pdfUrl: 'https://docs.google.com/viewer?url=https://renvox-ai.onrender.com/dummy_document.pdf&embedded=true',
+        pdfUrl: 'https://docs.google.com/viewer?url=https://coursenova-ai.onrender.com/dummy_document.pdf&embedded=true',
         order: 2
       },
       {
         lessonId: 'cs-l3',
         title: 'Professional Writing',
         videoUrl: 'https://www.youtube.com/embed/k3LCzsW0Sww',
-        pdfUrl: 'https://docs.google.com/viewer?url=https://renvox-ai.onrender.com/dummy_document.pdf&embedded=true',
+        pdfUrl: 'https://docs.google.com/viewer?url=https://coursenova-ai.onrender.com/dummy_document.pdf&embedded=true',
         order: 3
       }
     ],

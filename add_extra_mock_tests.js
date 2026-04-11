@@ -1,13 +1,13 @@
 /**
  * add_extra_mock_tests.js
- * Adds 13 new mock test series (6 Free, 7 Paid @ ₹59-₹129) to the Renvox AI platform.
+ * Adds 13 new mock test series (6 Free, 7 Paid @ ₹59-₹129) to the CourseNova platform.
  */
 require('dotenv').config();
 const mongoose = require('mongoose');
 const MockTestPack = require('./models/MockTestPack');
 const PracticeQuestion = require('./models/PracticeQuestion');
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/renvox';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/coursenova';
 
 const newSeries = [
     // ─── NEW FREE SERIES (6) ───────────────────────────────────────────────────

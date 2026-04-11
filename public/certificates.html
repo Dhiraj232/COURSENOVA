@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Certificate Courses — RENVOX AI</title>
+    <title>Certificate Courses — COURSENOVA</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -141,29 +141,59 @@
         /* ── Course Card ── */
         .course-card {
             background: var(--card);
-            border-radius: 18px;
-            border: 1.5px solid var(--border);
+            border-radius: 24px;
+            border: 1px solid rgba(226, 232, 240, 0.8);
             overflow: hidden;
-            transition: all .3s cubic-bezier(.175, .885, .32, 1.275);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             position: relative;
             display: flex;
             flex-direction: column;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+        }
+
+        .course-card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 24px;
+            padding: 2px;
+            background: linear-gradient(135deg, transparent, rgba(79, 70, 229, 0.2), transparent);
+            webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            pointer-events: none;
+            z-index: 10;
         }
 
         .course-card:hover {
-            transform: translateY(-6px);
-            box-shadow: 0 20px 48px rgba(79, 70, 229, .14);
-            border-color: var(--brand);
+            transform: translateY(-8px);
+            box-shadow: 0 24px 50px rgba(79, 70, 229, 0.15);
+            border-color: transparent;
+        }
+
+        .course-card:hover::before {
+            opacity: 1;
         }
 
         /* Card Header */
         .card-header {
-            padding: 28px 20px 20px;
+            padding: 34px 24px 24px;
             display: flex;
             flex-direction: column;
             align-items: center;
             position: relative;
             color: white;
+            overflow: hidden;
+        }
+
+        .card-header::after {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%; width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, transparent 60%);
+            pointer-events: none;
         }
 
         .card-header.beginner {
@@ -183,15 +213,25 @@
         }
 
         .course-icon {
-            font-size: 3rem;
-            margin-bottom: 8px;
+            font-size: 3.5rem;
+            margin-bottom: 12px;
+            filter: drop-shadow(0 8px 16px rgba(0,0,0,0.25));
+            transition: transform 0.4s ease;
+            z-index: 2;
+        }
+
+        .course-card:hover .course-icon {
+            transform: scale(1.1) rotate(-5deg);
         }
 
         .course-title {
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             font-weight: 800;
             text-align: center;
-            line-height: 1.35;
+            line-height: 1.4;
+            letter-spacing: -0.02em;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            z-index: 2;
         }
 
         /* Status Badges */
@@ -241,23 +281,27 @@
         /* Meta row */
         .course-meta {
             display: flex;
-            gap: 14px;
+            gap: 12px;
             flex-wrap: wrap;
-            margin-bottom: 14px;
+            margin-bottom: 18px;
+            background: #f1f5f9;
+            padding: 12px;
+            border-radius: 12px;
+            justify-content: space-around;
         }
 
         .meta-tag {
-            font-size: .78rem;
-            color: var(--muted);
-            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--text);
+            font-weight: 700;
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 6px;
         }
 
         .meta-tag i {
             color: var(--brand);
-            font-size: .72rem;
+            font-size: 1rem;
         }
 
         /* Highlights */
@@ -470,7 +514,7 @@
     <!-- NAVBAR -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
-            <a href="index.html" class="logo"><img src="images/logo%20renvox.png" alt="RENVOX"> <span>RENVOX AI</span></a>
+            <a href="index.html" class="logo"><img src="images/logo%20coursenova.png" alt="COURSENOVA"> <span>COURSENOVA</span></a>
             <div class="nav-search">
                 <input type="text" id="navbarSearch" placeholder="Search for courses, subjects, or concepts...">
                 <button type="button" onclick="handleNavbarSearch()"><i class="fas fa-search"></i></button>
@@ -491,7 +535,7 @@
 
     <!-- HERO -->
     <div class="cert-hero">
-        <h1>🎓 RENVOX AI — Certificate Courses</h1>
+        <h1>🎓 COURSENOVA — Certificate Courses</h1>
         <p>Enroll • Learn • Pass the test • Earn your verified industry-recognized certificate</p>
     </div>
 
@@ -532,7 +576,7 @@
 
     <script>
         const API = '';
-        const token = localStorage.getItem('renvox_token') || localStorage.getItem('renvoxToken') || '';
+        const token = localStorage.getItem('coursenova_token') || localStorage.getItem('coursenovaToken') || '';
 
         let COURSES = [];
         let enrolledIds = [];
@@ -614,9 +658,17 @@
                         icon: c.icon || '🎓',
                         level: c.level || 'Beginner',
                         duration: c.duration || '4 Weeks',
-                        assignments: (c.quizQuestions || []).length || 1,
+                        lessonCount: (c.lessons || []).length || 1,
+                        quizCount: (c.quizQuestions || []).length || 15,
                         description: c.description || '',
-                        highlights: c.highlights || ['Verified Certificate', 'Full Access'],
+                        highlights: c.highlights && c.highlights.length > 0 
+                            ? c.highlights 
+                            : [
+                                `${(c.lessons || []).length || 1} Video Lessons`,
+                                `${(c.quizQuestions || []).length || 15} MCQ Questions`,
+                                'PDF Study Material',
+                                'Verified Certificate'
+                              ],
                         price: c.price,
                         isFree: c.isFree
                     }));
@@ -741,7 +793,8 @@
                     <p class="course-desc">${c.description}</p>
                     <div class="course-meta">
                         <span class="meta-tag"><i class="fas fa-clock"></i> ${c.duration}</span>
-                        <span class="meta-tag"><i class="fas fa-tasks"></i> ${c.assignments} Lsns</span>
+                        <span class="meta-tag"><i class="fas fa-play-circle"></i> ${c.lessonCount} Videos</span>
+                        <span class="meta-tag"><i class="fas fa-question-circle"></i> ${c.quizCount} MCQs</span>
                     </div>
                     <ul class="highlights">
                         ${c.highlights.map(h => `<li>${h}</li>`).join('')}
@@ -770,12 +823,7 @@
                 return;
             }
             try {
-                // Determine correct mode (sandbox/production)
-                const configRes = await fetch(`${API}/api/cashfree/config`);
-                const configData = await configRes.json();
-                const sdkMode = configData.mode || 'sandbox';
-
-                // Create Order
+                // Create Order via backend
                 const res = await fetch(`${API}/api/cashfree/create-order`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -784,22 +832,50 @@
                 const orderData = await res.json();
                 
                 if (!orderData.ok) {
-                    alert(orderData.message || "Failed to create order");
+                    // Already enrolled?
+                    if ((orderData.message || '').toLowerCase().includes('already')) {
+                        showToast('✅ Already enrolled! Loading course...', 'success');
+                        setTimeout(() => window.location.href = `course-content.html?course=${courseId}`, 1500);
+                        return;
+                    }
+                    const detail = orderData.details ? `\n\nDetail: ${orderData.details}` : '';
+                    alert(`❌ Order Failed: ${orderData.message}${detail}`);
                     return;
                 }
 
-                // Launch Cashfree
+                // Fetch SDK mode
+                let sdkMode = 'production';
+                try {
+                    const configRes = await fetch(`${API}/api/cashfree/config`);
+                    const configData = await configRes.json();
+                    sdkMode = configData.mode || 'production';
+                } catch (e) {}
+
+                console.log(`[Checkout] Mode: ${sdkMode} | SessionId: ${orderData.payment_session_id?.slice(0,20)}...`);
+
+                // Launch Cashfree SDK
                 if (typeof Cashfree === 'undefined') {
-                    alert('Payment gateway not loaded. Please refresh the page.');
+                    alert('Payment gateway not loaded. Please refresh and try again.');
                     return;
                 }
 
-                console.log(`[Certificates] Launching Cashfree in ${sdkMode} mode`);
                 const cashfreeInstance = Cashfree({ mode: sdkMode });
                 
+                // Build the return URL pointing to course-content.html for auto-enrollment
+                const returnUrl = `${window.location.origin}/course-content.html?course=${orderData.courseId || courseId}&payment=verify&order_id=${orderData.orderId}`;
+
                 cashfreeInstance.checkout({ 
                     paymentSessionId: orderData.payment_session_id,
-                    returnUrl: window.location.href + (window.location.href.includes('?') ? '&' : '?') + "payment=verify&order_id=" + orderData.order_id
+                    redirectTarget: '_self',
+                    returnUrl: returnUrl
+                }).then((result) => {
+                    if (result.error) {
+                        console.error('[Cashfree SDK Error]', result.error);
+                        alert(`Payment Error: ${result.error.message}`);
+                    }
+                }).catch((err) => {
+                    console.error('[Cashfree checkout error]', err);
+                    alert('Payment gateway error. Please try again.');
                 });
 
             } catch (err) {

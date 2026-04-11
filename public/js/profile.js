@@ -1,5 +1,5 @@
 /**
- * ==================== RENVOX PROFILE DASHBOARD LOGIC ====================
+ * ==================== COURSENOVA PROFILE DASHBOARD LOGIC ====================
  * 
  * This file handles fetching profile information, updating details,
  * switching between dashboard tabs, and rendering analytics and charts.
@@ -19,8 +19,8 @@ document.addEventListener('DOMContentLoaded', function () {
  * Check if the user is logged in.
  */
 function checkAuthentication() {
-    const token = localStorage.getItem('renvoxToken') || localStorage.getItem('renvox_token');
-    const user = localStorage.getItem('renvoxUser') || localStorage.getItem('renvox_user');
+    const token = localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token');
+    const user = localStorage.getItem('coursenovaUser') || localStorage.getItem('coursenova_user');
 
     if (!token || !user) {
         console.warn('Authentication token not found. Redirecting to login...');
@@ -69,7 +69,7 @@ function toggleProfileEdit() {
  * Load User Details from Backend
  */
 async function loadProfileData() {
-    const token = localStorage.getItem('renvoxToken') || localStorage.getItem('renvox_token');
+    const token = localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token');
 
     try {
         const response = await fetch('/api/user/profile', {
@@ -102,7 +102,7 @@ async function loadProfileData() {
  * Load Enrolled Courses
  */
 async function loadUserCourses() {
-    const token = localStorage.getItem('renvoxToken') || localStorage.getItem('renvox_token');
+    const token = localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token');
     const container = document.getElementById('userCoursesContainer');
 
     try {
@@ -142,7 +142,7 @@ async function loadUserCourses() {
  * Load Payment History
  */
 async function loadPaymentHistory() {
-    const token = localStorage.getItem('renvoxToken') || localStorage.getItem('renvox_token');
+    const token = localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token');
     const tableBody = document.getElementById('paymentHistoryBody');
 
     try {
@@ -170,7 +170,7 @@ async function loadPaymentHistory() {
  * Load Certificates
  */
 async function loadCertificates() {
-    const token = localStorage.getItem('renvoxToken') || localStorage.getItem('renvox_token');
+    const token = localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token');
     const container = document.getElementById('certificatesContainer');
 
     try {
@@ -205,7 +205,7 @@ async function loadCertificates() {
  * Initialize Analytics & Charts
  */
 async function initAnalytics() {
-    const token = localStorage.getItem('renvoxToken') || localStorage.getItem('renvox_token');
+    const token = localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token');
 
     try {
         const response = await fetch('/api/analytics/dashboard', {
@@ -268,7 +268,7 @@ async function initAnalytics() {
  */
 document.getElementById('profileForm').addEventListener('submit', async function (e) {
     e.preventDefault();
-    const token = localStorage.getItem('renvoxToken') || localStorage.getItem('renvox_token');
+    const token = localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token');
 
     const updateData = {
         fullName: document.getElementById('profileName').value,
@@ -304,7 +304,7 @@ document.getElementById('profileForm').addEventListener('submit', async function
 document.getElementById('avatarUploader').addEventListener('change', async function (e) {
     if (e.target.files && e.target.files[0]) {
         const file = e.target.files[0];
-        const token = localStorage.getItem('renvoxToken') || localStorage.getItem('renvox_token');
+        const token = localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token');
 
         const reader = new FileReader();
         reader.onload = async (event) => {

@@ -6,14 +6,14 @@ router.post('/ai-chat', async (req, res) => {
     if (!message) return res.status(400).json({ ok: false, message: 'Message is required' });
 
     try {
-        // Master Prompt for RENVOX AI Doubt Assistant
-        const masterPrompt = `You are the RENVOX AI Doubt Assistant. 
+        // Master Prompt for COURSENOVA Doubt Assistant
+        const masterPrompt = `You are the COURSENOVA Doubt Assistant. 
         Your goal is to help students with programming, DSA, Web Development, and AI doubts.
         Provide clear, concise explanations and code examples where possible.`;
 
         // For now, simple mock logic as a placeholder for LLM integration
         const lowerMsg = message.toLowerCase();
-        let reply = "I'm your RENVOX AI Assistant. How can I help you today?";
+        let reply = "I'm your COURSENOVA Assistant. How can I help you today?";
 
         if (lowerMsg.includes('recursion')) {
             reply = "Recursion is a process in which a function calls itself directly or indirectly. It consists of two main parts: a **Base Case** (to stop calling itself) and a **Recursive Case** (where the function calls itself). For example, finding the factorial of a number: `fact(n) = n * fact(n-1)` with base case `n <= 1`.";

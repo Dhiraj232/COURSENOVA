@@ -1,10 +1,10 @@
 /**
- * RENVOX - Certificate Generation System
+ * COURSENOVA - Certificate Generation System
  * Generates downloadable certificates for completed courses
  * Uses HTML5 Canvas for certificate creation
  * 
  * @version 1.0.0
- * @author RENVOX Team
+ * @author COURSENOVA Team
  */
 
 // Certificate template configuration
@@ -140,7 +140,7 @@ function generateCertificate(index) {
     ctx.font = 'bold 60px Poppins, sans-serif';
     ctx.fillStyle = CERTIFICATE_CONFIG.borderColor;
     ctx.textAlign = 'center';
-    ctx.fillText('📚 RENVOX', canvas.width / 2, 150);
+    ctx.fillText('📚 COURSENOVA', canvas.width / 2, 150);
 
     // Certificate title
     ctx.font = 'bold 50px Poppins, sans-serif';
@@ -186,7 +186,7 @@ function generateCertificate(index) {
     // Date and Grade
     ctx.font = '18px Inter, sans-serif';
     ctx.fillStyle = '#6b7280';
-    ctx.fillText(`Completed on: ${formatDate(course.courseName)}`, canvas.width / 2 - 200, 580);
+    ctx.fillText(`Completed on: ${formatDate(course.completionDate)}`, canvas.width / 2 - 200, 580);
     
     ctx.fillText(`Grade: ${course.grade}`, canvas.width / 2 + 200, 580);
 
@@ -209,7 +209,7 @@ function generateCertificate(index) {
     ctx.font = 'bold 16px Poppins, sans-serif';
     ctx.fillText('Dr. Raj Kumar', 200, canvas.height - 100);
     ctx.font = '14px Inter, sans-serif';
-    ctx.fillText('Director, RENVOX', 200, canvas.height - 80);
+    ctx.fillText('Director, COURSENOVA', 200, canvas.height - 80);
 
     // Principal signature
     ctx.textAlign = 'right';
@@ -224,7 +224,7 @@ function generateCertificate(index) {
     ctx.textAlign = 'center';
     ctx.font = '12px Inter, sans-serif';
     ctx.fillStyle = '#9ca3af';
-    ctx.fillText('Verify at: renvox.com/verify | This certificate is verifiable online', canvas.width / 2, canvas.height - 40);
+    ctx.fillText('Verify at: coursenova.com/verify | This certificate is verifiable online', canvas.width / 2, canvas.height - 40);
 
     // Convert to image and download
     const link = document.createElement('a');
@@ -241,11 +241,11 @@ function generateCertificate(index) {
  */
 function shareCertificate(index) {
     const course = completedCourses[index];
-    const shareText = `I just completed "${course.courseName}" on RENVOX with grade ${course.grade}! 🎓\n\nCertificate ID: ${course.certificateId}\n\nVerify: renvox.com/verify`;
+    const shareText = `I just completed "${course.courseName}" on COURSENOVA with grade ${course.grade}! 🎓\n\nCertificate ID: ${course.certificateId}\n\nVerify: coursenova.com/verify`;
     
     if (navigator.share) {
         navigator.share({
-            title: 'My RENVOX Certificate',
+            title: 'My COURSENOVA Certificate',
             text: shareText,
             url: window.location.href
         }).catch(err => console.log('Share cancelled'));

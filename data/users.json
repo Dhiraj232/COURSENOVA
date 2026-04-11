@@ -15,7 +15,7 @@
   {
     "id": "1771356323609",
     "fullName": "Test User",
-    "email": "test1@renvox.com",
+    "email": "test1@coursenova.com",
     "mobile": "9999999999",
     "passwordHash": "$2b$10$ELt4eJgO8NIYJijSsRCSz.4HgcvBMY.3FW5XvYdVwAKbvPY/2IEIW",
     "role": "student",
@@ -28,7 +28,7 @@
   {
     "id": "1771356454163",
     "fullName": "Test User2",
-    "email": "test2@renvox.com",
+    "email": "test2@coursenova.com",
     "mobile": "9999999998",
     "passwordHash": "$2b$10$GYyJXhaRKP74t7LFGNPeLOBZpoogGiTd2cAwYQEhXvI/oJTu2j9mi",
     "role": "student",
@@ -41,7 +41,7 @@
   {
     "id": "1771356513893",
     "fullName": "Test User3",
-    "email": "test3@renvox.com",
+    "email": "test3@coursenova.com",
     "mobile": "9999999997",
     "passwordHash": "$2b$10$pb9zBAuue7nTcTAx7nJ3O./Khig24KlhmLxcMJTPtFH997obEVnj6",
     "role": "student",

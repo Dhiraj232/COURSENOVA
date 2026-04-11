@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Book Store - RENVOX</title>
+    <title>Book Store - COURSENOVA</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -833,10 +833,10 @@
 </head>
 
 <body>
-    <!-- --------------- RENVOX NAVBAR --------------- -->
+    <!-- --------------- COURSENOVA NAVBAR --------------- -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
-            <a href="index.html" class="logo"><img src="images/logo%20renvox.png" alt="RENVOX"> <span>RENVOX</span></a>
+            <a href="index.html" class="logo"><img src="images/logo%20coursenova.png" alt="COURSENOVA"> <span>COURSENOVA</span></a>
             <div class="nav-search">
                 <input type="text" id="navbarSearch" placeholder="Search for courses, subjects, or concepts...">
                 <button type="button" onclick="handleNavbarSearch()"><i class="fas fa-search"></i></button>
@@ -1122,7 +1122,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             // Get user info from localStorage if available
             try {
-                const user = JSON.parse(localStorage.getItem('renvox_user') || '{}');
+                const user = JSON.parse(localStorage.getItem('coursenova_user') || '{}');
                 userCollege = user.collegeName || '';
             } catch(e){}
 
@@ -1314,7 +1314,7 @@
         // --- MY LISTINGS ---
         async function loadMyBooks() {
             const grid = document.getElementById('myBooksGrid');
-            const token = localStorage.getItem('renvox_token') || localStorage.getItem('renvoxToken') || '';
+            const token = localStorage.getItem('coursenova_token') || localStorage.getItem('coursenovaToken') || '';
             if (!token) {
                 grid.innerHTML = `<div class="state-box">
                     <div class="icon"></div>
@@ -1397,7 +1397,7 @@
         // --- DELETE BOOK ---
         async function deleteBook(id, btn) {
             if (!confirm('Are you sure you want to delete this listing?')) return;
-            const token = localStorage.getItem('renvox_token') || localStorage.getItem('renvoxToken') || '';
+            const token = localStorage.getItem('coursenova_token') || localStorage.getItem('coursenovaToken') || '';
             btn.disabled = true; btn.textContent = '...';
             try {
                 const res = await fetch(`${API}/${id}`, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token } });
@@ -1413,7 +1413,7 @@
 
         // --- MARK AS SOLD ---
         async function markSold(id, btn, currentStatus) {
-            const token = localStorage.getItem('renvox_token') || localStorage.getItem('renvoxToken') || '';
+            const token = localStorage.getItem('coursenova_token') || localStorage.getItem('coursenovaToken') || '';
             if (!token) { showToast('Login required', 'error'); return; }
             btn.disabled = true; btn.textContent = '...';
             try {
@@ -1431,7 +1431,7 @@
 
         // --- SELL / EDIT MODAL ---
         function openSellModal() {
-            const token = localStorage.getItem('renvox_token') || localStorage.getItem('renvoxToken') || '';
+            const token = localStorage.getItem('coursenova_token') || localStorage.getItem('coursenovaToken') || '';
             if (!token) {
                 if (confirm('You must be logged in to list a book.\n\nClick OK to go to the login page.')) {
                     window.location.href = '/auth/google';
@@ -1471,7 +1471,7 @@
         // --- SUBMIT BOOK ---
         async function submitBook(e) {
             e.preventDefault();
-            const token = localStorage.getItem('renvox_token') || localStorage.getItem('renvoxToken') || '';
+            const token = localStorage.getItem('coursenova_token') || localStorage.getItem('coursenovaToken') || '';
             if (!token) {
                 showFormAlert('You must be logged in to list a book.', 'error');
                 return;

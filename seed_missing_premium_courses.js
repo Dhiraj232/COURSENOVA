@@ -105,10 +105,10 @@ const missingCourses = [
     ]
   },
   {
-    slug: 'renvox-ai-masterclass',
-    title: 'Renvox AI Masterclass',
+    slug: 'coursenova-ai-masterclass',
+    title: 'CourseNova Masterclass',
     icon: '🚀',
-    description: 'A complete guided masterclass on using Renvox AI to its full potential. Includes hands-on projects and a verified certificate.',
+    description: 'A complete guided masterclass on using CourseNova to its full potential. Includes hands-on projects and a verified certificate.',
     price: 1, // SPECIAL ₹1 FOR TESTING
     isPremium: true,
     isFree: false,
@@ -118,15 +118,15 @@ const missingCourses = [
     lessons: [
         { 
             lessonId: 'rm-l1', 
-            title: 'Welcome to Renvox AI', 
+            title: 'Welcome to CourseNova', 
             videoUrl: 'https://www.youtube.com/embed/KJgsSFOSQv0', // Valid embed
-            pdfUrl: 'renvox_guide.pdf', 
+            pdfUrl: 'coursenova_guide.pdf', 
             order: 1 
         }
     ],
     quizQuestions: [
         { 
-            question: 'What is the primary goal of Renvox AI?', 
+            question: 'What is the primary goal of CourseNova?', 
             options: ['To help you learn', 'To play games', 'To watch movies', 'None'], 
             correctIndex: 0 
         }

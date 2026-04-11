@@ -1,5 +1,5 @@
 /**
- * RENVOX AI - Google Analytics 4 (GA4) Helper
+ * COURSENOVA - Google Analytics 4 (GA4) Helper
  * 
  * This script provides a centralized way to track user events.
  * Replace 'G-XXXXXXXXXX' with your actual GA4 Measurement ID.
@@ -26,15 +26,15 @@ const trackEvent = (eventName, params = {}) => {
     if (typeof gtag === 'function') {
         gtag('event', eventName, {
             ...params,
-            platform: 'RENVOX_AI',
+            platform: 'COURSENOVA_AI',
             timestamp: new Date().toISOString()
         });
         console.log(`[Analytics] Tracked: ${eventName}`, params);
     }
 };
 
-// Standard Events for RENVOX AI
-const RenvoxAnalytics = {
+// Standard Events for COURSENOVA
+const CourseNovaAnalytics = {
     trackLogin: (method = 'Google') => {
         trackEvent('login', { method });
     },
@@ -63,4 +63,4 @@ const RenvoxAnalytics = {
 
 // Initialize on load
 initGA();
-window.RenvoxAnalytics = RenvoxAnalytics;
+window.CourseNovaAnalytics = CourseNovaAnalytics;

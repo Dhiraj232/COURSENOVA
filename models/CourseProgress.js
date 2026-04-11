@@ -28,6 +28,7 @@ const CourseProgressSchema = new mongoose.Schema({
 
     // Certificate
     certId: { type: String, default: null },
+    courseName: { type: String, default: null },
     earnedAt: { type: Date, default: null },
 
     updatedAt: { type: Date, default: Date.now }

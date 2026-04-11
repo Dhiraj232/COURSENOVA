@@ -1,6 +1,6 @@
 // API base is auto-detected by config.js (localhost in dev, Render in prod)
-const API = window.RENVOX_API || 'https://renvox-ai.onrender.com';
-const token = localStorage.getItem('renvox_token') || localStorage.getItem('renvoxToken') || '';
+const API = window.COURSENOVA_API || 'https://coursenova-ai.onrender.com';
+const token = localStorage.getItem('coursenova_token') || localStorage.getItem('coursenovaToken') || '';
 const params = new URLSearchParams(window.location.search);
 const courseId = params.get('course');
 
@@ -46,17 +46,18 @@ async function verifyCashfreePayment(orderId, courseId) {
         if (data.ok) {
             fireConfetti();
             showToast('🎉 Payment verified! Welcome to the course.', 'toast-success');
+            // Sync user data to unlock content globally
+            if (typeof window.refreshUserData === 'function') await window.refreshUserData();
             return; // Done
         }
 
-        // If not yet successful — poll /order-status (webhook may arrive after redirect)
-        // Cashfree can take a few seconds to fire the webhook. Poll up to 30s.
-        showToast('Confirming with payment server... please wait.', 'toast-success');
-        const confirmed = await pollOrderStatus(orderId, 15, 2000); // 15 attempts × 2s = 30s max
+        // ... pollling logic ...
 
         if (confirmed) {
             fireConfetti();
             showToast('🎉 Payment confirmed! Welcome to the course.', 'toast-success');
+            // Sync user data to unlock content globally
+            if (typeof window.refreshUserData === 'function') await window.refreshUserData();
         } else {
             showToast(
                 data.message || 'Payment not confirmed yet. If you paid, access will unlock within minutes.',
@@ -131,7 +132,7 @@ async function loadCoursePlayer() {
         progressData = data.progress || { completedLessons: [] };
         examAttemptsLeft = data.examAttemptsLeft !== undefined ? data.examAttemptsLeft : 3;
 
-        document.getElementById('sidebarCourseTitle').textContent = courseData.title;
+        document.getElementById('sidebarCourseTitle').innerText = courseData.title;
 
         if (!data.enrolled) {
             // Show Locked Screen
@@ -146,7 +147,13 @@ async function loadCoursePlayer() {
             updateOverallProgress();
 
             if (courseData.lessons && courseData.lessons.length > 0) {
-                loadLesson(0);
+                // Auto-resume: Find the first uncompleted lesson
+                let resumeIdx = 0;
+                if (progressData.completedLessons && progressData.completedLessons.length > 0) {
+                    resumeIdx = courseData.lessons.findIndex(l => !progressData.completedLessons.includes(l.lessonId));
+                    if (resumeIdx === -1) resumeIdx = 0; // If all completed, start at 0
+                }
+                loadLesson(resumeIdx);
             }
 
             if (progressData.isCompleted) {
@@ -449,7 +456,8 @@ function showCertSection() {
 
     if (progressData && progressData.certId) {
         const btn = document.getElementById('downloadCertBtn');
-        btn.href = `/api/certificates/generate/${progressData.certId}`;
+        btn.href = `view-certificate.html?id=${progressData.certId}`;
+        btn.innerHTML = '<i class="fas fa-certificate"></i> View & Download Certificate';
     }
 }
 

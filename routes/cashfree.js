@@ -1,7 +1,7 @@
 /**
  * routes/cashfree.js
  * ─────────────────────────────────────────────────────────────────────────────
- * Cashfree Payment Routes for RENVOX AI
+ * Cashfree Payment Routes for COURSENOVA
  *
  * Mounted at: /api/cashfree
  *

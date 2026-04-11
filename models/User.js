@@ -20,6 +20,14 @@ const UserSchema = new mongoose.Schema({
 
     // Array of course titles the user has paid for or enrolled in
     enrolledCourses: [{ type: String }],
+    purchasedCourses: [{ type: String }], // New standard list (mirrors enrolledCourses)
+
+    // Premium Mock Test System access flag (₹59 series)
+    hasMockSeriesAccess: { type: Boolean, default: false },
+    purchasedMockTest: { type: Boolean, default: false }, // New standard flag
+
+    // Array of purchased book ObjectIDs
+    purchasedBooks: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Book' }],
 
     lastLogin: { type: Date, default: Date.now },
     createdAt: { type: Date, default: Date.now }

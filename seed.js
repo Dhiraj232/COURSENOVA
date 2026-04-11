@@ -5,7 +5,7 @@ const mongoose = require('mongoose');
 const Book = require('./models/Book');
 const Seller = require('./models/Seller');
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/renvox-bookstore';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/coursenova-bookstore';
 
 async function seed() {
   try {

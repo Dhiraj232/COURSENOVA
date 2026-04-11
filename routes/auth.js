@@ -8,16 +8,17 @@ const catchAsync = require('../utils/catchAsync');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'Dhiraj@2026_secure_key!';
 
-// @route   GET /auth/google
+// @route   GET /api/auth/google  (also accessible as /auth/google via legacy alias)
 // @desc    Redirect to Google for authentication
 router.get('/google',
     sensitiveLimiter,
     passport.authenticate('google', { scope: ['profile', 'email'] })
 );
 
+
 router.use(preventInjection);
 
-// @route   GET /auth/google/callback
+// @route   GET /api/auth/google/callback
 router.get('/google/callback',
     passport.authenticate('google', {
         failureRedirect: '/signup.html?error=google_auth_failed'
@@ -54,12 +55,19 @@ router.get('/google/callback',
             picture: req.user.picture
         };
 
+        // ✅ FIXED: Redirect to a dedicated auth-callback page.
+        // That page reads token/user from URL, saves them to localStorage,
+        // then redirects the user to the dashboard. This is the standard
+        // pattern for SPA + server-side OAuth.
         const userStr = encodeURIComponent(JSON.stringify(userSafe));
-        res.redirect(`/dashboard?token=${token}&user=${userStr}`);
+        // ✅ PORT 5000 UNIFICATION: Always redirect to our own static frontend
+        const REDIRECT_URL = 'http://localhost:5000/auth-callback.html';
+        res.redirect(`${REDIRECT_URL}?token=${token}&user=${userStr}`);
     })
 );
 
-// @route   GET /api/me
+// @route   GET /api/auth/me  (also GET /auth/me via legacy alias)
+// @desc    Returns current logged-in user from JWT token
 router.get('/me', catchAsync(async (req, res, next) => {
     const auth = req.headers.authorization || '';
     const token = auth.startsWith('Bearer ') ? auth.slice(7) : (req.query.token || '');
@@ -81,7 +89,11 @@ router.get('/me', catchAsync(async (req, res, next) => {
             role: user.role,
             college: user.collegeName,
             picture: user.picture,
-            profileComplete: user.profileComplete
+            profileComplete: user.profileComplete,
+            purchasedCourses: user.purchasedCourses || [],
+            purchasedMockTest: user.purchasedMockTest || false,
+            enrolledCourses: user.enrolledCourses || [],
+            hasMockSeriesAccess: user.hasMockSeriesAccess || false
         }
     });
 }));
@@ -95,7 +107,7 @@ router.get('/logout', (req, res, next) => {
             req.session.destroy((err) => {
                 if (err) return next(new AppError('Session cleanup failed', 500));
 
-                const cookiesToClear = ['connect.sid', 'token', 'user', 'renvox_token'];
+                const cookiesToClear = ['connect.sid', 'token', 'user', 'coursenova_token'];
                 cookiesToClear.forEach(cookie => res.clearCookie(cookie));
 
                 res.json({ success: true, message: 'Logged out completely' });

@@ -1,6 +1,6 @@
 /**
  * seed_platform_content.js
- * Bulk seeding script for Renvox AI platform
+ * Bulk seeding script for CourseNova platform
  */
 require('dotenv').config();
 const mongoose = require('mongoose');
@@ -12,7 +12,7 @@ const MONGO_URI = process.env.MONGO_URI;
 const coursesToSeed = [
     // FREE COURSES (6)
     { slug: 'python-basics', title: 'Python for Absolute Beginners', icon: '🐍', price: 0, isFree: true, isPremium: false, category: 'Coding' },
-    { slug: 'intro-ai', title: 'Introduction to Renvox AI', icon: '🤖', price: 0, isFree: true, isPremium: false, category: 'AI' },
+    { slug: 'intro-ai', title: 'Introduction to CourseNova', icon: '🤖', price: 0, isFree: true, isPremium: false, category: 'AI' },
     { slug: 'web-101', title: 'Web Development 101', icon: '🌐', price: 0, isFree: true, isPremium: false, category: 'Web' },
     { slug: 'soft-skills', title: 'Effective Communication', icon: '🗣️', price: 0, isFree: true, isPremium: false, category: 'General' },
     { slug: 'digital-literacy', title: 'Digital Literacy Essentials', icon: '💻', price: 0, isFree: true, isPremium: false, category: 'Tech' },
@@ -64,7 +64,7 @@ async function seed() {
                 { 
                     $set: { 
                         ...c, 
-                        description: `A comprehensive ${c.title} course designed for RENVOX learners.`,
+                        description: `A comprehensive ${c.title} course designed for COURSENOVA learners.`,
                         duration: '4-8 Weeks',
                         level: 'Beginner',
                         lessons: [

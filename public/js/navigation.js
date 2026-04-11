@@ -1,5 +1,5 @@
 /**
- * ==================== RENVOX NAVIGATION SYSTEM ====================
+ * ==================== COURSENOVA NAVIGATION SYSTEM ====================
  * 
  * This file handles all navigation functionality across the entire platform
  * Features:
@@ -8,7 +8,7 @@
  * - Hash-based navigation on homepage
  * - Responsive mobile menu handling
  * 
- * @author RENVOX Development Team
+ * @author COURSENOVA Development Team
  * @version 1.0.0
  */
 
@@ -18,7 +18,7 @@
  * @returns {string|null} The token or null
  */
 function getAuthToken() {
-    return localStorage.getItem('renvoxToken') || localStorage.getItem('renvox_token');
+    return localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token');
 }
 
 /**
@@ -26,7 +26,7 @@ function getAuthToken() {
  * @returns {object|null} The user object or null
  */
 function getAuthUser() {
-    const userStr = localStorage.getItem('renvox_user') || localStorage.getItem('renvoxUser');
+    const userStr = localStorage.getItem('coursenova_user') || localStorage.getItem('coursenovaUser');
     try {
         return userStr ? JSON.parse(userStr) : null;
     } catch (e) {
@@ -351,28 +351,64 @@ function handleAuthRedirect() {
         return;
     }
 
-    if (token && userStr) {
-        try {
-            // Force save to localStorage
-            localStorage.setItem('renvoxToken', token);
-            localStorage.setItem('renvox_token', token);
-            localStorage.setItem('renvoxUser', userStr);
-            localStorage.setItem('renvox_user', userStr);
+/**
+ * ─── Sync User State ──────────────────────────────────────────────────
+ * Re-fetches user data from server and updates localStorage.
+ * Call this after successful payment or profile update.
+ */
+async function refreshUserData() {
+    const token = getAuthToken();
+    if (!token) return;
 
-            // Clean up the URL
-            window.history.replaceState({}, document.title, window.location.pathname);
-            console.log('✅ Authentication session established');
-
-            // Trigger UI update
-            if (typeof setupUserDropdown === 'function') setupUserDropdown();
-        } catch (error) {
-            console.error('❌ Redirect Auth Error:', error);
+    try {
+        console.log('🔄 Refreshing user data from server...');
+        const res = await fetch('/api/auth/me', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.ok && data.user) {
+            // Save updated user data
+            localStorage.setItem('coursenovaUser', JSON.stringify(data.user));
+            localStorage.setItem('coursenova_user', JSON.stringify(data.user));
+            console.log('✅ User data synchronized');
+            return data.user;
         }
+    } catch (e) {
+        console.error('❌ Failed to refresh user data:', e);
     }
+    return null;
 }
 
 // Call animation on load
 window.addEventListener('load', animatePageEntrance);
+
+if (token && userStr) {
+    try {
+        // Force save to localStorage
+        localStorage.setItem('coursenovaToken', token);
+        localStorage.setItem('coursenova_token', token);
+        localStorage.setItem('coursenovaUser', userStr);
+        localStorage.setItem('coursenova_user', userStr);
+
+        // Clean up the URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+        console.log('✅ Authentication session established');
+
+        // Immediately trigger a background refresh to get the latest purchase status
+        refreshUserData();
+
+        // Trigger UI update
+        if (typeof setupUserDropdown === 'function') setupUserDropdown();
+    } catch (error) {
+        console.error('❌ Redirect Auth Error:', error);
+    }
+}
+}
+
+// Export global refresh
+if (typeof window !== 'undefined') {
+    window.refreshUserData = refreshUserData;
+}
 
 // ==================== 9. NAVIGATION UTILITIES ====================
 /**
@@ -507,8 +543,8 @@ function setupUserDropdown() {
     if (!navButtons) return;
 
     // Check for user in localStorage - Support both naming conventions
-    const userJson = localStorage.getItem('renvox_user') || localStorage.getItem('renvoxUser');
-    const token = localStorage.getItem('renvox_token') || localStorage.getItem('renvoxToken');
+    const userJson = localStorage.getItem('coursenova_user') || localStorage.getItem('coursenovaUser');
+    const token = localStorage.getItem('coursenova_token') || localStorage.getItem('coursenovaToken');
 
     let user = null;
 
@@ -517,24 +553,24 @@ function setupUserDropdown() {
         if (userJson) {
             user = JSON.parse(userJson);
             // Synchronize keys
-            if (!localStorage.getItem('renvoxUser')) localStorage.setItem('renvoxUser', userJson);
-            if (!localStorage.getItem('renvox_user')) localStorage.setItem('renvox_user', userJson);
+            if (!localStorage.getItem('coursenovaUser')) localStorage.setItem('coursenovaUser', userJson);
+            if (!localStorage.getItem('coursenova_user')) localStorage.setItem('coursenova_user', userJson);
             if (token) {
-                if (!localStorage.getItem('renvoxToken')) localStorage.setItem('renvoxToken', token);
-                if (!localStorage.getItem('renvox_token')) localStorage.setItem('renvox_token', token);
+                if (!localStorage.getItem('coursenovaToken')) localStorage.setItem('coursenovaToken', token);
+                if (!localStorage.getItem('coursenova_token')) localStorage.setItem('coursenova_token', token);
             }
         }
     } catch (e) {
         console.error('Error parsing user data', e);
-        localStorage.removeItem('renvox_user');
-        localStorage.removeItem('renvoxUser');
+        localStorage.removeItem('coursenova_user');
+        localStorage.removeItem('coursenovaUser');
     }
 
     // If no user, show Login/Signup buttons
     if (!user) {
         navButtons.innerHTML = `
             <div id="guestButtons" style="display: flex; gap: 1rem; align-items: center;">
-                <a href="/auth/google" class="btn-login" style="background: white; color: #4285F4; border: 1px solid #4285F4; display: flex; align-items: center; gap: 0.5rem; text-decoration: none;">
+                <a href="${window.COURSENOVA_API || ''}/api/auth/google" class="btn-login" style="background: white; color: #4285F4; border: 1px solid #4285F4; display: flex; align-items: center; gap: 0.5rem; text-decoration: none;">
                     <svg style="width:16px; height:16px;" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" /><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" /><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" /><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" /></svg>
                     Google Login
                 </a>
@@ -564,7 +600,7 @@ function setupUserDropdown() {
                 <div class="dropdown-header">
                     <div class="dropdown-user-avatar">${initial}</div>
                     <div class="dropdown-user-info">
-                        <div class="dropdown-user-name">${user.fullName || 'RenVox User'}</div>
+                        <div class="dropdown-user-name">${user.fullName || 'CourseNova User'}</div>
                         <div class="dropdown-user-email">${email}</div>
                     </div>
                 </div>
@@ -668,9 +704,10 @@ async function logoutUser(event) {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 1000);
 
-        await fetch('/auth/logout', {
+        const apiBase = (window.COURSENOVA_API || '').replace(/\/$/, '');
+        await fetch(`${apiBase}/api/auth/logout`, {
             signal: controller.signal,
-            headers: { 'Authorization': `Bearer ${localStorage.getItem('renvoxToken') || localStorage.getItem('renvox_token')}` }
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token')}` }
         }).catch(() => { });
 
         clearTimeout(timeoutId);
@@ -698,7 +735,7 @@ document.addEventListener('click', function (event) {
  * Poll for user state changes (optional, but good for multi-tab consistency)
  */
 window.addEventListener('storage', function (e) {
-    if (e.key === 'renvox_user' || e.key === 'renvox_token') {
+    if (e.key === 'coursenova_user' || e.key === 'coursenova_token') {
         setupUserDropdown();
     }
 });

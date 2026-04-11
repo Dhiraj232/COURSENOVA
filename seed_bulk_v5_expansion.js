@@ -1,6 +1,6 @@
 /**
  * seed_bulk_v5_expansion.js
- * Adds 14 new courses (7 Free, 7 Paid @ ₹99) to the Renvox AI platform.
+ * Adds 14 new courses (7 Free, 7 Paid @ ₹99) to the CourseNova platform.
  */
 require('dotenv').config();
 const mongoose = require('mongoose');

@@ -1,6 +1,6 @@
 /**
  * add_paid_courses_final.js
- * Adds 7 new paid courses (₹59-₹129, ending in 9) to the Renvox AI platform.
+ * Adds 7 new paid courses (₹59-₹129, ending in 9) to the CourseNova platform.
  * These courses include full video lessons, PDFs, and Quizzes.
  * Existing ₹1 course and 7 Free courses are preserved.
  */
@@ -8,7 +8,7 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 const Course = require('./models/Course');
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/renvox';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/coursenova';
 
 const newPaidCourses = [
     {

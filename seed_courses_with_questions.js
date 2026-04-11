@@ -5,7 +5,7 @@ const PracticeQuestion = require('./models/PracticeQuestion');
 
 require('dotenv').config();
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/renvox-bookstore';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/coursenova-bookstore';
 
 const demoQuestionsTemplate = (topic) => [
     {

@@ -58,7 +58,7 @@ if (process.env.BASE_URL && process.env.BASE_URL.includes('localhost') && proces
 }
 
 // ─── MongoDB Connection ───────────────────────────────────────
-const MONGO_URI = isProduction ? process.env.MONGO_URI : (process.env.MONGO_URI || 'mongodb://localhost:27017/renvox-bookstore');
+const MONGO_URI = isProduction ? process.env.MONGO_URI : (process.env.MONGO_URI || 'mongodb://localhost:27017/coursenova-bookstore');
 
 if (isProduction && !MONGO_URI) {
   console.error('❌ CRITICAL ERROR: MONGO_URI missing in production! Exiting...');
@@ -83,11 +83,11 @@ const CourseProgress = require('./models/CourseProgress');
 passport.use(new GoogleStrategy({
   clientID: GOOGLE_CLIENT_ID,
   clientSecret: GOOGLE_CLIENT_SECRET,
-
-  callbackURL: (process.env.BASE_URL || "http://localhost:5000") + "/auth/google/callback",
+  // ✅ PORT 5000 UNIFICATION: Hardcoded local callback
+  callbackURL: 'http://localhost:5000/api/auth/google/callback',
   proxy: true
-
 },
+
   async function (accessToken, refreshToken, profile, done) {
     try {
       console.log('Google Auth Attempt:', profile.emails[0].value);
@@ -157,10 +157,17 @@ const AppError = require('./utils/AppError');
 const globalErrorHandler = require('./middleware/errorMiddleware');
 
 // Handle Uncaught Exceptions (Synchronous errors)
+// ✅ FIXED: Only log — do NOT exit. Exiting on every uncaught exception kills
+// the server over routine request errors (e.g. bad ObjectId cast, missing header).
+// Express's globalErrorHandler and catchAsync already catch route-level errors.
 process.on('uncaughtException', err => {
-  console.error('❌ UNCAUGHT EXCEPTION! Shutting down...');
-  console.error(err.name, err.message);
-  process.exit(1);
+  console.error('❌ UNCAUGHT EXCEPTION (non-fatal):', err.name, err.message);
+  // Only exit on truly fatal startup errors (listen errors, etc.)
+  if (err.code === 'EADDRINUSE' || err.code === 'EACCES') {
+    console.error('Fatal port error — exiting.');
+    process.exit(1);
+  }
+  // Otherwise: log and continue
 });
 
 const app = express();
@@ -173,14 +180,7 @@ app.set('trust proxy', 1);
 
 // ─── 1. CORS — MUST be first, before all other middleware ────────────────────
 const allowedOrigins = [
-  "http://localhost:3000",
-  "http://localhost:5000",
-  "http://localhost:5500",
-  "http://127.0.0.1:5500",
-  "https://renvox.in",
-  "https://www.renvox.in",
-  "https://lms-backend-renvox.onrender.com",
-  "https://renvox-ai.onrender.com"
+  "http://localhost:5000"
 ];
 
 const corsOptions = {
@@ -223,9 +223,9 @@ app.use(helmet({
       ...helmet.contentSecurityPolicy.getDefaultDirectives(),
       "frame-src": ["'self'", "https://www.youtube.com", "https://youtube.com", "https://docs.google.com", "https://sdk.cashfree.com", "https://sandbox.cashfree.com", "https://api.cashfree.com"],
       "img-src": ["'self'", "data:", "blob:", "https://res.cloudinary.com", "https://images.unsplash.com", "https://*.google.com", "https://*.googleusercontent.com", "https://i.ytimg.com", "https://yt3.ggpht.com", "https://ui-avatars.com", "https://cdni.iconscout.com"],
-      "script-src": ["'self'", "'unsafe-inline'", "https://www.googletagmanager.com", "https://*.google.com", "https://sdk.cashfree.com"],
+      "script-src": ["'self'", "'unsafe-inline'", "https://www.googletagmanager.com", "https://*.google.com", "https://sdk.cashfree.com", "https://cdnjs.cloudflare.com"],
       "script-src-attr": ["'unsafe-inline'"],
-      "connect-src": ["'self'", "https://*.google-analytics.com", "https://*.analytics.google.com", "https://*.googletagmanager.com", "https://sdk.cashfree.com", "https://sandbox.cashfree.com", "https://api.cashfree.com", "https://lms-backend-renvox.onrender.com", "https://renvox-ai.onrender.com", "http://localhost:5000", "http://localhost:5500", "ws://localhost:5000", "wss://renvox-ai.onrender.com"],
+      "connect-src": ["'self'", "https://*.google-analytics.com", "https://*.analytics.google.com", "https://*.googletagmanager.com", "https://sdk.cashfree.com", "https://sandbox.cashfree.com", "https://api.cashfree.com", "http://localhost:5000", "ws://localhost:5000", "http://127.0.0.1:5000", "ws://127.0.0.1:5000"],
       "form-action": ["'self'", "https://sdk.cashfree.com", "https://sandbox.cashfree.com", "https://api.cashfree.com"]
       },
   },
@@ -261,7 +261,12 @@ app.use(session({
   secret: JWT_SECRET,
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: false } // Set to true if using HTTPS
+  cookie: {
+    secure: false, // Must be false for Local HTTP
+    httpOnly: true,
+    sameSite: 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+  }
 }));
 
 app.use(passport.initialize());
@@ -284,13 +289,7 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// ─── Authentication Routes ──────────────────────────────
-app.get('/auth/logout', (req, res) => {
-  req.logout((err) => {
-    if (err) return res.status(500).json({ ok: false, message: 'Logout failed' });
-    res.json({ ok: true, message: 'Logged out successfully' });
-  });
-});
+// ✅ FIXED: Removed duplicate /auth/logout — logout is handled in routes/auth.js
 
 // ─── JWT Authentication Middleware ──────────────────────────────
 // Extracts JWT token from Authorization header and attaches user to request
@@ -358,10 +357,17 @@ app.use('/api/practice', require('./routes/practice'));
 app.use('/api/mocktest', require('./routes/mockTestRoutes'));
 app.use('/api/ai', require('./routes/ai'));
 
-// ─── Authentication Routes ───────────────────────────
+// ─── Authentication Routes ───────────────────────────────────────────────────
+// ✅ FIXED: All auth routes now under /api/auth — matches Google OAuth callbackURL
+//   GET /api/auth/google          → triggers Google OAuth
+//   GET /api/auth/google/callback → Google redirects here after login
+//   GET /api/auth/me              → returns current authenticated user
+//   GET /api/auth/logout          → logs out user
 const authRoutes = require('./routes/auth');
+app.use('/api/auth', authRoutes);
+// Legacy aliases — keep /auth/google working for any existing links
 app.use('/auth', authRoutes);
-app.use('/api', authRoutes); // also mount under /api for /api/me consistency
+
 const userRoutes = require('./routes/userRoutes');
 app.use('/api/user', userRoutes);
 app.use('/api/profile', require('./routes/userRoutes')); // fulfilling legacy endpoint requirements
@@ -533,28 +539,22 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-const PORT = process.env.PORT || 5000;
+const PORT = 5000;
 const server = require('http').createServer(app);
 
 // Handle Unhandled Rejections (Asynchronous errors)
+// ✅ FIXED: Do NOT shut down the server on unhandled rejections.
+// This was crashing the entire server every time a route threw an async error
+// (e.g. Activity.create failing, a bad MongoDB query in a route handler).
+// Express catchAsync + globalErrorHandler already deal with route-level errors.
 process.on('unhandledRejection', err => {
-  console.error('❌ UNHANDLED REJECTION! Shutting down...');
-  console.error(err.name, err.message);
-  server.close(() => {
-    process.exit(1);
-  });
+  console.error('⚠️ UNHANDLED REJECTION (non-fatal, server continues):', err?.name, err?.message);
+  // Intentionally NOT calling process.exit() — keep the server alive
 });
 const io = require('socket.io')(server, {
   cors: {
     origin: [
-      "http://localhost:3000", 
-      "http://127.0.0.1:3000", 
-      "http://localhost:5500", 
-      "http://127.0.0.1:5500",
-      "https://renvox.in",
-      "https://www.renvox.in",
-      "https://lms-backend-renvox.onrender.com",
-      "https://renvox-ai.onrender.com" // Just in case
+      "http://localhost:5000"
     ],
     methods: ["GET", "POST"]
   }
@@ -618,5 +618,5 @@ io.on('connection', (socket) => {
 // Attach socketMap to app for use in routes
 app.set('socketMap', socketMap);
 
-server.listen(PORT, () => console.log('RENVOX Community API & Chat listening on port', PORT));
+server.listen(PORT, () => console.log('COURSENOVA Community API & Chat listening on port', PORT));
 

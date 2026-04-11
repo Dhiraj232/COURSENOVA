@@ -1,7 +1,7 @@
 /**
  * cashfreeController.js
  * ─────────────────────────────────────────────────────────────────────────────
- * Production-ready Cashfree Payment Controller for RENVOX AI
+ * Production-ready Cashfree Payment Controller for COURSENOVA
  *
  * Endpoints:
  *   POST /api/cashfree/create-order   — Authenticated; creates CF order + saves to DB
@@ -109,35 +109,41 @@ async function findItem(itemId) {
         }
     }
 
-    // 2. Try by Slug (lowercase, hyphenated)
-    const slugValue = String(itemId).toLowerCase().trim().replace(/\s+/g, '-');
-    const bySlug = await Course.findOne({ slug: slugValue });
-    if (bySlug) {
-        console.log(`[findItem] ✅ Found course by slug "${slugValue}": ${bySlug.title}`);
-        return { doc: bySlug, type: 'course' };
-    }
-
-    // 3. Try by Mock Pack custom ID field
-    const packByIdStr = await MockTestPack.findOne({ id: String(itemId).trim() });
-    if (packByIdStr) {
-        console.log(`[findItem] ✅ Found mock pack by custom ID: ${packByIdStr.title}`);
-        return { doc: packByIdStr, type: 'mock' };
-    }
-
-    // 4. Try by Title (Case-insensitive, Trimmed)
     const escapedTitle = String(itemId).trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const titleRegex = new RegExp(`^${escapedTitle}$`, 'i');
     
-    const courseByTitle = await Course.findOne({ title: { $regex: titleRegex } });
-    if (courseByTitle) {
-        console.log(`[findItem] ✅ Found course by title exact match: ${courseByTitle.title}`);
-        return { doc: courseByTitle, type: 'course' };
+    // Check Courses
+    const course = await Course.findOne({ 
+        $or: [
+            { _id: String(itemId).match(/^[0-9a-fA-F]{24}$/) ? itemId : null },
+            { slug: String(itemId).toLowerCase().trim().replace(/\s+/g, '-') },
+            { title: { $regex: titleRegex } }
+        ]
+    });
+    if (course) {
+        console.log(`[findItem] ✅ Found course: ${course.title}`);
+        return { 
+            doc: course, 
+            type: 'course',
+            meta: { _id: course._id, slug: course.slug, title: course.title }
+        };
     }
 
-    const packByTitle = await MockTestPack.findOne({ title: { $regex: titleRegex } });
-    if (packByTitle) {
-        console.log(`[findItem] ✅ Found mock pack by title exact match: ${packByTitle.title}`);
-        return { doc: packByTitle, type: 'mock' };
+    // Check Mock Packs
+    const pack = await MockTestPack.findOne({
+        $or: [
+            { _id: String(itemId).match(/^[0-9a-fA-F]{24}$/) ? itemId : null },
+            { id: String(itemId).trim() },
+            { title: { $regex: titleRegex } }
+        ]
+    });
+    if (pack) {
+        console.log(`[findItem] ✅ Found mock pack: ${pack.title}`);
+        return { 
+            doc: pack, 
+            type: 'mock',
+            meta: { _id: pack._id, id: pack.id, title: pack.title }
+        };
     }
 
     console.warn(`[findItem] ❌ No item found for "${itemId}" after all lookup attempts.`);
@@ -148,22 +154,35 @@ async function findItem(itemId) {
 // HELPER — quick item look up specifically by courseId or string pack id
 // ─────────────────────────────────────────────────────────────────────────────
 async function getItemById(itemId) {
-    if (String(itemId).match(/^[0-9a-fA-F]{24}$/)) {
-        const c = await Course.findById(itemId);
-        if (c) return { title: c.title };
-        const m = await MockTestPack.findById(itemId);
-        if (m) return { title: m.title };
-    }
-    const p = await MockTestPack.findOne({ id: String(itemId) }) || 
-              await MockTestPack.findOne({ title: String(itemId) });
-    if (p) return { title: p.title };
+    const isObjectId = String(itemId).match(/^[0-9a-fA-F]{24}$/);
+    
+    // Try Course
+    const c = await Course.findOne({
+        $or: [
+            { _id: isObjectId ? itemId : null },
+            { slug: String(itemId).toLowerCase() },
+            { title: String(itemId) }
+        ]
+    });
+    if (c) return { _id: c._id, title: c.title, slug: c.slug };
+
+    // Try Mock Pack
+    const m = await MockTestPack.findOne({
+        $or: [
+            { _id: isObjectId ? itemId : null },
+            { id: String(itemId) },
+            { title: String(itemId) }
+        ]
+    });
+    if (m) return { _id: m._id, title: m.title, id: m.id };
+
     return null;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPER — enroll user in course (shared by webhook + verifyPayment)
 // ─────────────────────────────────────────────────────────────────────────────
-async function enrollUser({ userId, courseId, paymentId, amount, orderId, courseTitle }) {
+async function enrollUser({ userId, courseId, paymentId, amount, orderId, courseTitle, itemMeta }) {
     // 1. Enrollment record (upsert)
     await Enrollment.findOneAndUpdate(
         { userId, courseId: String(courseId) },
@@ -178,10 +197,39 @@ async function enrollUser({ userId, courseId, paymentId, amount, orderId, course
         { upsert: true, new: true }
     );
 
-    // 2. User.enrolledCourses quick-lookup array
-    await User.findByIdAndUpdate(userId, {
-        $addToSet: { enrolledCourses: String(courseId) }
-    });
+    // 2. User logic: Synchronize all possible identifiers for "Open-All-Doors" access
+    const identifiers = new Set();
+    identifiers.add(String(courseId)); // The ObjectId string usually
+    if (courseTitle) identifiers.add(String(courseTitle));
+    if (itemMeta) {
+        if (itemMeta._id) identifiers.add(String(itemMeta._id));
+        if (itemMeta.id) identifiers.add(String(itemMeta.id));
+        if (itemMeta.slug) identifiers.add(String(itemMeta.slug));
+        if (itemMeta.title) identifiers.add(String(itemMeta.title));
+    }
+
+    const idList = Array.from(identifiers).filter(id => id && id !== 'undefined' && id !== 'null');
+    console.log(`[enrollUser] Synchronizing access for User ${userId} with IDs:`, idList);
+
+    const updateData = {
+        $addToSet: { 
+            enrolledCourses: { $each: idList },
+            purchasedCourses: { $each: idList }
+        }
+    };
+
+    // Special check: Grant Master Series Access if this is the Master Pack
+    const masterIds = ['state-board-master', 'State Board Master', 'state-board-master-paid'];
+    const hasMasterMatch = idList.some(id => masterIds.includes(id));
+
+    if (hasMasterMatch) {
+        updateData.$set = { 
+            hasMockSeriesAccess: true,
+            purchasedMockTest: true 
+        };
+    }
+
+    await User.findByIdAndUpdate(userId, updateData);
 
     // 3. Transaction record (non-fatal)
     try {
@@ -256,46 +304,65 @@ exports.createOrder = async (req, res) => {
             if (String(uid).match(/^[0-9a-fA-F]{24}$/)) {
                 return await User.findById(uid);
             }
-            // Fallback: Check if it's an email
             return await User.findOne({ email: String(uid) });
         }
 
         const user = await findUserByIdOrEmail(userId);
-        const customerEmail = user?.email || 'user@renvox.in';
-        const customerName  = user?.name  || 'Course User';
+        
+        // ── Email Sanitization ──
+        let customerEmail = user?.email || 'user@coursenova.in';
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) customerEmail = 'user@coursenova.in';
+
+        // ── Name Sanitization (CF requires min 3 chars, max 50) ──
+        let customerName = user?.name || 'Course User';
+        customerName = customerName.replace(/[^a-zA-Z0-9\s]/g, '').trim();
+        if (customerName.length < 3) customerName = 'Course User';
+        customerName = customerName.slice(0, 50);
         
         // ── Phone Sanitization (Cashfree requires exactly 10 digits) ──
         let rawPhone = user?.phone || '9999999999';
-        const customerPhone = rawPhone.replace(/\D/g, '').slice(-10); // Keep last 10 digits
+        let customerPhone = rawPhone.replace(/\D/g, ''); 
+        if (customerPhone.length < 10) customerPhone = '9999999999';
+        else customerPhone = customerPhone.slice(-10); // Keep last 10 digits
         
-        console.log(`[createOrder] Sanitized Phone: "${rawPhone}" -> "${customerPhone}"`);
+        console.log(`[createOrder] Sanitized user info: ${customerName} | ${customerPhone} | ${customerEmail}`);
 
         // ── Generate unique order ID ─────────────────────────────
-        const orderId = `renvox_${String(userId).slice(-6)}_${Date.now()}`;
+        const orderId = `coursenova_${String(userId).slice(-6)}_${Date.now()}`;
 
-        const baseUrl   = process.env.BASE_URL || 'https://renvox-ai.onrender.com';
-        
-        let returnUrl = `${baseUrl}/premium-course-player.html?course=${course._id}&payment=verify&order_id=${orderId}`;
+        const baseUrl = process.env.BASE_URL || 'https://coursenova-ai.onrender.com';
+        const isLocal = baseUrl.includes('localhost');
+
+        // return_url: redirect back to context with verify params
+        let returnUrl = `${baseUrl}/course-content.html?course=${course._id}&payment=verify&order_id={order_id}`;
         if (itemType === 'mock') {
-            returnUrl = `${baseUrl}/mock-tests.html?payment=verify&order_id=${orderId}`;
+            // Use custom ID if available for mock tests (cleaner URLs)
+            const mockParam = course.id || course._id;
+            returnUrl = `${baseUrl}/mock-tests.html?payment=verify&order_id={order_id}&pack_id=${mockParam}`;
         }
-        
-        const notifyUrl = `${baseUrl}/api/cashfree/webhook`;
+
+        // notify_url: Cashfree PRODUCTION cannot reach localhost — skip it in local dev
+        // In production (Render/VPS), this will be set correctly via BASE_URL env var
+        const notifyUrl = isLocal
+            ? undefined  // Skip webhook URL for local — verification will happen via return_url instead
+            : `${baseUrl}/api/cashfree/webhook`;
+
+        const orderMeta = { return_url: returnUrl };
+        if (notifyUrl) orderMeta.notify_url = notifyUrl;
+
+        console.log(`[createOrder] Base: ${baseUrl} | isLocal: ${isLocal} | returnUrl: ${returnUrl}`);
 
         const cfRequest = {
-            order_amount:   course.price,
+            order_amount:   Number(course.price),
             order_currency: 'INR',
             order_id:       orderId,
             customer_details: {
-                customer_id:    String(userId),
+                customer_id:    String(userId).slice(0, 50),
                 customer_email: customerEmail,
                 customer_name:  customerName,
                 customer_phone: customerPhone,
             },
-            order_meta: {
-                return_url: returnUrl,
-                notify_url: notifyUrl,
-            },
+            order_meta: orderMeta,
             order_note: `Course purchase - ${course.title}`,
         };
 
@@ -432,6 +499,13 @@ exports.verifyPayment = async (req, res) => {
         const paymentId = String(successPayment.cf_payment_id);
         const paidAmount = successPayment.payment_amount;
 
+        // Security: Ensure the order belongs to this user (extra guard)
+        const orderOwnerId = String(orderRecord.userId._id || orderRecord.userId);
+        if (orderOwnerId !== userId) {
+            console.warn(`[verifyPayment] Security ALERT: User ${userId} tried to verify Order ${orderId} owned by ${orderOwnerId}`);
+            return res.status(403).json({ ok: false, message: 'You do not have permission to verify this order.' });
+        }
+
         // ── Update CourseOrder ───────────────────────────────────
         if (orderRecord) {
             orderRecord.status    = 'paid';
@@ -451,6 +525,7 @@ exports.verifyPayment = async (req, res) => {
             amount:      paidAmount,
             orderId,
             courseTitle: itemMeta.title,
+            itemMeta
         });
 
         console.log(`[verifyPayment] ✅ Verified & Enrolled: ${itemMeta.title} for user ${userId}`);
@@ -571,12 +646,13 @@ async function handlePaymentSuccess({ orderRecord, orderId, paymentId, amount, p
 
     // Enroll user — fully idempotent (upsert)
     await enrollUser({
-        userId:      String(orderRecord.userId),
+        userId:      String(orderRecord.userId._id || orderRecord.userId),
         courseId:    orderRecord.courseId,
         paymentId,
         amount:      amount || orderRecord.amount,
         orderId,
         courseTitle: itemMeta.title,
+        itemMeta
     });
 
     console.log(`[Webhook] 🎉 User ${orderRecord.userId} successfully enrolled in "${itemMeta.title}"`);

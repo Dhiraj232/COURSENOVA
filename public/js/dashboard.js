@@ -1,11 +1,11 @@
 /**
- * ==================== RENVOX REAL-TIME DASHBOARD ====================
+ * ==================== COURSENOVA REAL-TIME DASHBOARD ====================
  * Handles Socket.io events, telemetry tracking, and dynamic UI updates.
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-    const token = localStorage.getItem('renvoxToken') || localStorage.getItem('renvox_token');
-    const userStr = localStorage.getItem('renvoxUser') || localStorage.getItem('renvox_user');
+    const token = localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token');
+    const userStr = localStorage.getItem('coursenovaUser') || localStorage.getItem('coursenova_user');
     
     if (!token || !userStr) {
         window.location.href = 'signup.html?redirect=dashboard.html';
@@ -76,7 +76,7 @@ function initTelemetry() {
     setInterval(async () => {
         // Only track if tab is active to ensure accuracy
         if (document.visibilityState === 'visible') {
-            const token = localStorage.getItem('renvoxToken') || localStorage.getItem('renvox_token');
+            const token = localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token');
             try {
                 const res = await fetch('/api/analytics/heartbeat', {
                     method: 'POST',
@@ -100,7 +100,7 @@ function initTelemetry() {
  */
 let dashboardData = null;
 async function fetchDashboardOverview() {
-    const token = localStorage.getItem('renvoxToken') || localStorage.getItem('renvox_token');
+    const token = localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token');
     try {
         const res = await fetch('/api/analytics/dashboard', {
             headers: { 'Authorization': `Bearer ${token}` }
@@ -117,7 +117,7 @@ async function fetchDashboardOverview() {
 }
 
 async function fetchWeeklyActivity() {
-    const token = localStorage.getItem('renvoxToken') || localStorage.getItem('renvox_token');
+    const token = localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token');
     try {
         const res = await fetch('/api/analytics/weekly', {
             headers: { 'Authorization': `Bearer ${token}` }
@@ -188,7 +188,11 @@ function updateDashboardUI(data) {
     }
 
     updatePerformanceStats(stats);
-    renderLibrary('course', courses);
+    
+    // Render My Learning Vault
+    renderCoursesVault(courses);
+    renderMockTestVault(data.mockTestAccess);
+    renderBooksVault(books);
 }
 
 function updatePerformanceStats(stats) {
@@ -326,38 +330,96 @@ function renderWeeklyActivityChart(weeklyData) {
 }
 
 /**
- * Library & Tabs
+ * Dynamic Vault Renderers
  */
-function initLibraryTabs() {
-    document.querySelectorAll('.lib-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-            document.querySelectorAll('.lib-tab').forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            if (dashboardData) {
-                renderLibrary(tab.dataset.type, tab.dataset.type === 'course' ? dashboardData.courses : dashboardData.books);
-            }
-        });
-    });
-}
-
-function renderLibrary(type, items) {
-    const list = document.getElementById('libraryContent');
+function renderCoursesVault(courses) {
+    const list = document.getElementById('vaultCourses');
     if (!list) return;
 
-    if (!items || items.length === 0) {
-        list.innerHTML = `<div style="text-align:center; padding:30px; color:#94a3b8;"><p>No ${type}s found.</p></div>`;
+    if (!courses || courses.length === 0) {
+        list.innerHTML = `<p style="grid-column:1/-1; color:#94a3b8;">You haven't enrolled in any courses yet. <a href="certificates.html" style="color:#6366f1;">Explore Courses</a></p>`;
         return;
     }
 
-    list.innerHTML = items.map(item => `
-        <div class="lib-item" style="display: flex; align-items: center; gap: 12px; padding: 12px; background: white; border-radius: 12px; margin-bottom: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.02);">
-            <div style="width: 36px; height: 36px; border-radius: 8px; background: #f8fafc; display: flex; align-items: center; justify-content: center; color: #6366f1;">
-                <i class="fas ${type === 'course' ? 'fa-play-circle' : 'fa-book'}"></i>
+    list.innerHTML = courses.map((c, idx) => {
+        // Bonus Feature: Highlight recently accessed course (first element)
+        const isRecent = idx === 0;
+        const cardClass = isRecent ? 'vault-card vault-card-featured' : 'vault-card';
+
+        return `
+        <div class="${cardClass}">
+            ${c.thumbnail 
+                ? `<img src="${c.thumbnail}" class="vault-cover" alt="Course Thumbnail">` 
+                : `<div class="vault-cover"><i class="fas fa-video ${isRecent ? 'fa-4x' : 'fa-2x'}" style="color:#a855f7"></i></div>`
+            }
+            <div style="display:flex; flex-direction:column; gap:10px; padding: ${isRecent ? '10px 0' : '0'}">
+                ${isRecent ? `<div style="color:#ef4444; font-weight:800; font-size:0.75rem; letter-spacing:1px; text-transform:uppercase;"><i class="fas fa-history"></i> Pick up where you left off</div>` : ''}
+                <h4 class="vault-title" style="${isRecent ? 'font-size:1.6rem;' : ''}">${c.title}</h4>
+                <div style="font-size:0.85rem; color:#64748b; margin-top: -5px;">Progress: ${c.progress}%</div>
+                <div class="vault-progress-container">
+                    <div class="vault-progress-fill" style="width: ${c.progress}%"></div>
+                </div>
+                <a href="premium-course-player.html?course=${c.id}" class="vault-btn vault-btn-primary" style="${isRecent ? 'width: auto; padding: 12px 30px; align-self: flex-start;' : ''}">
+                    ${c.progress === 100 ? '<i class="fas fa-certificate"></i> View Course' : '<i class="fas fa-play"></i> Resume Lesson'}
+                </a>
             </div>
-            <div style="flex: 1;">
-                <h5 style="margin: 0; font-size: 0.85rem; font-weight: 700;">${item.title}</h5>
-                <span style="font-size: 0.75rem; color: #6366f1;">${type === 'course' ? item.progress + '% Progress' : 'In Library'}</span>
+        </div>
+        `;
+    }).join('');
+}
+
+function renderMockTestVault(hasAccess) {
+    const list = document.getElementById('vaultMockTest');
+    if (!list) return;
+
+    if (hasAccess) {
+        list.innerHTML = `
+            <div class="vault-card">
+                <div class="vault-cover" style="background:#f0fdf4; display:flex; align-items:center; justify-content:center; color:#10b981;">
+                    <i class="fas fa-check-circle fa-4x"></i>
+                </div>
+                <h4 class="vault-title">State Board Master Series</h4>
+                <p style="font-size:0.85rem; color:#64748b;">Full Access to 15+ Boards</p>
+                <div style="flex-grow:1"></div>
+                <a href="mock-test-hub.html" class="vault-btn vault-btn-primary" style="background:#10b981;">
+                    <i class="fas fa-vial"></i> Start Testing
+                </a>
             </div>
+        `;
+    } else {
+        list.innerHTML = `
+            <div class="vault-card">
+                <div class="vault-cover" style="background:#f1f5f9; display:flex; align-items:center; justify-content:center; color:#94a3b8;">
+                    <i class="fas fa-lock fa-4x"></i>
+                </div>
+                <h4 class="vault-title">State Board Master Series</h4>
+                <p style="font-size:0.85rem; color:#64748b;">Unlock all 15+ State Boards instantly.</p>
+                <div style="flex-grow:1"></div>
+                <a href="mock-test-hub.html" class="vault-btn vault-btn-primary">
+                    <i class="fas fa-shopping-cart"></i> Unlock Now (₹59)
+                </a>
+            </div>
+        `;
+    }
+}
+
+function renderBooksVault(books) {
+    const list = document.getElementById('vaultBooks');
+    if (!list) return;
+
+    if (!books || books.length === 0) {
+        list.innerHTML = `<p style="grid-column:1/-1; color:#94a3b8;">You don't own any books yet. <a href="store.html" style="color:#6366f1;">Visit Store</a></p>`;
+        return;
+    }
+
+    list.innerHTML = books.map(b => `
+        <div class="vault-card">
+            ${b.images && b.images.length > 0 ? `<img src="${b.images[0].imageUrl}" class="vault-cover" alt="Book Cover" style="object-fit:contain; background:white;">` : `<div class="vault-cover" style="display:flex; align-items:center; justify-content:center; color:#a855f7;"><i class="fas fa-book fa-3x"></i></div>`}
+            <h4 class="vault-title" style="margin-top:10px">${b.title}</h4>
+            <div style="flex-grow:1"></div>
+            <a href="${b.samplePdf || '#'}" target="_blank" class="vault-btn vault-btn-primary" style="background:#6366f1;">
+                <i class="fas fa-book-reader"></i> Read Full Book
+            </a>
         </div>
     `).join('');
 }

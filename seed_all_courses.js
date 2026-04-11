@@ -1,6 +1,6 @@
 /**
  * seed_all_courses.js
- * Master seed file for RENVOX AI courses.
+ * Master seed file for COURSENOVA courses.
  * Contains 7 Free Courses and 3 Premium Courses.
  */
 
@@ -8,7 +8,7 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 const Course   = require('./models/Course');
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/renvox';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/coursenova';
 
 const allCourses = [
   // --- PREMIUM COURSES ---

@@ -1,6 +1,6 @@
-# RENVOX — Local Dev & Deployment
+# COURSENOVA — Local Dev & Deployment
 
-This workspace contains a minimal RENVOX demo (frontend static files + an Express backend). The backend serves API endpoints and static frontend files so you can host the whole site from one process.
+This workspace contains a minimal COURSENOVA demo (frontend static files + an Express backend). The backend serves API endpoints and static frontend files so you can host the whole site from one process.
 
 ## Requirements
 - Node.js 16+ and npm

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mock Test Player | COURSENOVA</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background: #f1f5f9; font-family: 'Inter', sans-serif; }
+        .player-nav {
+            background: white; padding: 15px 5%; display: flex; 
+            justify-content: space-between; align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100;
+        }
+        .timer { font-size: 1.2rem; font-weight: 700; color: #ef4444; }
+        .lang-toggle {
+            background: #e2e8f0; padding: 5px; border-radius: 30px; 
+            display: flex; gap: 5px; cursor: pointer;
+        }
+        .lang-toggle span {
+            padding: 5px 15px; border-radius: 20px; font-size: 0.9rem; font-weight: 600;
+            transition: 0.3s;
+        }
+        .lang-toggle span.active { background: #3b82f6; color: white; }
+
+        .player-container { max-width: 900px; margin: 40px auto; padding: 0 20px; }
+        .question-card {
+            background: white; padding: 40px; border-radius: 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05); margin-bottom: 30px;
+        }
+        .q-meta { color: #64748b; font-size: 0.9rem; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 1px; }
+        .q-text { font-size: 1.4rem; font-weight: 600; color: #1e293b; margin-bottom: 30px; line-height: 1.6; }
+        
+        .option {
+            background: #f8fafc; border: 2px solid #e2e8f0; padding: 18px 25px;
+            border-radius: 12px; margin-bottom: 15px; cursor: pointer;
+            transition: 0.3s; display: flex; align-items: center; gap: 15px;
+        }
+        .option:hover { border-color: #3b82f6; background: #eff6ff; }
+        .option.selected { border-color: #3b82f6; background: #3b82f6; color: white; }
+        .option-radio { width: 22px; height: 22px; border: 2px solid #cbd5e1; border-radius: 50%; position: relative; }
+        .selected .option-radio { border-color: white; }
+        .selected .option-radio::after {
+            content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 10px; height: 10px; background: white; border-radius: 50%;
+        }
+
+        .controls { display: flex; justify-content: space-between; align-items: center; }
+        .progress-bar { flex: 1; height: 8px; background: #e2e8f0; margin: 0 30px; border-radius: 4px; overflow: hidden; }
+        .progress-fill { height: 100%; background: #3b82f6; width: 0%; transition: 0.3s; }
+    </style>
+</head>
+<body>
+    <nav class="player-nav">
+        <div class="logo-group">
+            <h2 id="boardLabel">Board Name</h2>
+            <p id="subjectLabel" style="font-size: 0.8rem; color: #64748b;"></p>
+        </div>
+        
+        <div class="timer" id="timer">30:00</div>
+
+        <div class="lang-toggle" onclick="toggleLang()">
+            <span id="lang-en" class="active">English</span>
+            <span id="lang-hi">Hindi</span>
+        </div>
+        
+        <button class="btn-primary" onclick="submitTest()">Finish Test</button>
+    </nav>
+
+    <div class="player-container">
+        <div class="question-card">
+            <div class="q-meta">Question <span id="qIdx">1</span> of <span id="qTotal">0</span></div>
+            <div class="q-text" id="qText">Loading question...</div>
+            <div id="optionsGrid">
+                <!-- Options injected by JS -->
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn-secondary" id="prevBtn" onclick="prevQ()"><i class="fas fa-arrow-left"></i> Previous</button>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <button class="btn-primary" id="nextBtn" onclick="nextQ()">Next <i class="fas fa-arrow-right"></i></button>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const packId = urlParams.get('packId');
+        const board = urlParams.get('board');
+        const subject = urlParams.get('subject');
+        let currentLang = urlParams.get('lang') || 'en';
+        
+        let questions = [];
+        let userAnswers = {};
+        let currentIndex = 0;
+        let timeLeft = 30 * 60; // 30 minutes
+
+        document.getElementById('boardLabel').innerText = board;
+        document.getElementById('subjectLabel').innerText = subject;
+
+        async function fetchQuestions() {
+            const token = localStorage.getItem('token') || localStorage.getItem('coursenova_token') || localStorage.getItem('coursenovaToken');
+            try {
+                const res = await fetch(`/api/mocktest/packs/${packId}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    // Find the test for the selected subject
+                    const test = data.pack.tests.find(t => t.testTitle.includes(subject)) || data.pack.tests[0];
+                    questions = test.questions;
+                    document.getElementById('qTotal').innerText = questions.length;
+                    renderQuestion();
+                    startTimer();
+                } else {
+                    alert(data.message);
+                    window.location.href = 'mock-test-hub.html';
+                }
+            } catch (e) { alert('Failed to load test'); }
+        }
+
+        function renderQuestion() {
+            const q = questions[currentIndex];
+            const qText = currentLang === 'hi' ? (q.question_hi || q.question) : (q.question_en || q.question);
+            const qOptions = currentLang === 'hi' ? (q.options_hi || q.options) : (q.options_en || q.options);
+            
+            document.getElementById('qIdx').innerText = currentIndex + 1;
+            document.getElementById('qText').innerText = qText;
+            
+            const grid = document.getElementById('optionsGrid');
+            grid.innerHTML = qOptions.map((opt, i) => `
+                <div class="option ${userAnswers[currentIndex] === opt ? 'selected' : ''}" onclick="selectOption('${opt}')">
+                    <div class="option-radio"></div>
+                    <span>${opt}</span>
+                </div>
+            `).join('');
+
+            // Progress Fill
+            document.getElementById('progressFill').style.width = `${((currentIndex + 1) / questions.length) * 100}%`;
+            
+            // Toggle visibility of buttons
+            document.getElementById('prevBtn').style.visibility = currentIndex === 0 ? 'hidden' : 'visible';
+            document.getElementById('nextBtn').innerText = currentIndex === questions.length - 1 ? 'Last Question' : 'Next Question';
+        }
+
+        function selectOption(opt) {
+            userAnswers[currentIndex] = opt;
+            renderQuestion();
+        }
+
+        function nextQ() {
+            if (currentIndex < questions.length - 1) {
+                currentIndex++;
+                renderQuestion();
+            }
+        }
+
+        function prevQ() {
+            if (currentIndex > 0) {
+                currentIndex--;
+                renderQuestion();
+            }
+        }
+
+        function toggleLang() {
+            currentLang = currentLang === 'en' ? 'hi' : 'en';
+            document.getElementById('lang-en').classList.toggle('active');
+            document.getElementById('lang-hi').classList.toggle('active');
+            renderQuestion();
+        }
+
+        function startTimer() {
+            const timerEl = document.getElementById('timer');
+            const interval = setInterval(() => {
+                const mins = Math.floor(timeLeft / 60);
+                const secs = timeLeft % 60;
+                timerEl.innerText = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(interval);
+                    alert("Time's up! Submitting your test.");
+                    submitTest();
+                }
+                timeLeft--;
+            }, 1000);
+        }
+
+        async function submitTest() {
+            const token = localStorage.getItem('token');
+            let score = 0;
+            questions.forEach((q, i) => {
+                if (userAnswers[i] === q.correctAnswer) score++;
+            });
+
+            try {
+                const res = await fetch('/api/mocktest/submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({
+                        testId: `${packId}-${subject}`,
+                        packId: board,
+                        score: score,
+                        total: questions.length,
+                        correct: score,
+                        incorrect: questions.length - score,
+                        timeSpentSec: (30 * 60) - timeLeft
+                    })
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    window.location.href = `mock-test-result.html?score=${score}&total=${questions.length}&board=${encodeURIComponent(board)}&subject=${encodeURIComponent(subject)}`;
+                }
+            } catch (e) { alert('Failed to submit results'); }
+        }
+
+        fetchQuestions();
+    </script>
+</body>
+</html>

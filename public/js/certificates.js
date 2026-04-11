@@ -1,5 +1,5 @@
 /**
- * RENVOX AI - Certificates Page Logic
+ * COURSENOVA - Certificates Page Logic
  * Handles fetching, filtering, and rendering of certificate courses.
  */
 
@@ -7,7 +7,7 @@
     "use strict";
 
     const API_BASE = ''; // Root relative
-    const USER_TOKEN = localStorage.getItem('renvoxToken') || localStorage.getItem('renvox_token') || '';
+    const USER_TOKEN = localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token') || '';
 
     // INITIALIZATION
     document.addEventListener('DOMContentLoaded', function () {
@@ -30,12 +30,21 @@
                 // Handle URL filtering
                 const urlParams = new URLSearchParams(window.location.search);
                 const filter = urlParams.get('filter');
+                const searchQuery = urlParams.get('search');
                 let filteredCourses = result.courses;
 
                 if (filter === 'free') {
-                    filteredCourses = result.courses.filter(c => c.isFree === true || Number(c.price) === 0);
+                    filteredCourses = filteredCourses.filter(c => c.isFree === true || Number(c.price) === 0);
                 } else if (filter === 'premium') {
-                    filteredCourses = result.courses.filter(c => c.isFree === false && Number(c.price) > 0);
+                    filteredCourses = filteredCourses.filter(c => c.isFree === false && Number(c.price) > 0);
+                }
+                
+                if (searchQuery) {
+                    const q = searchQuery.toLowerCase();
+                    filteredCourses = filteredCourses.filter(c => 
+                        (c.title && c.title.toLowerCase().includes(q)) || 
+                        (c.description && c.description.toLowerCase().includes(q))
+                    );
                 }
 
                 displayCourses(filteredCourses);

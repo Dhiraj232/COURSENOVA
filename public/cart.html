@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Shopping Cart - RENVOX Book Store</title>
+    <title>Shopping Cart - COURSENOVA Book Store</title>
     <style>
         * {
             margin: 0;
@@ -276,7 +276,7 @@
     <!-- standard navbar -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
-            <a href="index.html" class="logo"><img src="images/logo%20renvox.png" alt="RENVOX"> <span>RENVOX</span></a>
+            <a href="index.html" class="logo"><img src="images/logo%20coursenova.png" alt="COURSENOVA"> <span>COURSENOVA</span></a>
             <ul class="nav-menu" id="navMenu"></ul>
             <div class="nav-buttons" id="navButtons"></div>
             <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
@@ -329,7 +329,7 @@
 
         async function loadCart() {
             try {
-                const token = localStorage.getItem('renvoxToken') || localStorage.getItem('renvox_token');
+                const token = localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token');
                 if (!token) {
                     document.getElementById('cart-items-container').innerHTML = `
                         <div class="empty-cart">
@@ -420,7 +420,7 @@
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('renvoxToken') || localStorage.getItem('renvox_token')}`
+                        'Authorization': `Bearer ${localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token')}`
                     },
                     body: JSON.stringify({ quantity: newQty })
                 });
@@ -443,7 +443,7 @@
             try {
                 const response = await fetch(`/api/cart/${bookId}`, {
                     method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${localStorage.getItem('renvoxToken') || localStorage.getItem('renvox_token')}` }
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token')}` }
                 });
 
                 const data = await response.json();
@@ -472,7 +472,7 @@
         }
 
         async function proceedToCheckout() {
-            const token = localStorage.getItem('renvoxToken') || localStorage.getItem('renvox_token');
+            const token = localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token');
             if (!token) {
                 showMessage('Please login to proceed', 'error');
                 setTimeout(() => { window.location.href = 'signup.html'; }, 1500);

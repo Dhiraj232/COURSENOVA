@@ -1,6 +1,6 @@
 /**
  * seed_final_v4.js
- * Round 4 bulk seeding for Renvox AI platform
+ * Round 4 bulk seeding for CourseNova platform
  * Focus: Specialized English & Career Skills
  */
 require('dotenv').config();
@@ -36,7 +36,7 @@ async function seed() {
                 { 
                     $set: { 
                         ...c, 
-                        description: `Master the art of ${c.title} with RENVOX AI professional curriculum. Practical insights guaranteed.`,
+                        description: `Master the art of ${c.title} with COURSENOVA professional curriculum. Practical insights guaranteed.`,
                         duration: '2-5 Weeks',
                         level: 'Beginner',
                         isActive: true,

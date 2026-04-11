@@ -24,7 +24,7 @@ const batchSchema = new mongoose.Schema({
     },
     mentorName: {
         type: String,
-        default: 'RENVOX Expert'
+        default: 'COURSENOVA Expert'
     },
     enrolledUsers: [{
         type: mongoose.Schema.Types.ObjectId,

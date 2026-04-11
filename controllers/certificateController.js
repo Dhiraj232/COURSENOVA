@@ -28,95 +28,96 @@ async function generateCertificate({ userName, courseName, completionDate, certI
         const W = doc.page.width;
         const H = doc.page.height;
 
-        // ── Background gradient simulation (solid + overlay) ──────────────
-        doc.rect(0, 0, W, H).fill('#0f172a');
+        // ── Clean White Background ─────────────────────────────────────────
+        doc.rect(0, 0, W, H).fill('#ffffff');
 
-        // Decorative top & bottom bands
-        doc.rect(0, 0, W, 8).fill('#6366f1');
-        doc.rect(0, H - 8, W, 8).fill('#6366f1');
+        // ── Elegant Borders ───────────────────────────────────────────────
+        doc.rect(40, 40, W - 80, H - 80).lineWidth(1.5).stroke('#e2e8f0'); // Outer subtle
+        doc.rect(48, 48, W - 96, H - 96).lineWidth(0.5).stroke('#cbd5e1'); // Inner fine
 
-        // Side bands
-        doc.rect(0, 0, 8, H).fill('#6366f1');
-        doc.rect(W - 8, 0, 8, H).fill('#6366f1');
+        // Accent corner decorations
+        const cornerSize = 40;
+        doc.lineWidth(3).strokeColor('#1e40af'); // Deep blue accent
+        
+        // Top Left
+        doc.moveTo(40, 80).lineTo(40, 40).lineTo(80, 40).stroke();
+        // Top Right
+        doc.moveTo(W-80, 40).lineTo(W-40, 40).lineTo(W-40, 80).stroke();
+        // Bottom Left
+        doc.moveTo(40, H-80).lineTo(40, H-40).lineTo(80, H-40).stroke();
+        // Bottom Right
+        doc.moveTo(W-80, H-40).lineTo(W-40, H-40).lineTo(W-40, H-80).stroke();
 
-        // Inner light border
-        doc.rect(28, 28, W - 56, H - 56).lineWidth(1).stroke('#6366f140');
-
-        // ── Logo area ─────────────────────────────────────────────────────
-        doc.fontSize(14)
-            .fillColor('#6366f1')
+        // ── Header: Brand ──────────────────────────────────────────────────
+        doc.fontSize(16)
+            .fillColor('#1e40af')
             .font('Helvetica-Bold')
-            .text('RENVOX AI', 0, 45, { align: 'center' });
+            .text('COURSENOVA', 0, 70, { align: 'center' });
 
-        // ── CERTIFICATE OF COMPLETION heading ─────────────────────────────
-        doc.fontSize(32)
-            .fillColor('#ffffff')
-            .text('CERTIFICATE OF COMPLETION', 0, 80, { align: 'center' });
-
-        // Decorative divider line
-        const lineY = 130;
-        doc.moveTo(80, lineY).lineTo(W - 80, lineY).lineWidth(1.5).stroke('#6366f1');
+        // ── Main Header ────────────────────────────────────────────────────
+        doc.fontSize(36)
+            .fillColor('#1e293b')
+            .font('Times-Bold') // Serif-like
+            .text('Certificate of Completion', 0, 130, { align: 'center' });
 
         // ── "This is to certify that" ─────────────────────────────────────
         doc.fontSize(14)
-            .fillColor('#94a3b8')
+            .fillColor('#64748b')
             .font('Helvetica')
-            .text('THIS IS TO CERTIFY THAT', 0, 150, { align: 'center' });
+            .text('This is to certify that', 0, 190, { align: 'center' });
 
-        // ── Student Name ──────────────────────────────────────────────────
-        doc.fontSize(36)
-            .fillColor('#fbbf24')
-            .font('Helvetica-Bold')
-            .text(userName, 0, 175, { align: 'center' });
+        // ── Full Name (Large Serif) ────────────────────────────────────────
+        doc.fontSize(48)
+            .fillColor('#0f172a')
+            .font('Times-Bold')
+            .text(userName, 0, 220, { align: 'center' });
+
+        // Underline for name
+        doc.moveTo(W/2 - 200, 275).lineTo(W/2 + 200, 275).lineWidth(1).stroke('#e2e8f0');
 
         // ── "has successfully completed" ─────────────────────────────────
         doc.fontSize(14)
+            .fillColor('#64748b')
+            .font('Helvetica')
+            .text('has successfully completed the professional course', 0, 295, { align: 'center' });
+
+        // ── Course Name (Professional Bold) ───────────────────────────────
+        doc.fontSize(28)
+            .fillColor('#1e40af')
+            .font('Helvetica-Bold')
+            .text(courseName, 80, 325, { align: 'center', width: W - 160 });
+
+        // ── Footer: Date, Cert ID, Authority ─────────────────────────────
+        const footerY = 440;
+
+        // Completion Date
+        doc.fontSize(10)
             .fillColor('#94a3b8')
             .font('Helvetica')
-            .text('has successfully completed the course', 0, 225, { align: 'center' });
-
-        // ── Course Name ───────────────────────────────────────────────────
-        doc.fontSize(26)
-            .fillColor('#ffffff')
+            .text('DATE OF ISSUANCE', 100, footerY);
+        doc.fontSize(12)
+            .fillColor('#1e293b')
             .font('Helvetica-Bold')
-            .text(courseName, 60, 255, { align: 'center', width: W - 120 });
+            .text(completionDate, 100, footerY + 15);
 
-        // Decorative divider line
-        const lineY2 = 310;
-        doc.moveTo(80, lineY2).lineTo(W - 80, lineY2).lineWidth(1.5).stroke('#6366f1');
+        // Certificate ID (Small/Subtle)
+        doc.fontSize(8)
+            .fillColor('#cbd5e1')
+            .font('Helvetica')
+            .text(`Verify at coursenova.com/verify\nCertificate ID: ${certId}`, 0, H - 70, { align: 'center' });
 
-        // ── Footer row: date, cert id, issuer ────────────────────────────
-        const footerY = 330;
-
-        // Completion Date (left)
-        doc.fontSize(11)
+        // Signature Area
+        doc.fontSize(10)
             .fillColor('#94a3b8')
             .font('Helvetica')
-            .text('Date of Completion', 80, footerY);
-        doc.fontSize(13)
-            .fillColor('#ffffff')
-            .font('Helvetica-Bold')
-            .text(completionDate, 80, footerY + 18);
-
-        // Certificate ID (center)
-        doc.fontSize(11)
-            .fillColor('#94a3b8')
-            .font('Helvetica')
-            .text('Certificate ID', 0, footerY, { align: 'center' });
-        doc.fontSize(13)
-            .fillColor('#6366f1')
-            .font('Helvetica-Bold')
-            .text(certId, 0, footerY + 18, { align: 'center' });
-
-        // Issued by (right)
-        doc.fontSize(11)
-            .fillColor('#94a3b8')
-            .font('Helvetica')
-            .text('Issued By', W - 200, footerY, { width: 120, align: 'right' });
-        doc.fontSize(13)
-            .fillColor('#ffffff')
-            .font('Helvetica-Bold')
-            .text('RENVOX AI', W - 200, footerY + 18, { width: 120, align: 'right' });
+            .text('OFFICIAL REPRESENTATIVE', W - 250, footerY, { align: 'center', width: 150 });
+        
+        doc.moveTo(W - 250, footerY + 35).lineTo(W - 100, footerY + 35).lineWidth(1).stroke('#e2e8f0');
+        
+        doc.fontSize(12)
+            .fillColor('#1e293b')
+            .font('Times-Italic')
+            .text('COURSENOVA Learning', W - 250, footerY + 45, { align: 'center', width: 150 });
 
         doc.end();
 

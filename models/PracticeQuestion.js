@@ -1,10 +1,17 @@
 const mongoose = require('mongoose');
 
 const practiceQuestionSchema = new mongoose.Schema({
-    question: { type: String, required: true },
-    options: { type: [String], required: true },
+    question: { type: String, required: true }, // Legacy/Default question
+    question_en: { type: String },              // English version
+    question_hi: { type: String },              // Hindi version
+
+    options: { type: [String], required: true }, // Legacy/Default options
+    options_en: { type: [String] },              // English options
+    options_hi: { type: [String] },              // Hindi options
+
     correctAnswer: { type: String, required: true },
     explanation: { type: String },
+    explanation_hi: { type: String },            // Hindi explanation
     category: {
         type: String,
         required: true,

@@ -7,18 +7,24 @@ const User = require('../models/User');
 const Activity = require('../models/Activity');
 const TestResult = require('../models/TestResult');
 const { requireAuth } = require('../middleware/auth');
+const { checkAccess } = require('../utils/accessControl');
 
 // All routes in this file require authentication
 router.use(requireAuth);
 
 // ── GET /api/course/details ─────────────────────────────────────────────────────
-// Returns course lessons + quiz questions — ALL COURSES FREE, no enrollment check
+// Returns course lessons + quiz quiz questions for enrolled users or free courses
 router.get('/details', async (req, res) => {
-    const { courseId } = req.query;
-    if (!courseId) return res.status(400).json({ ok: false, message: 'courseId is required' });
-
     try {
-        // All courses are freely accessible — no enrollment check
+        const { courseId } = req.query;
+        if (!courseId) return res.status(400).json({ ok: false, message: 'courseId is required' });
+
+        // Enforce Access Check
+        const hasAccess = await checkAccess(req.userId, courseId);
+        if (!hasAccess) {
+            return res.status(403).json({ ok: false, message: 'Access denied. Please enroll to view course content.' });
+        }
+
         const orQuery = [
             { title: courseId },
             { slug: courseId.toLowerCase().replace(/\s+/g, '-') }
@@ -66,18 +72,10 @@ router.get('/access-check', async (req, res) => {
     if (!courseId) return res.status(400).json({ ok: false, message: 'courseId is required' });
 
     try {
-        const enrollment = await Enrollment.findOne({ userId: req.userId, courseId });
+        const hasAccess = await checkAccess(req.userId, courseId);
 
-        if (!enrollment) {
-            const user = await User.findById(req.userId);
-            const legacyEnrolled = user && user.enrolledCourses &&
-                (user.enrolledCourses.includes(courseId) || user.enrolledCourses.some(c =>
-                    c.toLowerCase().includes(courseId.toLowerCase()) ||
-                    courseId.toLowerCase().includes(c.toLowerCase())
-                ));
-            if (!legacyEnrolled) {
-                return res.status(403).json({ ok: false, message: 'Course not purchased. Please enroll to access this course.' });
-            }
+        if (!hasAccess) {
+            return res.status(403).json({ ok: false, message: 'Course not purchased. Please enroll to access this course.' });
         }
 
         const progress = await CourseProgress.findOne({ userId: req.userId, courseId });
@@ -189,8 +187,15 @@ router.post('/save-progress', handleProgress);
 // ── POST /api/course/submit-test ──────────────────────────────────────────────
 router.post('/submit-test', async (req, res) => {
     try {
-        console.log('Incoming submit-test body:', req.body);
         const { courseId, answers, correctAnswers } = req.body;
+
+        // Enforce Access Check
+        const hasAccess = await checkAccess(req.userId, courseId);
+        if (!hasAccess) {
+            return res.status(403).json({ ok: false, message: 'You must be enrolled to take the test.' });
+        }
+
+        console.log('Incoming submit-test body:', req.body);
         
         if (!courseId || !answers || !Array.isArray(answers)) {
             return res.status(400).json({ ok: false, message: 'courseId and valid answers array are required' });

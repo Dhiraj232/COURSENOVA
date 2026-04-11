@@ -114,9 +114,10 @@ router.post('/:id/approve', async (req, res) => {
         );
 
         // Also update User.enrolledCourses array for quick lookup
+        // We add both ID and Name to ensure all lookup patterns work instantly
         await User.findByIdAndUpdate(
             payment.userId,
-            { $addToSet: { enrolledCourses: payment.courseName } },
+            { $addToSet: { enrolledCourses: { $each: [String(payment.courseId), String(payment.courseName)] } } },
             { new: true }
         );
 

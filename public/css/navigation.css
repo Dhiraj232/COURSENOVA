@@ -1,5 +1,5 @@
 /* ==========================================================================
-   RENVOX NAVIGATION & USER MENU STYLES
+   COURSENOVA NAVIGATION & USER MENU STYLES
    - Shared across all pages for a consistent header experience
    - NAVBAR IS ALWAYS LIGHT (Original Request)
    ========================================================================== */
@@ -71,7 +71,7 @@
 
 .logo i,
 .logo img {
-    height: 45px !important;
+    height: 55px !important;
     width: auto !important;
     object-fit: contain !important;
     object-position: center !important;
@@ -85,6 +85,7 @@
     font-weight: 800 !important;
     color: var(--nav-primary) !important;
     letter-spacing: 0.5px !important;
+    display: inline-block !important;
 }
 
 .nav-menu {
@@ -613,7 +614,7 @@ body.dark-theme .dropdown-divider {
 @media (max-width: 480px) {
     .logo span {
         font-size: 1rem !important;
-        /* Keep RENVOX text visible even on small screens */
+        /* Keep COURSENOVA text visible even on small screens */
     }
 
     .logo img {

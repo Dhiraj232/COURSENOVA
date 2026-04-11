@@ -9,7 +9,7 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 const Course   = require('./models/Course');
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/renvox';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/coursenova';
 
 const freeCourses = [
   {

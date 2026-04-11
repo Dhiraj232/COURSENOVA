@@ -12,10 +12,10 @@ const MockTestPack = require('./models/MockTestPack');
 const MONGO_URI = process.env.MONGO_URI;
 
 const premiumCourse = {
-    slug: 'renvox-ai-masterclass',
-    title: 'Renvox AI Masterclass',
+    slug: 'coursenova-ai-masterclass',
+    title: 'CourseNova Masterclass',
     icon: '🚀',
-    description: 'A complete guided masterclass on using Renvox AI to its full potential. Includes hands-on projects and a verified certificate.',
+    description: 'A complete guided masterclass on using CourseNova to its full potential. Includes hands-on projects and a verified certificate.',
     price: 1, // SPECIAL ₹1 PER THE USER'S REQUEST
     isPremium: true,
     isFree: false,
@@ -25,15 +25,15 @@ const premiumCourse = {
     lessons: [
         { 
             lessonId: 'rm-l1', 
-            title: 'Welcome to Renvox AI', 
+            title: 'Welcome to CourseNova', 
             videoUrl: 'https://www.youtube.com/embed/KJgsSFOSQv0',
-            pdfUrl: 'renvox_guide.pdf', 
+            pdfUrl: 'coursenova_guide.pdf', 
             order: 1 
         }
     ],
     quizQuestions: [
         { 
-            question: 'What is the primary goal of Renvox AI?', 
+            question: 'What is the primary goal of CourseNova?', 
             options: ['To help you learn', 'To play games', 'To watch movies', 'None'], 
             correctIndex: 0 
         }

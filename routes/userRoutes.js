@@ -53,7 +53,7 @@ router.get('/courses', requireAuth, async (req, res) => {
             return {
                 id: e.courseId,
                 title: e.courseName,
-                instructor: "RenVox AI Expert",
+                instructor: "CourseNova Expert",
                 icon: course ? course.icon : '📚',
                 progress: p ? p.progressPercent : 0,
                 startDate: e.purchaseDate,
