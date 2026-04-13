@@ -106,6 +106,10 @@ router.post('/submit', requireAuth, async (req, res) => {
             score: (score / total) * 100
         });
 
+        // Award points: +20 for test attempt (as per new rules)
+        const { awardPoints } = require('../utils/gamification');
+        await awardPoints(req.userId, 20, 'test');
+
         res.json({ ok: true, result });
 
         // ── Real-time Dashboard Update ──

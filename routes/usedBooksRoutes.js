@@ -211,6 +211,18 @@ router.post('/add', requireAuth, upload.single('image'), async (req, res) => {
         });
 
         await book.save();
+        
+        // Log Activity for Dashboard Feed
+        try {
+            const Activity = require('../models/Activity');
+            await Activity.create({
+                userId,
+                type: 'book_uploaded',
+                title: `Listed Book: ${book.title}`,
+                description: `Added "${book.title}" to the marketplace for ₹${book.price}.`
+            });
+        } catch (e) { console.warn("Activity log skipped:", e.message); }
+
         res.status(201).json({ ok: true, success: true, message: 'Book listed successfully!', book });
 
         // ── Real-time Dashboard Update ──

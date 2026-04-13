@@ -6,7 +6,7 @@ User-agent: *
 Allow: /
 Allow: /index.html
 Allow: /certificates.html
-Allow: /testing-center.html
+Allow: /mock-tests.html
 Allow: /community.html
 Allow: /store.html
 Allow: /privacy-policy.html

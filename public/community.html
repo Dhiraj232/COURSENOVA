@@ -415,6 +415,11 @@
 							<span id="notifBadge"
 								style="display:none; background:#ef4444; color:white; padding:2px 6px; border-radius:10px; font-size:10px; margin-left:5px;">0</span></a>
 					</li>
+					<li style="margin-top:20px; padding:0 16px; font-size:0.75rem; color:#94a3b8; text-transform:uppercase; font-weight:800; letter-spacing:1px;">Groups</li>
+					<li><a class="nav-link" onclick="switchRoom('General')"><i class="fas fa-hashtag"></i> General</a></li>
+					<li><a class="nav-link" onclick="switchRoom('JEE')"><i class="fas fa-hashtag"></i> JEE Prep</a></li>
+					<li><a class="nav-link" onclick="switchRoom('NEET')"><i class="fas fa-hashtag"></i> NEET Prep</a></li>
+					<li><a class="nav-link" onclick="switchRoom('Coding')"><i class="fas fa-hashtag"></i> Coding</a></li>
 				</ul>
 			</nav>
 		</aside>
@@ -485,7 +490,15 @@
 			</div>
 			<div class="form-group">
 				<label>Content</label>
-				<textarea id="postContent" rows="5" placeholder="What's on your mind?"></textarea>
+				<textarea id="postContent" rows="4" placeholder="What's on your mind?"></textarea>
+			</div>
+			<div class="form-group">
+				<label>Tags (comma separated)</label>
+				<input type="text" id="postTags" placeholder="e.g. dsa, webdev, career">
+			</div>
+			<div class="form-group">
+				<label>Image URL (optional)</label>
+				<input type="text" id="postImage" placeholder="https://example.com/image.jpg">
 			</div>
 			<button class="btn-comm btn-post" style="width:100%; justify-content:center;" onclick="submitPost()">Publish
 				Post</button>
@@ -501,8 +514,19 @@
 			</header>
 			<div class="form-group">
 				<label>The Doubt</label>
-				<textarea id="doubtQuestion" rows="4"
-					placeholder="Example: How does recursion work with factorials?"></textarea>
+				<input type="text" id="doubtQuestion" placeholder="Example: How does recursion work?">
+			</div>
+			<div class="form-group">
+				<label>Detailed Explanation</label>
+				<textarea id="doubtDetails" rows="3" placeholder="Provide more context..."></textarea>
+			</div>
+			<div class="form-group">
+				<label>Tags (comma separated)</label>
+				<input type="text" id="doubtTags" placeholder="e.g. math, physics, jee">
+			</div>
+			<div class="form-group">
+				<label>Image URL (optional)</label>
+				<input type="text" id="doubtImage" placeholder="https://example.com/question.jpg">
 			</div>
 			<button class="btn-comm btn-doubt" style="width:100%; justify-content:center;" onclick="submitDoubt()">Ask
 				Community</button>

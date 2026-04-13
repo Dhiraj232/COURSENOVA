@@ -73,7 +73,11 @@ function renderPosts(posts, targetId) {
             </div>
             <div class="post-content">
                 <h2>${p.title}</h2>
+                <div class="tags-container" style="display:flex; gap:8px; margin-bottom:12px;">
+                    ${(p.tags || []).map(t => `<span style="background:#f1f5f9; padding:2px 8px; border-radius:6px; font-size:11px; color:#64748b;">#${t}</span>`).join('')}
+                </div>
                 <p>${p.content}</p>
+                ${p.image ? `<img src="${p.image}" style="width:100%; border-radius:12px; margin-top:15px; max-height:400px; object-fit:cover;">` : ''}
             </div>
             <div class="post-footer">
                 <div class="footer-action" onclick="likePost('${p._id}', this)">
@@ -95,6 +99,8 @@ async function submitPost() {
     const title = document.getElementById('postTitle').value;
     const content = document.getElementById('postContent').value;
     const category = document.getElementById('postCategory').value;
+    const tags = document.getElementById('postTags')?.value.split(',').map(t => t.trim()) || [];
+    const image = document.getElementById('postImage')?.value || '';
 
     if (!title || !content) return alert('Title and Content are required');
 
@@ -105,7 +111,7 @@ async function submitPost() {
                 'Content-Type': 'application/json', 
                 'Authorization': `Bearer ${token}` 
             },
-            body: JSON.stringify({ title, content, category })
+            body: JSON.stringify({ title, content, category, tags, image })
         });
         const data = await res.json();
         if (data.ok) {
@@ -158,37 +164,98 @@ function renderDoubts(doubts) {
                         <span>${new Date(d.createdAt).toLocaleString()}</span>
                     </div>
                 </div>
-                <span class="badge" style="background:#e0f2fe; color:#0369a1; padding:4px 10px; border-radius:20px; font-size:12px;">Doubt</span>
+                <span class="badge" style="background:${d.bestAnswer ? '#22c55e' : '#e0f2fe'}; color:${d.bestAnswer ? 'white' : '#0369a1'}; padding:4px 10px; border-radius:20px; font-size:12px;">
+                    ${d.bestAnswer ? '<i class="fas fa-check-circle"></i> Solved' : 'Unsolved Doubt'}
+                </span>
             </div>
             <div class="post-content">
-                <h2 style="font-size:1.2rem;">${d.question}</h2>
+                <h2 style="font-size:1.4rem;">${d.question}</h2>
                 ${d.details ? `<p>${d.details}</p>` : ''}
+                ${d.image ? `<img src="${d.image}" style="width:100%; border-radius:12px; margin-top:15px; max-height:400px; object-fit:cover;">` : ''}
+                <div class="tags-container" style="display:flex; gap:8px; margin-top:12px;">
+                    ${(d.tags || []).map(t => `<span style="background:#f1f5f9; padding:2px 8px; border-radius:6px; font-size:11px; color:#64748b;">#${t}</span>`).join('')}
+                </div>
             </div>
             <div id="answers-${d._id}" style="margin-top:20px; padding-top:20px; border-top:1px dashed #e2e8f0;">
                 ${d.answers.map(a => `
-                    <div style="margin-bottom:15px; background:#f8fafc; padding:12px; border-radius:12px;">
-                        <strong style="color:var(--comm-primary)">${a.username}${a.isInstructor ? ' <i class="fas fa-check-circle"></i>' : ''}</strong>: ${a.answer}
+                    <div style="margin-bottom:15px; background:${d.bestAnswer === a._id ? 'rgba(34, 197, 94, 0.05)' : '#f8fafc'}; padding:20px; border-radius:16px; border: ${d.bestAnswer === a._id ? '2px solid #22c55e' : '1px solid #e2e8f0'}">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:10px;">
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <div class="user-avatar-sm" style="width:24px; height:24px; border-radius:50%; overflow:hidden; background:#eee;">
+                                    <img src="${a.userPicture || 'https://ui-avatars.com/api/?name=' + a.username}" style="width:100%; height:100%; object-fit:cover;">
+                                </div>
+                                <strong style="color:var(--comm-primary); font-size:0.85rem;">${a.username}${a.isInstructor ? ' <i class="fas fa-check-circle" title="Instructor"></i>' : ''}</strong>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:12px;">
+                                ${d.userId === user.id && !d.bestAnswer ? `<button class="btn-comm" style="background:#22c55e; color:white; font-size:11px; padding:4px 8px;" onclick="markBestAnswer('${d._id}', '${a._id}')">Mark Best</button>` : ''}
+                                <div class="upvote-box" style="display:flex; align-items:center; gap:5px; cursor:pointer; color:#64748b;" onclick="upvoteAnswer('${d._id}', '${a._id}', this)">
+                                    <i class="fa${(a.upvotes || []).includes(user.id) ? 's' : 'r'} fa-thumbs-up"></i> 
+                                    <span>${(a.upvotes || []).length}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="font-size:1.05rem; color:#334155; line-height:1.5;">${a.answer}</div>
                     </div>
                 `).join('')}
-                <div style="display:flex; gap:10px; margin-top:15px;">
-                    <input type="text" id="ans-input-${d._id}" placeholder="Type your answer..." style="flex:1; border:1px solid #e2e8f0; border-radius:8px; padding:8px;">
-                    <button class="btn-comm btn-post" style="padding:8px 15px;" onclick="submitAnswer('${d._id}')">Answer</button>
+                <div style="display:flex; gap:10px; margin-top:25px;">
+                    <textarea id="ans-input-${d._id}" placeholder="Provide detailed explanation..." style="flex:1; border:1px solid #e2e8f0; border-radius:12px; padding:12px; height:60px;"></textarea>
+                    <button class="btn-comm btn-post" style="padding:10px 20px; height:60px;" onclick="submitAnswer('${d._id}')">Answer</button>
                 </div>
             </div>
         </div>
     `).join('');
 }
 
+async function markBestAnswer(doubtId, answerId) {
+    if (!confirm('Mark this as the best answer? Points will be awarded.')) return;
+    try {
+        const res = await fetch(`/api/community/doubts/${doubtId}/best-answer`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ answerId })
+        });
+        const data = await res.json();
+        if (data.ok) loadSection('doubts');
+        else alert(data.message);
+    } catch (e) { console.error(e); }
+}
+
+async function upvoteAnswer(doubtId, answerId, el) {
+    if (!token) return alert('Login to upvote!');
+    try {
+        const res = await fetch(`/api/community/doubts/${doubtId}/answers/${answerId}/upvote`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.ok) {
+            el.querySelector('span').innerText = data.upvotes;
+            const icon = el.querySelector('i');
+            if (data.hasUpvoted) {
+                icon.classList.remove('far');
+                icon.classList.add('fas');
+            } else {
+                icon.classList.remove('fas');
+                icon.classList.add('far');
+            }
+        }
+    } catch (e) { console.error(e); }
+}
+
 async function submitDoubt() {
     if (!token) return alert('Login to ask a doubt!');
     const question = document.getElementById('doubtQuestion').value;
+    const details = document.getElementById('doubtDetails')?.value || '';
+    const image = document.getElementById('doubtImage')?.value || '';
+    const tags = document.getElementById('doubtTags')?.value.split(',').map(t => t.trim()) || [];
+
     if (!question) return alert('Question is required');
 
     try {
         const res = await fetch('/api/community/doubts', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ question })
+            body: JSON.stringify({ question, details, image, tags })
         });
         const data = await res.json();
         if (data.ok) {
@@ -254,7 +321,18 @@ async function loadMiniLeaderboard() {
 
 function setupSocket() {
     if (!socket) return;
-    socket.emit('join-room', 'general');
+    socket.on('connect', () => {
+        socket.emit('identify', user.id);
+        socket.emit('join-room', currentChannel);
+    });
+
+    socket.on('chat-history', (history) => {
+        const container = document.getElementById('chatMsgs');
+        if (container) {
+            container.innerHTML = '';
+            history.forEach(msg => appendChatMessage(msg));
+        }
+    });
 
     socket.on('receive-message', (data) => {
         appendChatMessage(data);
@@ -297,9 +375,29 @@ function setupSocket() {
 function loadChannels() {
     const chatW = document.getElementById('chatWidget');
     if (chatW) chatW.classList.add('active');
-    currentChannel = 'general';
+    switchRoom('General');
+}
+
+function switchRoom(roomId) {
+    if (!socket) return;
+    
+    // UI Update
+    const chatW = document.getElementById('chatWidget');
+    if (chatW) chatW.classList.add('active');
+    
+    currentChannel = roomId;
     const currC = document.getElementById('currentChannel');
-    if (currC) currC.innerText = '# ' + currentChannel;
+    if (currC) currC.innerText = '# ' + roomId;
+    
+    const input = document.getElementById('chatInput');
+    if (input) input.placeholder = `Message to #${roomId}...`;
+
+    // Clear and leave old room is handled by server, we just join new
+    socket.emit('join-room', roomId);
+    
+    // Clear display while waiting for history
+    const container = document.getElementById('chatMsgs');
+    if (container) container.innerHTML = '<div style="font-size:12px; color:#94a3b8; text-align:center;">Joining room...</div>';
 }
 
 function sendChatMessage() {

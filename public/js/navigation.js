@@ -95,7 +95,7 @@ function setupNavigation() {
             return dropdownHtml;
         } else {
             // Specific active rules
-            if (currentPage === 'testing-center' && link.href === 'testing-center.html') isActive = true;
+            if (currentPage === 'mock-tests' && link.href === 'mock-tests.html') isActive = true;
 
             return `<li><a href="${link.href}" class="${isActive ? 'active' : ''}">${link.name}</a></li>`;
         }
@@ -313,48 +313,8 @@ function animatePageEntrance() {
 }
 
 /**
- * ─── OAuth Redirect Handler ───────────────────────────────────────────
- * Checks the URL for 'token' and 'user' parameters, common after 
- * Google OAuth redirects. Saves them to localStorage and sweeps the URL.
- */
-function handleAuthRedirect() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token');
-    const userStr = urlParams.get('user');
-    const logout = urlParams.get('logout');
-
-    // Handle logout success message
-    if (logout === 'true' || logout === 'success') {
-        const logoutToast = document.createElement('div');
-        logoutToast.style.cssText = `
-            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-            background: #10b981; color: white; padding: 12px 24px; border-radius: 99px;
-            z-index: 10000; font-family: 'Outfit', sans-serif; font-weight: 600;
-            box-shadow: 0 10px 30px rgba(16, 185, 129, 0.3); animation: slideDown 0.5s ease;
-        `;
-        logoutToast.innerHTML = '<i class="fas fa-check-circle"></i> Logged out successfully';
-        document.body.appendChild(logoutToast);
-
-        // Add animation style
-        const style = document.createElement('style');
-        style.textContent = '@keyframes slideDown { from { transform: translate(-50%, -50px); opacity: 0; } to { transform: translate(-50%, 0); opacity: 1; } }';
-        document.head.appendChild(style);
-
-        setTimeout(() => {
-            logoutToast.style.opacity = '0';
-            logoutToast.style.transition = 'opacity 0.5s ease';
-            setTimeout(() => logoutToast.remove(), 500);
-        }, 4000);
-
-        // Clean URL
-        window.history.replaceState({}, document.title, window.location.pathname);
-        return;
-    }
-
-/**
  * ─── Sync User State ──────────────────────────────────────────────────
  * Re-fetches user data from server and updates localStorage.
- * Call this after successful payment or profile update.
  */
 async function refreshUserData() {
     const token = getAuthToken();
@@ -367,7 +327,6 @@ async function refreshUserData() {
         });
         const data = await res.json();
         if (data.ok && data.user) {
-            // Save updated user data
             localStorage.setItem('coursenovaUser', JSON.stringify(data.user));
             localStorage.setItem('coursenova_user', JSON.stringify(data.user));
             console.log('✅ User data synchronized');
@@ -379,30 +338,42 @@ async function refreshUserData() {
     return null;
 }
 
-// Call animation on load
-window.addEventListener('load', animatePageEntrance);
+/**
+ * ─── OAuth Redirect Handler ───────────────────────────────────────────
+ */
+function handleAuthRedirect() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    const userStr = urlParams.get('user');
+    const logout = urlParams.get('logout');
 
-if (token && userStr) {
-    try {
-        // Force save to localStorage
-        localStorage.setItem('coursenovaToken', token);
-        localStorage.setItem('coursenova_token', token);
-        localStorage.setItem('coursenovaUser', userStr);
-        localStorage.setItem('coursenova_user', userStr);
-
-        // Clean up the URL
+    if (logout === 'true' || logout === 'success') {
+        // Clean URL
         window.history.replaceState({}, document.title, window.location.pathname);
-        console.log('✅ Authentication session established');
-
-        // Immediately trigger a background refresh to get the latest purchase status
-        refreshUserData();
-
-        // Trigger UI update
-        if (typeof setupUserDropdown === 'function') setupUserDropdown();
-    } catch (error) {
-        console.error('❌ Redirect Auth Error:', error);
+        return;
     }
-}
+
+    if (token && userStr) {
+        try {
+            // Force save to localStorage
+            localStorage.setItem('coursenovaToken', token);
+            localStorage.setItem('coursenova_token', token);
+            localStorage.setItem('coursenovaUser', userStr);
+            localStorage.setItem('coursenova_user', userStr);
+
+            // Clean up the URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+            console.log('✅ Authentication session established');
+
+            // Immediately trigger a background refresh
+            refreshUserData();
+
+            // Trigger UI update
+            if (typeof setupUserDropdown === 'function') setupUserDropdown();
+        } catch (error) {
+            console.error('❌ Redirect Auth Error:', error);
+        }
+    }
 }
 
 // Export global refresh
@@ -612,7 +583,7 @@ function setupUserDropdown() {
                         </a>
                     </li>
                     <li class="dropdown-item">
-                        <a href="testing-center.html" onclick="window.closeUserDropdown()">
+                        <a href="mock-tests.html" onclick="window.closeUserDropdown()">
                             <i class="fas fa-file-alt"></i> Mock Tests
                         </a>
                     </li>

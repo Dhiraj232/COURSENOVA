@@ -153,10 +153,30 @@
         }
 
         .cert-date {
-            font-size: 1.4rem;
+            font-size: 1.2rem;
             font-weight: 600;
             color: var(--secondary);
             margin-top: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .cert-duration {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--secondary);
+            margin-top: 0.2rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .cert-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            align-items: flex-start;
         }
 
         /* Footer Elements */
@@ -304,7 +324,14 @@
             <div class="intro-text">has successfully completed the</div>
             
             <div class="course-name" id="courseName">...</div>
-            <div class="cert-date" id="certDate">...</div>
+            <div class="cert-meta">
+                <div class="cert-date">
+                    <i class="fas fa-calendar-alt"></i> Issued on: <span id="certDate">...</span>
+                </div>
+                <div class="cert-duration" id="durationBox" style="display: none;">
+                    <i class="fas fa-clock"></i> Duration: <span id="certDuration">...</span>
+                </div>
+            </div>
         </div>
 
         <div class="cert-footer">
@@ -352,6 +379,11 @@
                         day: 'numeric',
                         year: 'numeric'
                     });
+
+                    if (d.duration) {
+                        document.getElementById('certDuration').innerText = d.duration;
+                        document.getElementById('durationBox').style.display = 'inline-flex';
+                    }
 
                     // Generate QR Code
                     const verifyLink = `${window.location.origin}/verify-certificate.html?id=${certId}`;

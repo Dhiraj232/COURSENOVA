@@ -29,6 +29,11 @@ const UserSchema = new mongoose.Schema({
     // Array of purchased book ObjectIDs
     purchasedBooks: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Book' }],
 
+    // Gamification & Community
+    points: { type: Number, default: 0 },
+    rank: { type: Number, default: 0 },
+    badges: [{ type: String }],
+
     lastLogin: { type: Date, default: Date.now },
     createdAt: { type: Date, default: Date.now }
 });

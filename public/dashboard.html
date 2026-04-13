@@ -50,7 +50,7 @@
             <nav class="sidebar-nav">
                 <a href="dashboard.html" class="nav-item active"><i class="fas fa-th-large"></i> Overview</a>
                 <a href="certificates.html" class="nav-item"><i class="fas fa-graduation-cap"></i> My Courses</a>
-                <a href="testing-center.html" class="nav-item"><i class="fas fa-edit"></i> Mock Tests</a>
+                <a href="mock-tests.html" class="nav-item"><i class="fas fa-edit"></i> Mock Tests</a>
                 <a href="store.html" class="nav-item"><i class="fas fa-book"></i> Book Store</a>
                 <a href="profile.html" class="nav-item"><i class="fas fa-user"></i> My Profile</a>
             </nav>
@@ -67,12 +67,12 @@
             <!-- Header -->
             <header class="dashboard-header">
                 <div class="welcome-section">
-                    <h1>Your Learning Journey</h1>
-                    <p>Welcome back, <span id="studentFirstName">Learner</span>! You're on a <span class="highlight" id="streakCounter">0 day</span> streak.</p>
+                    <h1>Welcome back, <span id="studentFirstName">Learner</span>! 👋</h1>
+                    <p>You're on a <span class="highlight" id="streakDisplay">0 day</span> streak.</p>
                 </div>
                 <div class="header-actions">
                     <div class="live-indicator">
-                        <span class="dot pulse"></span> LIVE Telemetry
+                        <span class="status-dot dot pulse"></span> LIVE Telemetry
                     </div>
                 </div>
             </header>
@@ -114,22 +114,22 @@
                 <div class="stat-card glass">
                     <div class="stat-icon emerald"><i class="fas fa-wallet"></i></div>
                     <div class="stat-info">
-                        <h4 id="mktEarnings">₹0</h4>
+                        <h4 id="mktRevenueDisplay">₹0</h4>
                         <p>Total Earnings</p>
                     </div>
                 </div>
                 <div class="stat-card glass">
-                    <div class="stat-icon blue"><i class="fas fa-list"></i></div>
+                    <div class="stat-icon blue"><i class="fas fa-shopping-cart"></i></div>
                     <div class="stat-info">
-                        <h4 id="mktListed">0</h4>
-                        <p>Books Listed</p>
+                        <h4 id="mktBoughtCount">0</h4>
+                        <p>Books Bought</p>
                     </div>
                 </div>
                 <div class="stat-card glass">
                     <div class="stat-icon orange"><i class="fas fa-check-circle"></i></div>
                     <div class="stat-info">
                         <h4 id="mktSold">0</h4>
-                        <p>Books Sold</p>
+                        <p>Units Sold</p>
                     </div>
                 </div>
             </section>
@@ -216,6 +216,39 @@
 
                 <!-- RIGHT COLUMN -->
                 <div class="grid-right">
+                    <!-- NEW: Gamification Sidebar -->
+                    <div class="analytics-card glass highlight-card" style="margin-bottom: 30px;">
+                        <div class="card-header">
+                            <h3><i class="fas fa-medal"></i> Your Standing</h3>
+                        </div>
+                        <div class="stat-main-box">
+                            <h1 id="studentPoints">0 pts</h1>
+                            <p id="userRank">Rank #--</p>
+                        </div>
+                    </div>
+
+                    <!-- NEW: Weak Topics & AI Recommender -->
+                    <div class="activity-card glass" style="margin-bottom: 30px;">
+                        <div class="card-header">
+                            <h3><i class="fas fa-microscope"></i> Weak Topics</h3>
+                        </div>
+                        <div id="weakTopicsList" class="topic-tag-cloud">
+                             <!-- Injected -->
+                        </div>
+                        <div class="card-footer-info" style="margin-top:20px;">
+                            <p style="font-size: 0.75rem; color:#64748b;">Subjects where you scored below 50% average.</p>
+                        </div>
+                    </div>
+
+                    <div class="activity-card glass" style="margin-bottom: 30px;">
+                        <div class="card-header">
+                            <h3><i class="fas fa-magic"></i> AI Recommendations</h3>
+                        </div>
+                        <div id="recommendationsList" class="recommendation-stack">
+                             <!-- Injected -->
+                        </div>
+                    </div>
+
                     <!-- C. ACTIVITY TIMELINE -->
                     <div class="activity-card glass">
                         <div class="card-header">

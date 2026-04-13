@@ -41,6 +41,7 @@ const courseRoutes = require('./routes/courseRoutes');
 
 // ─── Community Routers (New) ──────────────────────────────────────
 const communityRoutes = require('./routes/community');
+const dashboardRoutes = require('./routes/dashboardRoutes');
 
 // ─── Environment Configuration Setup ────────────────────────────
 const isProduction = process.env.NODE_ENV === 'production';
@@ -220,14 +221,18 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
-      ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+      "default-src": ["'self'"],
       "frame-src": ["'self'", "https://www.youtube.com", "https://youtube.com", "https://docs.google.com", "https://sdk.cashfree.com", "https://sandbox.cashfree.com", "https://api.cashfree.com"],
       "img-src": ["'self'", "data:", "blob:", "https://res.cloudinary.com", "https://images.unsplash.com", "https://*.google.com", "https://*.googleusercontent.com", "https://i.ytimg.com", "https://yt3.ggpht.com", "https://ui-avatars.com", "https://cdni.iconscout.com"],
-      "script-src": ["'self'", "'unsafe-inline'", "https://www.googletagmanager.com", "https://*.google.com", "https://sdk.cashfree.com", "https://cdnjs.cloudflare.com"],
+      "script-src": ["'self'", "'unsafe-inline'", "https://www.googletagmanager.com", "https://*.google.com", "https://sdk.cashfree.com", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net", "https://cdn.socket.io"],
+      "script-src-elem": ["'self'", "'unsafe-inline'", "https://www.googletagmanager.com", "https://*.google.com", "https://sdk.cashfree.com", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net", "https://cdn.socket.io"],
       "script-src-attr": ["'unsafe-inline'"],
-      "connect-src": ["'self'", "https://*.google-analytics.com", "https://*.analytics.google.com", "https://*.googletagmanager.com", "https://sdk.cashfree.com", "https://sandbox.cashfree.com", "https://api.cashfree.com", "http://localhost:5000", "ws://localhost:5000", "http://127.0.0.1:5000", "ws://127.0.0.1:5000"],
-      "form-action": ["'self'", "https://sdk.cashfree.com", "https://sandbox.cashfree.com", "https://api.cashfree.com"]
-      },
+      "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdnjs.cloudflare.com"],
+      "font-src": ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com"],
+      "connect-src": ["'self'", "https://*.google-analytics.com", "https://*.analytics.google.com", "https://*.googletagmanager.com", "https://sdk.cashfree.com", "https://sandbox.cashfree.com", "https://api.cashfree.com", "http://localhost:5000", "ws://localhost:5000", "http://127.0.0.1:5000", "ws://127.0.0.1:5000", "ws://*", "wss://*", "https://cdn.socket.io"],
+      "form-action": ["'self'", "https://sdk.cashfree.com", "https://sandbox.cashfree.com", "https://api.cashfree.com"],
+      "upgrade-insecure-requests": []
+    },
   },
 }));
 
@@ -381,6 +386,7 @@ const adminRoutes = require('./routes/adminRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
 app.use('/api/admin', adminRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 
 // Serve uploaded screenshots and generated certificates as static files
@@ -560,57 +566,77 @@ const io = require('socket.io')(server, {
   }
 });
 app.set('io', io);
+global.io = io; // Set globally for cross-module notifications
 
 // Community Chat & Real-Time Dashboard Logic (Socket.io)
 const socketMap = new Map(); // userId -> Set of socketIds
+
+const CommunityChat = require('./models/CommunityChat');
 
 io.on('connection', (socket) => {
   console.log('⚡ New Socket Connection:', socket.id);
 
   // Unified Identification for Dashboard/Chat
   socket.on('identify', (userId) => {
-    if (!userId) {
-        console.warn('⚠️ Identification failed: No userId provided for socket', socket.id);
-        return;
-    }
-    
-    // Ensure userId is a clean string (remove quotes if any)
+    if (!userId) return;
     const cleanUserId = String(userId).replace(/['"]+/g, '');
     socket.userId = cleanUserId;
+    socket.join(`user:${cleanUserId}`);
+    console.log(`👤 User Verified: ${cleanUserId} | Joined Room: user:${cleanUserId}`);
+  });
+
+  socket.on('join-room', async (roomId) => {
+    socket.join(roomId);
+    console.log(`📡 Socket ${socket.id} joined channel: ${roomId}`);
     
-    if (!socketMap.has(socket.userId)) {
-      socketMap.set(socket.userId, new Set());
+    // Fetch last 50 messages from DB
+    try {
+        const chat = await CommunityChat.findOne({ roomId });
+        if (chat) {
+            socket.emit('chat-history', chat.messages.slice(-50));
+        } else {
+            // Initialize room if it doesn't exist (group rooms)
+            const globalRooms = ['JEE', 'NEET', 'Coding', 'General'];
+            if (globalRooms.includes(roomId)) {
+                await CommunityChat.create({ roomId, type: 'group' });
+            }
+        }
+    } catch (err) {
+        console.error('Chat history error:', err);
     }
-    socketMap.get(socket.userId).add(socket.id);
-    
-    const roomName = `user:${cleanUserId}`;
-    socket.join(roomName);
-    console.log(`👤 User Verified: ${cleanUserId} | Joined Room: ${roomName} | Socket: ${socket.id}`);
-    
-    // Send a welcome message to confirm link
-    socket.emit('dashboard_update', {
-        type: 'CONNECTION_STABLE',
-        message: 'Live telemetry link established.'
-    });
   });
 
-  socket.on('join-room', (room) => {
-    socket.join(room);
-    console.log(`📡 Socket ${socket.id} joined channel: ${room}`);
+  socket.on('send-message', async (data) => {
+    // data: { roomId, senderId, senderName, senderPicture, text }
+    const { roomId, senderId, senderName, senderPicture, text } = data;
+    
+    try {
+        // Save to DB
+        await CommunityChat.findOneAndUpdate(
+            { roomId },
+            { 
+                $push: { messages: { senderId, senderName, senderPicture, text } },
+                lastMessage: text,
+                lastMessageTime: new Date()
+            },
+            { upsert: true }
+        );
+
+        // Broadcast to room
+        io.to(roomId).emit('receive-message', {
+            senderId, senderName, senderPicture, text, timestamp: new Date()
+        });
+    } catch (err) {
+        console.error('Message save error:', err);
+    }
   });
 
-  socket.on('send-message', (data) => {
-    // data: { room, sender, text, avatar, ts }
-    io.to(data.room).emit('receive-message', data);
+  socket.on('typing', (data) => {
+      // data: { roomId, username, isTyping }
+      socket.to(data.roomId).emit('user-typing', data);
   });
 
   socket.on('disconnect', () => {
-    if (socket.userId && socketMap.has(socket.userId)) {
-      socketMap.get(socket.userId).delete(socket.id);
-      if (socketMap.get(socket.userId).size === 0) {
-        socketMap.delete(socket.userId);
-      }
-    }
     console.log('🔌 Socket Disconnected:', socket.id);
   });
 });

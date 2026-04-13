@@ -261,6 +261,15 @@ async function enrollUser({ userId, courseId, paymentId, amount, orderId, course
     }
 
     console.log(`✅ [enrollUser] User ${userId} enrolled in course ${courseId} | paymentId: ${paymentId}`);
+
+    // 5. Emit Real-time Dashboard Update
+    if (global.io) {
+        global.io.to(`user:${userId}`).emit('dashboard_update', {
+            type: 'ENROLLMENT_SUCCESS',
+            title: courseTitle,
+            message: `Enrollment successful for ${courseTitle}! Welcome aboard.`
+        });
+    }
 }
 
 // ═════════════════════════════════════════════════════════════════════════════

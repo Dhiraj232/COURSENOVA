@@ -45,11 +45,22 @@ router.get('/generate/:certId', async (req, res) => {
             ? new Date(record.earnedAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })
             : new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' });
 
+        // Fetch duration from course
+        const Course = require('../models/Course');
+        const courseObj = await Course.findOne({
+            $or: [
+                { _id: String(record.courseId).match(/^[0-9a-fA-F]{24}$/) ? record.courseId : null },
+                { slug: record.courseId }
+            ].filter(q => q._id !== null || q.slug)
+        });
+        const duration = courseObj ? courseObj.duration : '';
+
         const { filePath, fileName } = await generateCertificate({
             userName: user ? (user.name || user.fullName || 'Student') : 'Student',
             courseName: record.courseName || record.courseId,
             completionDate,
-            certId
+            certId,
+            duration
         });
 
         res.setHeader('Content-Type', 'application/pdf');
@@ -107,6 +118,19 @@ router.get('/details/:certId', async (req, res) => {
             }
         }
 
+        // Also fetch duration for HTML view
+        let duration = '';
+        try {
+            const Course = require('../models/Course');
+            const courseObj = await Course.findOne({
+                $or: [
+                    { _id: String(record.courseId).match(/^[0-9a-fA-F]{24}$/) ? record.courseId : null },
+                    { slug: record.courseId }
+                ].filter(q => q._id !== null || q.slug)
+            });
+            if (courseObj) duration = courseObj.duration;
+        } catch (e) { console.error('Duration lookup fail:', e); }
+
         res.json({
             ok: true,
             details: {
@@ -114,7 +138,8 @@ router.get('/details/:certId', async (req, res) => {
                 email: student ? student.email : '',
                 courseName: displayCourseName || record.courseId,
                 completionDate: record.earnedAt || record.updatedAt,
-                certId: record.certId
+                certId: record.certId,
+                duration: duration
             }
         });
     } catch (err) {
@@ -144,11 +169,22 @@ router.post('/email/:certId', async (req, res) => {
             ? new Date(record.earnedAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })
             : new Date().toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' });
 
+        // Fetch duration for email PDF
+        const Course = require('../models/Course');
+        const courseObj = await Course.findOne({
+            $or: [
+                { _id: String(record.courseId).match(/^[0-9a-fA-F]{24}$/) ? record.courseId : null },
+                { slug: record.courseId }
+            ].filter(q => q._id !== null || q.slug)
+        });
+        const duration = courseObj ? courseObj.duration : '';
+
         const { filePath } = await generateCertificate({
             userName: user.name,
             courseName: record.courseId,
             completionDate,
-            certId
+            certId,
+            duration
         });
 
         await sendCertificateEmail({

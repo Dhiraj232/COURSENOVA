@@ -10,6 +10,8 @@ const postSchema = new mongoose.Schema({
         type: String, // String for flexibility; enum was previously ['Programming', 'DSA', 'Web Dev', 'AI', 'Career']
         default: 'Programming'
     },
+    tags: [String],
+    image: { type: String, default: '' },
     likes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     likesCount: { type: Number, default: 0 },
     commentsCount: { type: Number, default: 0 },

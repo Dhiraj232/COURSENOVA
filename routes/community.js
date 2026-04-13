@@ -8,23 +8,7 @@ const CommunityLeaderboard = require('../models/CommunityLeaderboard');
 const Notification = require('../models/Notification');
 const User = require('../models/User');
 const { requireAuth } = require('../middleware/auth');
-
-// Utility to update leaderboard points
-async function updatePoints(userId, username, points, type) {
-    try {
-        const update = { $inc: { points } };
-        if (type === 'post') update.$inc.posts = 1;
-        if (type === 'answer') update.$inc.answers = 1;
-
-        await CommunityLeaderboard.findOneAndUpdate(
-            { userId },
-            { ...update, username, lastUpdated: new Date() },
-            { upsert: true, new: true }
-        );
-    } catch (err) {
-        console.error('Leaderboard update error:', err);
-    }
-}
+const { awardPoints } = require('../utils/gamification');
 
 // ─── POSTS / FORUM ──────────────────────────────────────────────
 
@@ -59,7 +43,7 @@ router.get('/posts', async (req, res) => {
 
 // Create post
 router.post('/posts', requireAuth, async (req, res) => {
-    const { title, content, category } = req.body;
+    const { title, content, category, tags, image } = req.body;
     if (!title || !content || !category) {
         return res.status(400).json({ ok: false, message: 'Title, category, and content are required' });
     }
@@ -74,14 +58,16 @@ router.post('/posts', requireAuth, async (req, res) => {
             userPicture: user.picture,
             title,
             content,
-            category
+            category,
+            tags: tags || [],
+            image: image || ''
         });
         await post.save();
 
-        // Update points: 10 points for creating a post
-        await updatePoints(req.userId, user.name, 10, 'post');
+        // Update points: 5 points for creating a post (as per new rules)
+        await awardPoints(req.userId, 5, 'post');
 
-        if (req.app.get('io')) req.app.get('io').emit('new_post', post);
+        if (req.app.get('io')) req.app.get('io').emit('new_post', { ...post._doc, username: user.name, userPicture: user.picture });
 
         res.json({ ok: true, post });
     } catch (err) {
@@ -121,8 +107,8 @@ router.post('/posts/:postId/comments', requireAuth, async (req, res) => {
         // Increment comment count on post
         await Post.findByIdAndUpdate(req.params.postId, { $inc: { commentsCount: 1 } });
 
-        // Update points: 5 points for commenting
-        await updatePoints(req.userId, user.name, 5);
+        // Update points: 2 points for commenting (as per new rules)
+        await awardPoints(req.userId, 2, 'comment');
 
         if (req.app.get('io')) req.app.get('io').emit('new_comment', { postId: req.params.postId, comment });
 
@@ -185,7 +171,7 @@ router.get('/doubts', async (req, res) => {
 
 // Ask doubt
 router.post('/doubts', requireAuth, async (req, res) => {
-    const { question, details } = req.body;
+    const { question, details, image, tags } = req.body;
     try {
         const user = await User.findById(req.userId);
         const doubt = new Doubt({
@@ -193,7 +179,9 @@ router.post('/doubts', requireAuth, async (req, res) => {
             username: user.name,
             userPicture: user.picture,
             question,
-            details
+            details,
+            image: image || '',
+            tags: tags || []
         });
         await doubt.save();
         if (req.app.get('io')) req.app.get('io').emit('new_doubt', doubt);
@@ -251,8 +239,8 @@ router.post('/doubts/:doubtId/answer', requireAuth, async (req, res) => {
                 message: `${user.name} answered your doubt: ${doubt.question.substring(0, 20)}...`
             })).save();
 
-            // Reward answerer: 15 points for answering a doubt
-            await updatePoints(req.userId, user.name, 15, 'answer');
+            // Note: points are now awarded only for "Best Answer" (+10) 
+            // as per the new user request. 
         }
 
         if (req.app.get('io')) req.app.get('io').emit('new_answer', { doubtId: doubt._id, answers: doubt.answers });
@@ -260,6 +248,56 @@ router.post('/doubts/:doubtId/answer', requireAuth, async (req, res) => {
         res.json({ ok: true, answers: doubt.answers });
     } catch (err) {
         res.status(500).json({ ok: false, message: 'Failed to answer' });
+    }
+});
+
+// Mark Best Answer
+router.post('/doubts/:doubtId/best-answer', requireAuth, async (req, res) => {
+    const { answerId } = req.body;
+    try {
+        const doubt = await Doubt.findById(req.params.doubtId);
+        if (!doubt) return res.status(404).json({ ok: false, message: 'Doubt not found' });
+
+        // Only author can mark best answer
+        if (doubt.userId.toString() !== req.userId) {
+            return res.status(403).json({ ok: false, message: 'Only the author can mark best answer' });
+        }
+
+        const answer = doubt.answers.id(answerId);
+        if (!answer) return res.status(404).json({ ok: false, message: 'Answer not found' });
+
+        doubt.bestAnswer = answerId;
+        await doubt.save();
+
+        // Reward answerer: 10 points for best answer (as per new rules)
+        await awardPoints(answer.userId, 10, 'best_answer');
+
+        res.json({ ok: true, message: 'Best answer marked', bestAnswer: answerId });
+    } catch (err) {
+        res.status(500).json({ ok: false, message: 'Failed to mark best answer' });
+    }
+});
+
+// Upvote Answer
+router.post('/doubts/:doubtId/answers/:answerId/upvote', requireAuth, async (req, res) => {
+    try {
+        const doubt = await Doubt.findById(req.params.doubtId);
+        if (!doubt) return res.status(404).json({ ok: false, message: 'Doubt not found' });
+
+        const answer = doubt.answers.id(req.params.answerId);
+        if (!answer) return res.status(404).json({ ok: false, message: 'Answer not found' });
+
+        const hasUpvoted = answer.upvotes.includes(req.userId);
+        if (hasUpvoted) {
+            answer.upvotes = answer.upvotes.filter(id => id.toString() !== req.userId);
+        } else {
+            answer.upvotes.push(req.userId);
+        }
+
+        await doubt.save();
+        res.json({ ok: true, upvotes: answer.upvotes.length, hasUpvoted: !hasUpvoted });
+    } catch (err) {
+        res.status(500).json({ ok: false, message: 'Failed to upvote' });
     }
 });
 

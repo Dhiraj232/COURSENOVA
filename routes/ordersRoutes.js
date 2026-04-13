@@ -104,6 +104,27 @@ router.post('/', authMiddleware, async (req, res) => {
         });
 
         await order.save();
+        
+        // Log Activity for Dashboard Feed
+        try {
+            const Activity = require('../models/Activity');
+            await Activity.create({
+                userId: req.user.id,
+                type: 'book_purchased',
+                title: `Ordered: ${orderItems[0].bookTitle}`,
+                description: `Placed an order for ${orderItems.length} book(s) totaling ₹${totalAmount}.`
+            });
+        } catch (e) { console.warn("Activity log skipped:", e.message); }
+
+        // Real-time Dashboard Update
+        if (req.app && req.app.get('io')) {
+            const io = req.app.get('io');
+            io.to(`user:${req.user.id}`).emit('dashboard_update', {
+                type: 'BOOK_PURCHASED',
+                title: orderItems[0].bookTitle,
+                message: `Order #${order.orderNumber} placed successfully!`
+            });
+        }
 
         // Clear cart
         await Cart.findOneAndDelete({ userId: req.user.id });

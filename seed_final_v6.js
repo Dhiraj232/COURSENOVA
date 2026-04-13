@@ -55,7 +55,7 @@ const courses = [
         icon: '🌐',
         description: 'Learn the basics of integrating AI into modern web applications using TensorFlow.js and browser-based machine learning.',
         price: 0, isFree: true, isPremium: false,
-        duration: '2 Weeks', level: 'Beginner', isActive: true, examPassPercent: 60,
+        duration: '15 Hours', level: 'Beginner', isActive: true, examPassPercent: 60,
         lessons: [
             { lessonId: 'iwa-l1', title: 'What is Web AI? Introduction', videoUrl: 'https://www.youtube.com/embed/KJgsSFOSQv0?rel=0', pdfUrl: PDFS.webAI, order: 1 },
             { lessonId: 'iwa-l2', title: 'TensorFlow.js Crash Course', videoUrl: 'https://www.youtube.com/embed/EoYfa6mYOG4?rel=0', pdfUrl: PDFS.webAI, order: 2 },
@@ -86,7 +86,7 @@ const courses = [
         icon: '🐍',
         description: 'Start your coding journey with Python — the world\'s most popular programming language. Learn variables, loops, functions, and more.',
         price: 0, isFree: true, isPremium: false,
-        duration: '3 Weeks', level: 'Beginner', isActive: true, examPassPercent: 60,
+        duration: '25 Hours', level: 'Beginner', isActive: true, examPassPercent: 60,
         lessons: [
             { lessonId: 'pyb-l1', title: 'Python Basics: Syntax & Variables', videoUrl: 'https://www.youtube.com/embed/_uQrJ0TkZlc?rel=0', pdfUrl: PDFS.python, order: 1 },
             { lessonId: 'pyb-l2', title: 'Python Functions & Loops', videoUrl: 'https://www.youtube.com/embed/rfscVS0vtbw?rel=0', pdfUrl: PDFS.python, order: 2 },
@@ -118,7 +118,7 @@ const courses = [
         icon: '📈',
         description: 'Understand how to grow brands online using SEO, social media, PPC, and content marketing strategies.',
         price: 0, isFree: true, isPremium: false,
-        duration: '1 Week', level: 'Beginner', isActive: true, examPassPercent: 60,
+        duration: '8 Hours', level: 'Beginner', isActive: true, examPassPercent: 60,
         lessons: [
             { lessonId: 'dmb-l1', title: 'SEO Fundamentals for Beginners', videoUrl: 'https://www.youtube.com/embed/nU-IIXBWlS4?rel=0', pdfUrl: PDFS.marketing, order: 1 },
             { lessonId: 'dmb-l2', title: 'Social Media Marketing Strategy', videoUrl: 'https://www.youtube.com/embed/nL-MRi7dqPw?rel=0', pdfUrl: PDFS.marketing, order: 2 },
@@ -211,7 +211,7 @@ const courses = [
         icon: '📊',
         description: 'An introductory guide to analyzing real-world data using Pandas, Matplotlib, and AI-powered tools.',
         price: 0, isFree: true, isPremium: false,
-        duration: '4 Weeks', level: 'Beginner', isActive: true, examPassPercent: 60,
+        duration: '35 Hours', level: 'Beginner', isActive: true, examPassPercent: 60,
         lessons: [
             { lessonId: 'dsa-l1', title: 'Python for Data Science — Pandas & NumPy', videoUrl: 'https://www.youtube.com/embed/LHBE0usLVCI?rel=0', pdfUrl: PDFS.dataScience, order: 1 },
             { lessonId: 'dsa-l2', title: 'Data Visualization with Matplotlib & Seaborn', videoUrl: 'https://www.youtube.com/embed/a9UrKTVEeZA?rel=0', pdfUrl: PDFS.dataScience, order: 2 },
@@ -246,7 +246,7 @@ const courses = [
         icon: '⚛️',
         description: 'Build industrial-grade full-stack web applications with MongoDB, Express.js, React.js, and Node.js.',
         price: getRandomPrice(59, 149), isFree: false, isPremium: true,
-        duration: '8 Weeks', level: 'Advanced', isActive: true, examPassPercent: 60,
+        duration: '60 Hours', level: 'Advanced', isActive: true, examPassPercent: 60,
         lessons: [
             { lessonId: 'mern-l1', title: 'MERN Stack Architecture Overview', videoUrl: 'https://www.youtube.com/embed/7CqJlxBYj-M?rel=0', pdfUrl: PDFS.mern, order: 1 },
             { lessonId: 'mern-l2', title: 'Node.js & Express.js Backend Crash Course', videoUrl: 'https://www.youtube.com/embed/L72fhGm1tfE?rel=0', pdfUrl: PDFS.mern, order: 2 },
@@ -309,7 +309,7 @@ const courses = [
         icon: '☁️',
         description: 'Deploy, manage, and scale real applications on Amazon Web Services — the world\'s most popular cloud platform.',
         price: getRandomPrice(59, 149), isFree: false, isPremium: true,
-        duration: '6 Weeks', level: 'Intermediate', isActive: true, examPassPercent: 60,
+        duration: '45 Hours', level: 'Intermediate', isActive: true, examPassPercent: 60,
         lessons: [
             { lessonId: 'aws-l1', title: 'AWS Core Services Overview', videoUrl: 'https://www.youtube.com/embed/Z3SYDTn3f11?rel=0', pdfUrl: PDFS.aws, order: 1 },
             { lessonId: 'aws-l2', title: 'EC2, S3 & IAM — AWS Essentials', videoUrl: 'https://www.youtube.com/embed/ulprqHHWlng?rel=0', pdfUrl: PDFS.aws, order: 2 },
@@ -340,7 +340,7 @@ const courses = [
         icon: '🧥',
         description: 'Learn how to lead the development of AI-driven products from concept to launch, managing teams and stakeholders.',
         price: getRandomPrice(59, 149), isFree: false, isPremium: true,
-        duration: '5 Weeks', level: 'Intermediate', isActive: true, examPassPercent: 60,
+        duration: '30 Hours', level: 'Intermediate', isActive: true, examPassPercent: 60,
         lessons: [
             { lessonId: 'aipm-l1', title: 'Introduction to AI Product Management', videoUrl: 'https://www.youtube.com/embed/30nB4v-Ld9I?rel=0', pdfUrl: PDFS.aiPM, order: 1 },
             { lessonId: 'aipm-l2', title: 'Agile Process for AI Products', videoUrl: 'https://www.youtube.com/embed/Z9QbYZh1YXY?rel=0', pdfUrl: PDFS.aiPM, order: 2 },
@@ -371,7 +371,7 @@ const courses = [
         icon: '🛡️',
         description: 'Protect your applications and networks from sophisticated cyber threats using AI-powered defense strategies.',
         price: getRandomPrice(59, 149), isFree: false, isPremium: true,
-        duration: '10 Weeks', level: 'Advanced', isActive: true, examPassPercent: 60,
+        duration: '80 Hours', level: 'Advanced', isActive: true, examPassPercent: 60,
         lessons: [
             { lessonId: 'cs-l1', title: 'Modern Cyber Threats & Attack Vectors', videoUrl: 'https://www.youtube.com/embed/3Kq1MIfTWCE?rel=0', pdfUrl: PDFS.cyber, order: 1 },
             { lessonId: 'cs-l2', title: 'Network Security & Firewalls', videoUrl: 'https://www.youtube.com/embed/r926DREXZ0I?rel=0', pdfUrl: PDFS.cyber, order: 2 },

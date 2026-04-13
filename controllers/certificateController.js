@@ -6,7 +6,7 @@ const path = require('path');
  * Generate a certificate PDF for a user who completed a course.
  * Returns the file path of the generated certificate.
  */
-async function generateCertificate({ userName, courseName, completionDate, certId }) {
+async function generateCertificate({ userName, courseName, completionDate, certId, duration }) {
     const certsDir = path.join(__dirname, '..', 'certificates');
     if (!fs.existsSync(certsDir)) {
         fs.mkdirSync(certsDir, { recursive: true });
@@ -99,6 +99,18 @@ async function generateCertificate({ userName, courseName, completionDate, certI
             .fillColor('#1e293b')
             .font('Helvetica-Bold')
             .text(completionDate, 100, footerY + 15);
+
+        // Course Duration
+        if (duration) {
+            doc.fontSize(10)
+                .fillColor('#94a3b8')
+                .font('Helvetica')
+                .text('COURSE DURATION', 100, footerY + 40);
+            doc.fontSize(12)
+                .fillColor('#1e293b')
+                .font('Helvetica-Bold')
+                .text(duration, 100, footerY + 55);
+        }
 
         // Certificate ID (Small/Subtle)
         doc.fontSize(8)

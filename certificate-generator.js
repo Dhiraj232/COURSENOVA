@@ -23,14 +23,16 @@ let completedCourses = JSON.parse(localStorage.getItem('completedCourses')) || [
         completionDate: '2025-01-15',
         studentName: 'John Doe',
         certificateId: 'RENV-2025-CP-001',
-        grade: 'A+'
+        grade: 'A+',
+        duration: '12 Hours'
     },
     {
         courseName: 'Data Structures Advanced',
         completionDate: '2025-01-20',
         studentName: 'John Doe',
         certificateId: 'RENV-2025-DS-002',
-        grade: 'A'
+        grade: 'A',
+        duration: '20 Hours'
     }
 ];
 
@@ -189,6 +191,13 @@ function generateCertificate(index) {
     ctx.fillText(`Completed on: ${formatDate(course.completionDate)}`, canvas.width / 2 - 200, 580);
     
     ctx.fillText(`Grade: ${course.grade}`, canvas.width / 2 + 200, 580);
+
+    // Duration (New)
+    if (course.duration) {
+        ctx.font = 'bold 20px Poppins, sans-serif';
+        ctx.fillStyle = CERTIFICATE_CONFIG.borderColor;
+        ctx.fillText(`Course Duration: ${course.duration}`, canvas.width / 2, 620);
+    }
 
     // Certificate ID
     ctx.font = '14px Inter, sans-serif';
