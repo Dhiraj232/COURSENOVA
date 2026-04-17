@@ -84,8 +84,8 @@ const CourseProgress = require('./models/CourseProgress');
 passport.use(new GoogleStrategy({
   clientID: GOOGLE_CLIENT_ID,
   clientSecret: GOOGLE_CLIENT_SECRET,
-  // ✅ PORT 5000 UNIFICATION: Hardcoded local callback
-  callbackURL: 'https://coursenova.in/api/auth/google/callback',
+  // ✅ PORT 5000 UNIFICATION: Configured callback
+  callbackURL: process.env.GOOGLE_CALLBACK_URL || 'https://www.coursenova.in/api/auth/google/callback',
   proxy: true
 },
 
@@ -181,7 +181,6 @@ app.set('trust proxy', 1);
 
 // ─── 1. CORS — MUST be first, before all other middleware ────────────────────
 const allowedOrigins = [
-  "https://coursenova.in",
   "https://www.coursenova.in"
 ];
 
@@ -230,7 +229,7 @@ app.use(helmet({
       "script-src-attr": ["'unsafe-inline'"],
       "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdnjs.cloudflare.com"],
       "font-src": ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com"],
-      "connect-src": ["'self'", "https://*.google-analytics.com", "https://*.analytics.google.com", "https://*.googletagmanager.com", "https://sdk.cashfree.com", "https://sandbox.cashfree.com", "https://api.cashfree.com", "https://coursenova.in", "wss://coursenova.in", "ws://*", "wss://*", "https://cdn.socket.io"],
+      "connect-src": ["'self'", "https://*.google-analytics.com", "https://*.analytics.google.com", "https://*.googletagmanager.com", "https://sdk.cashfree.com", "https://sandbox.cashfree.com", "https://api.cashfree.com", "https://www.coursenova.in", "wss://www.coursenova.in", "ws://*", "wss://*", "https://cdn.socket.io"],
       "form-action": ["'self'", "https://sdk.cashfree.com", "https://sandbox.cashfree.com", "https://api.cashfree.com"],
       "upgrade-insecure-requests": []
     },
@@ -431,7 +430,7 @@ app.post('/api/request-verification', (req, res) => {
   user.collegeVerification = { collegeEmail, token, expiry: Date.now() + 24 * 60 * 60 * 1000 };
   writeUsers(users);
   // In production send verification email to collegeEmail with tokenized link
-  console.log(`College verification link (mock): https://coursenova.in/api/verify-college?token=${token}`);
+  console.log(`College verification link (mock): ${process.env.BASE_URL || 'https://www.coursenova.in'}/api/verify-college?token=${token}`);
   res.json({ ok: true, message: 'Verification email sent (mock). Check server console for link.' });
 });
 
@@ -561,7 +560,6 @@ process.on('unhandledRejection', err => {
 const io = require('socket.io')(server, {
   cors: {
     origin: [
-      "https://coursenova.in",
       "https://www.coursenova.in"
     ],
     methods: ["GET", "POST"]

@@ -32,7 +32,7 @@ let localTimeSpent = 0;
  * PRODUCTION-READY SOCKET SYSTEM
  */
 function initLiveSystem(userId, token) {
-    const socketUrl = 'https://coursenova.in';
+    const socketUrl = 'https://www.coursenova.in';
     socket = io(socketUrl);
 
     socket.on('connect', () => {

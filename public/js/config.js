@@ -11,8 +11,8 @@
  */
 (function () {
     // ✅ PRODUCTION UNIFICATION
-    window.COURSENOVA_API = 'https://coursenova.in';
-    window.FRONTEND_URL   = 'https://coursenova.in';
+    window.COURSENOVA_API = 'https://www.coursenova.in';
+    window.FRONTEND_URL   = 'https://www.coursenova.in';
 
     // Also expose a convenience function for building API URLs
     window.apiUrl = function (path) {

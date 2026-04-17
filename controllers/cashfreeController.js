@@ -339,7 +339,7 @@ exports.createOrder = async (req, res) => {
         // ── Generate unique order ID ─────────────────────────────
         const orderId = `coursenova_${String(userId).slice(-6)}_${Date.now()}`;
 
-        const baseUrl = process.env.BASE_URL || 'https://coursenova.in';
+        const baseUrl = process.env.BASE_URL || 'https://www.coursenova.in';
         const isLocal = false;
 
         // return_url: redirect back to context with verify params
