@@ -59,9 +59,9 @@ if (process.env.BASE_URL && process.env.BASE_URL.includes('localhost') && proces
 }
 
 // ─── MongoDB Connection ───────────────────────────────────────
-const MONGO_URI = isProduction ? process.env.MONGO_URI : (process.env.MONGO_URI || 'mongodb://localhost:27017/coursenova-bookstore');
+const MONGO_URI = process.env.MONGO_URI;
 
-if (isProduction && !MONGO_URI) {
+if (!MONGO_URI) {
   console.error('❌ CRITICAL ERROR: MONGO_URI missing in production! Exiting...');
   process.exit(1);
 }
@@ -85,7 +85,7 @@ passport.use(new GoogleStrategy({
   clientID: GOOGLE_CLIENT_ID,
   clientSecret: GOOGLE_CLIENT_SECRET,
   // ✅ PORT 5000 UNIFICATION: Hardcoded local callback
-  callbackURL: 'http://localhost:5000/api/auth/google/callback',
+  callbackURL: 'https://coursenova.in/api/auth/google/callback',
   proxy: true
 },
 
@@ -181,7 +181,8 @@ app.set('trust proxy', 1);
 
 // ─── 1. CORS — MUST be first, before all other middleware ────────────────────
 const allowedOrigins = [
-  "http://localhost:5000"
+  "https://coursenova.in",
+  "https://www.coursenova.in"
 ];
 
 const corsOptions = {
@@ -229,7 +230,7 @@ app.use(helmet({
       "script-src-attr": ["'unsafe-inline'"],
       "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdnjs.cloudflare.com"],
       "font-src": ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com"],
-      "connect-src": ["'self'", "https://*.google-analytics.com", "https://*.analytics.google.com", "https://*.googletagmanager.com", "https://sdk.cashfree.com", "https://sandbox.cashfree.com", "https://api.cashfree.com", "http://localhost:5000", "ws://localhost:5000", "http://127.0.0.1:5000", "ws://127.0.0.1:5000", "ws://*", "wss://*", "https://cdn.socket.io"],
+      "connect-src": ["'self'", "https://*.google-analytics.com", "https://*.analytics.google.com", "https://*.googletagmanager.com", "https://sdk.cashfree.com", "https://sandbox.cashfree.com", "https://api.cashfree.com", "https://coursenova.in", "wss://coursenova.in", "ws://*", "wss://*", "https://cdn.socket.io"],
       "form-action": ["'self'", "https://sdk.cashfree.com", "https://sandbox.cashfree.com", "https://api.cashfree.com"],
       "upgrade-insecure-requests": []
     },
@@ -430,7 +431,7 @@ app.post('/api/request-verification', (req, res) => {
   user.collegeVerification = { collegeEmail, token, expiry: Date.now() + 24 * 60 * 60 * 1000 };
   writeUsers(users);
   // In production send verification email to collegeEmail with tokenized link
-  console.log(`College verification link (mock): http://localhost:${PORT || 4000}/api/verify-college?token=${token}`);
+  console.log(`College verification link (mock): https://coursenova.in/api/verify-college?token=${token}`);
   res.json({ ok: true, message: 'Verification email sent (mock). Check server console for link.' });
 });
 
@@ -560,7 +561,8 @@ process.on('unhandledRejection', err => {
 const io = require('socket.io')(server, {
   cors: {
     origin: [
-      "http://localhost:5000"
+      "https://coursenova.in",
+      "https://www.coursenova.in"
     ],
     methods: ["GET", "POST"]
   }

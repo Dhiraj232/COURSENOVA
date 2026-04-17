@@ -5,7 +5,7 @@ const mongoose = require('mongoose');
 const Book = require('./models/Book');
 const Seller = require('./models/Seller');
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/coursenova-bookstore';
+const MONGO_URI = process.env.MONGO_URI;
 
 async function seed() {
   try {

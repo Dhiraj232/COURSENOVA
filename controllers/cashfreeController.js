@@ -339,8 +339,8 @@ exports.createOrder = async (req, res) => {
         // ── Generate unique order ID ─────────────────────────────
         const orderId = `coursenova_${String(userId).slice(-6)}_${Date.now()}`;
 
-        const baseUrl = process.env.BASE_URL || 'https://coursenova-ai.onrender.com';
-        const isLocal = baseUrl.includes('localhost');
+        const baseUrl = process.env.BASE_URL || 'https://coursenova.in';
+        const isLocal = false;
 
         // return_url: redirect back to context with verify params
         let returnUrl = `${baseUrl}/course-content.html?course=${course._id}&payment=verify&order_id={order_id}`;
@@ -350,16 +350,12 @@ exports.createOrder = async (req, res) => {
             returnUrl = `${baseUrl}/mock-tests.html?payment=verify&order_id={order_id}&pack_id=${mockParam}`;
         }
 
-        // notify_url: Cashfree PRODUCTION cannot reach localhost — skip it in local dev
-        // In production (Render/VPS), this will be set correctly via BASE_URL env var
-        const notifyUrl = isLocal
-            ? undefined  // Skip webhook URL for local — verification will happen via return_url instead
-            : `${baseUrl}/api/cashfree/webhook`;
+        // notify_url: Ensure Cashfree webhooks definitely reach our server
+        const notifyUrl = `${baseUrl}/api/cashfree/webhook`;
 
-        const orderMeta = { return_url: returnUrl };
-        if (notifyUrl) orderMeta.notify_url = notifyUrl;
+        const orderMeta = { return_url: returnUrl, notify_url: notifyUrl };
 
-        console.log(`[createOrder] Base: ${baseUrl} | isLocal: ${isLocal} | returnUrl: ${returnUrl}`);
+        console.log(`[createOrder] Base: ${baseUrl} | returnUrl: ${returnUrl}`);
 
         const cfRequest = {
             order_amount:   Number(course.price),

@@ -7,7 +7,7 @@ const mongoose = require('mongoose');
 const MockTestPack = require('./models/MockTestPack');
 const PracticeQuestion = require('./models/PracticeQuestion');
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/coursenova';
+const MONGO_URI = process.env.MONGO_URI;
 
 const newSeries = [
     // ─── NEW FREE SERIES (6) ───────────────────────────────────────────────────

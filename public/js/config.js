@@ -10,9 +10,9 @@
  * as the website itself, which works for same-server deployments.
  */
 (function () {
-    // ✅ PORT 5000 UNIFICATION
-    window.COURSENOVA_API = 'http://localhost:5000';
-    window.FRONTEND_URL   = 'http://localhost:5000';
+    // ✅ PRODUCTION UNIFICATION
+    window.COURSENOVA_API = 'https://coursenova.in';
+    window.FRONTEND_URL   = 'https://coursenova.in';
 
     // Also expose a convenience function for building API URLs
     window.apiUrl = function (path) {

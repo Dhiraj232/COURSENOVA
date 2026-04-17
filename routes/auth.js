@@ -60,8 +60,8 @@ router.get('/google/callback',
         // then redirects the user to the dashboard. This is the standard
         // pattern for SPA + server-side OAuth.
         const userStr = encodeURIComponent(JSON.stringify(userSafe));
-        // ✅ PORT 5000 UNIFICATION: Always redirect to our own static frontend
-        const REDIRECT_URL = 'http://localhost:5000/auth-callback.html';
+        // ✅ PRODUCTION UNIFICATION: Always redirect to our own static frontend
+        const REDIRECT_URL = 'https://coursenova.in/auth-callback.html';
         res.redirect(`${REDIRECT_URL}?token=${token}&user=${userStr}`);
     })
 );
