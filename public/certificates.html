@@ -138,6 +138,23 @@
             gap: 24px;
         }
 
+        /* ── Section Headers ── */
+        .section-header {
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .section-header h2 {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: #1e293b;
+            padding-left: 15px;
+            border-left: 4px solid var(--brand);
+            line-height: 1.2;
+        }
+
         /* ── Course Card ── */
         .course-card {
             background: var(--card);
@@ -564,13 +581,38 @@
 
         <!-- Actual grids grouped by free / premium -->
         <div id="freeSection" style="display:none; margin-bottom: 50px;">
-            <h2 style="font-size: 1.6rem; font-weight: 800; margin-bottom: 24px; color: #1e293b;">✨ Free Foundation Courses</h2>
+            <div class="section-header">
+                <h2 style="border-left-color: var(--green);">✨ Free Foundation Courses</h2>
+            </div>
             <div class="certs-grid" id="freeCoursesGrid"></div>
         </div>
 
         <div id="premiumSection" style="display:none;">
-            <h2 style="font-size: 1.6rem; font-weight: 800; margin-bottom: 24px; color: #1e293b;">💎 Premium Course Tracks</h2>
+            <div class="section-header">
+                <h2 style="border-left-color: var(--brand);">Professional Skills & Tech Career Programs</h2>
+            </div>
             <div class="certs-grid" id="premiumCoursesGrid"></div>
+        </div>
+
+        <div id="nursingSection" style="display:none; margin-bottom: 50px;">
+            <div class="section-header">
+                <h2 style="border-left-color: #0d9488;">BSc NURSING STUDENTS</h2>
+            </div>
+            <div class="certs-grid" id="nursingCoursesGrid"></div>
+        </div>
+
+        <div id="pharmaSection" style="display:none; margin-bottom: 50px;">
+            <div class="section-header">
+                <h2 style="border-left-color: #d946ef;">B Pharma Students</h2>
+            </div>
+            <div class="certs-grid" id="pharmaCoursesGrid"></div>
+        </div>
+
+        <div id="agriSection" style="display:none; margin-bottom: 50px;">
+            <div class="section-header">
+                <h2 style="border-left-color: #16a34a;">Agriculture Students</h2>
+            </div>
+            <div class="certs-grid" id="agriCoursesGrid"></div>
         </div>
     </div>
 
@@ -673,7 +715,8 @@
                                 'Verified Certificate'
                               ],
                         price: c.price,
-                        isFree: c.isFree
+                        isFree: c.isFree,
+                        category: c.category || 'Tech'
                     }));
                 }
             } catch (err) {
@@ -715,15 +758,22 @@
             if (filter === 'Intermediate') courses = COURSES.filter(c => c.level === 'Intermediate');
             if (filter === 'completed') courses = COURSES.filter(c => !!completedMap[c.id]);
 
+
             renderGrids(courses);
         }
 
         function renderGrids(coursesList) {
             const freeGrid = document.getElementById('freeCoursesGrid');
             const premiumGrid = document.getElementById('premiumCoursesGrid');
+            const nursingGrid = document.getElementById('nursingCoursesGrid');
+            const pharmaGrid = document.getElementById('pharmaCoursesGrid');
+            const agriGrid = document.getElementById('agriCoursesGrid');
             
             const freeCourses = coursesList.filter(c => c.isFree);
-            const premiumCourses = coursesList.filter(c => !c.isFree);
+            const nursingCourses = coursesList.filter(c => !c.isFree && c.category === 'BSc NURSING STUDENTS');
+            const pharmaCourses = coursesList.filter(c => !c.isFree && c.category === 'B Pharma Students');
+            const agriCourses = coursesList.filter(c => !c.isFree && c.category === 'Agriculture Students');
+            const premiumCourses = coursesList.filter(c => !c.isFree && !['BSc NURSING STUDENTS', 'B Pharma Students', 'Agriculture Students'].includes(c.category));
 
             const getEmptyHtml = (msg) => `<div style="grid-column:1/-1;text-align:center;padding:40px 20px;color:var(--muted);">
                     <div style="font-size:2.5rem;margin-bottom:12px;">📭</div>
@@ -734,6 +784,27 @@
                 freeGrid.innerHTML = freeCourses.length 
                     ? freeCourses.map(c => buildCard(c)).join('') 
                     : getEmptyHtml("No free courses found matching your criteria.");
+            }
+            if (nursingGrid) {
+                nursingGrid.innerHTML = nursingCourses.length 
+                    ? nursingCourses.map(c => buildCard(c)).join('') 
+                    : getEmptyHtml("Coming Soon!");
+                const section = document.getElementById('nursingSection');
+                if (section) section.style.display = nursingCourses.length ? 'block' : 'none';
+            }
+            if (pharmaGrid) {
+                pharmaGrid.innerHTML = pharmaCourses.length 
+                    ? pharmaCourses.map(c => buildCard(c)).join('') 
+                    : getEmptyHtml("Coming Soon!");
+                const section = document.getElementById('pharmaSection');
+                if (section) section.style.display = pharmaCourses.length ? 'block' : 'none';
+            }
+            if (agriGrid) {
+                agriGrid.innerHTML = agriCourses.length 
+                    ? agriCourses.map(c => buildCard(c)).join('') 
+                    : getEmptyHtml("Coming Soon!");
+                const section = document.getElementById('agriSection');
+                if (section) section.style.display = agriCourses.length ? 'block' : 'none';
             }
             if (premiumGrid) {
                 premiumGrid.innerHTML = premiumCourses.length 

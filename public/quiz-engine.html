@@ -11,7 +11,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/navigation.css">
-    <script src="js/navigation.js"></script>
     <style>
         :root {
             --glass-bg: rgba(255, 255, 255, 0.7);
@@ -27,12 +26,8 @@
             padding: 0;
         }
 
-        /* Platform Navbar Integration - HIDE FOR FULL SCREEN TEST */
-        .navbar {
-            display: none !important;
-        }
+        .navbar { display: none !important; }
 
-        /* Quiz Header - Top Level Now */
         .quiz-header {
             background: white;
             padding: 15px 40px;
@@ -62,7 +57,6 @@
             color: #64748b;
         }
 
-        /* Quiz Main Layout */
         .quiz-container {
             max-width: 1400px;
             margin: 30px auto;
@@ -93,10 +87,7 @@
             color: #1e293b;
         }
 
-        .options-grid {
-            display: grid;
-            gap: 15px;
-        }
+        .options-grid { display: grid; gap: 15px; }
 
         .option-btn {
             padding: 22px 28px;
@@ -137,7 +128,6 @@
             color: #991b1b !important;
         }
 
-        /* Sidebar Palette */
         .nav-sidebar {
             background: white;
             padding: 30px;
@@ -147,13 +137,6 @@
             height: fit-content;
             position: sticky;
             top: 90px;
-        }
-
-        .nav-sidebar h3 {
-            font-size: 1.2rem;
-            margin-bottom: 25px;
-            font-weight: 800;
-            color: #1e293b;
         }
 
         .num-grid {
@@ -177,24 +160,9 @@
             transition: all 0.2s;
         }
 
-        .num-btn:hover {
-            border-color: #6366f1;
-            color: #6366f1;
-        }
+        .num-btn.answered { background: #6366f1; color: white; border-color: #6366f1; }
+        .num-btn.current { border: 2.5px solid #6366f1; color: #6366f1; box-shadow: 0 0 15px rgba(99, 102, 241, 0.2); }
 
-        .num-btn.answered {
-            background: #6366f1;
-            color: white;
-            border-color: #6366f1;
-        }
-
-        .num-btn.current {
-            border: 2.5px solid #6366f1;
-            color: #6366f1;
-            box-shadow: 0 0 15px rgba(99, 102, 241, 0.2);
-        }
-
-        /* Controls */
         .quiz-controls {
             display: flex;
             justify-content: space-between;
@@ -215,37 +183,9 @@
             font-size: 1.05rem;
         }
 
-        .btn-prev {
-            background: #f1f5f9;
-            color: #64748b;
-        }
-
-        .btn-prev:hover:not(:disabled) {
-            background: #e2e8f0;
-            color: #1e293b;
-        }
-
-        .btn-next {
-            background: var(--primary-gradient);
-            color: white;
-            box-shadow: 0 10px 20px rgba(99, 102, 241, 0.2);
-        }
-
-        .btn-next:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 15px 30px rgba(99, 102, 241, 0.3);
-        }
-
-        .btn-submit {
-            background: #10b981;
-            color: white;
-            box-shadow: 0 10px 20px rgba(16, 185, 129, 0.2);
-        }
-
-        .btn-submit:hover {
-            background: #059669;
-            transform: translateY(-2px);
-        }
+        .btn-prev { background: #f1f5f9; color: #64748b; }
+        .btn-next { background: var(--primary-gradient); color: white; }
+        .btn-submit { background: #10b981; color: white; }
 
         .explanation-box {
             margin-top: 30px;
@@ -254,148 +194,25 @@
             border-radius: 20px;
             border-left: 6px solid #0ea5e9;
             display: none;
-            animation: slideUp 0.4s ease;
-        }
-
-        @keyframes slideUp {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .explanation-box h4 {
-            margin-top: 0;
-            color: #0369a1;
-            margin-bottom: 12px;
-            font-weight: 800;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        /* 1200px Breakpoint */
-        @media (max-width: 1200px) {
-            .quiz-container {
-                max-width: 95%;
-                gap: 20px;
-            }
-        }
-
-        /* 768px Breakpoint (Tablet/Large Mobile) */
-        @media (max-width: 768px) {
-            .quiz-header {
-                padding: 15px 20px;
-                flex-direction: column;
-                gap: 15px;
-                text-align: center;
-            }
-
-            .quiz-container {
-                grid-template-columns: 1fr;
-                margin-top: 20px;
-                padding: 0 15px;
-            }
-
-            .nav-sidebar {
-                display: none;
-            }
-
-            .question-card {
-                padding: 25px;
-                border-radius: 20px;
-                min-height: auto;
-            }
-
-            .question-text {
-                font-size: 1.25rem;
-                margin-bottom: 25px;
-            }
-
-            .option-btn {
-                padding: 18px 22px;
-                font-size: 1rem;
-            }
-
-            .quiz-controls {
-                flex-direction: column;
-                gap: 15px;
-            }
-
-            .btn-quiz {
-                width: 100%;
-                justify-content: center;
-                padding: 15px;
-            }
-        }
-
-        /* 480px Breakpoint (Small Phones) */
-        @media (max-width: 480px) {
-            .quiz-header h2 {
-                font-size: 1.2rem;
-            }
-
-            .timer-box {
-                padding: 8px 15px;
-                font-size: 0.9rem;
-            }
-
-            .progress-indicator {
-                font-size: 0.85rem;
-            }
-
-            .question-text {
-                font-size: 1.1rem;
-            }
-
-            .option-btn {
-                padding: 15px 20px;
-                font-size: 0.95rem;
-                border-radius: 15px;
-            }
         }
     </style>
-
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" href="/images/logo%20coursenova.png">
 </head>
 
 <body>
-    <nav class="navbar" id="navbar">
-        <div class="nav-container">
-            <a href="index.html" class="logo"><img src="images/logo%20coursenova.png" alt="COURSENOVA"> <span>COURSENOVA</span></a>
-            <div class="nav-search">
-                <input type="text" id="navbarSearch" placeholder="Search for courses, subjects...">
-                <button type="button" onclick="handleNavbarSearch()"><i class="fas fa-search"></i></button>
-            </div>
-            <ul class="nav-menu" id="navMenu"></ul>
-            <div class="nav-buttons" id="navButtons"></div>
-            <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
-        </div>
-    </nav>
-
-    <div class="quiz-header" style="top: 0; z-index: 1000;">
+    <div class="quiz-header">
         <div style="display: flex; align-items: center; gap: 20px;">
-            <a href="mock-tests.html"
-                style="color: #64748b; font-size: 1.1rem; text-decoration: none; display: flex; align-items: center; gap: 8px; font-weight: 600; margin-right: 15px;">
+            <a href="mock-tests.html" style="color: #64748b; font-size: 1.1rem; text-decoration: none; display: flex; align-items: center; gap: 8px; font-weight: 600;">
                 <i class="fas fa-arrow-left"></i> Back
             </a>
             <h2 id="quizTitle" style="font-weight: 800; margin: 0; font-size: 1.2rem;">Practice Test</h2>
         </div>
         <div id="quizMeta" style="display: flex; align-items: center; gap: 30px;">
-            <div class="progress-indicator">Question <span id="currentNum">1</span> / <span id="totalNum">20</span>
-            </div>
+            <div class="progress-indicator">Question <span id="currentNum">1</span> / <span id="totalNum">20</span></div>
             <div class="timer-box" id="timerBox">
                 <i class="fas fa-clock"></i>
                 <span id="timerText">00:00</span>
             </div>
-            <button class="btn-quiz btn-submit" id="mainSubmit" style="padding: 10px 20px; font-size: 0.9rem;">Submit
-                Test</button>
+            <button class="btn-quiz btn-submit" id="mainSubmit" style="padding: 10px 20px; font-size: 0.9rem;">Submit Test</button>
         </div>
     </div>
 
@@ -403,51 +220,38 @@
         <div class="quiz-main">
             <div class="question-card" id="questionCard">
                 <div class="question-text" id="questionText">Loading question...</div>
-                <div class="options-grid" id="optionsGrid">
-                    <!-- Dynamic -->
-                </div>
-                <!-- Explanation -->
+                <div class="options-grid" id="optionsGrid"></div>
                 <div class="explanation-box" id="explanationBox">
                     <h4><i class="fas fa-lightbulb"></i> Explanation</h4>
                     <p id="explanationText"></p>
                 </div>
-
                 <div class="quiz-controls">
-                    <button class="btn-quiz btn-prev" id="btnPrev" onclick="changeQuestion(-1)"><i
-                            class="fas fa-arrow-left"></i> Previous</button>
-                    <button class="btn-quiz btn-next" id="btnNext" onclick="changeQuestion(1)">Next <i
-                            class="fas fa-arrow-right"></i></button>
+                    <button class="btn-quiz btn-prev" id="btnPrev" onclick="changeQuestion(-1)"><i class="fas fa-arrow-left"></i> Previous</button>
+                    <button class="btn-quiz btn-next" id="btnNext" onclick="changeQuestion(1)">Next <i class="fas fa-arrow-right"></i></button>
                 </div>
             </div>
         </div>
 
         <aside class="nav-sidebar">
             <h3>Question Palette</h3>
-            <div class="num-grid" id="numberGrid">
-                <!-- Dynamic -->
-            </div>
-            <div style="margin-top: 30px; font-size: 0.8rem; color: #64748b; padding-top: 20px; border-top: 1px solid #e2e8f0;">
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div style="display: flex; align-items: center; gap: 8px;"><span style="width:14px; height:14px; background:#6366f1; border-radius:4px;"></span> Answered</div>
-                    <div style="display: flex; align-items: center; gap: 8px;"><span style="width:14px; height:14px; background:#f8fafc; border:2px solid #e2e8f0; border-radius:4px;"></span> Not Visited</div>
-                </div>
-            </div>
+            <div class="num-grid" id="numberGrid"></div>
         </aside>
     </div>
 
+    <script src="js/navigation.js"></script>
     <script>
-        // Quiz State
         const urlParams = new URLSearchParams(window.location.search);
         const mode = urlParams.get('mode') || 'practice';
         const category = urlParams.get('category');
         const subject = urlParams.get('subject');
         const packId = urlParams.get('packId');
-        const courseId = urlParams.get('course'); // For Course Final Tests
+        const courseId = urlParams.get('course');
+        const displayLang = urlParams.get('lang') || 'en';
 
         let questions = [];
         let currentIndex = 0;
-        let userChoices = {}; // index: selectedOptionIndex (integer)
-        let timerSeconds = 3600; // 60 mins default
+        let userChoices = {};
+        let timerSeconds = 3600;
         let timerInterval;
 
         document.addEventListener('DOMContentLoaded', () => {
@@ -468,41 +272,38 @@
 
             try {
                 const res = await fetch(url, {
-                    headers: { 'Authorization': `Bearer ${localStorage.getItem('coursenova_token') || localStorage.getItem('coursenovaToken')}` }
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token')}` }
                 });
                 const data = await res.json();
 
                 if (courseId) {
                     questions = data;
                     document.getElementById('quizTitle').innerText = `${courseId} - Final Test`;
-                    timerSeconds = 1800; // 30 mins for course tests
                 } else if (data.ok) {
                     if (packId) {
                         if (data.locked) {
-                            alert('This test series is locked. Please purchase to continue.');
-                            window.location.href = 'mock-tests.html';
-                            return;
+                            alert('This pack is locked.'); window.location.href = 'mock-tests.html'; return;
                         }
-                        questions = data.pack.tests[0].questions;
-                        document.getElementById('quizTitle').innerText = data.pack.tests[0].testTitle;
-                        timerSeconds = data.pack.tests[0].durationMinutes * 60;
+                        const targetSub = urlParams.get('subject');
+                        const subtest = data.pack.tests.find(t => t.testTitle === targetSub) || data.pack.tests[0];
+                        questions = subtest.questions;
+                        document.getElementById('quizTitle').innerText = `${data.pack.title} - ${subtest.testTitle}`;
+                        timerSeconds = (subtest.durationMinutes || 30) * 60;
                     } else {
                         questions = data.questions;
-                        document.getElementById('quizTitle').innerText = `${subject} Practice - ${category}`;
+                        document.getElementById('quizTitle').innerText = `${subject} Practice`;
                     }
                 }
 
                 if (!questions || questions.length === 0) {
-                    document.getElementById('questionText').innerText = "No questions found for this topic yet. Check back soon!";
+                    document.getElementById('questionText').innerText = "No questions found.";
                     return;
                 }
 
+                document.getElementById('totalNum').innerText = questions.length;
                 renderPalette();
                 renderQuestion(0);
-                document.getElementById('totalNum').innerText = questions.length;
-                document.getElementById('currentNum').innerText = 1;
-
-            } catch (err) { console.error('Fetch error:', err); }
+            } catch (err) { console.error(err); }
         }
 
         function renderPalette() {
@@ -515,41 +316,40 @@
         function renderQuestion(index) {
             currentIndex = index;
             const q = questions[index];
-            document.getElementById('questionText').innerText = q.question;
+            const qText = (displayLang === 'hi' && q.question_hi) ? q.question_hi : q.question;
+            const qOpts = (displayLang === 'hi' && q.options_hi && q.options_hi.length) ? q.options_hi : q.options;
+
+            document.getElementById('questionText').innerText = qText;
             document.getElementById('currentNum').innerText = index + 1;
 
             const grid = document.getElementById('optionsGrid');
-            grid.innerHTML = q.options.map((opt, i) => `
+            grid.innerHTML = qOpts.map((opt, i) => `
                 <button class="option-btn ${userChoices[index] === i ? 'selected' : ''}" 
                         onclick="handleOptionSelect(${i})">${opt}</button>
             `).join('');
 
             document.getElementById('explanationBox').style.display = 'none';
-
-            if (mode === 'practice' && userChoices[index] !== undefined) {
-                showFeedback();
-            }
+            if (mode === 'practice' && userChoices[index] !== undefined) showFeedback();
 
             document.querySelectorAll('.num-btn').forEach(b => b.classList.remove('current'));
             document.getElementById(`pal-${index}`).classList.add('current');
-
             document.getElementById('btnPrev').disabled = (index === 0);
             document.getElementById('btnNext').innerText = (index === questions.length - 1) ? 'Finish' : 'Next';
         }
 
         function handleOptionSelect(optIdx) {
             if (mode === 'practice' && userChoices[currentIndex] !== undefined) return;
-
             userChoices[currentIndex] = optIdx;
             renderQuestion(currentIndex);
             document.getElementById(`pal-${currentIndex}`).classList.add('answered');
-
             if (mode === 'practice') showFeedback();
         }
 
         function showFeedback() {
             const q = questions[currentIndex];
             const btns = document.querySelectorAll('.option-btn');
+            
+            // The index of the correct answer is always determined by the English options
             const correctIdx = q.options.indexOf(q.correctAnswer);
 
             btns.forEach((btn, i) => {
@@ -561,28 +361,23 @@
             });
 
             const exp = document.getElementById('explanationBox');
-            if (q.explanation) {
-                document.getElementById('explanationText').innerText = q.explanation;
+            if (exp.style.display !== 'block') {
                 exp.style.display = 'block';
+                const qExp = (displayLang === 'hi' && q.explanation_hi) ? q.explanation_hi : q.explanation;
+                if (qExp) document.getElementById('explanationText').innerText = qExp;
             }
         }
 
         function changeQuestion(delta) {
             const newIndex = currentIndex + delta;
-            if (newIndex >= 0 && newIndex < questions.length) {
-                renderQuestion(newIndex);
-            } else if (newIndex === questions.length) {
-                submitTest();
-            }
+            if (newIndex >= 0 && newIndex < questions.length) renderQuestion(newIndex);
+            else if (newIndex === questions.length) submitTest();
         }
 
         function startTimer() {
             timerInterval = setInterval(() => {
                 timerSeconds--;
-                if (timerSeconds <= 0) {
-                    clearInterval(timerInterval);
-                    submitTest();
-                }
+                if (timerSeconds <= 0) { clearInterval(timerInterval); submitTest(); }
                 const mins = Math.floor(timerSeconds / 60);
                 const secs = timerSeconds % 60;
                 document.getElementById('timerText').innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
@@ -590,55 +385,41 @@
         }
 
         async function submitTest() {
-            if (!confirm('Are you sure you want to finish the test?')) return;
-
+            if (!confirm('Finish test?')) return;
             clearInterval(timerInterval);
 
             let correctCount = 0;
-            const finalAnswers = [];
-
             questions.forEach((q, i) => {
                 const selectedIdx = userChoices[i];
-                const selectedVal = selectedIdx !== undefined ? q.options[selectedIdx] : null;
-                if (selectedVal === q.correctAnswer) correctCount++;
-                finalAnswers.push(selectedIdx !== undefined ? selectedIdx : -1);
+                const correctIdx = q.options.indexOf(q.correctAnswer);
+                if (selectedIdx === correctIdx) correctCount++;
             });
 
             const payload = {
                 courseId: courseId || packId || `${category}-${subject}`,
-                testId: packId || courseId || 'Practice',
+                testId: packId || 'Practice',
                 packId: packId || 'Practice',
                 total: questions.length,
                 correct: correctCount,
                 score: correctCount,
-                mode: mode,
-                answers: finalAnswers,
-                correctAnswers: questions.map(q => q.options.indexOf(q.correctAnswer))
+                mode: mode
             };
 
             const endpoint = courseId ? '/api/course/submit-test' : '/api/mocktest/submit';
-
             try {
                 const res = await fetch(endpoint, {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('coursenova_token') || localStorage.getItem('coursenovaToken')}`,
+                        'Authorization': `Bearer ${localStorage.getItem('coursenovaToken')}`,
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(payload)
                 });
                 const data = await res.json();
-
-                if (data.ok) {
-                    window.location.href = `quiz-results.html?correct=${correctCount}&total=${questions.length}&mode=${mode}&course=${courseId || ''}`;
-                } else {
-                    alert(data.message || 'Submission failed');
-                }
-            } catch (err) { console.error('Submission error:', err); }
+                if (data.ok) window.location.href = `quiz-results.html?correct=${correctCount}&total=${questions.length}&mode=${mode}`;
+            } catch (err) { console.error(err); }
         }
-
         document.getElementById('mainSubmit').onclick = submitTest;
     </script>
 </body>
-
 </html>

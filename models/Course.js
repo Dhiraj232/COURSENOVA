@@ -62,6 +62,8 @@ const CourseSchema = new mongoose.Schema({
     // Admin can disable a course without deleting it
     isActive: { type: Boolean, default: true },
 
+    category: { type: String, default: '' },
+
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date, default: Date.now }
 });

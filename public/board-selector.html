@@ -161,7 +161,7 @@
 
         document.getElementById('startBtn').onclick = () => {
             const finalPackId = urlPackId || selectedBoard.toLowerCase().replace(/\s+/g, '-');
-            window.location.href = `test-player.html?board=${encodeURIComponent(selectedBoard)}&subject=${encodeURIComponent(selectedSubject)}&lang=${selectedLanguage}&packId=${encodeURIComponent(finalPackId)}`;
+            window.location.href = `quiz-engine.html?mode=mock&board=${encodeURIComponent(selectedBoard)}&subject=${encodeURIComponent(selectedSubject)}&lang=${selectedLanguage}&packId=${encodeURIComponent(finalPackId)}`;
         };
 
         init();

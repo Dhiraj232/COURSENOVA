@@ -76,10 +76,10 @@ async function loadMockPacks() {
 
 // ─── Difficulty Helper ───────────────────────────────────────────────────────
 function getDiff(pack) {
-    const hard  = ['JEE Main', 'NEET', 'UPSC', 'NDA', 'CA Foundation'];
-    const easy  = ['Coding & DSA', 'Typing & English', 'Communication Skills'];
-    if (hard.some(h => (pack.category || '').includes(h))) return { label: 'Hard',   cls: 'diff-hard' };
-    if (easy.some(e => (pack.category || '').includes(e))) return { label: 'Easy',   cls: 'diff-easy' };
+    const hard  = ['JEE Main', 'NEET', 'UPSC', 'NDA', 'CA Foundation', 'SSC CGL', 'Banking PO'];
+    const easy  = ['Coding & DSA', 'Typing & English', 'Communication Skills', 'Home Guard', 'Army GD'];
+    if (hard.some(h => (pack.category || '').includes(h) || (pack.title || '').includes(h))) return { label: 'Hard',   cls: 'diff-hard' };
+    if (easy.some(e => (pack.category || '').includes(e) || (pack.title || '').includes(e))) return { label: 'Easy',   cls: 'diff-easy' };
     return { label: 'Medium', cls: 'diff-medium' };
 }
 
@@ -89,9 +89,9 @@ function getCatIcon(category) {
         'CBSE Board': '📚', 'ICSE Board': '📖', 'State Board': '🏫',
         'JEE Main': '⚗️', 'NEET': '🩺', 'CUET': '🎓',
         'NDA': '🎖️', 'CA Foundation': '💼', 'UPSC': '🏛️',
-        'SSC CGL': '📋', 'SSC CHSL': '📝', 'Coding & DSA': '💻',
+        'SSC': '📋', 'Banking': '🏦', 'Coding & DSA': '💻',
         'English & IELTS': '🇬🇧', 'Aptitude & Reasoning': '🧠',
-        'Typing & English': '⌨️', 'Communication Skills': '🗣️'
+        'Govt Exam': '🏁', 'National Exam': '🚀', 'Tech Free': '💻'
     };
     for (const [k, v] of Object.entries(map)) {
         if ((category || '').includes(k)) return v;
@@ -101,27 +101,39 @@ function getCatIcon(category) {
 
 // ─── Render Packs ────────────────────────────────────────────────────────────
 function renderPacks(packs) {
-    const freeGrid    = document.getElementById('freeTestsGrid');
-    const premiumGrid = document.getElementById('premiumTestsGrid');
+    const techFreeGrid = document.getElementById('techFreeTestsGrid');
+    const freeGrid     = document.getElementById('freeTestsGrid'); 
+    const govtGrid     = document.getElementById('govtTestsGrid');
+    const nationalGrid = document.getElementById('nationalTestsGrid');
+    
+    const techFreeSection = document.getElementById('techFreeTestsSection');
+    const govtSection     = document.getElementById('govtTestsSection');
+    const nationalSection = document.getElementById('nationalTestsSection');
 
-    freeGrid.innerHTML    = '';
-    premiumGrid.innerHTML = '';
+    if (techFreeGrid) techFreeGrid.innerHTML = '';
+    if (freeGrid) freeGrid.innerHTML = '';
+    if (govtGrid) govtGrid.innerHTML = '';
+    if (nationalGrid) nationalGrid.innerHTML = '';
 
-    let freeCount = 0, paidCount = 0;
+    let techFreeCount = 0, freeCount = 0, govtCount = 0, nationalCount = 0;
 
     packs.forEach(pack => {
         const d        = getDiff(pack);
-        const totalQs  = pack.tests && pack.tests[0] ? pack.tests[0].numQuestions : 35;
-        const totalTime= pack.tests && pack.tests[0] ? pack.tests[0].durationMinutes : 60;
+        const totalQs  = pack.tests && pack.tests[0] ? pack.tests[0].numQuestions : 75;
+        const totalTime= pack.tests && pack.tests[0] ? pack.tests[0].durationMinutes : 90;
         const icon     = getCatIcon(pack.category);
         const marks    = totalQs * 4;
 
+        // Detection for Free vs Premium cards
+        const isActuallyFree = pack.isFree === true || pack.price === 0;
+
         const cardHTML = `
-        <div class="test-card" data-id="${pack.id}" data-free="${pack.isFree}" data-cat="${pack.category || ''}">
-            ${pack.isFree
+        <div class="test-card" data-id="${pack.id}">
+            ${isActuallyFree 
                 ? '<div class="badge-free"><i class="fas fa-gift"></i> FREE</div>'
                 : '<div class="badge-premium"><i class="fas fa-crown"></i> PREMIUM</div>'
             }
+            
             <div class="card-header">
                 <span class="subject-tag">${icon} ${pack.category || 'Test Series'}</span>
                 <h3>${pack.title}</h3>
@@ -142,28 +154,42 @@ function renderPacks(packs) {
             </div>
             <div class="card-footer">
                 <div class="price-box">
-                    ${pack.isFree
-                        ? `<span class="price-display" style="color:#10b981;">FREE</span> <span class="original-price">₹${pack.price || 199}</span>`
-                        : `<span class="price-display">₹${pack.price}</span>`
+                    ${isActuallyFree
+                        ? `<span class="price-display" style="color:#10b981;">FREE</span> <span class="original-price">₹199</span>`
+                        : `<span class="price-display">₹${pack.price || 99}</span> <span class="original-price">₹199</span>`
                     }
                 </div>
-                ${pack.isFree
+                ${isActuallyFree
                     ? `<button class="btn-action btn-start" onclick="handleStart('${pack.id}', true)">
                           Start Now <i class="fas fa-arrow-right"></i>
                        </button>`
                     : `<button class="btn-action btn-unlock" onclick="handleStart('${pack.id}', false)">
-                          Unlock ₹${pack.price} <i class="fas fa-lock-open"></i>
+                          Unlock Now <i class="fas fa-lock"></i>
                        </button>`
                 }
             </div>
         </div>`;
 
-        if (pack.isFree) { freeGrid.innerHTML  += cardHTML; freeCount++; }
-        else             { premiumGrid.innerHTML += cardHTML; paidCount++; }
+        if (pack.category === 'Tech Free') {
+            if (techFreeGrid) techFreeGrid.innerHTML += cardHTML;
+            techFreeCount++;
+        } else if (pack.category === 'Govt Exam') {
+            if (govtGrid) govtGrid.innerHTML += cardHTML;
+            govtCount++;
+        } else if (pack.category === 'National Exam') {
+            if (nationalGrid) nationalGrid.innerHTML += cardHTML;
+            nationalCount++;
+        } else {
+            if (freeGrid) freeGrid.innerHTML += cardHTML;
+            freeCount++;
+        }
     });
 
-    if (freeCount  === 0) freeGrid.innerHTML    = '<p style="color:#6b7280;padding:20px;text-align:center;">No free tests match your filter.</p>';
-    if (paidCount  === 0) premiumGrid.innerHTML = '<p style="color:#6b7280;padding:20px;text-align:center;">No premium tests match your filter.</p>';
+    if (techFreeSection) techFreeSection.style.display = techFreeCount > 0 ? 'block' : 'none';
+    if (govtSection) govtSection.style.display = govtCount > 0 ? 'block' : 'none';
+    if (nationalSection) nationalSection.style.display = nationalCount > 0 ? 'block' : 'none';
+    
+    if (freeCount === 0 && freeGrid) freeGrid.innerHTML = '<p style="color:#6b7280;padding:20px;text-align:center;">Coming soon!</p>';
 }
 
 // ─── Filter Setup ────────────────────────────────────────────────────────────

@@ -475,8 +475,10 @@
     </div>
 
     <script>
-        // ✅ LOCAL DEVELOPMENT ONLY
-        const BACKEND_URL = 'https://www.coursenova.in';
+        // ✅ DYNAMIC URL DETECTION
+        const BACKEND_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+            ? '' 
+            : 'https://www.coursenova.in';
 
         /**
          * ✅ FIXED: Redirects user to the correct backend OAuth initiation endpoint.

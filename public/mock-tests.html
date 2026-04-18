@@ -11,7 +11,7 @@
     <style>
         :root {
             --tb-blue-dark: #002244;
-            --tb-blue: #1C52A0; /* Testbook style blue */
+            --tb-blue: #1C52A0; 
             --tb-green: #10B981;
             --tb-green-hover: #059669;
             --tb-gray-100: #F3F4F6;
@@ -26,7 +26,6 @@
             padding-top: 70px;
         }
 
-        /* Hero Banner */
         .mock-hero {
             background: linear-gradient(135deg, var(--tb-blue-dark) 0%, var(--tb-blue) 100%);
             padding: 60px 20px;
@@ -48,13 +47,12 @@
             margin: 0 auto;
         }
 
-        /* Filter Section */
         .filter-section {
             background: white;
             padding: 20px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.02);
             position: sticky;
-            top: 70px; /* Under navbar */
+            top: 70px;
             z-index: 100;
             border-bottom: 1px solid var(--tb-gray-200);
         }
@@ -86,21 +84,6 @@
             transition: all 0.3s;
         }
 
-        .search-box input:focus {
-            background: white;
-            border-color: var(--tb-blue);
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(28, 82, 160, 0.1);
-        }
-
-        .search-box i {
-            position: absolute;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: #9ca3af;
-        }
-
         .filters-group {
             display: flex;
             gap: 15px;
@@ -119,11 +102,6 @@
             min-width: 160px;
         }
 
-        .filter-select:focus {
-            border-color: var(--tb-blue);
-        }
-
-        /* Main Content */
         .content-container {
             max-width: 1200px;
             margin: 40px auto;
@@ -154,18 +132,12 @@
             font-size: 0.95rem;
         }
 
-        .view-all:hover {
-            text-decoration: underline;
-        }
-
-        /* Test Cards Grid */
         .packs-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
             gap: 25px;
         }
 
-        /* Test Card UI */
         .test-card {
             background: white;
             border-radius: 12px;
@@ -178,221 +150,46 @@
             flex-direction: column;
         }
 
-        .test-card:hover {
-            transform: translateY(-5px);
-            box-shadow: var(--card-hover-shadow);
-            border-color: #d1d5db;
-        }
+        .test-card:hover { transform: translateY(-5px); box-shadow: var(--card-hover-shadow); }
 
-        /* Badges */
         .badge-premium {
-            position: absolute;
-            top: 15px;
-            right: 15px;
+            position: absolute; top: 15px; right: 15px;
             background: linear-gradient(to right, #fbbf24, #f59e0b);
-            color: white;
-            font-size: 0.75rem;
-            font-weight: 700;
-            padding: 4px 10px;
-            border-radius: 20px;
-            z-index: 2;
-            box-shadow: 0 2px 5px rgba(245, 158, 11, 0.4);
+            color: white; font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 20px;
         }
 
         .badge-free {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: rgba(16, 185, 129, 0.15);
-            color: #059669;
-            border: 1px solid rgba(16, 185, 129, 0.3);
-            font-size: 0.75rem;
-            font-weight: 700;
-            padding: 4px 10px;
-            border-radius: 20px;
-            z-index: 2;
+            position: absolute; top: 15px; right: 15px;
+            background: rgba(16, 185, 129, 0.15); color: #059669; border: 1px solid rgba(16, 185, 129, 0.3);
+            font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 20px;
         }
 
-        .card-header {
-            padding: 20px 20px 15px;
-            background: #f8fafc;
-            border-bottom: 1px solid #f1f5f9;
-        }
-
-        .card-header .subject-tag {
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: var(--tb-blue);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 8px;
-            display: block;
-        }
-
-        .card-header h3 {
-            font-family: 'Outfit', sans-serif;
-            font-weight: 700;
-            font-size: 1.15rem;
-            color: #1f2937;
-            margin: 0;
-            line-height: 1.4;
-        }
-
-        .card-body {
-            padding: 20px;
-            flex-grow: 1;
-        }
-
-        .test-stats {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .stat-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: #4b5563;
-            font-size: 0.9rem;
-            font-weight: 500;
-        }
-
-        .stat-item i {
-            color: #9ca3af;
-            width: 16px;
-            text-align: center;
-        }
-
-        .difficulty-bar {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 15px;
-        }
-
-        .difficulty-label {
-            font-size: 0.8rem;
-            font-weight: 600;
-            color: #6b7280;
-        }
-
-        .diff-dots {
-            display: flex;
-            gap: 3px;
-        }
-
-        .dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #e5e7eb;
-        }
-
+        .card-header { padding: 20px 20px 15px; background: #f8fafc; border-bottom: 1px solid #f1f5f9; }
+        .card-header .subject-tag { font-size: 0.8rem; font-weight: 600; color: var(--tb-blue); text-transform: uppercase; margin-bottom: 8px; display: block; }
+        .card-header h3 { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 1.15rem; color: #1f2937; margin: 0; }
+        .card-body { padding: 20px; flex-grow: 1; }
+        .test-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .stat-item { display: flex; align-items: center; gap: 8px; color: #4b5563; font-size: 0.9rem; font-weight: 500; }
+        .difficulty-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 15px; }
+        .difficulty-label { font-size: 0.8rem; font-weight: 600; color: #6b7280; }
+        .diff-dots { display: flex; gap: 3px; }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: #e5e7eb; }
         .diff-easy .dot:nth-child(1) { background: #10b981; }
         .diff-medium .dot:nth-child(1), .diff-medium .dot:nth-child(2) { background: #f59e0b; }
         .diff-hard .dot { background: #ef4444; }
-
-        .card-footer {
-            padding: 15px 20px;
-            border-top: 1px solid var(--tb-gray-200);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .price-display {
-            font-family: 'Outfit', sans-serif;
-            font-weight: 800;
-            font-size: 1.25rem;
-            color: #1f2937;
-        }
-
-        .original-price {
-            text-decoration: line-through;
-            color: #9ca3af;
-            font-size: 0.9rem;
-            font-weight: 500;
-            margin-left: 5px;
-        }
-
-        .btn-action {
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-weight: 600;
-            font-size: 0.95rem;
-            cursor: pointer;
-            transition: all 0.2s;
-            border: none;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn-start {
-            background: var(--tb-blue);
-            color: white;
-        }
-
-        .btn-start:hover {
-            background: #154284;
-        }
-
-        .btn-unlock {
-            background: #fdf2f8;
-            color: #db2777;
-            border: 1px solid #fbcfe8;
-        }
-
-        .btn-unlock:hover {
-            background: #fce7f3;
-            color: #be185d;
-        }
-        
-        .loading-skeleton {
-            background: #e2e8f0;
-            animation: pulse 1.5s infinite ease-in-out;
-            border-radius: 4px;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 0.6; }
-            50% { opacity: 1; }
-            100% { opacity: 0.6; }
-        }
-
-        /* Toast Notifications */
-        .toast-container {
-            position: fixed;
-            bottom: 20px; left: 50%; transform: translateX(-50%);
-            z-index: 10000; display: flex; flex-direction: column; gap: 10px;
-        }
-        
-        .toast {
-            background: #1f2937; color: white; padding: 12px 24px;
-            border-radius: 8px; font-weight: 500; font-size: 0.95rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 10px;
-            animation: slideUp 0.3s ease;
-        }
-
-        @media (max-width: 768px) {
-            .filter-container {
-                flex-direction: column;
-                align-items: stretch;
-            }
-            .filters-group {
-                flex-direction: column;
-            }
-        }
+        .card-footer { padding: 15px 20px; border-top: 1px solid var(--tb-gray-200); display: flex; align-items: center; justify-content: space-between; }
+        .price-display { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 1.25rem; color: #1f2937; }
+        .original-price { text-decoration: line-through; color: #9ca3af; font-size: 0.9rem; margin-left: 5px; }
+        .btn-action { padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; border: none; display: flex; align-items: center; gap: 8px; }
+        .btn-start { background: var(--tb-blue); color: white; }
+        .btn-unlock { background: #fdf2f8; color: #db2777; border: 1px solid #fbcfe8; }
+        .loading-skeleton { background: #e2e8f0; animation: pulse 1.5s infinite ease-in-out; border-radius: 4px; }
+        @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
+        .toast-container { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 10000; display: flex; flex-direction: column; gap: 10px; }
+        .toast { background: #1f2937; color: white; padding: 12px 24px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 10px; }
     </style>
-
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" href="/images/logo%20coursenova.png">
 </head>
 <body>
-
-    <!-- NAVBAR INJECTED -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
             <a href="index.html" class="logo"><img src="images/logo%20coursenova.png" alt="COURSENOVA"> <span>COURSENOVA</span></a>
@@ -406,36 +203,30 @@
         </div>
     </nav>
 
-    <!-- Hero -->
     <div class="mock-hero">
         <h1>🎯 Mock Tests & Exam Preparation</h1>
-        <p>35 MCQ Questions per test • Board Exams • JEE • NEET • UPSC • SSC • NDA • CUET • CA Foundation<br>Free practice tests + Premium exam series with detailed solutions.</p>
+        <p>Expertly curated mock tests for Boards, Government Exams, and Professional Certifications.<br>Free practice tests + Premium exam series with detailed solutions.</p>
     </div>
 
-    <!-- Filters -->
     <div class="filter-section">
         <div class="filter-container">
             <div class="search-box">
                 <i class="fas fa-search"></i>
-                <input type="text" id="testSearch" placeholder="Search for SSC, JEE, NEET tests...">
+                <input type="text" id="testSearch" placeholder="Search for exams...">
             </div>
             <div class="filters-group">
                 <select class="filter-select" id="subjectFilter">
                     <option value="">📋 All Categories</option>
                     <option value="CBSE">📚 CBSE Board</option>
-                    <option value="ICSE">📖 ICSE Board</option>
-                    <option value="State Board">🏫 State Board (Bihar/UP)</option>
+                    <option value="State Board">🏫 State Board</option>
+                    <option value="Govt Exam">🏁 Govt Exam Series</option>
+                    <option value="National Exam">🚀 National Entrance Exams</option>
+                    <option value="Tech Free">💻 Free Tech Tests</option>
                     <option value="JEE">⚗️ JEE Main</option>
                     <option value="NEET">🩺 NEET Medical</option>
-                    <option value="CUET">🎓 CUET (UG)</option>
+                    <option value="SSC">📋 SSC Exams</option>
+                    <option value="Banking">🏦 Banking</option>
                     <option value="NDA">🎖️ NDA Defense</option>
-                    <option value="CA Foundation">💼 CA Foundation</option>
-                    <option value="UPSC">🏛️ UPSC Civil Services</option>
-                    <option value="SSC CGL">📋 SSC CGL</option>
-                    <option value="SSC CHSL">📝 SSC CHSL</option>
-                    <option value="Coding">💻 Coding & DSA (Free)</option>
-                    <option value="English">🇬🇧 English & IELTS (Free)</option>
-                    <option value="Aptitude">🧠 Aptitude & Reasoning (Free)</option>
                 </select>
                 <select class="filter-select" id="difficultyFilter">
                     <option value="">All Levels</option>
@@ -447,32 +238,41 @@
         </div>
     </div>
 
-    <!-- Main Content -->
     <main class="content-container">
-        
-        <div id="freeTestsSection">
-            <div class="section-header" id="free">
-                <h2>Free Mock Tests</h2>
-                <a href="#" class="view-all">View All</a>
+        <!-- NEW: FREE TECH TESTS SECTION (TOP) -->
+        <div id="techFreeTestsSection" style="display: none; margin-bottom: 50px;">
+            <div class="section-header">
+                <h2 style="border-left-color: #10b981;">Free Mock Test Series</h2>
+                <a href="#" class="view-all">Start Practicing</a>
             </div>
-            <div class="packs-grid" id="freeTestsGrid">
-                <!-- Skeleton loader -->
-                <div class="test-card"><div class="card-header"><div class="loading-skeleton" style="height:15px;width:60px;margin-bottom:10px;"></div><div class="loading-skeleton" style="height:25px;width:80%;"></div></div><div class="card-body"><div class="loading-skeleton" style="height:60px;width:100%;"></div></div></div>
-                <div class="test-card"><div class="card-header"><div class="loading-skeleton" style="height:15px;width:60px;margin-bottom:10px;"></div><div class="loading-skeleton" style="height:25px;width:80%;"></div></div><div class="card-body"><div class="loading-skeleton" style="height:60px;width:100%;"></div></div></div>
-                <div class="test-card"><div class="card-header"><div class="loading-skeleton" style="height:15px;width:60px;margin-bottom:10px;"></div><div class="loading-skeleton" style="height:25px;width:80%;"></div></div><div class="card-body"><div class="loading-skeleton" style="height:60px;width:100%;"></div></div></div>
-            </div>
+            <div class="packs-grid" id="techFreeTestsGrid"></div>
         </div>
 
-        <div id="premiumSeriesSection">
-            <div class="section-header" id="paid">
-                <h2>Premium Test Series</h2>
-                <span style="font-size: 0.9rem; color: #6b7280; font-weight:500;">Unlock unlimited access</span>
+        <div id="freeTestsSection">
+            <div class="section-header" id="free">
+                <h2 style="border-left-color: var(--tb-blue);">State Board Test Series</h2>
+                <a href="#" class="view-all">View All</a>
             </div>
-            <div class="packs-grid" id="premiumTestsGrid">
-                <!-- Filled via JS -->
-            </div>
+            <div class="packs-grid" id="freeTestsGrid"></div>
         </div>
-        
+
+        <!-- GOVT EXAM SECTION -->
+        <div id="govtTestsSection" style="display: none; margin-top: 50px;">
+            <div class="section-header">
+                <h2 style="border-left-color: #7c3aed;">Govt Exam Test Series</h2>
+                <a href="#" class="view-all">Explore All</a>
+            </div>
+            <div class="packs-grid" id="govtTestsGrid"></div>
+        </div>
+
+        <!-- NATIONAL ENTRANCE EXAM SECTION -->
+        <div id="nationalTestsSection" style="display: none; margin-top: 50px;">
+            <div class="section-header">
+                <h2 style="border-left-color: #f59e0b;">Engineering, Medical & University Entrance Exams</h2>
+                <a href="#" class="view-all">View All</a>
+            </div>
+            <div class="packs-grid" id="nationalTestsGrid"></div>
+        </div>
     </main>
 
     <div class="toast-container" id="toastContainer"></div>
