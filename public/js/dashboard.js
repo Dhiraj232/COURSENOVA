@@ -18,8 +18,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // 1. Initialize Sockets & Live Hub
     initLiveSystem(userId, token);
 
+
     // 2. Initial Data Pull from Production-Ready Endpoint
-    fetchDashboardOverview(token);
+    initDashboardData(token);
 
     // 3. Tab Navigation Logic
     initLibraryTabs();
@@ -27,6 +28,119 @@ document.addEventListener('DOMContentLoaded', () => {
 
 let socket;
 let localTimeSpent = 0;
+let COURSES_MAP = {};
+let PROGRESS_MAP = {};
+let COMPLETED_MAP = {};
+
+async function initDashboardData(token) {
+    await fetchMasterCourses();
+    await fetchDashboardOverview(token);
+    await loadVaultCourses(token);
+}
+
+async function fetchMasterCourses() {
+    try {
+        const res = await fetch('/api/premium/courses');
+        const data = await res.json();
+        if (data.ok) {
+            data.courses.forEach(c => {
+                COURSES_MAP[c.slug || c._id] = {
+                    id: c.slug || c._id,
+                    title: c.title,
+                    icon: c.icon || '🎓',
+                    level: c.level || 'Beginner',
+                    duration: c.duration || '25 Hours',
+                    lessonCount: (c.lessons || []).length || 3,
+                    quizCount: (c.quizQuestions || []).length || 35,
+                    description: c.description || 'Master this subject with in-depth modules.'
+                };
+            });
+        }
+    } catch (e) { console.warn("Vault: Course metadata sync skipped."); }
+}
+
+async function loadVaultCourses(token) {
+    const grid = document.getElementById('vaultCourses');
+    if (!grid) return;
+
+    try {
+        const res = await fetch('/api/enrollments/my-courses', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+
+        if (data.ok && data.courses.length > 0) {
+            // Fetch progress
+            await Promise.all(data.courses.map(async (e) => {
+                try {
+                    const pRes = await fetch(`/api/course/progress?courseId=${encodeURIComponent(e.courseName)}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    const pData = await pRes.json();
+                    if (pData.ok && pData.record) {
+                        PROGRESS_MAP[e.courseName] = pData.record.progressPercent || 0;
+                        COMPLETED_MAP[e.courseName] = pData.record.testPassed;
+                    }
+                } catch (err) {}
+            }));
+
+            grid.innerHTML = data.courses.map(e => {
+                const c = COURSES_MAP[e.courseName] || {
+                    id: e.courseName,
+                    title: e.courseName,
+                    icon: '🎓',
+                    level: 'Beginner',
+                    duration: 'Self-paced',
+                    lessonCount: 0,
+                    quizCount: 0,
+                    description: 'Enrolled Course'
+                };
+                return buildStandardCard(c);
+            }).join('');
+        } else {
+            grid.innerHTML = `<p style="color:#64748b; padding:20px;">No courses found in your vault.</p>`;
+        }
+    } catch (err) { console.error("Vault Error:", err); }
+}
+
+function buildStandardCard(c) {
+    const progress = PROGRESS_MAP[c.id] || 0;
+    const completed = !!COMPLETED_MAP[c.id];
+    
+    const badge = completed 
+        ? `<span class="status-badge"><i class="fas fa-check-circle"></i> Completed</span>`
+        : `<span class="status-badge"><i class="fas fa-graduation-cap"></i> Enrolled</span>`;
+
+    const btnText = completed ? 'Review content' : 'Continue learning';
+    
+    return `
+    <div class="course-card">
+        <div class="card-header ${c.level.toLowerCase()}">
+            ${badge}
+            <div class="course-icon">${c.icon}</div>
+            <div class="course-title">${c.title}</div>
+        </div>
+        <div class="card-body">
+            <p class="course-desc">${c.description}</p>
+            <div class="course-meta">
+                <span class="meta-tag"><i class="fas fa-clock"></i> ${c.duration}</span>
+                <span class="meta-tag"><i class="fas fa-circle-play"></i> ${c.lessonCount} Videos</span>
+                <span class="meta-tag">${c.quizCount} MCQs</span>
+            </div>
+            <ul class="highlights-mini">
+                <li>Expert Training</li>
+                <li>Certification</li>
+            </ul>
+            <div class="progress-wrap">
+                <div class="progress-label"><span>Progress</span><span>${progress}%</span></div>
+                <div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div>
+            </div>
+            <a href="course-content.html?course=${encodeURIComponent(c.id)}" class="btn-action-vault">
+                ${btnText}
+            </a>
+        </div>
+    </div>`;
+}
 
 /**
  * PRODUCTION-READY SOCKET SYSTEM

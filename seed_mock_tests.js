@@ -41,7 +41,7 @@ const QUESTION_BANKS = {
   // FREE 1: Coding Test (DSA / Programming)
   // ════════════════════════════════════════════════════════════
   'coding-dsa-free': {
-    category: 'Coding & DSA', subject: 'Programming',
+    category: 'Tech Free', subject: 'Programming',
     qs: [
       { q:'What does CPU stand for?', opts:['Central Processing Unit','Central Program Unit','Computer Personal Unit','Control Process Unit'], ans:'Central Processing Unit' },
       { q:'Which data structure uses LIFO principle?', opts:['Queue','Stack','Linked List','Heap'], ans:'Stack' },
@@ -85,7 +85,7 @@ const QUESTION_BANKS = {
   // FREE 2: English Speaking & IELTS Practice
   // ════════════════════════════════════════════════════════════
   'english-ielts-free': {
-    category: 'English & IELTS', subject: 'English Language',
+    category: 'Tech Free', subject: 'English Language',
     qs: [
       { q:'What is the plural of "analysis"?', opts:['analysises','analysis','analyses','analyzees'], ans:'analyses' },
       { q:'Choose the correct sentence:', opts:['She don\'t like it.','She doesn\'t likes it.','She doesn\'t like it.','She not like it.'], ans:'She doesn\'t like it.' },
@@ -129,7 +129,7 @@ const QUESTION_BANKS = {
   // FREE 3: Aptitude + Reasoning Test
   // ════════════════════════════════════════════════════════════
   'aptitude-reasoning-free': {
-    category: 'Aptitude & Reasoning', subject: 'General Aptitude',
+    category: 'Tech Free', subject: 'General Aptitude',
     qs: [
       { q:'15% of 200 = ?', opts:['25','30','35','40'], ans:'30' },
       { q:'If A is the brother of B, and B is the sister of C, how is A related to C?', opts:['Father','Brother','Sister','Uncle'], ans:'Brother' },
@@ -173,7 +173,7 @@ const QUESTION_BANKS = {
   // FREE 4: Typing Speed & English Test
   // ════════════════════════════════════════════════════════════
   'typing-english-free': {
-    category: 'Typing & English', subject: 'English Grammar',
+    category: 'Tech Free', subject: 'English Grammar',
     qs: [
       { q:'Average typing speed for a professional typist?', opts:['20-30 WPM','40-50 WPM','60-80 WPM','100+ WPM'], ans:'60-80 WPM' },
       { q:'WPM stands for?', opts:['Words Per Minute','Works Per Memory','Write Per Mark','None'], ans:'Words Per Minute' },
@@ -217,7 +217,7 @@ const QUESTION_BANKS = {
   // FREE 5: Communication Skills Assessment
   // ════════════════════════════════════════════════════════════
   'communication-free': {
-    category: 'Communication Skills', subject: 'Soft Skills',
+    category: 'Tech Free', subject: 'Soft Skills',
     qs: [
       { q:'Active listening involves?', opts:['Talking as much as possible','Fully focusing and responding thoughtfully','Appearing to listen while thinking of your reply','Multitasking simultaneously'], ans:'Fully focusing and responding thoughtfully' },
       { q:'Non-verbal communication includes?', opts:['Emails and texts','Body language, facial expressions, gestures','Phone calls only','Written reports'], ans:'Body language, facial expressions, gestures' },
@@ -260,8 +260,8 @@ const QUESTION_BANKS = {
   // ════════════════════════════════════════════════════════════
   // PAID 1: CBSE Board Exams (10th & 12th)
   // ════════════════════════════════════════════════════════════
-  'cbse-board-paid': {
-    category: 'CBSE Board', subject: 'Mixed Subjects',
+  'cbse-10-paid': {
+    category: 'State Board', subject: 'CBSE Class 10',
     qs: [
       { q:'Chemical formula of Baking Soda?', opts:['NaCl','NaHCO₃','Na₂CO₃','CaCO₃'], ans:'NaHCO₃' },
       { q:'Author of "Gulliver\'s Travels"?', opts:['Charles Dickens','Jonathan Swift','Mark Twain','William Shakespeare'], ans:'Jonathan Swift' },
@@ -292,11 +292,22 @@ const QUESTION_BANKS = {
       { q:'"Two Stories about Flying" Class 10 — Author of "His First Flight"?', opts:['Liam O\'Flaherty','Katherine Mansfield','Guy de Maupassant','Anton Chekhov'], ans:'Liam O\'Flaherty' },
       { q:'Equation of motion: v² = u² + ?', opts:['2as','at','a/2s','2a/s'], ans:'2as' },
       { q:'Which part of the human brain controls balance?', opts:['Cerebrum','Cerebellum','Medulla','Thalamus'], ans:'Cerebellum' },
+      { q:'Acid present in lemon?', opts:['Citric acid','Acetic acid','Lactic acid','Tartaric acid'], ans:'Citric acid' },
+      { q:'Mirror formula?', opts:['1/f = 1/v + 1/u','1/f = 1/v - 1/u','1/f = 1/u - 1/v','f = u+v'], ans:'1/f = 1/v + 1/u' },
+      { q:'"A Letter to God" protagonist?', opts:['Lencho','Nelson Mandela','Anne Frank','Rajvir'], ans:'Lencho' },
+      { q:'Process of formation of soil is called?', opts:['Pedogenesis','Erosion','Weathering','Decomposition'], ans:'Weathering' },
+      { q:'Which planet is the closest to Sun?', opts:['Venus','Mars','Mercury','Earth'], ans:'Mercury' },
+      { q:'Smallest prime number?', opts:['1','2','3','5'], ans:'2' },
+    ]
+  },
+  'cbse-12-paid': {
+    category: 'State Board', subject: 'CBSE Class 12',
+    qs: [
+      { q:'CBSE board full form?', opts:['Central Board of School Examination','Central Board of Secondary Education','Council of Board School Education','None'], ans:'Central Board of Secondary Education' },
       { q:'Class 12 Physics — Coulomb\'s Law gives force between?', opts:['Magnetic poles','Two point charges','Neutrons','Gravitational masses'], ans:'Two point charges' },
       { q:'Who gave the Theory of Relativity?', opts:['Isaac Newton','Niels Bohr','Albert Einstein','Max Planck'], ans:'Albert Einstein' },
       { q:'Which acid is present in vinegar?', opts:['Hydrochloric acid','Acetic acid','Sulfuric acid','Nitric acid'], ans:'Acetic acid' },
       { q:'Class 12 — Integration of e^x dx = ?', opts:['xe^x','e^x + C','e^x/x','ln(x)+C'], ans:'e^x + C' },
-      { q:'CBSE board full form?', opts:['Central Board of School Examination','Central Board of Secondary Education','Council of Board School Education','None'], ans:'Central Board of Secondary Education' },
       { q:'Human body — largest organ?', opts:['Liver','Heart','Lung','Skin'], ans:'Skin' },
     ]
   },
@@ -305,7 +316,7 @@ const QUESTION_BANKS = {
   // PAID 2: ICSE Board Exams
   // ════════════════════════════════════════════════════════════
   'icse-board-paid': {
-    category: 'ICSE Board', subject: 'Mixed Subjects',
+    category: 'State Board', subject: 'Mixed Subjects',
     qs: [
       { q:'ICSE stands for?', opts:['Indian Certificate of School Examination','Indian Certificate of Secondary Education','International Certificate of School Education','None'], ans:'Indian Certificate of Secondary Education' },
       { q:'Who is called "Father of Economics"?', opts:['Karl Marx','J.M. Keynes','Adam Smith','Alfred Marshall'], ans:'Adam Smith' },
@@ -348,8 +359,8 @@ const QUESTION_BANKS = {
   // ════════════════════════════════════════════════════════════
   // PAID 3: State Board (Bihar & UP — 10th & 12th)
   // ════════════════════════════════════════════════════════════
-  'state-board-paid': {
-    category: 'State Board', subject: 'Bihar & UP Board',
+  'bihar-10-paid': {
+    category: 'State Board', subject: 'Bihar Board Class 10',
     qs: [
       { q:'बिहार बोर्ड की स्थापना कब हुई? (Bihar Board established in?)', opts:['1952','1952 mein BSEB','1947','1960'], ans:'1952 mein BSEB' },
       { q:'Ohm ka Niyam (Ohm\'s Law): V = ?', opts:['IR','I/R','R/I','I+R'], ans:'IR' },
@@ -368,14 +379,74 @@ const QUESTION_BANKS = {
       { q:'Area of Triangle = ?', opts:['base × height','½ × base × height','2 × base × height','base + height'], ans:'½ × base × height' },
       { q:'Sanvidhaan kis din laagu hua? (Constitution adopted on?)', opts:['15 August 1947','26 January 1950','26 November 1949','1 January 1950'], ans:'26 January 1950' },
       { q:'LCM of 4 and 6?', opts:['12','24','6','18'], ans:'12' },
-      { q:'UP Board kin classes ke liye hai? (UP Board is for which classes?)', opts:['9-10 only','1-8 only','9-12','11-12 only'], ans:'9-12' },
+      { q:'Bihar ki rajdhani (Capital of Bihar)?', opts:['Gaya','Muzaffarpur','Patna','Bhagalpur'], ans:'Patna' },
       { q:'Prakaash ki gati (Speed of Light)?', opts:['3×10⁸ m/s','3×10⁶ m/s','3×10¹⁰ m/s','3×10⁵ m/s'], ans:'3×10⁸ m/s' },
       { q:'Which is an acid? (Kaun sa aaml hai?)', opts:['NaOH','Ca(OH)₂','HCl','KOH'], ans:'HCl' },
-      { q:'Bihar ki rajdhani (Capital of Bihar)?', opts:['Gaya','Muzaffarpur','Patna','Bhagalpur'], ans:'Patna' },
+      { q:'"Tulsidas" ne kaun si rachna likhi? (Famous work of Tulsidas?)', opts:['Ramcharitmanas','Godan','Gitanjali','Kamayani'], ans:'Ramcharitmanas' },
+      { q:'Haemoglobin kis kaam aata hai? (Function of Haemoglobin?)', opts:['Digest food','Carry oxygen in blood','Filter blood','Fight infection'], ans:'Carry oxygen in blood' },
+      { q:'Pani ka boiling point (Boiling point of water in °C)?', opts:['90°C','95°C','100°C','105°C'], ans:'100°C' },
+      { q:'Proton ka charge (Charge of proton)?', opts:['Negative','Positive','Neutral','Zero'], ans:'Positive' },
+      { q:'1 km = ? meter', opts:['10','100','1000','10000'], ans:'1000' },
+      { q:'Bihar ka rajya pakshi (State Bird of Bihar)?', opts:['Mor','Goraiya (House Sparrow)','Pankaj','Kabutar'], ans:'Goraiya (House Sparrow)' },
+      { q:'Sabse chota mahadeep (Smallest Continent)?', opts:['Asia','Africa','Australia','Europe'], ans:'Australia' },
+      { q:'Inert gas example?', opts:['Hydrogen','Oxygen','Helium','Nitrogen'], ans:'Helium' },
+      { q:'Magadh ki prachin rajdhani?', opts:['Patna','Rajgir','Gaya','Vaishali'], ans:'Rajgir' },
+      { q:'Square root of 144?', opts:['10','12','14','16'], ans:'12' },
+      { q:'Buddhism ke sansthapak kaun the?', opts:['Mahavira','Gautama Buddha','Ashoka','Chandragupta'], ans:'Gautama Buddha' },
+      { q:'Nitrogen gas atmosphere mein kitni hai?', opts:['21%','78%','0.03%','1%'], ans:'78%' },
+      { q:'Sun is a?', opts:['Planet','Star','Satellite','Comet'], ans:'Star' },
+      { q:'Acid Rain is caused by?', opts:['SO2 & NO2','CO2','O2','N2'], ans:'SO2 & NO2' },
+      { q:'First Man on Moon?', opts:['Neil Armstrong','Yuri Gagarin','Rakesh Sharma','Buzz Aldrin'], ans:'Neil Armstrong' },
+    ]
+  },
+  'bihar-12-paid': {
+    category: 'State Board', subject: 'Bihar Board Class 12',
+    qs: [
+      { q:'Integration of 1/x dx?', opts:['ln|x| + C','x²','1','log(x)'], ans:'ln|x| + C' },
+      { q:'BSEB full form?', opts:['Bihar School Examination Board','Bihar Secondary Education Board','Bihar State Education Board','None'], ans:'Bihar School Examination Board' },
+      { q:'Charge of an electron?', opts:['-1.6 × 10⁻¹⁹ C','1.6 × 10⁻¹⁹ C','9.1 × 10⁻³¹ C','None'], ans:'-1.6 × 10⁻¹⁹ C' },
+      { q:'Class 12 Bihar Board — "Digant Part 2" is for?', opts:['Hindi','English','Mathematics','History'], ans:'Hindi' },
+      { q:'Derivative of tan(x)?', opts:['sec²(x)','-cosec²(x)','sec(x)tan(x)','cos(x)'], ans:'sec²(x)' },
+      { q:'Who is the father of Indian Constitution?', opts:['Mahatma Gandhi','Sardar Patel','Dr. B.R. Ambedkar','Jawaharlal Nehru'], ans:'Dr. B.R. Ambedkar' },
+      { q:'pH of blood?', opts:['6.4','7.4','8.4','7.0'], ans:'7.4' },
+      { q:'Which is NOBLE gas?', opts:['Neon','Chlorine','Fluorine','Oxygen'], ans:'Neon' },
+      { q:'Integration of 1/(1+x²) dx?', opts:['tan⁻¹(x) + C','sin⁻¹(x) + C','log|1+x²|','None'], ans:'tan⁻¹(x) + C' },
+      { q:'Unit of magnetic field?', opts:['Tesla','Ampere','Volt','Watt'], ans:'Tesla' },
+      { q:'Human Heart has how many chambers?', opts:['2','3','4','1'], ans:'4' },
+      { q:'Chemical formula of Ozone?', opts:['O₂','O₃','O','O₄'], ans:'O₃' },
+      { q:'Father of Biology?', opts:['Aristotle','Darwin','Lamarck','Newton'], ans:'Aristotle' },
+      { q:'Derivative of sin⁻¹(x)?', opts:['1/√(1-x²)','-1/√(1-x²)','1/(1+x²)','None'], ans:'1/√(1-x²)' },
+      { q:'Electric potential is a?', opts:['Scalar quantity','Vector quantity','Tensor','None'], ans:'Scalar quantity' },
+      { q:'Bohr model is for?', opts:['Hydrogen atom','Multielectron atoms','Nucleus','Neutron'], ans:'Hydrogen atom' },
+      { q:'Total number of bones in human adult?', opts:['200','206','300','250'], ans:'206' },
+      { q:'Functional group of Aldehyde?', opts:['-CHO','-CO-','-COOH','-OH'], ans:'-CHO' },
+      { q:'Mendeleev Periodic Table is based on?', opts:['Atomic number','Atomic mass','Volume','None'], ans:'Atomic mass' },
+      { q:'Integration of sin(2x) dx?', opts:['-cos(2x)/2 + C','sin(2x)/2','cos(2x)','None'], ans:'-cos(2x)/2 + C' },
+      { q:'Which lens is used for Myopia?', opts:['Concave','Convex','Cylindrical','None'], ans:'Concave' },
+      { q:'Power of a lens is P = ?', opts:['1/f','f','2f','f/2'], ans:'1/f' },
+      { q:'Unit of capacitance?', opts:['Farad','Ohm','Tesla','Henry'], ans:'Farad' },
+      { q:'Who discovered the Nucleus of atom?', opts:['Rutherford','Bohr','Thomson','Dalton'], ans:'Rutherford' },
+      { q:'Is glass a crystalline solid?', opts:['No, it is amorphous','Yes','Depends','None'], ans:'No, it is amorphous' },
+      { q:'"Indian Civilization and Culture" Class 12 Author?', opts:['Mahatma Gandhi','Dr. Zakir Hussain','Manohar Malgonkar','Martin Luther King Jr.'], ans:'Mahatma Gandhi' },
+      { q:'Value of Sin 90°?', opts:['0','1','1/2','√3/2'], ans:'1' },
+      { q:'Matrix A where A = Aᵀ is called?', opts:['Symmetric','Skew-symmetric','Identity','Null'], ans:'Symmetric' },
+      { q:'Vector quantity example?', opts:['Force','Work','Energy','Speed'], ans:'Force' },
+      { q:'Smallest unit of heredity?', opts:['Gene','Cell','Nucleus','DNA'], ans:'Gene' },
+      { q:'Which metal is stored in kerosene?', opts:['Sodium','Iron','Gold','Silver'], ans:'Sodium' },
+      { q:'Bohr radius for hydrogen is?', opts:['0.529 Å','1 Å','0.1 Å','None'], ans:'0.529 Å' },
+      { q:'Integration of eˣ(f(x) + f\'(x)) dx?', opts:['eˣ f(x) + C','eˣ + C','f(x) + C','None'], ans:'eˣ f(x) + C' },
+      { q:'Refractive index of diamond?', opts:['1.5','2.42','1.33','1.0'], ans:'2.42' },
+      { q:'Father of Indian Physics?', opts:['C.V. Raman','Homi Bhabha','Vikram Sarabhai','S.N. Bose'], ans:'C.V. Raman' },
+    ]
+  },
+  'up-10-paid': {
+    category: 'State Board', subject: 'UP Board Class 10',
+    qs: [
+      { q:'UP Board kin classes ke liye hai? (UP Board is for which classes?)', opts:['9-10 only','1-8 only','9-12','11-12 only'], ans:'9-12' },
       { q:'UP ki rajdhani (Capital of Uttar Pradesh)?', opts:['Varanasi','Agra','Allahabad','Lucknow'], ans:'Lucknow' },
       { q:'"Tulsidas" ne kaun si rachna likhi? (Famous work of Tulsidas?)', opts:['Ramcharitmanas','Godan','Gitanjali','Kamayani'], ans:'Ramcharitmanas' },
       { q:'Electricity — unit of Power?', opts:['Volt','Ampere','Watt','Joule'], ans:'Watt' },
-      { q:'Mitosis ho sakti hai? (Mitosis occurs in which cells?)', opts:['Only germ cells','Only body (somatic) cells','Both germ and somatic','Neither'], ans:'Only body (somatic) cells' },
+      { q:'Mitosis ho sakti hai? (Mitosis occurs in which cells?)', opts:['Only germ cells','Only body (somatic) cells','Both germ and somatic','Neither'], ans:'Only body ( somatic ) cells' },
       { q:'Bharat mein kitne rajya hain? (States in India as of 2019?)', opts:['25','28','29','30'], ans:'28' },
       { q:'Aankh ka kya kaam hai? (Function of the eye lens?)', opts:['Produce light','Focus image on retina','Detect color','Produce tears'], ans:'Focus image on retina' },
       { q:'"Kabirdas" kab ke kavi the? (Kabirdas was a poet of which era?)', opts:['Modern period','Medieval period (Bhakti Movement)','Ancient period','Colonial period'], ans:'Medieval period (Bhakti Movement)' },
@@ -384,16 +455,157 @@ const QUESTION_BANKS = {
       { q:'Pani ka boiling point (Boiling point of water in °C)?', opts:['90°C','95°C','100°C','105°C'], ans:'100°C' },
       { q:'"Rashtriya Geet" kaun sa hai? (National Song of India?)', opts:['Jana Gana Mana','Vande Mataram','Saare Jahan Se Achha','Jai Hind'], ans:'Vande Mataram' },
       { q:'"Rashtriya Gaan" kaun sa hai? (National Anthem of India?)', opts:['Jana Gana Mana','Vande Mataram','Jai Hind','Saare Jahan'], ans:'Jana Gana Mana' },
-      { q:'Proton ka charge (Charge of proton)?', opts:['Negative','Positive','Neutral','Zero'], ans:'Positive' },
-      { q:'1 km = ? meter', opts:['10','100','1000','10000'], ans:'1000' },
+      { q:'UP Board established in?', opts:['1921','1947','1950','1960'], ans:'1921' },
+      { q:'High Court of UP sits in?', opts:['Lucknow','Kanpur','Allahabad (Prayagraj)','Varanasi'], ans:'Allahabad (Prayagraj)' },
+      { q:'UP Board High School topper marks are calculated in?', opts:['Percentage (%)','CGPA','Grades','None'], ans:'Percentage (%)' },
+      { q:'Author of "Kamayani"?', opts:['Jaishankar Prasad','Premchand','Mahadevi Varma','Tulsidas'], ans:'Jaishankar Prasad' },
+      { q:'"Buddhacharita" was written by?', opts:['Ashvaghosha','Kalidasa','Banabhatta','Tulsidas'], ans:'Ashvaghosha' },
+      { q:'UP ka pratik chinh (Symbol of UP Gov)?', opts:['Dhanush aur Machli','Mor','Sher','Hathi'], ans:'Dhanush aur Machli' },
+      { q:'Atomic number of Hydrogen?', opts:['1','2','3','4'], ans:'1' },
+      { q:'Largest state of India by population?', opts:['Bihar','UP','Maharashtra','WB'], ans:'UP' },
+      { q:'Acid in Tamarind (Imli)?', opts:['Tartaric acid','Citric acid','Acetic acid','Lactic acid'], ans:'Tartaric acid' },
+      { q:'Who is called "The Iron Man of India"?', opts:['Sardar Patel','Mahatma Gandhi','Nehru','Subhash Bose'], ans:'Sardar Patel' },
+      { q:'Discovery of Cell?', opts:['Robert Hooke','Leeuwenhoek','Brown','Schwann'], ans:'Robert Hooke' },
+      { q:'Capital of India?', opts:['Mumbai','Kolkata','Delhi','Chennai'], ans:'Delhi' },
+      { q:'Area of square?', opts:['side × side','4 × side','side + side','2 × side'], ans:'side × side' },
+      { q:'Holi is the festival of?', opts:['Light','Colors','Harvest','None'], ans:'Colors' },
+      { q:'National river of India?', opts:['Yamuna','Ganga','Narmada','Tapi'], ans:'Ganga' },
+      { q:'Sound cannot travel through?', opts:['Water','Air','Steel','Vacuum'], ans:'Vacuum' },
+      { q:'Process of water changing into vapor?', opts:['Evaporation','Condensation','Freezing','Melting'], ans:'Evaporation' },
+      { q:'"Surdas" was a devotee of?', opts:['Lord Rama','Lord Krishna','Lord Shiva','Goddess Durga'], ans:'Lord Krishna' },
+      { q:'The word "Satyameva Jayate" is from?', opts:['Mundaka Upanishad','Ramayana','Gita','Veda'], ans:'Mundaka Upanishad' },
+      { q:'Total number of vowels in English?', opts:['5','7','21','26'], ans:'5' },
+      { q:'Which animal is known as Ship of Desert?', opts:['Lion','Camel','Horse','Elephant'], ans:'Camel' },
+      { q:'1 Ton = ? kg', opts:['100','500','1000','2000'], ans:'1000' },
     ]
   },
+  'up-12-paid': {
+    category: 'State Board', subject: 'UP Board Class 12',
+    qs: [
+      { q:'UP Board Intermediate exams correspond to?', opts:['Class 10','Class 11','Class 12','Class 12+'], ans:'Class 12' },
+      { q:'UP Board headquarter location?', opts:['Lucknow','Prayagraj (Allahabad)','Meerut','Varanasi'], ans:'Prayagraj (Allahabad)' },
+      { q:'Integration of sec²(x) dx?', opts:['tan(x) + C','sec(x) + C','log|sec x|','None'], ans:'tan(x) + C' },
+      { q:'Newton\'s 1st Law is also known as?', opts:['Law of Inertia','Law of Acceleration','Law of Action-Reaction','None'], ans:'Law of Inertia' },
+      { q:'Chemical name of Gypsum?', opts:['CaSO₄·2H₂O','CuSO₄','MgSO₄','None'], ans:'CaSO₄·2H₂O' },
+      { q:'Class 12 UP Board - English poetry "My Mother at Sixty-Six" author?', opts:['Kamala Das','Stephen Spender','Robert Frost','John Keats'], ans:'Kamala Das' },
+      { q:'Derivative of log(sin x)?', opts:['cot x','tan x','1/sin x','None'], ans:'cot x' },
+      { q:'Functional group of Ether?', opts:['-O-','-CO-','-CHO','-COOH'], ans:'-O-' },
+      { q:'Refractive index of Glass (general)?', opts:['1.5','1.33','2.42','1.0'], ans:'1.5' },
+      { q:'Total resistance in series?', opts:['R1 + R2','1/R1 + 1/R2','R1 × R2','None'], ans:'R1 + R2' },
+      { q:'Human eye — Part that controls light entry?', opts:['Iris','Pupil','Lens','Retina'], ans:'Pupil' },
+      { q:'Which mirror is used as a rear-view mirror?', opts:['Concave','Convex','Plane','None'], ans:'Convex' },
+      { q:'Derivative of e^(2x)?', opts:['2e^(2x)','e^(2x)','e^x','2e^x'], ans:'2e^(2x)' },
+      { q:'Integration of 1/√(x) dx?', opts:['2√x + C','√x','1/2√x','None'], ans:'2√x + C' },
+      { q:'Identity Matrix property?', opts:['AI = A','AI = I','AI = 0','None'], ans:'AI = A' },
+      { q:'Who is called the Father of Chemistry?', opts:['Lavoisier','Dalton','Mendeleev','Bohr'], ans:'Lavoisier' },
+      { q:'Unit of resistance?', opts:['Ohm','Volt','Ampere','Watt'], ans:'Ohm' },
+      { q:'X-Rays were discovered by?', opts:['Roentgen','Curie','Thomson','Bohr'], ans:'Roentgen' },
+      { q:'Isotope of Hydrogen?', opts:['Deuterium','Helium','Lithium','None'], ans:'Deuterium' },
+      { q:'Power formula P = ?', opts:['VI','I²R','V²/R','All of these'], ans:'All of these' },
+      { q:'Integration of zero dx?', opts:['Constant C','0','1','x'], ans:'Constant C' },
+      { q:'Magnetic flux unit?', opts:['Weber','Tesla','Henry','Farad'], ans:'Weber' },
+      { q:'The chemical name of aspirin is?', opts:['Acetylsalicylic acid','Citric acid','Acetic acid','None'], ans:'Acetylsalicylic acid' },
+      { q:'DNA replication occurs in?', opts:['S-phase','G1-phase','M-phase','G2-phase'], ans:'S-phase' },
+      { q:'Father of Indian Industry?', opts:['J.N. Tata','Ambani','Birla','None'], ans:'J.N. Tata' },
+      { q:'Work done in a closed path for conservative force?', opts:['Zero','Max','Min','None'], ans:'Zero' },
+      { q:'Angle of minimum deviation for prism?', opts:['δ = (μ-1)A','A','μA','None'], ans:'δ = (μ-1)A' },
+      { q:'Bioluminescence is shown by?', opts:['Firefly','Dog','Cat','Man'], ans:'Firefly' },
+      { q:'Acid in Ant sting?', opts:['Methanoic acid','Citric acid','Acetic acid','Lactic acid'], ans:'Methanoic acid' },
+      { q:'"Wings of Fire" author?', opts:['A.P.J. Abdul Kalam','Nehru','Gandhi','Bose'], ans:'A.P.J. Abdul Kalam' },
+      { q:'Atomic number of Oxygen?', opts:['6','8','10','16'], ans:'8' },
+      { q:'Smallest bone in human body?', opts:['Stapes','Femur','Skull','Rib'], ans:'Stapes' },
+      { q:'Speed of sound is max in?', opts:['Steel','Water','Air','Vacuum'], ans:'Steel' },
+      { q:'Which is an inert gas?', opts:['Argon','Nitrogen','Oxygen','Hydrogen'], ans:'Argon' },
+      { q:'Integration of tan x dx?', opts:['log|sec x| + C','log|sin x|','sec²x','None'], ans:'log|sec x| + C' },
+    ]
+  },
+  'punjab-10-paid': {
+    category: 'State Board', subject: 'Punjab Board Class 10',
+    qs: [
+      { q:'PSEB stands for?', opts:['Punjab School Education Board','Punjab Secondary Education Board','Punjab State Education Board','None'], ans:'Punjab School Education Board' },
+      { q:'Capital of Punjab?', opts:['Chandigarh','Ludhiana','Amritsar','Patiala'], ans:'Chandigarh' },
+      { q:'Major crop of Punjab?', opts:['Wheat','Cotton','Rice','Tea'], ans:'Wheat' },
+      { q:'Process of soil reclamation in Punjab?', opts:['Afforestation','Green Revolution methods','Irrigation control','None'], ans:'Green Revolution methods' },
+      { q:'Punjab is known as?', opts:['Land of Five Rivers','Land of Gold','Heart of India','None'], ans:'Land of Five Rivers' },
+      { q:'Area of circle with radius r?', opts:['πr²','2πr','πr','2π'], ans:'πr²' },
+      { q:'Who founded the Sikh religion?', opts:['Guru Nanak Dev','Guru Gobind Singh','Guru Arjan Dev','None'], ans:'Guru Nanak Dev' },
+      { q:'PSEB headquarter?', opts:['Mohali','Chandigarh','Ludhiana','Amritsar'], ans:'Mohali' },
+      { q:'Atomic number of Carbon?', opts:['6','8','12','1'], ans:'6' },
+      { q:'Punjab Board (PSEB) Class 10th science medium?', opts:['Punjabi','English','Hindi','All of these'], ans:'All of these' },
+      { q:'Unit of Electric Current?', opts:['Ampere','Volt','Watt','Ohm'], ans:'Ampere' },
+      { q:'Which is a renewable source of energy?', opts:['Solar','Coal','Petrol','Natural Gas'], ans:'Solar' },
+      { q:'Chemical formula for Salt?', opts:['NaCl','NaOH','HCl','KOH'], ans:'NaCl' },
+      { q:'Square root of 225?', opts:['15','25','12','20'], ans:'15' },
+      { q:'First Guru of Sikhs?', opts:['Guru Nanak Dev Ji','Guru Angad Dev Ji','Guru Ram Das Ji','None'], ans:'Guru Nanak Dev Ji' },
+      { q:'"Golden Temple" is located in?', opts:['Amritsar','Ludhiana','Patiala','Bhatinda'], ans:'Amritsar' },
+      { q:'The Green Revolution started in?', opts:['1960s','1980s','1940s','2000s'], ans:'1960s' },
+      { q:'1 kg-wt is equal to?', opts:['9.8 N','10 N','1 N','None'], ans:'9.8 N' },
+      { q:'Largest district of Punjab?', opts:['Ludhiana','Sangrur','Amritsar','Ferozepur'], ans:'Ludhiana' },
+      { q:'Human body temperature (normal) in °C?', opts:['37°C','98.6°C','30°C','40°C'], ans:'37°C' },
+      { q:'The river Satluj passes through?', opts:['Punjab','Bihar','UP','Kerala'], ans:'Punjab' },
+      { q:'Smallest state of India by area?', opts:['Goa','Sikkim','Punjab','Haryana'], ans:'Goa' },
+      { q:'Functional group of Carboxylic acid?', opts:['-COOH','-OH','-CHO','-CO'], ans:'-COOH' },
+      { q:'The chemical formula of methane is?', opts:['CH₄','C₂H₆','C₃H₈','C₄H₁₀'], ans:'CH₄' },
+      { q:'Who gave the "Law of Octaves"?', opts:['Newlands','Mendeleev','Dobereiner','Moseley'], ans:'Newlands' },
+      { q:'Which acid is in curd?', opts:['Lactic acid','Citric acid','Acetic acid','Formic acid'], ans:'Lactic acid' },
+      { q:'Sunlight takes approx how much time to reach Earth?', opts:['8 mins','1 min','20 mins','5 mins'], ans:'8 mins' },
+      { q:'National flower of India?', opts:['Lotus','Rose','Jasmine','Marigold'], ans:'Lotus' },
+      { q:'Which gas is filled in balloons?', opts:['Helium','Nitrogen','Hydrogen','Carbon Dioxide'], ans:'Helium' },
+      { q:'Sum of angles in a triangle?', opts:['90°','180°','360°','270°'], ans:'180°' },
+      { q:'Value of Pi (approx)?', opts:['3.14','2.14','4.14','1.14'], ans:'3.14' },
+      { q:'The primary colors are?', opts:['Red, Blue, Green','Black, White, Gray','Pink, Yellow, Orange','None'], ans:'Red, Blue, Green' },
+      { q:'Number of teeth in adult human?', opts:['28','30','32','34'], ans:'32' },
+      { q:'Who invented the Light Bulb?', opts:['Thomas Edison','Tesla','Newton','Einstein'], ans:'Thomas Edison' },
+      { q:'"Vande Mataram" was written by?', opts:['Bankim Chandra Chattopadhyay','Rabindranath Tagore','Mahatma Gandhi','None'], ans:'Bankim Chandra Chattopadhyay' },
+    ]
+  },
+  'punjab-12-paid': {
+    category: 'State Board', subject: 'Punjab Board Class 12',
+    qs: [
+      { q:'Class 12 PSEB — "General English" is compulsory?', opts:['Yes','No','Optional','None'], ans:'Yes' },
+      { q:'Integration of 1/(x ln x) dx?', opts:['ln|ln x| + C','ln x','1/x','None'], ans:'ln|ln x| + C' },
+      { q:'Unit of resistivity?', opts:['Ohm-meter','Ohm','Volt','Ampere'], ans:'Ohm-meter' },
+      { q:'Physics — Focal length of plane mirror?', opts:['Infinity','Zero','10cm','1m'], ans:'Infinity' },
+      { q:'Chemical name of Bleaching Powder?', opts:['Calcium Oxychloride (CaOCl₂)','NaCl','NaHCO₃','None'], ans:'Calcium Oxychloride (CaOCl₂)' },
+      { q:'Who is the tenth Guru of Sikhs?', opts:['Guru Gobind Singh Ji','Guru Nanak Dev Ji','Guru Tegh Bahadur Ji','None'], ans:'Guru Gobind Singh Ji' },
+      { q:'PSEB Class 12th commerce subject example?', opts:['Accountancy','Physics','Biology','None'], ans:'Accountancy' },
+      { q:'Derivative of cos⁻¹(x)?', opts:['-1/√(1-x²)','1/√(1-x²)','1/(1+x²)','None'], ans:'-1/√(1-x²)' },
+      { q:'Functional group of Ketone?', opts:['-CO-','-CHO','-COOH','-OH'], ans:'-CO-' },
+      { q:'Integration of xⁿ dx?', opts:['(xⁿ⁺¹)/(n+1) + C','nxⁿ⁻¹','xⁿ','None'], ans:'(xⁿ⁺¹)/(n+1) + C' },
+      { q:'Magnetic permeability of vacuum?', opts:['4π × 10⁻⁷ T m/A','1','0','None'], ans:'4π × 10⁻⁷ T m/A' },
+      { q:'Speed of light in water?', opts:['2.25 × 10⁸ m/s','3 × 10⁸ m/s','2 × 10⁸ m/s','None'], ans:'2.25 × 10⁸ m/s' },
+      { q:'Chemical formula of Rust?', opts:['Fe₂O₃·xH₂O','FeO','Fe₃O₄','None'], ans:'Fe₂O₃·xH₂O' },
+      { q:'Who discovered Neutron?', opts:['James Chadwick','Thomson','Rutherford','Bohr'], ans:'James Chadwick' },
+      { q:'Integration of sec(x) dx?', opts:['log|sec x + tan x| + C','sec x tan x','log|sin x|','None'], ans:'log|sec x + tan x| + C' },
+      { q:'Rank of a matrix — Is it unique?', opts:['Yes','No','Depends','None'], ans:'Yes' },
+      { q:'Vector dot product of î·ĵ?', opts:['0','1','k̂','None'], ans:'0' },
+      { q:'SI unit of Luminous Intensity?', opts:['Candela','Lumen','Lux','Watt'], ans:'Candela' },
+      { q:'The gas used in fluorescent tubes?', opts:['Mercury vapor & Argon','Oxygen','Nitrogen','CO2'], ans:'Mercury vapor & Argon' },
+      { q:'Alcoholic fermentation is done by?', opts:['Yeast','Bacteria','Virus','Amoeba'], ans:'Yeast' },
+      { q:'Who is called the Father of Computer?', opts:['Charles Babbage','Alan Turing','Bill Gates','None'], ans:'Charles Babbage' },
+      { q:'Full form of LAN?', opts:['Local Area Network','Large Area Node','Link All Nodes','None'], find: 'Local Area Network', ans:'Local Area Network' },
+      { q:'Sum of two sides of triangle is always?', opts:['Greater than 3rd side','Smaller than 3rd side','Equal to 3rd side','None'], ans:'Greater than 3rd side' },
+      { q:'Integration of 1 dx?', opts:['x + C','0','1','C'], ans:'x + C' },
+      { q:'The chemical formula of sulfuric acid is?', opts:['H₂SO₄','HCl','HNO₃','H₃PO₄'], ans:'H₂SO₄' },
+      { q:'Who proposed the atomic theory?', opts:['John Dalton','Rutherford','Bohr','Einstein'], ans:'John Dalton' },
+      { q:'Which is the largest gland in the body?', opts:['Liver','Pancreas','Pituitary','Thyroid'], ans:'Liver' },
+      { q:'Current carrier in metals?', opts:['Electrons','Protons','Ions','Neutrons'], ans:'Electrons' },
+      { q:'Newton is a unit of?', opts:['Force','Work','Power','Energy'], ans:'Force' },
+      { q:'Angle between electric field and equipotential surface?', opts:['90°','0°','45°','180°'], ans:'90°' },
+      { q:'The value of G (gravitational constant) is?', opts:['6.67 × 10⁻¹¹ N m²/kg²','9.8','1.6','None'], ans:'6.67 × 10⁻¹¹ N m²/kg²' },
+      { q:'Integration of log x dx?', opts:['x log x - x + C','1/x','log x','None'], ans:'x log x - x + C' },
+      { q:'Who is the Author of "Deep Water"?', opts:['William Douglas','Anees Jung','Louis Fischer','John Keats'], ans:'William Douglas' },
+      { q:'Refractive index of water?', opts:['1.33','1.5','2.42','1.0'], ans:'1.33' },
+      { q:'Number of states in USA?', opts:['50','51','48','45'], ans:'50' },
+    ]
+  },
+
 
   // ════════════════════════════════════════════════════════════
   // PAID 4: JEE Main
   // ════════════════════════════════════════════════════════════
   'jee-main-paid': {
-    category: 'JEE Main', subject: 'Physics, Chemistry, Mathematics',
+    category: 'National Exam', subject: 'Physics, Chemistry, Mathematics',
     qs: [
       { q:'Dimensional formula of force?', opts:['[MLT⁻¹]','[MLT⁻²]','[ML²T⁻²]','[M⁰LT⁻²]'], ans:'[MLT⁻²]' },
       { q:'Integration of sin(x) dx?', opts:['cos(x)+C','-cos(x)+C','sin(x)+C','-sin(x)+C'], ans:'-cos(x)+C' },
@@ -437,7 +649,7 @@ const QUESTION_BANKS = {
   // PAID 5: NEET (Medical)
   // ════════════════════════════════════════════════════════════
   'neet-paid': {
-    category: 'NEET', subject: 'Biology, Physics, Chemistry',
+    category: 'National Exam', subject: 'Biology, Physics, Chemistry',
     qs: [
       { q:'Powerhouse of the cell?', opts:['Nucleus','Ribosome','Mitochondria','Golgi Apparatus'], ans:'Mitochondria' },
       { q:'Double helix model of DNA proposed by?', opts:['Gregor Mendel','Francis Crick & James Watson','Rosalind Franklin','Frederick Griffith'], ans:'Francis Crick & James Watson' },
@@ -481,7 +693,7 @@ const QUESTION_BANKS = {
   // PAID 6: CUET (UG)
   // ════════════════════════════════════════════════════════════
   'cuet-paid': {
-    category: 'CUET', subject: 'General Test & Domain',
+    category: 'National Exam', subject: 'General Test & Domain',
     qs: [
       { q:'CUET UG stands for?', opts:['Central University Exam Test','Common University Entrance Test (UG)','Central Undergraduate Entrance Test','None'], ans:'Common University Entrance Test (UG)' },
       { q:'CUET is conducted by?', opts:['NTA','CBSE','UGC','University Grants Commission'], ans:'NTA' },
@@ -525,7 +737,7 @@ const QUESTION_BANKS = {
   // PAID 7: NDA (Defense)
   // ════════════════════════════════════════════════════════════
   'nda-paid': {
-    category: 'NDA', subject: 'Mathematics & General Ability',
+    category: 'Govt Exam', subject: 'Mathematics & General Ability',
     qs: [
       { q:'NDA stands for?', opts:['National Defense Academy','National Development Authority','National Diploma Association','None'], ans:'National Defense Academy' },
       { q:'NDA exam is conducted by?', opts:['Ministry of Defense','Army HQ','UPSC','NTA'], ans:'UPSC' },
@@ -569,7 +781,7 @@ const QUESTION_BANKS = {
   // PAID 8: CA Foundation
   // ════════════════════════════════════════════════════════════
   'ca-foundation-paid': {
-    category: 'CA Foundation', subject: 'Accounting, Law, Economics, Mathematics',
+    category: 'Govt Exam', subject: 'Accounting, Law, Economics, Mathematics',
     qs: [
       { q:'CA stands for?', opts:['Cost Accountant','Chartered Accountant','Commerce Accountant','None'], ans:'Chartered Accountant' },
       { q:'ICAI stands for?', opts:['Institute of Cost Accountants India','Indian Commerce Accounting Institute','Institute of Chartered Accountants of India','None'], ans:'Institute of Chartered Accountants of India' },
@@ -613,7 +825,7 @@ const QUESTION_BANKS = {
   // PAID 9: UPSC Civil Services (IAS, IPS)
   // ════════════════════════════════════════════════════════════
   'upsc-paid': {
-    category: 'UPSC', subject: 'GS Paper 1 & 2',
+    category: 'Govt Exam', subject: 'GS Paper 1 & 2',
     qs: [
       { q:'UPSC Prelims has how many papers?', opts:['1','2','3','4'], ans:'2' },
       { q:'UPSC Mains GS Paper I covers?', opts:['Indian Economy','Indian Heritage, Culture, History, Geography','Indian Constitution','Science & Technology'], ans:'Indian Heritage, Culture, History, Geography' },
@@ -657,7 +869,7 @@ const QUESTION_BANKS = {
   // PAID 10: SSC CGL
   // ════════════════════════════════════════════════════════════
   'ssc-cgl-paid': {
-    category: 'SSC CGL', subject: 'Quantitative, Reasoning, English, GK',
+    category: 'Govt Exam', subject: 'Quantitative, Reasoning, English, GK',
     qs: [
       { q:'SSC CGL Tier 1 has how many questions?', opts:['75','100','150','50'], ans:'100' },
       { q:'SSC CGL stands for?', opts:['Staff Selection Commission Combined Graduate Level','Staff Sector Commission Civil Graduate Level','System Selection Civil Graduate Level','None'], ans:'Staff Selection Commission Combined Graduate Level' },
@@ -701,7 +913,7 @@ const QUESTION_BANKS = {
   // PAID 11: SSC CHSL
   // ════════════════════════════════════════════════════════════
   'ssc-chsl-paid': {
-    category: 'SSC CHSL', subject: 'Quantitative, Reasoning, English, GK',
+    category: 'Govt Exam', subject: 'Quantitative, Reasoning, English, GK',
     qs: [
       { q:'SSC CHSL stands for?', opts:['Combined Higher Secondary Level','Civil Higher Secondary Level','Staff Classification Higher Secondary Level','None'], ans:'Combined Higher Secondary Level' },
       { q:'SSC CHSL is for candidates who have passed?', opts:['Class 8','Class 10','Class 12 (10+2)','Graduation'], ans:'Class 12 (10+2)' },
@@ -750,12 +962,19 @@ const FREE_PACKS = [
   { id: 'aptitude-reasoning-free', title: 'Aptitude + Reasoning Test',              price: 0,   isFree: true,  totalTests: 3, thumbnail: 'https://images.unsplash.com/photo-1509228468518-180dd48219d8?w=800&q=80',  duration: 60, qKey: 'aptitude-reasoning-free' },
   { id: 'typing-english-free',     title: 'Typing Speed & English Test',            price: 0,   isFree: true,  totalTests: 2, thumbnail: 'https://images.unsplash.com/photo-1515378960530-7c0da6231fb1?w=800&q=80',  duration: 30, qKey: 'typing-english-free' },
   { id: 'communication-free',      title: 'Communication Skills Assessment',        price: 0,   isFree: true,  totalTests: 2, thumbnail: 'https://images.unsplash.com/photo-1556761175-b413da4baf72?w=800&q=80',  duration: 40, qKey: 'communication-free' },
+  // State Boards (Made FREE as per user request)
+  { id: 'cbse-10-paid',         title: 'CBSE Board Class 10 Mock',           price: 0,   isFree: true,  totalTests: 10, thumbnail: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800&q=80', duration: 90, qKey: 'cbse-10-paid' },
+  { id: 'cbse-12-paid',         title: 'CBSE Board Class 12 Mock',           price: 0,   isFree: true,  totalTests: 12, thumbnail: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800&q=80', duration: 90, qKey: 'cbse-12-paid' },
+  { id: 'icse-board-paid',         title: 'ICSE Board Exams',                       price: 0,   isFree: true,  totalTests: 8,  thumbnail: 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?w=800&q=80', duration: 90, qKey: 'icse-board-paid' },
+  { id: 'bihar-10-paid',        title: 'Bihar Board Class 10 Mock',          price: 0,   isFree: true,  totalTests: 8,  thumbnail: 'https://images.unsplash.com/photo-1622675363311-3e1904dc1885?w=800&q=80', duration: 90, qKey: 'bihar-10-paid' },
+  { id: 'bihar-12-paid',        title: 'Bihar Board Class 12 Mock',          price: 0,   isFree: true,  totalTests: 8,  thumbnail: 'https://images.unsplash.com/photo-1622675363311-3e1904dc1885?w=800&q=80', duration: 90, qKey: 'bihar-12-paid' },
+  { id: 'up-10-paid',           title: 'UP Board Class 10 Mock',             price: 0,   isFree: true,  totalTests: 8,  thumbnail: 'https://images.unsplash.com/photo-1622675363311-3e1904dc1885?w=800&q=80', duration: 90, qKey: 'up-10-paid' },
+  { id: 'up-12-paid',           title: 'UP Board Class 12 Mock',             price: 0,   isFree: true,  totalTests: 8,  thumbnail: 'https://images.unsplash.com/photo-1622675363311-3e1904dc1885?w=800&q=80', duration: 90, qKey: 'up-12-paid' },
+  { id: 'punjab-10-paid',       title: 'Punjab Board Class 10 Mock',         price: 0,   isFree: true,  totalTests: 8,  thumbnail: 'https://images.unsplash.com/photo-1622675363311-3e1904dc1885?w=800&q=80', duration: 90, qKey: 'punjab-10-paid' },
+  { id: 'punjab-12-paid',       title: 'Punjab Board Class 12 Mock',         price: 0,   isFree: true,  totalTests: 8,  thumbnail: 'https://images.unsplash.com/photo-1622675363311-3e1904dc1885?w=800&q=80', duration: 90, qKey: 'punjab-12-paid' },
 ];
 
 const PAID_PACKS = [
-  { id: 'cbse-board-paid',         title: 'CBSE Board Exams (10th & 12th)',         price: 99,  isFree: false, totalTests: 10, thumbnail: 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800&q=80', duration: 90, qKey: 'cbse-board-paid' },
-  { id: 'icse-board-paid',         title: 'ICSE Board Exams',                       price: 89,  isFree: false, totalTests: 8,  thumbnail: 'https://images.unsplash.com/photo-1546410531-bb4caa6b424d?w=800&q=80', duration: 90, qKey: 'icse-board-paid' },
-  { id: 'state-board-paid',        title: 'State Board Exams — Bihar & UP (10–12)', price: 79,  isFree: false, totalTests: 8,  thumbnail: 'https://images.unsplash.com/photo-1622675363311-3e1904dc1885?w=800&q=80', duration: 90, qKey: 'state-board-paid' },
   { id: 'jee-main-paid',           title: 'JEE Main — Engineering Entrance',        price: 149, isFree: false, totalTests: 20, thumbnail: 'https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=800&q=80', duration: 180, qKey: 'jee-main-paid' },
   { id: 'neet-paid',               title: 'NEET — Medical Entrance',                price: 149, isFree: false, totalTests: 20, thumbnail: 'https://images.unsplash.com/photo-1530026405186-ed1f139313f8?w=800&q=80', duration: 200, qKey: 'neet-paid' },
   { id: 'cuet-paid',               title: 'CUET (UG) — Central University Entrance',price: 99,  isFree: false, totalTests: 10, thumbnail: 'https://images.unsplash.com/photo-1580582932707-520aed937b7b?w=800&q=80', duration: 120, qKey: 'cuet-paid' },

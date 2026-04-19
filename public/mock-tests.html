@@ -73,6 +73,14 @@
             min-width: 250px;
         }
 
+        .search-box i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+        }
+
         .search-box input {
             width: 100%;
             padding: 12px 20px 12px 45px;
@@ -193,10 +201,6 @@
     <nav class="navbar" id="navbar">
         <div class="nav-container">
             <a href="index.html" class="logo"><img src="images/logo%20coursenova.png" alt="COURSENOVA"> <span>COURSENOVA</span></a>
-            <div class="nav-search">
-                <input type="text" id="navbarSearch" placeholder="Search for courses, subjects...">
-                <button type="button" onclick="handleNavbarSearch()"><i class="fas fa-search"></i></button>
-            </div>
             <ul class="nav-menu" id="navMenu"></ul>
             <div class="nav-buttons" id="navButtons"></div>
             <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>

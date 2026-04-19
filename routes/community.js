@@ -100,7 +100,7 @@ router.post('/posts/:postId/comments', requireAuth, async (req, res) => {
             userId: req.userId,
             username: user.name,
             userPicture: user.picture,
-            text
+            content: text
         });
         await comment.save();
 
@@ -146,7 +146,7 @@ router.post('/posts/:postId/like', requireAuth, async (req, res) => {
 
                 // Reward post author: 2 points for receiving a like
                 const postAuthor = await User.findById(post.userId);
-                await updatePoints(post.userId, postAuthor.name, 2);
+                await awardPoints(post.userId, 2, 'like_received');
             }
         }
         await post.save();

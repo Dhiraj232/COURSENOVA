@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Certificate Courses — COURSENOVA</title>
+    <title>Courses | COURSENOVA</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -35,32 +35,6 @@
             padding-top: 80px;
         }
 
-        /* ── Progress Banner ── */
-        .progress-banner {
-            background: linear-gradient(135deg, var(--brand), var(--brand2));
-            color: white;
-            padding: 14px 20px;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            gap: 40px;
-            font-size: .9rem;
-        }
-
-        .progress-banner.show {
-            display: flex;
-        }
-
-        .pbstat {
-            text-align: center;
-        }
-
-        .pbstat strong {
-            font-size: 1.5rem;
-            display: block;
-            font-weight: 800;
-        }
-
         /* ── Hero ── */
         .cert-hero {
             background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4338ca 100%);
@@ -89,40 +63,6 @@
             font-size: 1.05rem;
             opacity: .85;
             position: relative;
-        }
-
-        /* ── Filter Bar ── */
-        .filter-bar {
-            background: white;
-            border-bottom: 1px solid var(--border);
-            padding: 14px 20px;
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            justify-content: center;
-            position: sticky;
-            top: 70px;
-            z-index: 50;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, .05);
-        }
-
-        .filter-chip {
-            padding: 7px 18px;
-            border-radius: 20px;
-            border: 1.5px solid var(--border);
-            background: white;
-            font-size: .85rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all .2s;
-            color: var(--muted);
-        }
-
-        .filter-chip.active,
-        .filter-chip:hover {
-            background: var(--brand);
-            border-color: var(--brand);
-            color: white;
         }
 
         /* ── Main Grid ── */
@@ -198,150 +138,234 @@
         .card-header {
             padding: 34px 24px 24px;
             display: flex;
-            flex-direction: column;
+        }
+
+        /* ── Filter Section ── */
+        .filter-section {
+            background: white;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 80px;
+            z-index: 100;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .filter-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
             align-items: center;
+            justify-content: space-between;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .search-box {
+            position: relative;
+            flex: 1;
+            min-width: 250px;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 20px 12px 45px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            font-family: 'Inter';
+            font-size: 0.95rem;
+            background: #f8fafc;
+            transition: all 0.3s;
+        }
+
+        .filters-group {
+            display: flex;
+            gap: 15px;
+        }
+
+        .filter-select {
+            padding: 12px 20px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            background: white;
+            font-family: 'Inter';
+            font-size: 0.95rem;
+            color: #1e293b;
+            cursor: pointer;
+            outline: none;
+            min-width: 160px;
+        }
+        .card-header {
+            padding: 25px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
             position: relative;
             color: white;
             overflow: hidden;
+            min-height: 140px;
         }
 
         .card-header::after {
             content: '';
             position: absolute;
             top: -50%; left: -50%; width: 200%; height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.12) 0%, transparent 60%);
+            background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 60%);
             pointer-events: none;
         }
 
-        .card-header.beginner {
-            background: linear-gradient(135deg, #312e81, #4f46e5);
-        }
-
-        .card-header.intermediate {
-            background: linear-gradient(135deg, #1e3a5f, #2563eb);
-        }
-
-        .card-header.advanced {
-            background: linear-gradient(135deg, #3b1212, #dc2626);
-        }
-
-        .card-header.free {
-            background: linear-gradient(135deg, #064e3b, #10b981);
-        }
+        .card-header.beginner { background: linear-gradient(135deg, #4338ca, #6366f1); }
+        .card-header.intermediate { background: linear-gradient(135deg, #1e40af, #3b82f6); }
+        .card-header.advanced { background: linear-gradient(135deg, #991b1b, #ef4444); }
+        .card-header.free { background: linear-gradient(135deg, #0f766e, #10b981); }
 
         .course-icon {
-            font-size: 3.5rem;
-            margin-bottom: 12px;
-            filter: drop-shadow(0 8px 16px rgba(0,0,0,0.25));
+            font-size: 4rem;
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));
             transition: transform 0.4s ease;
             z-index: 2;
+            flex-shrink: 0;
+            width: 80px;
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .course-card:hover .course-icon {
-            transform: scale(1.1) rotate(-5deg);
+            transform: scale(1.1) rotate(-3deg);
         }
 
         .course-title {
-            font-size: 1.2rem;
+            font-size: 1.4rem;
             font-weight: 800;
-            text-align: center;
-            line-height: 1.4;
-            letter-spacing: -0.02em;
+            text-align: left;
+            line-height: 1.2;
+            letter-spacing: -0.03em;
             text-shadow: 0 2px 4px rgba(0,0,0,0.2);
             z-index: 2;
+            flex-grow: 1;
         }
 
         /* Status Badges */
         .status-badge {
             position: absolute;
-            top: 12px;
-            right: 12px;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: .72rem;
-            font-weight: 700;
+            top: 15px;
+            right: 15px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: .65rem;
+            font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: .5px;
+            letter-spacing: 1px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            z-index: 5;
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
 
-        .badge-completed {
-            background: rgba(245, 158, 11, .95);
-            color: #fff;
-        }
+        .status-badge i { font-size: 0.8rem; }
 
-        .badge-free {
-            background: rgba(255, 255, 255, .2);
-            color: #fff;
-        }
+        .badge-completed { background: #f59e0b; color: #fff; }
 
         /* Card Body */
         .card-body {
-            padding: 20px;
+            padding: 25px;
             flex-grow: 1;
             display: flex;
             flex-direction: column;
         }
 
         .course-desc {
-            font-size: .85rem;
-            color: var(--muted);
-            line-height: 1.6;
-            margin-bottom: 16px;
-            display: -webkit-box;
-            -webkit-line-clamp: 3;
-            -webkit-box-orient: vertical;
-            overflow: hidden;
-            line-clamp: 3;
-            min-height: 4.8em;
+            font-size: .95rem;
+            color: #64748b;
+            line-height: 1.5;
+            margin-bottom: 25px;
+            min-height: 3em;
         }
 
-        /* Meta row */
+        /* Meta row (Pill Style) */
         .course-meta {
             display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            margin-bottom: 18px;
-            background: #f1f5f9;
-            padding: 12px;
-            border-radius: 12px;
-            justify-content: space-around;
+            gap: 15px;
+            margin-bottom: 25px;
+            background: #f0f4ff;
+            padding: 10px 20px;
+            border-radius: 50px;
+            align-items: center;
+            justify-content: space-between;
         }
 
         .meta-tag {
             font-size: 0.85rem;
-            color: var(--text);
+            color: #1e293b;
             font-weight: 700;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
         }
 
         .meta-tag i {
-            color: var(--brand);
-            font-size: 1rem;
+            color: #6366f1;
+            font-size: 1.1rem;
         }
 
-        /* Highlights */
+        /* Highlights (Checkmarks) */
         .highlights {
             list-style: none;
-            margin-bottom: 18px;
+            margin-bottom: 25px;
             padding: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
         }
 
         .highlights li {
-            font-size: .82rem;
-            color: var(--text);
-            padding: 3px 0;
+            font-size: .95rem;
+            color: #1e293b;
+            font-weight: 500;
             display: flex;
-            gap: 8px;
+            gap: 12px;
             align-items: center;
         }
 
         .highlights li::before {
-            content: "✓";
-            color: var(--green);
-            font-weight: 800;
+            content: "\f058"; /* fa-check-circle */
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            color: #10b981;
+            font-size: 1.1rem;
         }
+
+        .btn-action {
+            width: 100%;
+            padding: 16px;
+            border-radius: 12px;
+            font-weight: 800;
+            font-size: 1.1rem;
+            text-decoration: none;
+            text-align: center;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .btn-free { background: #10b981; color: white; }
+        .btn-free:hover { background: #059669; transform: translateY(-2px); box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3); }
+
+        .btn-continue { background: #6366f1; color: white; }
+        .btn-completed { background: #f59e0b; color: white; }
 
         /* Action Buttons */
         .btn-action {
@@ -530,28 +554,17 @@
     <link rel="icon" type="image/png" href="/images/logo%20coursenova.png">
 </head>
 
+
 <body>
     <!-- NAVBAR -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
             <a href="index.html" class="logo"><img src="images/logo%20coursenova.png" alt="COURSENOVA"> <span>COURSENOVA</span></a>
-            <div class="nav-search">
-                <input type="text" id="navbarSearch" placeholder="Search for courses, subjects, or concepts...">
-                <button type="button" onclick="handleNavbarSearch()"><i class="fas fa-search"></i></button>
-            </div>
             <ul class="nav-menu" id="navMenu"></ul>
             <div class="nav-buttons" id="navButtons"></div>
             <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
         </div>
     </nav>
-
-    <!-- PROGRESS BANNER -->
-    <div class="progress-banner" id="progressBanner">
-        <div class="pbstat"><strong id="pbEnrolled">0</strong> Enrolled</div>
-        <div class="pbstat"><strong id="pbCompleted">0</strong> Completed</div>
-        <div class="pbstat"><strong id="pbCerts">0</strong> Certificates 🏆</div>
-        <a href="certificates.html" style="background:rgba(255,255,255,.2);color:white;padding:8px 20px;border-radius:20px;font-weight:700;text-decoration:none;font-size:.88rem;">View Dashboard →</a>
-    </div>
 
     <!-- HERO -->
     <div class="cert-hero">
@@ -559,12 +572,28 @@
         <p>Enroll • Learn • Pass the test • Earn your verified industry-recognized certificate</p>
     </div>
 
-    <!-- FILTER BAR -->
-    <div class="filter-bar">
-        <button class="filter-chip active" onclick="filterCards('all', this)">All Courses</button>
-        <button class="filter-chip" onclick="filterCards('Beginner', this)">🌱 Beginner</button>
-        <button class="filter-chip" onclick="filterCards('Intermediate', this)">📈 Intermediate</button>
-        <button class="filter-chip" onclick="filterCards('completed', this)">🏆 Completed</button>
+    <div class="filter-section">
+        <div class="filter-container">
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="courseSearch" placeholder="Search for courses...">
+            </div>
+            <div class="filters-group">
+                <select class="filter-select" id="categoryFilter">
+                    <option value="">📋 All Categories</option>
+                    <option value="BSc NURSING STUDENTS">🏥 BSc Nursing</option>
+                    <option value="B Pharma Students">💊 B Pharma</option>
+                    <option value="Agriculture Students">🌾 Agriculture</option>
+                    <option value="Tech">💻 Technology</option>
+                </select>
+                <select class="filter-select" id="levelFilter">
+                    <option value="">All Levels</option>
+                    <option value="Beginner">🌱 Beginner</option>
+                    <option value="Intermediate">📈 Intermediate</option>
+                    <option value="Advanced">🔥 Advanced</option>
+                </select>
+            </div>
+        </div>
     </div>
 
     <!-- MAIN CONTENT -->
@@ -673,17 +702,18 @@
                 }
             }
 
-            const searchQuery = urlParams.get('search');
+            setupFilters();
             
+            // Handle URL search param if present
+            const searchQuery = urlParams.get('search');
             if (searchQuery) {
-                const filtered = COURSES.filter(c =>
-                    c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    c.description.toLowerCase().includes(searchQuery.toLowerCase())
-                );
-                renderGrids(filtered);
-                document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+                const searchInp = document.getElementById('courseSearch');
+                if (searchInp) {
+                    searchInp.value = searchQuery;
+                    searchInp.dispatchEvent(new Event('input'));
+                }
             } else {
-                renderCards('all');
+                renderGrids(COURSES);
             }
             hideSkeleton();
         });
@@ -736,30 +766,39 @@
                     enrolledIds = status.enrolled || [];
                     completedMap = {};
                     (status.completed || []).forEach(c => { completedMap[c.courseId] = c; });
-
-                    // Banner stats
-                    if (enrolledIds.length > 0) {
-                        const banner = document.getElementById('progressBanner');
-                        banner.classList.add('show');
-                        document.getElementById('pbEnrolled').textContent = enrolledIds.length;
-                        document.getElementById('pbCompleted').textContent = Object.keys(completedMap).length;
-                        document.getElementById('pbCerts').textContent = Object.keys(completedMap).length;
-                    }
                 }
             } catch (err) {
                 console.warn('Status load:', err);
             }
         }
 
-        function renderCards(filter) {
-            let courses = COURSES;
-            if (filter === 'free') courses = COURSES.filter(c => c.isFree);
-            if (filter === 'Beginner') courses = COURSES.filter(c => c.level === 'Beginner');
-            if (filter === 'Intermediate') courses = COURSES.filter(c => c.level === 'Intermediate');
-            if (filter === 'completed') courses = COURSES.filter(c => !!completedMap[c.id]);
+        
 
 
-            renderGrids(courses);
+        function setupFilters() {
+            const searchInp = document.getElementById('courseSearch');
+            const catSel    = document.getElementById('categoryFilter');
+            const levelSel  = document.getElementById('levelFilter');
+
+            if (!searchInp) return;
+
+            const apply = () => {
+                const s = searchInp.value.toLowerCase();
+                const c = catSel.value;
+                const l = levelSel.value;
+
+                const filtered = COURSES.filter(course => {
+                    const matchSearch = course.title.toLowerCase().includes(s) || (course.description || '').toLowerCase().includes(s);
+                    const matchCat    = !c || course.category === c;
+                    const matchLevel  = !l || course.level === l;
+                    return matchSearch && matchCat && matchLevel;
+                });
+                renderGrids(filtered);
+            };
+
+            searchInp.addEventListener('input', apply);
+            catSel.addEventListener('change', apply);
+            levelSel.addEventListener('change', apply);
         }
 
         function renderGrids(coursesList) {
@@ -825,18 +864,18 @@
 
             let badge = '';
             if (completed) {
-                badge = `<span class="status-badge badge-completed">✅ Completed</span>`;
+                badge = `<span class="status-badge badge-completed"><i class="fas fa-check-circle"></i> Completed</span>`;
             } else if (enrolled) {
-                badge = `<span class="status-badge badge-free" style="background:#10b981">🎓 Enrolled</span>`;
+                badge = `<span class="status-badge" style="background:#10b981; color:white;"><i class="fas fa-graduation-cap"></i> Enrolled</span>`;
             } else {
                 badge = c.isFree 
-                    ? `<span class="status-badge badge-free">🆓 Free</span>` 
-                    : `<span class="status-badge" style="background:#7c3aed; color:white;">💎 Premium</span>`;
+                    ? `<span class="status-badge badge-free" style="background:#0f172a80; color:white;">🆓 FREE</span>` 
+                    : `<span class="status-badge" style="background:#7c3aed; color:white;">💎 PREMIUM</span>`;
             }
 
             const progressHTML = (enrolled && !completed && progress > 0)
-                ? `<div class="progress-wrap">
-                    <div class="progress-label"><span>Progress</span><span>${progress}%</span></div>
+                ? `<div class="progress-wrap" style="margin-bottom: 20px;">
+                    <div class="progress-label"><span>Overall Progress</span><span>${progress}%</span></div>
                     <div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div>
                    </div>`
                 : '';
@@ -844,17 +883,22 @@
             let btnHTML = '';
             if (completed) {
                 const cert = completedMap[c.id];
-                btnHTML = `<a href="course-content.html?course=${encodeURIComponent(c.id)}" class="btn-action btn-completed">🚀 View Topics</a>` +
-                        (cert?.certId ? `<a href="/api/certificates/generate/${cert.certId}" class="btn-cert" download><i class="fas fa-download"></i> Download Cert</a>` : '');
+                btnHTML = `<a href="course-content.html?course=${encodeURIComponent(c.id)}" class="btn-action btn-completed">Review Topics</a>` +
+                        (cert?.certId ? `<a href="/api/certificates/generate/${cert.certId}" class="btn-cert" style="margin-top:10px" download><i class="fas fa-download"></i> Get Certificate</a>` : '');
             } else if (enrolled) {
-                btnHTML = `<a href="course-content.html?course=${encodeURIComponent(c.id)}" class="btn-action btn-continue"><i class="fas fa-play"></i> Continue</a>`;
+                btnHTML = `<a href="course-content.html?course=${encodeURIComponent(c.id)}" class="btn-action btn-continue">Continue Learning</a>`;
             } else {
                 if (c.isFree) {
                     btnHTML = `<a href="course-content.html?course=${encodeURIComponent(c.id)}" class="btn-action btn-free">Start for FREE</a>`;
                 } else {
-                    btnHTML = `<button onclick="initiateCoursePurchase('${c.id}')" class="btn-action" style="background: linear-gradient(135deg, #7c3aed, #4f46e5); color: white; border: none;">Unlock for ₹${c.price}</button>`;
+                    btnHTML = `<button onclick="initiateCoursePurchase('${c.id}')" class="btn-action" style="background: #1e293b; color: white;">Enroll for ₹${c.price}</button>`;
                 }
             }
+
+            // Ensure we have some default highlights if none provided
+            const highlights = (c.highlights && c.highlights.length > 0) 
+                ? c.highlights 
+                : ['Expert Training', 'Verified Certification', 'Practical Skills Enhancement'];
 
             return `
             <div class="course-card">
@@ -867,11 +911,11 @@
                     <p class="course-desc">${c.description}</p>
                     <div class="course-meta">
                         <span class="meta-tag"><i class="fas fa-clock"></i> ${c.duration}</span>
-                        <span class="meta-tag"><i class="fas fa-play-circle"></i> ${c.lessonCount} Videos</span>
-                        <span class="meta-tag"><i class="fas fa-question-circle"></i> ${c.quizCount} MCQs</span>
+                        <span class="meta-tag"><i class="fas fa-circle-play"></i> ${c.lessonCount} Videos</span>
+                        <span class="meta-tag">${c.quizCount} MCQs</span>
                     </div>
                     <ul class="highlights">
-                        ${c.highlights.map(h => `<li>${h}</li>`).join('')}
+                        ${highlights.slice(0, 3).map(h => `<li>${h}</li>`).join('')}
                     </ul>
                     ${progressHTML}
                     ${btnHTML}
@@ -879,11 +923,7 @@
             </div>`;
         }
 
-        function filterCards(type, btn) {
-            document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            renderCards(type);
-        }
+        
 
         function hideSkeleton() {
             document.getElementById('skeletonGrid').style.display = 'none';

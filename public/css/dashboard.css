@@ -461,3 +461,173 @@ body.dashboard-body {
     .stats-ribbon { grid-template-columns: 1fr; }
     .stats-ribbon.secondary { grid-template-columns: 1fr; }
 }
+
+/* ── STANDARDIZED COURSE CARDS (Master Template) ── */
+.course-card {
+    background: white;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    border: 1px solid rgba(0,0,0,0.03);
+    text-decoration: none;
+    color: inherit;
+}
+
+.course-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    padding: 20px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    position: relative;
+    color: white;
+    overflow: hidden;
+    min-height: 120px;
+}
+
+.card-header::after {
+    content: '';
+    position: absolute;
+    top: -50%; left: -50%; width: 200%; height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 60%);
+    pointer-events: none;
+}
+
+.card-header.beginner { background: linear-gradient(135deg, #4338ca, #6366f1); }
+.card-header.intermediate { background: linear-gradient(135deg, #1e40af, #3b82f6); }
+.card-header.advanced { background: linear-gradient(135deg, #991b1b, #ef4444); }
+.card-header.free { background: linear-gradient(135deg, #0f766e, #10b981); }
+
+.course-icon {
+    font-size: 3rem;
+    filter: drop-shadow(0 8px 16px rgba(0,0,0,0.25));
+    transition: transform 0.4s ease;
+    z-index: 2;
+    flex-shrink: 0;
+}
+
+.course-title {
+    font-size: 1.2rem;
+    font-weight: 800;
+    text-align: left;
+    line-height: 1.2;
+    z-index: 2;
+    flex-grow: 1;
+}
+
+.status-badge {
+    position: absolute; top: 10px; right: 10px;
+    padding: 3px 8px; border-radius: 6px;
+    font-size: 0.6rem; font-weight: 800; text-transform: uppercase;
+    z-index: 5; background: rgba(255,255,255,0.2);
+}
+
+.card-body { padding: 20px; flex-grow: 1; display: flex; flex-direction: column; }
+.course-desc {
+    font-size: 0.85rem; color: #64748b; line-height: 1.5; margin-bottom: 20px;
+    min-height: 3em; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+
+.course-meta {
+    display: flex; gap: 10px; margin-bottom: 20px;
+    background: #f0f4ff; padding: 8px 15px; border-radius: 50px;
+    align-items: center; justify-content: space-between;
+}
+
+.meta-tag {
+    display: flex; align-items: center;
+    font-size: 0.75rem; font-weight: 700; color: #1e293b; gap: 5px;
+}
+.meta-tag i { font-size: 0.9rem; color: #6366f1; }
+
+.highlights-mini {
+    list-style: none; padding: 0; margin: 0 0 20px 0;
+    display: flex; flex-direction: column; gap: 4px;
+}
+.highlights-mini li {
+    font-size: 0.8rem; font-weight: 600; color: #1e293b;
+    display: flex; align-items: center; gap: 8px;
+}
+.highlights-mini li::before {
+    content: "\f058"; font-family: "Font Awesome 6 Free"; font-weight: 900;
+    color: #10b981; font-size: 0.85rem;
+}
+
+.progress-wrap { margin-bottom: 20px; }
+.progress-label { display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 700; color: #1e293b; margin-bottom: 5px; }
+.progress-bar { height: 8px; background: #f1f5f9; border-radius: 10px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(to right, #10b981, #34d399); }
+
+.btn-action-vault {
+    width: 100%; padding: 12px; border-radius: 10px;
+    font-weight: 800; font-size: 0.9rem; text-decoration: none;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: all 0.3s;
+    background: #10b981; color: white;
+}
+.btn-action-vault:hover { background: #059669; transform: translateY(-2px); }
+
+.course-icon {
+    font-size: 3rem;
+    margin-bottom: 8px;
+    filter: drop-shadow(0 6px 12px rgba(0,0,0,0.2));
+    z-index: 2;
+}
+
+.course-title {
+    font-size: 1.1rem;
+    font-weight: 800;
+    text-align: center;
+    line-height: 1.3;
+    z-index: 2;
+}
+
+.status-badge {
+    position: absolute; top: 12px; right: 12px;
+    padding: 4px 10px; border-radius: 20px;
+    font-size: 0.65rem; font-weight: 800; text-transform: uppercase;
+    z-index: 5;
+}
+
+.badge-completed { background: #f59e0b; color: white; }
+.badge-enrolled { background: #10b981; color: white; }
+
+.card-body { padding: 20px; flex-grow: 1; display: flex; flex-direction: column; }
+.course-desc {
+    font-size: 0.85rem; color: #64748b; line-height: 1.5; margin-bottom: 15px;
+    height: 4.5em; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+}
+
+.course-meta {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 8px; margin-bottom: 15px;
+    background: #f8fafc; padding: 10px; border-radius: 10px;
+}
+
+.meta-tag {
+    display: flex; flex-direction: column; align-items: center;
+    font-size: 0.7rem; font-weight: 700; color: #475569; gap: 3px;
+}
+.meta-tag i { font-size: 0.9rem; color: #6366f1; }
+
+.progress-wrap { margin-bottom: 15px; }
+.progress-label { display: flex; justify-content: space-between; font-size: 0.75rem; font-weight: 600; color: #64748b; margin-bottom: 5px; }
+.progress-bar { height: 6px; background: #f1f5f9; border-radius: 10px; overflow: hidden; }
+.progress-fill { height: 100%; background: linear-gradient(to right, #10b981, #34d399); }
+
+.btn-action-vault {
+    width: 100%; padding: 12px; border-radius: 10px;
+    font-weight: 800; font-size: 0.9rem; text-decoration: none;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: all 0.3s;
+    background: #10b981; color: white;
+}
+.btn-action-vault:hover { background: #059669; transform: scale(1.02); }

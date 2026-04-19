@@ -90,6 +90,7 @@ function renderPosts(posts, targetId) {
                     <i class="fas fa-share"></i>
                 </div>
             </div>
+            <div id="comments-section-${p._id}" style="display:none; margin-top:20px; padding-top:20px; border-top:1px dashed #e2e8f0;"></div>
         </div>
     `).join('');
 }
@@ -557,8 +558,18 @@ async function fetchFullLeaderboard() {
 }
 
 async function showComments(postId) {
-    const feed = document.getElementById('communityFeed');
-    if (!feed) return;
+    const container = document.getElementById(`comments-section-${postId}`);
+    if (!container) return;
+
+    // Toggle logic
+    if (container.style.display === 'block') {
+        container.style.display = 'none';
+        return;
+    }
+
+    container.style.display = 'block';
+    container.innerHTML = '<div style="font-size:12px; color:#64748b;">Loading comments...</div>';
+
     try {
         const res = await fetch(`/api/community/posts/${postId}/comments`);
         const data = await res.json();
@@ -569,27 +580,20 @@ async function showComments(postId) {
                         <strong>${c.username}</strong>
                         <span style="font-size:11px; color:#64748b;">${new Date(c.createdAt).toLocaleString()}</span>
                     </div>
-                    <p style="margin:0; font-size:14px; color:#334155;">${c.text}</p>
+                    <p style="margin:0; font-size:14px; color:#334155;">${c.content}</p>
                 </div>
             `).join('');
 
             const inputHtml = `
-                <div style="margin-top: 25px; padding-top: 25px; border-top: 2px dashed #e2e8f0;">
-                    <h4>Leave a Comment</h4>
-                    <div style="display:flex; gap:10px; margin-top:15px;">
-                        <textarea id="comm-input-${postId}" placeholder="Write your thoughts..." style="flex:1; border:1px solid #e2e8f0; border-radius:12px; padding:12px; resize:none;"></textarea>
-                        <button class="btn-comm btn-post" style="padding:10px 20px; align-self: flex-end;" onclick="submitComment('${postId}')">Post</button>
-                    </div>
-                    <button class="btn-comm" style="margin-top:20px; background:#f1f5f9; color:#64748b;" onclick="loadSection('feed')">← Back to Feed</button>
+                <div style="margin-top: 20px; display:flex; gap:10px;">
+                    <textarea id="comm-input-${postId}" placeholder="Write your thoughts..." style="flex:1; border:1px solid #e2e8f0; border-radius:12px; padding:12px; resize:none; font-family:'Inter'; height:50px;"></textarea>
+                    <button class="btn-comm btn-post" style="padding:10px 20px;" onclick="submitComment('${postId}')">Post</button>
                 </div>
             `;
 
-            feed.innerHTML = `
-                <div class="post-card">
-                    <h3 style="margin-bottom:20px; color:var(--comm-primary);">Discussion Thread</h3>
-                    ${data.comments.length ? commentsHtml : '<p style="color:#64748b; font-style:italic;">No comments yet. Be the first to comment!</p>'}
-                    ${inputHtml}
-                </div>
+            container.innerHTML = `
+                ${data.comments.length ? commentsHtml : '<p style="color:#64748b; font-size:13px; font-style:italic;">No comments yet. Be the first!</p>'}
+                ${inputHtml}
             `;
         }
     } catch (e) { console.error(e); }
@@ -608,7 +612,9 @@ async function submitComment(postId) {
         });
         const data = await res.json();
         if (data.ok) {
-            showComments(postId);
+            const container = document.getElementById(`comments-section-${postId}`);
+            if (container) container.style.display = 'none'; // reset state
+            showComments(postId); // re-open seamlessly
         }
     } catch (e) { console.error(e); }
 }

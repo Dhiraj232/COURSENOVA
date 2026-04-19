@@ -5,500 +5,287 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Courses | COURSENOVA</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        *,
-        *::before,
-        *::after {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
         :root {
-            --bg: #0f172a;
-            --surface: #1e293b;
-            --surface2: #273549;
-            --border: #334155;
-            --primary: #6366f1;
-            --primary-glow: rgba(99, 102, 241, 0.15);
-            --success: #10b981;
-            --warning: #f59e0b;
-            --text: #e2e8f0;
-            --muted: #94a3b8;
+            --brand: #1C52A0; /* CourseNova Blue */
+            --green: #10B981;
+            --muted: #64748b;
+            --bg-light: #f8fafc;
+            --border: #e2e8f0;
+            --card-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            --card-hover-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
         }
 
         body {
             font-family: 'Inter', sans-serif;
-            background: var(--bg);
-            background-image: radial-gradient(ellipse at 20% 20%, rgba(99, 102, 241, 0.08) 0%, transparent 60%);
-            color: var(--text);
+            background-color: var(--bg-light);
+            color: #1e293b;
+            margin: 0;
+            padding-top: 80px;
             min-height: 100vh;
         }
 
-        /* NAV */
-
-
-
-
-        .nav-menu {
-            display: flex;
-            gap: 1.5rem;
-        }
-
-        .nav-menu a {
-            color: var(--muted);
-            text-decoration: none;
-            font-size: 0.9rem;
-            transition: color 0.2s;
-        }
-
-        .nav-menu a:hover,
-        .nav-menu a.active {
-            color: var(--text);
-        }
-
-        .user-chip {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            background: var(--surface2);
-            padding: 0.4rem 1rem;
-            border-radius: 999px;
-            font-size: 0.85rem;
-        }
-
-        .user-chip img {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            object-fit: cover;
-        }
-
-        .user-chip .avatar-placeholder {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            background: var(--primary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            font-size: 0.8rem;
-            color: #fff;
-        }
-
-        /* HERO */
+        /* ── Hero ── */
         .hero {
-            padding: 3rem 2rem 2rem;
-            max-width: 1200px;
-            margin: 0 auto;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            padding: 60px 20px;
+            color: white;
+            text-align: center;
         }
 
-        .hero h1 {
-            font-size: 2rem;
-            font-weight: 700;
-        }
+        .hero h1 { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 2.5rem; margin-bottom: 12px; }
+        .hero h1 span { color: var(--green); }
+        .hero p { opacity: 0.85; max-width: 600px; margin: 20px auto 0; font-size: 1.1rem; }
 
-        .hero h1 span {
-            color: var(--primary);
-        }
-
-        .hero p {
-            color: var(--muted);
-            margin-top: 0.5rem;
-        }
-
-        /* TABS */
+        /* ── Tabs ── */
         .tabs {
-            display: flex;
-            gap: 0.5rem;
             max-width: 1200px;
-            margin: 0 auto 2rem;
-            padding: 0 2rem;
+            margin: 30px auto;
+            display: flex;
+            gap: 15px;
+            padding: 0 20px;
+            justify-content: center;
         }
 
         .tab {
-            padding: 0.5rem 1.4rem;
-            border-radius: 999px;
+            padding: 12px 28px;
+            border-radius: 30px;
             border: 1px solid var(--border);
-            background: transparent;
+            background: white;
             color: var(--muted);
+            font-weight: 700;
             cursor: pointer;
-            font-size: 0.85rem;
+            transition: all 0.3s;
             font-family: inherit;
-            transition: all 0.2s;
         }
 
-        .tab.active,
-        .tab:hover {
-            background: var(--primary);
-            border-color: var(--primary);
-            color: #fff;
+        .tab.active {
+            background: var(--brand);
+            color: white;
+            border-color: var(--brand);
+            box-shadow: 0 4px 12px rgba(28, 82, 160, 0.2);
         }
 
-        /* COURSES GRID */
+        /* ── Grid ── */
         .courses-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1.5rem;
-            max-width: 1200px;
+            max-width: 1240px;
             margin: 0 auto;
-            padding: 0 2rem 4rem;
+            padding: 0 20px 80px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 30px;
         }
 
+        /* ── MASTER COURSE CARD ── */
         .course-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 16px;
+            background: white;
+            border-radius: 20px;
             overflow: hidden;
-            transition: transform 0.25s, box-shadow 0.25s;
+            box-shadow: var(--card-shadow);
+            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid rgba(0,0,0,0.03);
+            text-decoration: none;
+            color: inherit;
         }
 
         .course-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-            border-color: var(--primary);
+            transform: translateY(-8px);
+            box-shadow: var(--card-hover-shadow);
         }
 
-        .course-thumb {
-            height: 140px;
-            background: linear-gradient(135deg, #3730a3 0%, #6366f1 100%);
+        .card-header {
+            padding: 25px;
             display: flex;
             align-items: center;
-            justify-content: center;
-            font-size: 3rem;
-        }
-
-        .course-body {
-            padding: 1.5rem;
-        }
-
-        .course-name {
-            font-size: 1.05rem;
-            font-weight: 600;
-            margin-bottom: 0.4rem;
-            line-height: 1.4;
-        }
-
-        .course-meta {
-            color: var(--muted);
-            font-size: 0.8rem;
-            margin-bottom: 1rem;
-        }
-
-        /* Progress bar */
-        .progress-wrap {
-            margin-bottom: 1.2rem;
-        }
-
-        .progress-label {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.78rem;
-            color: var(--muted);
-            margin-bottom: 0.4rem;
-        }
-
-        .progress-bar {
-            height: 6px;
-            background: var(--border);
-            border-radius: 999px;
+            gap: 20px;
+            position: relative;
+            color: white;
             overflow: hidden;
+            min-height: 140px;
         }
 
-        .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--primary), #818cf8);
-            border-radius: 999px;
-            transition: width 1s ease;
-        }
-
-        .btn-start {
-            width: 100%;
-            padding: 0.7rem;
-            border: none;
-            border-radius: 10px;
-            background: var(--primary);
-            color: #fff;
-            font-weight: 600;
-            font-size: 0.9rem;
-            font-family: inherit;
-            cursor: pointer;
-            transition: all 0.2s;
-            text-decoration: none;
-            display: block;
-            text-align: center;
-        }
-
-        .btn-start:hover {
-            background: #4f46e5;
-            transform: translateY(-1px);
-        }
-
-        .btn-start.completed {
-            background: rgba(16, 185, 129, 0.15);
-            color: var(--success);
+        .card-header::after {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%; width: 200%; height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 60%);
             pointer-events: none;
         }
 
-        /* PENDING PAYMENTS SECTION */
-        .section-head {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 2rem 1rem;
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: var(--muted);
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
+        .card-header.beginner { background: linear-gradient(135deg, #4338ca, #6366f1); }
+        .card-header.intermediate { background: linear-gradient(135deg, #1e40af, #3b82f6); }
+        .card-header.advanced { background: linear-gradient(135deg, #991b1b, #ef4444); }
+        .card-header.free { background: linear-gradient(135deg, #0f766e, #10b981); }
 
-        /* Empty state */
-        .empty {
-            text-align: center;
-            padding: 5rem 2rem;
-            color: var(--muted);
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        .empty i {
+        .course-icon {
             font-size: 4rem;
-            opacity: 0.3;
-            margin-bottom: 1rem;
-            color: var(--primary);
-        }
-
-        .empty h3 {
-            font-size: 1.3rem;
-            color: var(--text);
-            margin-bottom: 0.5rem;
-        }
-
-        .empty a {
-            display: inline-block;
-            margin-top: 1.5rem;
-            padding: 0.75rem 2rem;
-            background: var(--primary);
-            color: #fff;
-            border-radius: 10px;
-            text-decoration: none;
-            font-weight: 600;
-        }
-
-        /* Loading */
-        .spinner {
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.3));
+            transition: transform 0.4s ease;
+            z-index: 2;
+            flex-shrink: 0;
+            width: 80px;
+            height: 80px;
             display: flex;
-            justify-content: center;
             align-items: center;
-            padding: 5rem;
-            gap: 1rem;
-            color: var(--muted);
+            justify-content: center;
         }
 
-        .spinner i {
-            animation: spin 1s linear infinite;
-            font-size: 2rem;
-            color: var(--primary);
+        .course-card:hover .course-icon {
+            transform: scale(1.1) rotate(-3deg);
         }
 
-        @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
+        .course-title {
+            font-size: 1.4rem;
+            font-weight: 800;
+            text-align: left;
+            line-height: 1.2;
+            letter-spacing: -0.03em;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            z-index: 2;
+            flex-grow: 1;
         }
 
-        /* Pending payment cards */
-        .pending-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 1rem;
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 2rem 3rem;
-        }
-
-        .pending-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-left: 3px solid var(--warning);
-            border-radius: 12px;
-            padding: 1.2rem;
-        }
-
-        .pending-card .status-badge {
-            display: inline-block;
-            padding: 0.2rem 0.7rem;
-            border-radius: 999px;
-            font-size: 0.75rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-        }
-
-        .status-pending {
-            background: rgba(245, 158, 11, 0.15);
-            color: var(--warning);
-        }
-
-        .status-rejected {
-            background: rgba(239, 68, 68, 0.15);
-            color: #ef4444;
-        }
-
-        /* Certificate preview card */
-        .cert-preview-card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            overflow: hidden;
-            transition: transform 0.25s, box-shadow 0.25s;
-        }
-
-        .cert-preview-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 20px 40px rgba(0, 0, 0, .4);
-        }
-
-        .cert-design {
-            background: linear-gradient(135deg, #1e1b4b 0%, #4338ca 50%, #6366f1 100%);
-            padding: 28px 20px;
-            text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .cert-design::before {
-            content: '';
+        /* Status Badges */
+        .status-badge {
             position: absolute;
-            inset: 0;
-            background: url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M20 20c0 11.046-8.954 20-20 20S-20 31.046-20 20s8.954-20 20-20 20 8.954 20 20z'/%3E%3C/g%3E%3C/svg%3E");
-        }
-
-        .cert-trophy {
-            font-size: 2.5rem;
-            position: relative;
-        }
-
-        .cert-course-name {
-            font-size: 1rem;
-            font-weight: 700;
+            top: 15px;
+            right: 15px;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: .65rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            background: rgba(255,255,255,0.2);
             color: white;
-            margin-top: 8px;
-            position: relative;
+            z-index: 5;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .status-badge i { font-size: 0.8rem; }
+
+        .card-body { padding: 25px; flex-grow: 1; display: flex; flex-direction: column; }
+        
+        .course-desc {
+            font-size: .95rem;
+            color: #64748b;
+            line-height: 1.5;
+            margin-bottom: 25px;
+            min-height: 3em;
         }
 
-        .cert-cert-id {
-            font-size: .72rem;
-            color: rgba(255, 255, 255, .65);
-            font-family: monospace;
-            margin-top: 4px;
-            position: relative;
+        /* Meta row (Pill Style) */
+        .course-meta {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            background: #f0f4ff;
+            padding: 10px 20px;
+            border-radius: 50px;
+            align-items: center;
+            justify-content: space-between;
         }
 
-        .cert-info-body {
-            padding: 18px;
-        }
-
-        .cert-info-row {
+        .meta-tag {
+            font-size: 0.85rem;
+            color: #1e293b;
+            font-weight: 700;
             display: flex;
             align-items: center;
             gap: 8px;
-            font-size: .82rem;
-            color: var(--muted);
-            padding: 5px 0;
-            border-bottom: 1px solid var(--border);
         }
 
-        .cert-info-row:last-of-type {
-            border: none;
+        .meta-tag i {
+            color: #6366f1;
+            font-size: 1.1rem;
         }
 
-        .cert-info-row i {
-            color: var(--primary);
-            width: 16px;
-            text-align: center;
-        }
-
-        .btn-dl-cert {
+        /* Highlights (Checkmarks) */
+        .highlights {
+            list-style: none;
+            margin-bottom: 25px;
+            padding: 0;
             display: flex;
-            align-items: center;
-            justify-content: center;
+            flex-direction: column;
             gap: 8px;
-            width: 100%;
-            padding: 11px;
-            background: var(--primary);
-            color: white;
+        }
+
+        .highlights li {
+            font-size: .95rem;
+            color: #1e293b;
+            font-weight: 500;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .highlights li::before {
+            content: "\f058"; /* fa-check-circle */
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            color: #10b981;
+            font-size: 1.1rem;
+        }
+
+        .progress-wrap { margin-bottom: 25px; }
+        .progress-label { display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 700; color: #1e293b; margin-bottom: 8px; }
+        .progress-bar { height: 10px; background: #f1f5f9; border-radius: 10px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(to right, #10b981, #34d399); border-radius: 10px; }
+
+        .btn-action {
+            width: 100%; padding: 16px; border-radius: 12px;
+            font-weight: 800; font-size: 1.1rem; text-decoration: none;
+            display: flex; align-items: center; justify-content: center; gap: 10px;
+            transition: all 0.3s;
             border: none;
-            border-radius: 10px;
-            font-size: .9rem;
-            font-weight: 700;
-            font-family: inherit;
             cursor: pointer;
-            text-decoration: none;
-            margin-top: 14px;
-            transition: all .2s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
 
-        .btn-dl-cert:hover {
-            background: #4f46e5;
-            transform: translateY(-1px);
-        }
+        .btn-continue { background: #10b981; color: white; }
+        .btn-continue:hover { background: #059669; transform: translateY(-2px); }
+        .btn-completed { background: #f59e0b; color: white; }
 
-        .cert-empty-tab {
-            text-align: center;
-            padding: 3rem 2rem;
-            max-width: 1200px;
-            margin: 0 auto;
-            color: var(--muted);
-        }
+        /* -- Certificate Preview Cards -- */
+        .cert-preview-card { background: white; border-radius: 20px; overflow: hidden; box-shadow: var(--card-shadow); display: flex; flex-direction: column; transition: transform 0.3s; }
+        .cert-preview-card:hover { transform: translateY(-5px); }
+        .cert-design { height: 180px; background: #0f172a; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
+        .cert-trophy { font-size: 3rem; margin-bottom: 10px; }
+        .cert-course-name { font-weight: 800; font-size: 1.1rem; text-align: center; padding: 0 20px; }
+        .cert-info-body { padding: 25px; }
+        .cert-info-row { display: flex; align-items: center; gap: 12px; font-size: 0.9rem; color: #475569; margin-bottom: 10px; }
+        .cert-info-row i { color: #6366f1; width: 18px; }
+        .btn-dl-cert { margin-top: 15px; width: 100%; padding: 14px; background: var(--brand); color: white; border-radius: 12px; text-decoration: none; display: flex; align-items: center; justify-content: center; gap: 10px; font-weight: 800; font-size: 0.95rem; }
 
-        .cert-empty-tab i {
-            font-size: 3rem;
-            color: var(--primary);
-            opacity: .35;
-            display: block;
-            margin-bottom: 1rem;
-        }
+        .spinner { text-align: center; padding: 60px; font-weight: 700; color: #475569; }
+        .spinner i { animation: spin 1s linear infinite; margin-right: 12px; font-size: 1.5rem; color: var(--brand); }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        .empty { text-align: center; padding: 80px 20px; color: #64748b; }
+        .empty i { font-size: 4rem; margin-bottom: 20px; opacity: 0.2; color: var(--brand); }
+        .empty a { display: inline-block; margin-top: 25px; padding: 14px 40px; background: var(--brand); color: white; border-radius: 50px; text-decoration: none; font-weight: 700; }
 
         @media (max-width: 768px) {
-
-            .hero,
-            .tabs,
-            .courses-grid,
-            .pending-list,
-            .section-head {
-                padding-left: 1rem;
-                padding-right: 1rem;
-            }
-
-
-
-            .nav-menu {
-                display: none;
-            }
+            .hero h1 { font-size: 2rem; }
+            .courses-grid { grid-template-columns: 1fr; gap: 20px; }
+            .navbar .logo span { display: none; }
         }
     </style>
     <link rel="stylesheet" href="css/navigation.css">
-    <script src="/socket.io/socket.io.js"></script>
     <script src="js/navigation.js"></script>
-
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" href="/images/logo%20coursenova.png">
 </head>
 
-<body class="dark-theme">
-
-    <!-- standard navbar -->
+<body>
+    <!-- Standard Navbar -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
             <a href="index.html" class="logo"><img src="images/logo%20coursenova.png" alt="COURSENOVA"> <span>COURSENOVA</span></a>
-            <div class="nav-search">
-                <input type="text" id="navbarSearch" placeholder="Search for courses, subjects, or concepts...">
-                <button type="button" onclick="handleNavbarSearch()"><i class="fas fa-search"></i></button>
-            </div>
             <ul class="nav-menu" id="navMenu"></ul>
             <div class="nav-buttons" id="navButtons"></div>
             <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
@@ -507,275 +294,231 @@
 
     <!-- HERO -->
     <div class="hero">
-        <h1>My <span>Courses</span></h1>
-        <p>Continue your learning journey � track progress and earn certificates.</p>
+        <h1>My Learning <span>Vault</span></h1>
+        <p>Your educational journey, courses, and certifications in one place.</p>
     </div>
 
     <!-- TABS -->
     <div class="tabs">
-        <button class="tab active" onclick="showTab('enrolled', this)">Enrolled</button>
-        <button class="tab" onclick="showTab('certs', this)">?? My Certificates</button>
+        <button class="tab active" onclick="showTab('enrolled', this)">📚 My Courses</button>
+        <button class="tab" onclick="showTab('certs', this)">🏆 My Certificates</button>
     </div>
 
-    <!-- ENROLLED COURSES -->
+    <!-- CONTENT SECTIONS -->
     <div id="enrolledSection">
         <div class="spinner" id="loadingSpinner">
-            <i class="fas fa-circle-notch"></i> Loading your courses...
+            <i class="fas fa-circle-notch"></i> Synchronizing your learning progress...
         </div>
         <div class="courses-grid" id="coursesGrid" style="display:none"></div>
         <div class="empty" id="emptyState" style="display:none">
             <i class="fas fa-graduation-cap"></i>
-            <h3>No courses yet!</h3>
-            <p>Enroll in a course to start learning and earning certificates.</p>
-            <a href="index.html#courses">Browse Courses</a>
+            <h3>No courses found!</h3>
+            <p>You haven't enrolled in any courses yet. Start your journey today!</p>
+            <a href="certificates.html">Browse Catalog</a>
         </div>
     </div>
 
-
-    <!-- MY CERTIFICATES -->
     <div id="certsSection" style="display:none">
-        <div class="section-head"><i class="fas fa-certificate"></i> My Certificates</div>
-        <div class="courses-grid" id="certsGrid" style="display:none"></div>
         <div class="spinner" id="certsSpinner">
-            <i class="fas fa-circle-notch"></i> Loading certificates...
+            <i class="fas fa-circle-notch"></i> Retrieving your credentials...
         </div>
-        <div class="cert-empty-tab" id="certsEmpty" style="display:none">
+        <div class="courses-grid" id="certsGrid" style="display:none"></div>
+        <div class="empty" id="certsEmpty" style="display:none">
             <i class="fas fa-award"></i>
-            <h3 style="color:var(--text);font-size:1.2rem;margin-bottom:.5rem;">No certificates yet</h3>
-            <p>Complete a course and pass the final test to earn your certificate.</p>
-            <a href="certificates.html"
-                style="display:inline-block;margin-top:1.5rem;padding:.75rem 2rem;background:var(--primary);color:#fff;border-radius:10px;text-decoration:none;font-weight:600;">Browse
-                Courses</a>
+            <h3>No certificates yet</h3>
+            <p>Complete your courses and pass final tests to see your certificates here.</p>
+            <a href="my-courses.html">Continue Learning</a>
         </div>
     </div>
 
     <script>
         const API = '';
         const token = localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token');
+        
+        let COURSES_MAP = {};
+        let PROGRESS_MAP = {};
+        let COMPLETED_MAP = {};
 
-        // Course icons mapping
-        const COURSE_ICONS = {
-            'C Programming Fundamentals': '??',
-            'Data Structures Advanced': '??',
-            'Web Development Bootcamp': '??',
-            'Python for Data Science': '??',
-            'Database Management Systems': '???'
-        };
-
-        function getIcon(name) {
-            for (const [key, icon] of Object.entries(COURSE_ICONS)) {
-                if (name && name.toLowerCase().includes(key.toLowerCase().split(' ')[0].toLowerCase())) return icon;
-            }
-            return '??';
-        }
-
-        // -- Auth check ------------------------------------------------
         if (!token) {
             window.location.href = 'signup.html?redirect=my-courses.html';
         }
 
-        // -- Load user info ---------------------------------------------
-        async function loadUser() {
+        async function init() {
+            await fetchMasterCourses();
+            await loadEnrolledCourses();
+        }
+
+        async function fetchMasterCourses() {
             try {
-                const res = await fetch(`${API}/api/me`, { headers: { Authorization: `Bearer ${token}` } });
+                const res = await fetch(`${API}/api/premium/courses`);
                 const data = await res.json();
                 if (data.ok) {
-                    const u = data.user;
-                    document.getElementById('userName').textContent = u.fullName || u.email;
-                    const av = document.getElementById('userAvatar');
-                    if (u.picture) {
-                        av.innerHTML = `<img src="${u.picture}" alt="avatar">`;
-                        av.style.background = 'transparent';
-                    } else {
-                        av.textContent = (u.fullName || '?')[0].toUpperCase();
-                    }
+                    data.courses.forEach(c => {
+                        COURSES_MAP[c.slug || c._id] = {
+                            id: c.slug || c._id,
+                            title: c.title,
+                            icon: c.icon || '🎓',
+                            level: c.level || 'Beginner',
+                            duration: c.duration || '25 Hours',
+                            lessonCount: (c.lessons || []).length || 3,
+                            quizCount: (c.quizQuestions || []).length || 35,
+                            description: c.description || 'Master this subject with in-depth modules.'
+                        };
+                    });
                 }
-            } catch { }
+            } catch (e) {
+                console.warn('Could not fetch course metadata');
+            }
         }
 
-        // -- Load enrolled courses --------------------------------------
         async function loadEnrolledCourses() {
+            const grid = document.getElementById('coursesGrid');
+            const spinner = document.getElementById('loadingSpinner');
+            const empty = document.getElementById('emptyState');
+
             try {
-                const enrollRes = await fetch(`${API}/api/enrollments/my-courses`, { headers: { Authorization: `Bearer ${token}` } });
-                const enrollData = await enrollRes.json();
-
-                document.getElementById('loadingSpinner').style.display = 'none';
-                const grid = document.getElementById('coursesGrid');
-                const enrollments = enrollData.ok ? enrollData.courses : [];
-
-                if (enrollments.length === 0) {
-                    document.getElementById('emptyState').style.display = 'block';
-                    return;
-                }
-
-                // Fetch actual progress for each course from DB
-                const progressList = await Promise.all(enrollments.map(e =>
-                    fetch(`${API}/api/course/progress?courseId=${encodeURIComponent(e.courseName)}`, { headers: { Authorization: `Bearer ${token}` } })
-                        .then(r => r.json()).catch(() => ({ ok: false }))
-                ));
-
-                grid.style.display = 'grid';
-                grid.innerHTML = enrollments.map((e, idx) => {
-                    const progData = progressList[idx];
-                    const rec = (progData && progData.ok) ? progData.record : null;
-                    const progressPct = rec ? rec.progressPercent : 0;
-                    const completed = rec && rec.testPassed;
-                    const courseUrl = `course-content.html?course=${encodeURIComponent(e.courseName)}`;
-                    const enrollDate = new Date(e.purchaseDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
-                    const icon = getIcon(e.courseName);
-
-                    return `
-                <div class="course-card">
-                    <div class="course-thumb">${icon}</div>
-                    <div class="course-body">
-                        <div class="course-name">${escHtml(e.courseName)}</div>
-                        <div class="course-meta"><i class="fas fa-calendar-check"></i> Enrolled on ${enrollDate}</div>
-                        <div class="progress-wrap">
-                            <div class="progress-label">
-                                <span>Progress</span>
-                                <span>${progressPct}%</span>
-                            </div>
-                            <div class="progress-bar">
-                                <div class="progress-fill" style="width:${progressPct}%"></div>
-                            </div>
-                        </div>
-                        ${completed
-                            ? `<a href="${courseUrl}" class="btn-start completed"><i class="fas fa-check-circle"></i> Completed</a>`
-                            : `<a href="${courseUrl}" class="btn-start"><i class="fas fa-play"></i> Start Learning</a>`
-                        }
-                    </div>
-                </div>`;
-                }).join('');
-            } catch (err) {
-                document.getElementById('loadingSpinner').style.display = 'none';
-                document.getElementById('emptyState').style.display = 'block';
-                console.error('Error loading courses:', err);
-            }
-        }
-
-
-        // -- Tab switching ----------------------------------------------
-        function showTab(tab, btn) {
-            document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            document.getElementById('enrolledSection').style.display = tab === 'enrolled' ? 'block' : 'none';
-            document.getElementById('pendingSection').style.display = tab === 'pending' ? 'block' : 'none';
-            document.getElementById('certsSection').style.display = tab === 'certs' ? 'block' : 'none';
-            if (tab === 'certs') loadCertificates();
-        }
-
-        // -- Load Certificates ------------------------------------------
-        const COURSE_ICONS_MAP = {
-            'C Programming Fundamentals': '??',
-            'Data Structures Advanced': '??',
-            'Web Development Bootcamp': '??',
-            'Python for Data Science': '??',
-            'Database Management Systems': '???',
-            'Learning Essentials': '??'
-        };
-        function getCertIcon(name) {
-            for (const [k, v] of Object.entries(COURSE_ICONS_MAP)) {
-                if (name && name.toLowerCase().includes(k.toLowerCase().split(' ')[0].toLowerCase())) return v;
-            }
-            return '??';
-        }
-
-        let certsLoaded = false;
-        async function loadCertificates() {
-            if (certsLoaded) return;
-            certsLoaded = true;
-            try {
-                const res = await fetch(`${API}/api/certificates/my`, { headers: { Authorization: `Bearer ${token}` } });
+                const res = await fetch(`${API}/api/enrollments/my-courses`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
                 const data = await res.json();
 
-                document.getElementById('certsSpinner').style.display = 'none';
-                const certs = data.ok ? data.certificates : [];
-
-                if (certs.length === 0) {
-                    document.getElementById('certsEmpty').style.display = 'block';
+                if (!data.ok || data.courses.length === 0) {
+                    spinner.style.display = 'none';
+                    empty.style.display = 'block';
                     return;
                 }
 
-                const grid = document.getElementById('certsGrid');
+                // Fetch progress for each
+                await Promise.all(data.courses.map(async (e) => {
+                    try {
+                        const pRes = await fetch(`${API}/api/course/progress?courseId=${encodeURIComponent(e.courseName)}`, {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        const pData = await pRes.json();
+                        if (pData.ok && pData.record) {
+                            PROGRESS_MAP[e.courseName] = pData.record.progressPercent || 0;
+                            COMPLETED_MAP[e.courseName] = pData.record.testPassed;
+                        }
+                    } catch (err) {}
+                }));
+
+                spinner.style.display = 'none';
                 grid.style.display = 'grid';
-                grid.innerHTML = certs.map(cert => {
-                    const date = cert.earnedAt
-                        ? new Date(cert.earnedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
-                        : 'N/A';
-                    const icon = getCertIcon(cert.courseId || '');
-                    const dlUrl = `${API}/api/certificates/generate/${cert.certId}`;
+                grid.innerHTML = data.courses.map(e => {
+                    const c = COURSES_MAP[e.courseName] || {
+                        id: e.courseName,
+                        title: e.courseName,
+                        icon: '🎓',
+                        level: 'Beginner',
+                        duration: 'Self-paced',
+                        lessonCount: 0,
+                        quizCount: 0,
+                        description: 'Course information loading...'
+                    };
+                    return buildStandardCard(c);
+                }).join('');
+
+            } catch (err) {
+                spinner.style.display = 'none';
+                empty.style.display = 'block';
+            }
+        }
+
+        function buildStandardCard(c) {
+            const progress = PROGRESS_MAP[c.id] || 0;
+            const completed = !!COMPLETED_MAP[c.id];
+            
+            const badge = completed 
+                ? `<span class="status-badge badge-completed"><i class="fas fa-check-circle"></i> Completed</span>`
+                : `<span class="status-badge" style="background:#10b981; color:white;"><i class="fas fa-graduation-cap"></i> Enrolled</span>`;
+
+            const btnText = completed ? 'Review Topic Notes' : 'Continue Learning';
+            
+            return `
+            <div class="course-card">
+                <div class="card-header ${c.level.toLowerCase()}">
+                    ${badge}
+                    <div class="course-icon">${c.icon}</div>
+                    <div class="course-title">${c.title}</div>
+                </div>
+                <div class="card-body">
+                    <p class="course-desc">${c.description}</p>
+                    <div class="course-meta">
+                        <span class="meta-tag"><i class="fas fa-clock"></i> ${c.duration}</span>
+                        <span class="meta-tag"><i class="fas fa-circle-play"></i> ${c.lessonCount} Videos</span>
+                        <span class="meta-tag">${c.quizCount} MCQs</span>
+                    </div>
+                    <ul class="highlights">
+                        <li>Expert Training</li>
+                        <li>Certification</li>
+                        <li>Practical Skills</li>
+                    </ul>
+                    <div class="progress-wrap">
+                        <div class="progress-label"><span>Overall Progress</span><span>${progress}%</span></div>
+                        <div class="progress-bar"><div class="progress-fill" style="width:${progress}%"></div></div>
+                    </div>
+                    <a href="course-content.html?course=${encodeURIComponent(c.id)}" class="btn-action ${completed ? 'btn-completed' : 'btn-continue'}">
+                        ${btnText}
+                    </a>
+                </div>
+            </div>`;
+        }
+
+        async function loadCertificates() {
+            const grid = document.getElementById('certsGrid');
+            const spinner = document.getElementById('certsSpinner');
+            const empty = document.getElementById('certsEmpty');
+
+            try {
+                const res = await fetch(`${API}/api/certificates/my`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+
+                spinner.style.display = 'none';
+                if (!data.ok || data.certificates.length === 0) {
+                    empty.style.display = 'block';
+                    return;
+                }
+
+                grid.style.display = 'grid';
+                grid.innerHTML = data.certificates.map(cert => {
+                    const date = cert.earnedAt ? new Date(cert.earnedAt).toLocaleDateString() : 'N/A';
+                    const icon = (COURSES_MAP[cert.courseId] || {}).icon || '📜';
                     return `
                     <div class="cert-preview-card">
                         <div class="cert-design">
-                            <div class="cert-trophy">${icon} ??</div>
-                            <div class="cert-course-name">${escHtml(cert.courseId)}</div>
-                            <div class="cert-cert-id">${cert.certId}</div>
+                            <div class="cert-trophy">${icon} 🎓</div>
+                            <div class="cert-course-name">${cert.courseId}</div>
                         </div>
                         <div class="cert-info-body">
-                            <div class="cert-info-row"><i class="fas fa-user"></i> ${escHtml(data.userName || 'Student')}</div>
-                            <div class="cert-info-row"><i class="fas fa-calendar"></i> Earned: ${date}</div>
-                            <div class="cert-info-row"><i class="fas fa-fingerprint"></i> ID: ${cert.certId}</div>
-                            <a href="${dlUrl}" class="btn-dl-cert" download>
-                                <i class="fas fa-download"></i> Download PDF Certificate
+                            <div class="cert-info-row"><i class="fas fa-user"></i> ${data.userName || 'Student'}</div>
+                            <div class="cert-info-row"><i class="fas fa-calendar-alt"></i> Earned on ${date}</div>
+                            <div class="cert-info-row"><i class="fas fa-stamp"></i> ID: ${cert.certId}</div>
+                            <a href="/api/certificates/generate/${cert.certId}" class="btn-dl-cert" download>
+                                <i class="fas fa-file-download"></i> Download PDF
                             </a>
                         </div>
                     </div>`;
                 }).join('');
             } catch (err) {
-                document.getElementById('certsSpinner').style.display = 'none';
-                document.getElementById('certsEmpty').style.display = 'block';
-                console.error('Certs error:', err);
+                spinner.style.display = 'none';
+                empty.style.display = 'block';
             }
         }
 
-        function escHtml(str) {
-            return String(str || '')
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;');
+        function showTab(tab, btn) {
+            document.querySelectorAll('.tab').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            document.getElementById('enrolledSection').style.display = tab === 'enrolled' ? 'block' : 'none';
+            document.getElementById('certsSection').style.display = tab === 'certs' ? 'block' : 'none';
+            
+            if (tab === 'certs') loadCertificates();
         }
 
-        // --- INIT -------------------------------------------------------------
-        window.addEventListener('load', async () => {
-            await loadUser();
-            await loadEnrolledCourses();
-
-            // Handle URL Search Params
-            const urlParams = new URLSearchParams(window.location.search);
-            const searchQuery = urlParams.get('search');
-
-            if (searchQuery) {
-                const grid = document.getElementById('coursesGrid');
-                const cards = Array.from(grid.querySelectorAll('.course-card'));
-                let foundAny = false;
-
-                cards.forEach(card => {
-                    const title = card.querySelector('.course-name').textContent.toLowerCase();
-                    if (title.includes(searchQuery.toLowerCase())) {
-                        card.style.display = 'block';
-                        foundAny = true;
-                    } else {
-                        card.style.display = 'none';
-                    }
-                });
-
-                if (!foundAny && cards.length > 0) {
-                    grid.innerHTML = `<div class="empty" style="grid-column: 1/-1;">
-                        <i class="fas fa-search"></i>
-                        <h3>No results for "${searchQuery}"</h3>
-                        <p>We couldn't find any of your enrolled courses matching this search.</p>
-                        <a href="my-courses.html" style="margin-top: 1rem;">View all my courses</a>
-                    </div>`;
-                }
-
-                // Scroll to results
-                document.querySelector('.hero').scrollIntoView({ behavior: 'smooth' });
-            }
-        });
+        // Initialize on load
+        window.addEventListener('load', init);
     </script>
-    <!-- Navigation System -->
-
 </body>
-
 </html>

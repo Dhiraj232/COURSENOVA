@@ -42,7 +42,6 @@ document.addEventListener('DOMContentLoaded', function () {
     setupScrollEffects();
     setupHashNavigation();
     setupUserDropdown(); // Fixed function name
-    setupNavbarSearch();
 });
 
 // ==================== 2. DETECT CURRENT PAGE ====================
@@ -473,37 +472,7 @@ function handleViewCourses() {
     navigateToPage('certificates.html');
 }
 
-/**
- * Setup Navbar Search Input Listener
- */
-function setupNavbarSearch() {
-    const searchInput = document.getElementById('navbarSearch');
-    if (searchInput) {
-        searchInput.addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                handleNavbarSearch();
-            }
-        });
-    }
-}
 
-/**
- * Handle Navbar Search Submission
- * Always redirects to certificates.html which has proper search filtering
- */
-function handleNavbarSearch() {
-    const searchInput = document.getElementById('navbarSearch');
-    if (searchInput && searchInput.value.trim() !== '') {
-        const query = encodeURIComponent(searchInput.value.trim());
-        window.location.href = `certificates.html?search=${query}`;
-    } else if (searchInput) {
-        // If empty search, just go to courses page
-        searchInput.focus();
-        searchInput.placeholder = 'Type something to search...';
-        setTimeout(() => { searchInput.placeholder = 'Search for courses, subjects, or concepts...'; }, 2000);
-    }
-}
 
 // ==================== 12. USER DROPDOWN MENU ==================== 
 /**
@@ -720,7 +689,6 @@ if (typeof window !== 'undefined') {
     window.navigateToPage = navigateToPage;
     window.handleGetStarted = handleGetStarted;
     window.handleViewCourses = handleViewCourses;
-    window.handleNavbarSearch = handleNavbarSearch;
 
     // Auth Exports
     window.setupUserDropdown = setupUserDropdown;

@@ -201,61 +201,7 @@
     color: var(--nav-primary) !important;
 }
 
-/* ==================== SEARCH BAR IN NAVBAR ==================== */
-.nav-search {
-    display: flex !important;
-    align-items: center !important;
-    background-color: var(--secondary-color) !important;
-    border-radius: 50px !important;
-    padding: 0.2rem 0.4rem !important;
-    padding-left: 1rem !important;
-    border: 1px solid var(--border-color) !important;
-    flex: 1 1 auto !important;
-    max-width: 400px !important;
-    min-width: 120px !important;
-    margin: 0 0.5rem !important;
-    transition: all 0.3s ease !important;
-}
 
-.nav-search:focus-within {
-    border-color: var(--primary-color) !important;
-    box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1) !important;
-    background-color: var(--white) !important;
-}
-
-.nav-search input {
-    border: none !important;
-    background: transparent !important;
-    outline: none !important;
-    width: 100% !important;
-    font-family: 'Inter', sans-serif !important;
-    font-size: 0.95rem !important;
-    color: var(--text-dark) !important;
-    padding: 0.5rem 0 !important;
-}
-
-.nav-search input::placeholder {
-    color: var(--text-light) !important;
-}
-
-.nav-search button {
-    background-color: var(--primary-color) !important;
-    color: var(--white) !important;
-    border: none !important;
-    width: 36px !important;
-    height: 36px !important;
-    border-radius: 50% !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    cursor: pointer !important;
-    transition: all 0.3s ease !important;
-}
-
-.nav-search button:hover {
-    background-color: #3730a3 !important;
-    transform: scale(1.05) !important;
-}
 
 /* User Actions Section */
 .nav-buttons {
@@ -521,22 +467,12 @@ body.dark-theme .dropdown-divider {
         gap: 0.5rem !important;
     }
 
-    .nav-search {
-        flex: 0 0 280px !important;
-        min-width: 200px !important;
-    }
-
     .nav-menu {
         gap: 0.8rem !important;
     }
 }
 
 @media (max-width: 992px) {
-    .nav-search {
-        display: none !important;
-        /* Hide search in navbar on tablets, usually moved to menu or separate row */
-    }
-
     .nav-menu {
         gap: 1rem !important;
     }
