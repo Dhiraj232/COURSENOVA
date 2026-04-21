@@ -2,52 +2,64 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <!-- Main Pages -->
     <url>
-        <loc>https://coursenova-ai.com/</loc>
-        <lastmod>2026-03-09</lastmod>
+        <loc>https://coursenova.in/</loc>
+        <lastmod>2026-04-22</lastmod>
         <changefreq>weekly</changefreq>
         <priority>1.0</priority>
     </url>
     <url>
-        <loc>https://coursenova-ai.com/index.html</loc>
-        <lastmod>2026-03-09</lastmod>
+        <loc>https://coursenova.in/index.html</loc>
+        <lastmod>2026-04-22</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.9</priority>
     </url>
     <url>
-        <loc>https://coursenova-ai.com/certificates.html</loc>
-        <lastmod>2026-03-09</lastmod>
+        <loc>https://coursenova.in/about.html</loc>
+        <lastmod>2026-04-22</lastmod>
+        <changefreq>weekly</changefreq>
+        <priority>0.9</priority>
+    </url>
+    <url>
+        <loc>https://coursenova.in/signup.html</loc>
+        <lastmod>2026-04-22</lastmod>
+        <changefreq>monthly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    <url>
+        <loc>https://coursenova.in/certificates.html</loc>
+        <lastmod>2026-04-22</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.8</priority>
     </url>
     <url>
-        <loc>https://coursenova-ai.com/mock-tests.html</loc>
-        <lastmod>2026-03-09</lastmod>
+        <loc>https://coursenova.in/mock-tests.html</loc>
+        <lastmod>2026-04-22</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.8</priority>
     </url>
     <url>
-        <loc>https://coursenova-ai.com/community.html</loc>
-        <lastmod>2026-03-09</lastmod>
+        <loc>https://coursenova.in/community.html</loc>
+        <lastmod>2026-04-22</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.7</priority>
     </url>
     <url>
-        <loc>https://coursenova-ai.com/store.html</loc>
-        <lastmod>2026-03-09</lastmod>
+        <loc>https://coursenova.in/store.html</loc>
+        <lastmod>2026-04-22</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.7</priority>
     </url>
 
     <!-- Legal Pages -->
     <url>
-        <loc>https://coursenova-ai.com/privacy-policy.html</loc>
-        <lastmod>2026-03-09</lastmod>
+        <loc>https://coursenova.in/privacy-policy.html</loc>
+        <lastmod>2026-04-22</lastmod>
         <changefreq>yearly</changefreq>
         <priority>0.3</priority>
     </url>
     <url>
-        <loc>https://coursenova-ai.com/terms-and-conditions.html</loc>
-        <lastmod>2026-03-09</lastmod>
+        <loc>https://coursenova.in/terms-and-conditions.html</loc>
+        <lastmod>2026-04-22</lastmod>
         <changefreq>yearly</changefreq>
         <priority>0.3</priority>
     </url>

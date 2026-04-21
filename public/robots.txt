@@ -1,29 +1,8 @@
 # robots.txt for COURSENOVA
-# Website URL: https://coursenova-ai.com/
+# Website URL: https://coursenova.in/
 
-# Allow all search engines to crawl public content
 User-agent: *
 Allow: /
-Allow: /index.html
-Allow: /certificates.html
-Allow: /mock-tests.html
-Allow: /community.html
-Allow: /store.html
-Allow: /privacy-policy.html
-Allow: /terms-and-conditions.html
-
-# Block private student areas and sensitive directories
-Disallow: /dashboard
-Disallow: /dashboard.html
-Disallow: /my-courses.html
-Disallow: /profile
-Disallow: /quiz-engine.html
-Disallow: /quiz-results.html
-Disallow: /course-content.html
-
-# Block backend API routes
-Disallow: /api/
-Disallow: /auth/
 
 # Path to sitemap
-Sitemap: https://coursenova-ai.com/sitemap.xml
+Sitemap: https://coursenova.in/sitemap.xml

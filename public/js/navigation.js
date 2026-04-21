@@ -68,7 +68,8 @@ function setupNavigation() {
         { name: 'Courses', href: 'certificates.html', key: 'courses' },
         { name: 'Mock Tests', href: 'mock-tests.html', key: 'tests' },
         { name: 'Community', href: 'community.html', key: 'community' },
-        { name: 'Store', href: 'store.html', key: 'store' }
+        { name: 'Store', href: 'store.html', key: 'store' },
+        { name: 'About', href: 'about.html', key: 'about' }
     ];
 
     const currentPage = getCurrentPage();
