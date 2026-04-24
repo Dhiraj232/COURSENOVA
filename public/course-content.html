@@ -458,7 +458,7 @@
     </style>
 
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="/images/logo%20coursenova.png">
+    <link rel="icon" type="image/png" href="/images/coursenova-logo.png">
 </head>
 
 <body>
@@ -489,7 +489,7 @@
     <!-- Navbar -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
-            <a href="index.html" class="logo"><img src="images/logo%20coursenova.png" alt="COURSENOVA"> <span>COURSENOVA</span></a>
+            <a href="index.html" class="logo"><img src="images/coursenova-logo.png" alt="COURSENOVA"> <span>COURSENOVA</span></a>
             <ul class="nav-menu" id="navMenu"></ul>
             <div class="nav-buttons" id="navButtons"></div>
             <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
@@ -638,19 +638,6 @@
         let currentVideoWatched = false;
         let currentPdfRead = false;
 
-        const FALLBACK_DATA = {
-            'C Programming Fundamentals': { video: 'https://www.youtube.com/embed/KJgsSFOSQv0?rel=0', pdf: 'dummy_document.pdf', desc: 'Master C programming from scratch.' },
-            'Data Structures Advanced': { video: 'https://www.youtube.com/embed/RBSGKlAvoiM?rel=0', pdf: 'dummy_document.pdf', desc: 'Deep dive into data structures.' },
-            'Web Development Bootcamp': { video: 'https://www.youtube.com/embed/ysEN5RaKOlA?rel=0', pdf: 'dummy_document.pdf', desc: 'Complete web development course.' },
-            'Python for Data Science': { video: 'https://www.youtube.com/embed/LHBE0usLVCI?rel=0', pdf: 'dummy_document.pdf', desc: 'Learn Python for data science.' },
-            'Database Management Systems': { video: 'https://www.youtube.com/embed/HXV3zeQKqGY?rel=0', pdf: 'dummy_document.pdf', desc: 'Learn DBMS concepts with SQL.' },
-            'Learning Essentials (Free)': { video: 'https://www.youtube.com/embed/PkZNo7MFNFg?rel=0', pdf: 'dummy_document.pdf', desc: 'Start your learning journey here.' },
-            'Frontend Developer': { video: 'https://www.youtube.com/embed/G3e-cpL7ofc?rel=0', pdf: 'dummy_document.pdf', desc: 'Become a job-ready frontend developer with HTML, CSS, JS and React.' },
-            'Time Management': { video: 'https://www.youtube.com/embed/oTugjssqOT0?rel=0', pdf: 'dummy_document.pdf', desc: 'Master productivity techniques to 10x your efficiency.' },
-            'JavaScript Advanced': { video: 'https://www.youtube.com/embed/PkZNo7MFNFg?rel=0', pdf: 'dummy_document.pdf', desc: 'Go beyond basics — closures, async/await, ES6+ and design patterns.' },
-            'Web Design': { video: 'https://www.youtube.com/embed/mU6anWqZJcc?rel=0', pdf: 'dummy_document.pdf', desc: 'Learn modern UI/UX principles and build beautiful websites.' },
-            'Communication Skills': { video: 'https://www.youtube.com/embed/HAnw168huqA?rel=0', pdf: 'dummy_document.pdf', desc: 'Build confidence in spoken and written communication.' },
-        };
 
         function getToken() {
             return localStorage.getItem('coursenova_token') || localStorage.getItem('coursenovaToken') || '';
@@ -749,13 +736,26 @@
                 const res = await fetch(`${API}/api/course/details?courseId=${encodeURIComponent(courseId)}`, {
                     headers: { Authorization: 'Bearer ' + token }
                 });
+
+                // Handle expired/invalid token
+                if (res.status === 401) {
+                    localStorage.removeItem('coursenova_token');
+                    localStorage.removeItem('coursenovaToken');
+                    alert('Session expired. Please log in again.');
+                    window.location.href = 'signup.html';
+                    return;
+                }
+
                 const data = await res.json();
 
                 if (data.ok && data.course && data.course.lessons && data.course.lessons.length > 0) {
                     allLessons = data.course.lessons.slice().sort((a, b) => (a.order || 0) - (b.order || 0));
+                } else if (!data.ok && data.message) {
+                    document.getElementById('videoWrapper').innerHTML = `<div style="padding:40px;text-align:center;color:#ef4444;font-weight:bold;">❌ ${data.message}</div>`;
+                    allLessons = [];
                 } else {
-                    const fb = FALLBACK_DATA[courseId] || FALLBACK_DATA['Learning Essentials (Free)'];
-                    allLessons = [{ lessonId: 'lesson-1', title: 'Main Lesson', videoUrl: fb.video, pdfUrl: fb.pdf, order: 0 }];
+                    document.getElementById('videoWrapper').innerHTML = '<div style="padding:40px;text-align:center;color:#ef4444;font-weight:bold;">Course details not found. Please try again.</div>';
+                    allLessons = [];
                 }
 
                 if (data.ok && data.progress) {
@@ -767,13 +767,13 @@
                     examAttempts = data.examAttemptsLeft !== undefined ? data.examAttemptsLeft : examAttempts;
                 }
 
-                const desc = (data.ok && data.course) ? data.course.description : (FALLBACK_DATA[courseId] || {}).desc || '';
+                const desc = (data.ok && data.course) ? data.course.description : '';
                 document.getElementById('sidebarDesc').textContent = desc || 'Complete all lessons to earn your certificate.';
 
             } catch (e) {
                 console.error('Failed to load course details:', e);
-                const fb = FALLBACK_DATA[courseId] || FALLBACK_DATA['Learning Essentials (Free)'];
-                allLessons = [{ lessonId: 'lesson-1', title: 'Main Lesson', videoUrl: fb.video, pdfUrl: fb.pdf, order: 0 }];
+                document.getElementById('videoWrapper').innerHTML = '<div style="padding:40px;text-align:center;color:#ef4444;font-weight:bold;">Server connection failed. Please restart your local server.</div>';
+                allLessons = [];
             }
 
             document.getElementById('pageTitle').textContent = courseId;
@@ -830,14 +830,19 @@
             }
             const pw = document.getElementById('pdfWrapper');
             const dlLink = document.getElementById('pdfDownloadLink');
-            if (lesson.pdfUrl) {
+            const pdfCard = document.getElementById('pdfCard');
+            const checkPdf = document.getElementById('check-pdf');
+            if (lesson.pdfUrl && lesson.pdfUrl !== 'dummy_document.pdf') {
+                pdfCard.style.display = 'block';
+                if (checkPdf) checkPdf.style.display = 'flex';
                 const pdfSrc = lesson.pdfUrl.startsWith('http') ? lesson.pdfUrl : `${API}/${lesson.pdfUrl}`;
                 pw.innerHTML = `<iframe src="${pdfSrc}" title="Study Material"></iframe>`;
                 dlLink.href = pdfSrc;
                 dlLink.style.display = 'flex';
             } else {
-                pw.innerHTML = `<div style="height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#f8fafc;"><i class="fas fa-file-pdf" style="font-size:3rem;margin-bottom:0.75rem;color:#ef4444;opacity:0.3;"></i><p style="color:#64748b;">No PDF configured for this lesson yet.</p></div>`;
-                dlLink.style.display = 'none';
+                pdfCard.style.display = 'none';
+                if (checkPdf) checkPdf.style.display = 'none';
+                currentPdfRead = true; // Auto-complete PDF requirement
             }
             if (completedLessons.includes(lesson.lessonId)) {
                 applyVideoDone(false);

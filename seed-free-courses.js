@@ -217,7 +217,7 @@ const freeCourses = [
         lessonId: 'js-l3',
         title: 'Events & Listeners',
         videoUrl: 'https://www.youtube.com/embed/XF1_MlZ5P48',
-        pdfUrl: 'dummy_document.pdf',
+        pdfUrl: 'dummy_document.pdf', 
         order: 3
       }
     ],

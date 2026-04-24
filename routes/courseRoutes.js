@@ -35,7 +35,12 @@ router.get('/details', async (req, res) => {
         
         const course = await Course.findOne({ $or: orQuery });
 
-        const progress = await CourseProgress.findOne({ userId: req.userId, courseId });
+        let progress = null;
+        try {
+            progress = await CourseProgress.findOne({ userId: req.userId, courseId });
+        } catch (progressErr) {
+            console.warn('[course/details] Could not load progress (userId type mismatch?):', progressErr.message);
+        }
 
         res.json({
             ok: true,

@@ -10,7 +10,7 @@ const MONGO_URI = process.env.MONGO_URI;
 
 const singleCourse = {
     slug: 'coursenova-ai-masterclass',
-    title: 'CourseNova Masterclass',
+    title: 'CourseNova',
     icon: '🚀',
     description: 'A complete guided masterclass on using CourseNova to its full potential. Includes hands-on projects and a verified certificate.',
     price: 1, // SPECIAL ₹1 PER THE USER'S REQUEST

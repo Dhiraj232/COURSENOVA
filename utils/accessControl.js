@@ -32,23 +32,21 @@ async function checkAccess(userId, itemId) {
         let itemType = 'course';
 
         // Try as Course
-        item = await Course.findOne({
-            $or: [
-                { _id: isObjectId ? itemId : null },
-                { slug: String(itemId).toLowerCase().trim() },
-                { title: String(itemId) }
-            ]
-        }).lean();
+        const courseOrQuery = [
+            { slug: String(itemId).toLowerCase().trim() },
+            { title: String(itemId) }
+        ];
+        if (isObjectId) courseOrQuery.push({ _id: itemId });
+        item = await Course.findOne({ $or: courseOrQuery }).lean();
 
         if (!item) {
             // Try as MockTestPack
-            item = await MockTestPack.findOne({
-                $or: [
-                    { _id: isObjectId ? itemId : null },
-                    { id: String(itemId) },
-                    { title: String(itemId) }
-                ]
-            }).lean();
+            const mockOrQuery = [
+                { id: String(itemId) },
+                { title: String(itemId) }
+            ];
+            if (isObjectId) mockOrQuery.push({ _id: itemId });
+            item = await MockTestPack.findOne({ $or: mockOrQuery }).lean();
             if (item) itemType = 'mock';
         }
 

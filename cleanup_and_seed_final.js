@@ -53,6 +53,21 @@ const targetCourses = [
         lessons: [{ lessonId: 'git-l1', title: 'Git Basics', videoUrl: 'https://www.youtube.com/embed/RGOj5yH7evk', pdfUrl: 'dummy.pdf', order: 1 }],
         quizQuestions: Array.from({ length: 35 }, (_, i) => ({ question: `Git Question ${i + 1}`, options: ['A', 'B', 'C', 'D'], correctIndex: 0 }))
     },
+    {
+        slug: 'Python',
+        title: 'Python For Begineer',
+        icon: '🐙',
+        description: 'Learn Python programming language for beginners.',
+        price: 0,
+        isPremium: false,
+        isFree: true,
+        duration: '2 Weeks',
+        level: 'Beginner',
+        isActive: true,
+        lessons: [{ lessonId: 'py-l1', title: 'Python Basics', videoUrl: 'https://www.youtube.com/embed/RGOj5yH7evk', pdfUrl: 'dummy.pdf', order: 1 }],
+        quizQuestions: Array.from({ length: 35 }, (_, i) => ({ question: `Python Question ${i + 1}`, options: ['A', 'B', 'C', 'D'], correctIndex: 0 }))
+    },
+    
 
     // ─── PREMIUM COURSES @ ₹99 (7) ──────────────────────────────────────────
     {

@@ -82,6 +82,13 @@ function generateLessons(courseTitle) {
             videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
             pdfUrl: '/dummy_document.pdf',
             order: 4
+        },
+        {
+            lessonId: 'm4',
+            title: 'dfAdvanced Tips & Best Practices',
+            videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+            pdfUrl: '/dummy_document.pdf',
+            order: 4
         }
     ];
 }
