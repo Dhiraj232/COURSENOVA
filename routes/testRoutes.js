@@ -1,7 +1,61 @@
 const express = require('express');
 const router = express.Router();
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireAdmin } = require('../middleware/auth');
 const Course = require('../models/Course');
+const DailyChallenge = require('../models/DailyChallenge');
+const TestResult = require('../models/TestResult');
+
+// ── PUBLIC ROUTES (Daily Challenge) ──────────────────────────────────
+
+// GET /api/test/daily-challenge/today/:examType
+router.get('/daily-challenge/today/:examType', async (req, res) => {
+    try {
+        const todayStr = new Date().toISOString().split('T')[0];
+        const { examType } = req.params;
+        
+        let challenge = await DailyChallenge.findOne({ date: todayStr, examType });
+        
+        // AUTO-GENERATE if not exists
+        if (!challenge) {
+            console.log(`🎲 Auto-generating ${examType} challenge for ${todayStr}`);
+            const bank = QUESTION_BANKS[examType] || QUESTION_BANKS['default'];
+            
+            // Randomize and pick 15 questions
+            const shuffled = [...bank].sort(() => 0.5 - Math.random());
+            const selected = shuffled.slice(0, 15).map((q, i) => ({
+                question: q.q || q.question,
+                options: q.opts || q.options,
+                correctAnswer: q.opts ? q.opts[q.ans] : q.correctAnswer,
+                explanation: q.explanation || "No explanation available."
+            }));
+
+            challenge = new DailyChallenge({
+                date: todayStr,
+                title: `${examType} Daily Set - ${new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' })}`,
+                examType,
+                questions: selected,
+                totalQuestions: selected.length,
+                durationMinutes: 15 // 1 min per question
+            });
+            await challenge.save();
+        }
+
+        res.json({ ok: true, challenge });
+    } catch (err) {
+        console.error('Daily Challenge Error:', err);
+        res.status(500).json({ ok: false, error: 'Server error' });
+    }
+});
+
+// GET /api/test/daily-challenge/all
+router.get('/daily-challenge/all', async (req, res) => {
+    try {
+        const challenges = await DailyChallenge.find({}).sort({ date: -1 });
+        res.json({ ok: true, challenges });
+    } catch (err) {
+        res.status(500).json({ ok: false, error: 'Server error' });
+    }
+});
 
 // ── Hardcoded fallback question banks (moved from frontend) ────────────────
 const QUESTION_BANKS = {
@@ -124,16 +178,78 @@ const QUESTION_BANKS = {
         { q: 'What is "interpersonal communication"?', opts: ['Communication between companies', 'Communication between individuals', 'Internal thoughts', 'Written communication only'], ans: 1 },
         { q: 'How should you handle a communication conflict?', opts: ['Ignore it completely', 'Listen, acknowledge perspectives and find common ground', 'Always escalate immediately', 'Argue until you win'], ans: 1 },
     ],
+    'Railway Group D': [
+        { q: 'Which is the largest railway zone in India?', opts: ['Northern Railway', 'Western Railway', 'Southern Railway', 'Eastern Railway'], ans: 0 },
+        { q: 'Who is known as the Father of Indian Railways?', opts: ['Lord Dalhousie', 'Lord Curzon', 'Lord Ripon', 'Lord Bentinck'], ans: 0 },
+        { q: 'The first train in India ran between?', opts: ['Mumbai to Thane', 'Delhi to Agra', 'Mumbai to Pune', 'Kolkata to Howrah'], ans: 0 }
+    ],
+    'CTET': [
+        { q: 'Who developed the Theory of Multiple Intelligences?', opts: ['Howard Gardner', 'Jean Piaget', 'Lev Vygotsky', 'B.F. Skinner'], ans: 0 },
+        { q: 'Which stage of Piaget\'s theory involves "Object Permanence"?', opts: ['Sensorimotor', 'Pre-operational', 'Concrete Operational', 'Formal Operational'], ans: 0 }
+    ],
+    'Army GD': [
+        { q: 'What is the highest gallantry award in India?', opts: ['Param Vir Chakra', 'Bharat Ratna', 'Mahavir Chakra', 'Kirti Chakra'], ans: 0 },
+        { q: 'Where is the Indian Military Academy located?', opts: ['Dehradun', 'Pune', 'Chennai', 'Delhi'], ans: 0 }
+    ],
+    'Bihar Police': [
+        { q: 'Who was the first Chief Minister of Bihar?', opts: ['Sri Krishna Singh', 'Nitish Kumar', 'Lalu Prasad Yadav', 'Rabri Devi'], ans: 0 },
+        { q: 'Which river is known as the "Sorrow of Bihar"?', opts: ['Kosi', 'Ganga', 'Son', 'Gandak'], ans: 0 }
+    ],
+    'SSC GD': [
+        { q: 'Which article of the Indian Constitution deals with Equality before Law?', opts: ['Article 14', 'Article 17', 'Article 19', 'Article 21'], ans: 0 },
+        { q: 'The "Dandi March" was started in which year?', opts: ['1930', '1942', '1920', '1919'], ans: 0 }
+    ],
 };
 
-router.use(requireAuth);
 
-router.get('/questions/:courseId', async (req, res) => {
+// ── PROTECTED ROUTES ────────────────────────────────────────────────
+
+// GET /api/test/daily-challenge/stats
+router.get('/daily-challenge/stats', async (req, res) => {
+    try {
+        const authHeader = req.headers.authorization;
+        if (!authHeader) return res.status(401).json({ ok: false, message: 'Unauthorized' });
+
+        const todayStr = new Date().toISOString().split('T')[0];
+        const userId = req.user.id;
+
+        // Get user's result for today
+        const todayResult = await TestResult.findOne({ 
+            userId, 
+            courseId: `daily_ssc_${todayStr}` 
+        });
+
+        // Get global rank for today
+        let rank = 'N/A';
+        if (todayResult) {
+            const betterCount = await TestResult.countDocuments({ 
+                courseId: `daily_ssc_${todayStr}`, 
+                score: { $gt: todayResult.score } 
+            });
+            rank = betterCount + 1;
+        }
+
+        // Mock streak for now (in production, track consecutive days in User model)
+        const streak = 5; 
+
+        res.json({ 
+            ok: true, 
+            score: todayResult ? todayResult.score : 0,
+            correct: todayResult ? todayResult.correctQuestions : 0,
+            rank,
+            streak
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ ok: false });
+    }
+});
+
+router.get('/questions/:courseId', requireAuth, async (req, res) => {
     const { courseId } = req.params;
     if (!courseId) return res.status(400).json({ ok: false, message: 'courseId is required' });
 
     try {
-        // Try to get from database first
         const course = await Course.findOne({
             $or: [
                 { title: courseId },
@@ -150,20 +266,76 @@ router.get('/questions/:courseId', async (req, res) => {
             return res.json(formattedQuestions);
         }
 
-        // Fallback to hardcoded banks
         const bank = QUESTION_BANKS[courseId] || QUESTION_BANKS['default'];
-
-        // Format to requested structure
         const formattedQuestions = bank.slice(0, 15).map(q => ({
             question: q.q,
             options: q.opts,
-            correctAnswer: q.opts[q.ans] // Match correct index from fallback bank
+            correctAnswer: q.opts[q.ans]
         }));
 
         res.json(formattedQuestions);
     } catch (err) {
         console.error('Fetch questions error:', err);
         res.status(500).json({ ok: false, message: 'Server error fetching questions' });
+    }
+});
+
+// GET /api/test/daily-challenge/all
+router.get('/daily-challenge/all', requireAdmin, async (req, res) => {
+    try {
+        const challenges = await DailyChallenge.find().sort({ date: -1 });
+        res.json({ ok: true, challenges });
+    } catch (err) {
+        res.status(500).json({ ok: false });
+    }
+});
+
+router.post('/daily-challenge/submit', requireAuth, async (req, res) => {
+    try {
+        const { challengeId, answers, score, correct, wrong, accuracy, timeTaken } = req.body;
+        const userId = req.user.id || req.user.userId;
+
+        // 1. Save Result
+        const result = await TestResult.create({
+            userId,
+            courseId: `daily_challenge_${challengeId}`,
+            score,
+            correctQuestions: correct,
+            wrongQuestions: wrong,
+            accuracy,
+            timeTaken,
+            examType: 'Daily Challenge'
+        });
+
+        // 2. Update User Streaks & Points
+        const User = require('../models/User');
+        const user = await User.findById(userId);
+        if (user) {
+            const today = new Date().toISOString().split('T')[0];
+            
+            // If they haven't done a challenge today yet
+            if (user.lastChallengeDate !== today) {
+                const yesterday = new Date();
+                yesterday.setDate(yesterday.getDate() - 1);
+                const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+                if (user.lastChallengeDate === yesterdayStr) {
+                    user.streak += 1;
+                } else {
+                    user.streak = 1;
+                }
+                user.lastChallengeDate = today;
+                user.points += 50; // Daily reward
+            }
+            
+            user.points += Math.floor(score); // Performance reward
+            await user.save();
+        }
+
+        res.json({ ok: true, resultId: result._id });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ ok: false, message: 'Submission failed' });
     }
 });
 

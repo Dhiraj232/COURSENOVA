@@ -4,15 +4,20 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-    const token = localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_user_token');
-    const userStr = localStorage.getItem('coursenovaUser') || localStorage.getItem('coursenova_user');
+    const token = typeof getAuthToken === 'function' ? getAuthToken() : (localStorage.getItem('token') || localStorage.getItem('coursenovaToken'));
+    const user = typeof getAuthUser === 'function' ? getAuthUser() : JSON.parse(localStorage.getItem('user') || localStorage.getItem('coursenovaUser') || 'null');
+    const role = localStorage.getItem('role');
     
-    if (!token || !userStr) {
+    if (!token || !user) {
         window.location.href = 'signup.html?redirect=dashboard.html';
         return;
     }
 
-    const user = JSON.parse(userStr);
+    if (role === 'admin') {
+        window.location.href = '/admin-dashboard';
+        return;
+    }
+
     const userId = user.id || user._id;
 
     // 1. Initialize Sockets & Live Hub
@@ -196,14 +201,16 @@ async function fetchDashboardOverview(token) {
     if (statusDot) statusDot.style.background = '#fbbf24';
 
     try {
-        // CALL NEW PRODUCTION API
-        const res = await fetch('/api/dashboard', {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await res.json();
+        // CALL NEW PRODUCTION API for General Dashboard Stats
+        const dashRes = await fetch('/api/dashboard', { headers: { 'Authorization': `Bearer ${token}` } });
+        const dashData = await dashRes.json();
         
-        if (data.ok) {
-            updateDashboardUI(data);
+        // CALL NEW PRODUCTION API for User-specific Stats
+        const userStatsRes = await fetch('/api/user/dashboard-stats', { headers: { 'Authorization': `Bearer ${token}` } });
+        const userStatsData = await userStatsRes.json();
+        
+        if (dashData.ok && userStatsData.ok) {
+            updateDashboardUI(dashData, userStatsData.stats);
             if (statusDot) statusDot.style.background = '#10b981';
         }
     } catch (err) {
@@ -214,10 +221,10 @@ async function fetchDashboardOverview(token) {
 /**
  * UI SYNC ENGINE - Matching User Requirements exactly
  */
-function updateDashboardUI(data) {
+function updateDashboardUI(data, userStats) {
     // A. Main Counters (Using User's Specific Names)
-    setElText('enrolledCount', data.totalCourses);
-    setElText('testsTakenCount', data.totalTests);
+    setElText('enrolledCount', userStats.enrolledCourses || data.totalCourses);
+    setElText('testsTakenCount', userStats.testsTaken || data.totalTests);
     setElText('mktBoughtCount', data.totalBooksBought);
     setElText('mktSold', data.totalBooksSold);
     setElText('mktRevenueDisplay', "₹" + (data.totalBooksRevenue || 0));
@@ -229,24 +236,27 @@ function updateDashboardUI(data) {
     setElText('userAvatar', displayName.charAt(0).toUpperCase());
 
     // C. Gamification & Streak
-    setElText('studentPoints', (data.user.points || 0) + " pts");
-    setElText('userRank', "Rank #" + (data.user.rank || 'Unranked'));
-    setElText('streakDisplay', (data.stats.streak || 0) + " Days");
+    setElText('studentPoints', (userStats.points || 0) + " pts");
+    setElText('userRank', "Rank #" + (userStats.rank || 'N/A'));
+    setElText('streakDisplay', (userStats.streak || 0) + " Days");
+    setElText('streakDisplayTop', (userStats.streak || 0) + " day");
     
+    // D. Performance Analytics
+    setElText('accuracyDisplay', (userStats.avgAccuracy || 0) + "%");
+    if (userStats.recentTests && userStats.recentTests.length > 0) {
+        const bestScore = Math.max(...userStats.recentTests.map(t => t.scorePercent || 0));
+        setElText('bestScoreDisplay', bestScore + "%");
+        setElText('avgScoreDisplay', userStats.avgAccuracy + "%");
+    }
+
     localTimeSpent = data.stats.totalTime || 0;
     updateTimeDisplay(localTimeSpent || data.stats.totalMinutes);
 
-    // D. Library & Vault Rendering
-    // Still support rendering the vaults if lists are present (for the library tabs)
-    // Note: If vault sections need courses/books list, we can add them to the /api/dashboard later
-    // For now, these rely on standard enrollment data often cached or fetched separately
-    // But since we want "Dynamic", we'll ensure the counts are correctly mapped to existing tags.
-    
     // E. Recent Activity (Top 5)
     renderActivityTimeline(data.recentActivity || []);
     
     // F. Special Access UI
-    updateAccessBadges(data.user.mockTestAccess);
+    updateAccessBadges(userStats.isPremium);
 }
 
 function renderActivityTimeline(activities) {

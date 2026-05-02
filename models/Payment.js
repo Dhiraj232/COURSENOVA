@@ -1,30 +1,15 @@
 const mongoose = require('mongoose');
 
-const PaymentSchema = new mongoose.Schema({
-    userId: { type: String, required: true },
-    name: { type: String, default: '' },
-    email: { type: String, default: '' },
-    courseId: { type: String, required: true },
-    courseName: { type: String, default: '' },
-    amount: { type: Number, default: 0 },
-
-    // Cashfree fields
-    orderId: { type: String, default: '' },
-    paymentId: { type: String, default: '' },
-    paymentSessionId: { type: String, default: '' },
-
-    // Legacy UPI / manual-verification fields
-    utr: { type: String, default: '' },
-    screenshot: { type: String, default: '' },
-
-    // 'cashfree' | 'upi_manual'
-    paymentMethod: { type: String, default: 'cashfree' },
-    status: {
-        type: String,
-        enum: ['PENDING', 'SUCCESS', 'FAILED', 'pending', 'approved', 'rejected'], // Keep legacy statuses for backward compat
-        default: 'PENDING'
-    },
+const paymentSchema = new mongoose.Schema({
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'StoreUser', required: true },
+    amount: { type: Number, required: true },
+    currency: { type: String, default: 'INR' },
+    status: { type: String, enum: ['pending', 'success', 'failed'], default: 'pending' },
+    orderId: { type: String, required: true, unique: true },
+    paymentId: { type: String }, // From gateway
+    itemType: { type: String, enum: ['course', 'mocktest', 'subscription'], required: true },
+    itemId: { type: String }, // e.g. Course slug or "premium_monthly"
     createdAt: { type: Date, default: Date.now }
 });
 
-module.exports = mongoose.models.Payment || mongoose.model('Payment', PaymentSchema);
+module.exports = mongoose.model('Payment', paymentSchema);

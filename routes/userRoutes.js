@@ -111,4 +111,41 @@ router.post('/profile/upload', requireAuth, async (req, res) => {
     }
 });
 
+// ── GET /api/user/dashboard-stats ─────────────────────────────────
+router.get('/dashboard-stats', requireAuth, async (req, res) => {
+    try {
+        const user = await StoreUser.findById(req.userId);
+        if (!user) return res.status(404).json({ ok: false, message: 'User not found' });
+
+        const [enrollmentCount, testResults, payments] = await Promise.all([
+            Enrollment.countDocuments({ userId: String(req.userId) }),
+            require('../models/TestResult').find({ userId: req.userId }).sort({ createdAt: -1 }).limit(5),
+            Transaction.find({ userId: req.userId }).sort({ date: -1 }).limit(3)
+        ]);
+
+        // Calculate avg accuracy from last 5 tests
+        const accuracy = testResults.length > 0 
+            ? (testResults.reduce((acc, curr) => acc + curr.accuracy, 0) / testResults.length).toFixed(1)
+            : 0;
+
+        res.json({
+            ok: true,
+            stats: {
+                points: user.points || 0,
+                rank: user.rank || 'N/A',
+                streak: user.streak || 0,
+                enrolledCourses: enrollmentCount,
+                testsTaken: testResults.length,
+                avgAccuracy: accuracy,
+                recentTests: testResults,
+                recentPayments: payments,
+                isPremium: user.isPremium || false
+            }
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ ok: false, message: 'Failed to fetch dashboard stats' });
+    }
+});
+
 module.exports = router;

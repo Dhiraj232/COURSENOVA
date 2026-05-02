@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Challenge Taker | COURSENOVA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --bg: #f8fafc;
+            --white: #ffffff;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+        }
+
+        .exam-header {
+            background: var(--white);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .exam-title h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.2rem;
+            color: var(--primary);
+        }
+
+        .exam-timer {
+            background: #fee2e2;
+            color: var(--danger);
+            padding: 8px 16px;
+            border-radius: 50px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .exam-container {
+            max-width: 1200px;
+            margin: 30px auto;
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 30px;
+            padding: 0 20px;
+        }
+
+        .question-card {
+            background: var(--white);
+            padding: 40px;
+            border-radius: 24px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
+
+        .q-meta {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .q-text {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 30px;
+        }
+
+        .options-grid {
+            display: grid;
+            gap: 12px;
+        }
+
+        .option-btn {
+            background: var(--white);
+            border: 2px solid var(--border);
+            padding: 16px 24px;
+            border-radius: 12px;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .option-btn:hover {
+            border-color: var(--primary);
+            background: #f5f3ff;
+        }
+
+        .option-btn.selected {
+            border-color: var(--primary);
+            background: var(--primary);
+            color: white;
+        }
+
+        .option-circle {
+            width: 24px;
+            height: 24px;
+            border: 2px solid currentColor;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 700;
+            flex-shrink: 0;
+        }
+
+        .exam-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .nav-grid {
+            background: var(--white);
+            padding: 20px;
+            border-radius: 20px;
+            border: 1px solid var(--border);
+        }
+
+        .q-nav-buttons {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            margin-top: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        .nav-dot {
+            aspect-ratio: 1;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .nav-dot.answered { background: var(--success); color: white; border-color: var(--success); }
+        .nav-dot.current { border: 2px solid var(--primary); color: var(--primary); }
+        .nav-dot.marked { background: var(--warning); color: white; border-color: var(--warning); }
+
+        .exam-actions {
+            margin-top: 30px;
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+            flex: 1;
+        }
+
+        .btn-prev { background: #e2e8f0; color: var(--text); }
+        .btn-next { background: var(--primary); color: white; }
+        .btn-submit { background: var(--success); color: white; margin-top: 10px; }
+
+        @media (max-width: 992px) {
+            .exam-container { grid-template-columns: 1fr; }
+            .exam-sidebar { order: -1; }
+        }
+
+        /* Result Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+
+        .result-card {
+            background: white;
+            padding: 40px;
+            border-radius: 32px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+        }
+
+        .result-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 30px 0;
+        }
+
+        .stat-item {
+            padding: 20px;
+            background: #f8fafc;
+            border-radius: 16px;
+        }
+
+        .stat-item .val { font-size: 1.5rem; font-weight: 800; color: var(--primary); }
+        .stat-item .lab { font-size: 0.8rem; color: var(--text-muted); }
+    </style>
+</head>
+<body>
+    <header class="exam-header">
+        <div class="exam-title">
+            <h1 id="examName">Daily Challenge</h1>
+        </div>
+        <div class="exam-timer" id="timer">
+            <i class="fas fa-clock"></i> <span id="timeLeft">00:00:00</span>
+        </div>
+    </header>
+
+    <div class="exam-container">
+        <div class="exam-content">
+            <div class="question-card" id="questionCard">
+                <div class="loading">Loading questions...</div>
+            </div>
+
+            <div class="exam-actions">
+                <button class="btn btn-prev" onclick="prevQuestion()">Previous</button>
+                <button class="btn btn-next" onclick="nextQuestion()">Next & Save</button>
+            </div>
+        </div>
+
+        <aside class="exam-sidebar">
+            <div class="nav-grid">
+                <h3>Question Palette</h3>
+                <div class="q-nav-buttons" id="navGrid"></div>
+                <button class="btn btn-submit" style="width: 100%;" onclick="submitExam()">Submit Exam</button>
+            </div>
+
+            <div class="nav-grid" style="background: #f1f5f9; border: none;">
+                <p style="font-size: 0.85rem; color: #64748b;">
+                    <strong>Instructions:</strong><br>
+                    • Correct: +1.0<br>
+                    • Wrong: -0.25<br>
+                    • Time: 90 Minutes
+                </p>
+            </div>
+        </aside>
+    </div>
+
+    <div class="modal-overlay" id="resultModal">
+        <div class="result-card">
+            <h2 id="resultTitle">Exam Submitted!</h2>
+            <div class="result-stats">
+                <div class="stat-item">
+                    <div class="val" id="resScore">0</div>
+                    <div class="lab">Final Score</div>
+                </div>
+                <div class="stat-item">
+                    <div class="val" id="resAccuracy">0%</div>
+                    <div class="lab">Accuracy</div>
+                </div>
+                <div class="stat-item">
+                    <div class="val" id="resCorrect">0</div>
+                    <div class="lab">Correct</div>
+                </div>
+                <div class="stat-item">
+                    <div class="val" id="resWrong">0</div>
+                    <div class="lab">Wrong</div>
+                </div>
+            </div>
+            <button class="btn btn-next" onclick="window.location.href='dashboard.html'">Go to Dashboard</button>
+        </div>
+    </div>
+
+    <script>
+        let currentChallenge = null;
+        let currentIndex = 0;
+        let answers = {};
+        let timeLeft = 5400; // 90 mins
+        let timerInterval;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const examId = urlParams.get('id');
+            const token = localStorage.getItem('token');
+
+            if (!examId || !token) {
+                window.location.href = 'daily-challenge.html';
+                return;
+            }
+
+            try {
+                // Fetch all challenges and find the one matching the ID
+                const res = await fetch(`/api/test/daily-challenge/all`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                
+                if (data.ok && data.challenges) {
+                    currentChallenge = data.challenges.find(c => c._id === examId);
+                    if (currentChallenge) {
+                        document.getElementById('examName').textContent = currentChallenge.title;
+                        timeLeft = (currentChallenge.durationMinutes || 90) * 60;
+                        renderQuestion();
+                        renderNavGrid();
+                        startTimer();
+                    } else {
+                        alert("Challenge not found.");
+                        window.location.href = 'daily-challenge.html';
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        });
+
+        function renderQuestion() {
+            const container = document.getElementById('questionCard');
+            const q = currentChallenge.questions[currentIndex];
+            
+            container.innerHTML = `
+                <div class="q-meta">
+                    <span>Question ${currentIndex + 1} of ${currentChallenge.questions.length}</span>
+                    <span>SSC CGL Daily Set</span>
+                </div>
+                <div class="q-text">${q.question}</div>
+                <div class="options-grid">
+                    ${q.options.map((opt, i) => `
+                        <button class="option-btn ${answers[currentIndex] === opt ? 'selected' : ''}" onclick="selectOption('${opt}')">
+                            <div class="option-circle">${String.fromCharCode(65 + i)}</div>
+                            ${opt}
+                        </button>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function renderNavGrid() {
+            const grid = document.getElementById('navGrid');
+            grid.innerHTML = currentChallenge.questions.map((_, i) => `
+                <div class="nav-dot ${currentIndex === i ? 'current' : ''} ${answers[i] ? 'answered' : ''}" onclick="goToQuestion(${i})">
+                    ${i + 1}
+                </div>
+            `).join('');
+        }
+
+        function selectOption(opt) {
+            answers[currentIndex] = opt;
+            renderQuestion();
+            renderNavGrid();
+        }
+
+        function goToQuestion(index) {
+            currentIndex = index;
+            renderQuestion();
+            renderNavGrid();
+        }
+
+        function nextQuestion() {
+            if (currentIndex < currentChallenge.questions.length - 1) {
+                currentIndex++;
+                renderQuestion();
+                renderNavGrid();
+            }
+        }
+
+        function prevQuestion() {
+            if (currentIndex > 0) {
+                currentIndex--;
+                renderQuestion();
+                renderNavGrid();
+            }
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    submitExam();
+                    return;
+                }
+                timeLeft--;
+                const h = Math.floor(timeLeft / 3600);
+                const m = Math.floor((timeLeft % 3600) / 60);
+                const s = timeLeft % 60;
+                document.getElementById('timeLeft').textContent = 
+                    `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+            }, 1000);
+        }
+
+        async function submitExam() {
+            clearInterval(timerInterval);
+            const token = localStorage.getItem('token');
+            
+            // Calculate results locally for instant feedback
+            let correct = 0;
+            let wrong = 0;
+            currentChallenge.questions.forEach((q, i) => {
+                if (answers[i]) {
+                    if (answers[i] === q.correctAnswer) correct++;
+                    else wrong++;
+                }
+            });
+
+            const score = (correct * 1) - (wrong * 0.25);
+            const totalAttempted = correct + wrong;
+            const accuracy = totalAttempted > 0 ? ((correct / totalAttempted) * 100).toFixed(1) : 0;
+
+            // Show results UI
+            document.getElementById('resScore').textContent = score.toFixed(2);
+            document.getElementById('resAccuracy').textContent = accuracy + "%";
+            document.getElementById('resCorrect').textContent = correct;
+            document.getElementById('resWrong').textContent = wrong;
+            document.getElementById('resultModal').style.display = 'flex';
+
+            // Save to DB
+            try {
+                await fetch('/api/test/daily-challenge/submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({
+                        challengeId: currentChallenge._id,
+                        answers,
+                        score,
+                        correct,
+                        wrong,
+                        accuracy,
+                        timeTaken: (currentChallenge.durationMinutes * 60) - timeLeft
+                    })
+                });
+            } catch (err) { console.error("Save failed:", err); }
+        }
+    </script>
+</body>
+</html>

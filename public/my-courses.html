@@ -333,17 +333,20 @@
 
     <script>
         const API = '';
-        const token = localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token');
+        let token = '';
         
         let COURSES_MAP = {};
         let PROGRESS_MAP = {};
         let COMPLETED_MAP = {};
 
-        if (!token) {
-            window.location.href = 'signup.html?redirect=my-courses.html';
-        }
-
         async function init() {
+            token = typeof getAuthToken === 'function' ? getAuthToken() : (localStorage.getItem('token') || localStorage.getItem('coursenovaToken'));
+            
+            if (!token) {
+                window.location.href = 'signup.html?redirect=my-courses.html';
+                return;
+            }
+
             await fetchMasterCourses();
             await loadEnrolledCourses();
         }

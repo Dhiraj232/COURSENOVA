@@ -6,9 +6,9 @@
 // ==========================================
 // 🛡️ AUTH & STATE
 // ==========================================
-const token = localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token');
-const user = JSON.parse(localStorage.getItem('coursenovaUser') || localStorage.getItem('coursenova_user') || '{}');
-const isLoggedIn = !!token;
+let token = '';
+let user = {};
+let isLoggedIn = false;
 
 let currentQuestions = [];
 let currentIndex = 0;
@@ -19,6 +19,10 @@ let isDailyQuiz = false;
 // 🎯 INITIALIZATION
 // ==========================================
 document.addEventListener('DOMContentLoaded', () => {
+    token = typeof getAuthToken === 'function' ? getAuthToken() : (localStorage.getItem('token') || localStorage.getItem('coursenovaToken'));
+    user = typeof getAuthUser === 'function' ? getAuthUser() : JSON.parse(localStorage.getItem('user') || '{}');
+    isLoggedIn = !!token;
+    
     loadQuestions();
     loadLeaderboard();
 });

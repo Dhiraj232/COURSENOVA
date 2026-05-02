@@ -1,10 +1,10 @@
 // API base is auto-detected by config.js (localhost in dev, Render in prod)
 const API = window.COURSENOVA_API || 'https://coursenova-ai.onrender.com';
-const token = localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token') || '';
-
+let token = '';
 let courses = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
+    token = typeof getAuthToken === 'function' ? getAuthToken() : (localStorage.getItem('token') || '');
     await fetchCourses();
 });
 
@@ -32,100 +32,169 @@ async function fetchCourses() {
 }
 
 function renderGrid(courses) {
-    const grid = document.getElementById('premGrid');
-    if (!grid) return;
+    const sectionContainer = document.getElementById('coursesContainer');
+    if (!sectionContainer) return;
     
     if (!courses.length) {
-        grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:#94a3b8">No courses available right now.</div>';
+        sectionContainer.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8">No courses available right now.</div>';
         return;
     }
 
-    grid.innerHTML = '';
-    
+    // Keep the overall count display if needed, but we'll rebuild the sections
+    sectionContainer.innerHTML = '';
+
+    // Group courses
+    const groupedCourses = {
+        "✨ Free Foundation Courses": [],
+        "Professional Skills & Tech Career Programs": [],
+        "Nursing Practice & Clinical Career Pathways": [],
+        "Agricultural Skills & Agri-Career Programs": []
+    };
+
+    const freeTitles = [
+        "Excel",
+        "AI Basics",
+        "Communication"
+    ];
+
+    const professionalTitles = [
+        "Time Management",
+        "Leadership",
+        "C Programming",
+        "MySQL",
+        "Java",
+        "Git",
+        "AI Product",
+        "Positive Attitude",
+        "DevOps",
+        "MERN",
+        "Full Stack",
+        "Cloud Computing",
+        "Mobile App"
+    ];
+
+    const nursingTitles = [
+        "Clinical Skills",
+        "Pharmacovigilance",
+        "Drug Development",
+        "Emergency",
+        "Hospital Practical",
+        "Pharmaceutical"
+    ];
+
     courses.forEach(c => {
-        const id = c._id;
-        const enrolled = c.enrolled;
-        const prog = c.progress ? c.progress.progressPercent || 0 : 0;
-        const completed = c.progress && c.progress.isCompleted;
-        const isFree = c.isFree === true || c.price === 0;
-
-        const card = document.createElement('div');
-        card.className = 'prem-card';
-        
-        // Premium courses are locked if not enrolled; Free courses are always open to view
-        const lockOverlay = (!enrolled && !isFree) ? `<div class="prem-lock-overlay"><i class="fas fa-lock"></i></div>` : '';
-        const highlights = c.highlights && c.highlights.length ? `<ul class="prem-highlights">
-            ${c.highlights.slice(0,3).map(h => `<li>${h}</li>`).join('')}
-        </ul>` : '';
-        const progressBar = enrolled && !completed ? `
-            <div class="prem-progress-label">Progress: ${prog}%</div>
-            <div class="prem-progress-bar">
-                <div class="prem-progress-fill" style="width:${prog}%"></div>
-            </div>` : '';
-
-        card.innerHTML = `
-            <div class="prem-card-top">
-                ${lockOverlay}
-                <div class="prem-card-icon">${c.icon || '📚'}</div>
-                <div class="prem-card-badge" style="background:${isFree ? '#10b981' : '#7c3aed'}">
-                    ${isFree ? 'FREE' : 'Premium'}
-                </div>
-                <h3>${c.title}</h3>
-                <p>${c.description || 'Unlock this course to accelerate your journey.'}</p>
-                <div class="prem-card-meta">
-                    <span class="prem-meta-item"><i class="fas fa-clock"></i> ${c.duration || 'Flexible'}</span>
-                    <span class="prem-meta-item"><i class="fas fa-signal"></i> ${c.level || 'Beginner'}</span>
-                </div>
-                ${highlights}
-                ${progressBar}
-            </div>
-            <div class="prem-card-footer">
-                ${!enrolled ? `
-                <div class="prem-price">
-                    <span class="prem-price-amount">${isFree ? 'FREE' : '₹' + Number(c.price).toLocaleString('en-IN')}</span>
-                    <span class="prem-price-sub">${isFree ? 'Join Now' : 'Lifetime Access'}</span>
-                </div>` : `<div><span style="color:#10b981;font-size:0.85rem;font-weight:700">✅ Enrolled</span></div>`}
-                <div class="btn-container"></div>
-            </div>
-        `;
-
-        const user = getAuthUser();
-        const hasPurchased = user && (
-            (user.purchasedCourses && user.purchasedCourses.includes(id)) || 
-            (user.purchasedCourses && user.purchasedCourses.includes(c.title)) ||
-            enrolled
-        );
-
-        const btnContainer = card.querySelector('.btn-container');
-        if (completed) {
-            const btn = document.createElement('button');
-            btn.className = 'btn-continue';
-            btn.innerHTML = '🏆 View Course';
-            btn.onclick = () => window.location.href = `premium-course-player.html?course=${id}`;
-            btnContainer.appendChild(btn);
-        } else if (hasPurchased) {
-            const btn = document.createElement('button');
-            btn.className = 'btn-continue';
-            btn.innerHTML = `<i class="fas fa-play"></i> Continue (${prog}%)`;
-            btn.onclick = () => window.location.href = `premium-course-player.html?course=${id}`;
-            btnContainer.appendChild(btn);
-        } else if (isFree) {
-            const btn = document.createElement('a');
-            btn.className = 'btn-buy';
-            btn.style.background = '#10b981';
-            btn.href = `premium-course-player.html?course=${id}`;
-            btn.innerHTML = `<i class="fas fa-play-circle"></i> Start for FREE`;
-            btnContainer.appendChild(btn);
+        if (freeTitles.some(t => c.title.toLowerCase().includes(t.toLowerCase()))) {
+            groupedCourses["✨ Free Foundation Courses"].push(c);
+        } else if (professionalTitles.some(t => c.title.toLowerCase().includes(t.toLowerCase()))) {
+            groupedCourses["Professional Skills & Tech Career Programs"].push(c);
+        } else if (nursingTitles.some(t => c.title.toLowerCase().includes(t.toLowerCase()))) {
+            groupedCourses["Nursing Practice & Clinical Career Pathways"].push(c);
         } else {
-            const btn = document.createElement('button');
-            btn.className = 'btn-buy';
-            btn.innerHTML = `<i class="fas fa-crown"></i> Buy Now — ₹${Number(c.price).toLocaleString('en-IN')}`;
-            btn.onclick = () => window.buyCourse(id, c.title, c.price);
-            btnContainer.appendChild(btn);
+            groupedCourses["Agricultural Skills & Agri-Career Programs"].push(c);
         }
-
-        grid.appendChild(card);
     });
+
+    // Render each section
+    for (const [sectionName, sectionCourses] of Object.entries(groupedCourses)) {
+        if (sectionCourses.length === 0) continue;
+
+        // Create Section Title
+        const titleDiv = document.createElement('div');
+        titleDiv.className = 'prem-section-title';
+        titleDiv.style.marginTop = '40px';
+        titleDiv.innerHTML = `${sectionName} <span style="font-size:1rem;color:#64748b;font-weight:500;">(${sectionCourses.length})</span>`;
+        sectionContainer.appendChild(titleDiv);
+
+        // Create Grid
+        const gridDiv = document.createElement('div');
+        gridDiv.className = 'prem-grid';
+
+        sectionCourses.forEach(c => {
+            const id = c._id;
+            const enrolled = c.enrolled;
+            const prog = c.progress ? c.progress.progressPercent || 0 : 0;
+            const completed = c.progress && c.progress.isCompleted;
+            const isFree = c.isFree === true || c.price === 0;
+
+            const card = document.createElement('div');
+            card.className = 'prem-card';
+            
+            const lockOverlay = (!enrolled && !isFree) ? `<div class="prem-lock-overlay"><i class="fas fa-lock"></i></div>` : '';
+            const highlights = c.highlights && c.highlights.length ? `<ul class="prem-highlights">
+                ${c.highlights.slice(0,3).map(h => `<li>${h}</li>`).join('')}
+            </ul>` : '';
+            const progressBar = enrolled && !completed ? `
+                <div class="prem-progress-label">Progress: ${prog}%</div>
+                <div class="prem-progress-bar">
+                    <div class="prem-progress-fill" style="width:${prog}%"></div>
+                </div>` : '';
+
+            card.innerHTML = `
+                <div class="prem-card-top">
+                    ${lockOverlay}
+                    <div class="prem-card-icon">${c.icon || '📚'}</div>
+                    <div class="prem-card-badge" style="background:${isFree ? '#10b981' : '#7c3aed'}">
+                        ${isFree ? 'FREE' : 'Premium'}
+                    </div>
+                    <h3>${c.title}</h3>
+                    <p>${c.description || 'Unlock this course to accelerate your journey.'}</p>
+                    <div class="prem-card-meta">
+                        <span class="prem-meta-item"><i class="fas fa-clock"></i> ${c.duration || 'Flexible'}</span>
+                        <span class="prem-meta-item"><i class="fas fa-signal"></i> ${c.level || 'Beginner'}</span>
+                    </div>
+                    ${highlights}
+                    ${progressBar}
+                </div>
+                <div class="prem-card-footer">
+                    ${!enrolled ? `
+                    <div class="prem-price">
+                        <span class="prem-price-amount">${isFree ? 'FREE' : '₹' + Number(c.price).toLocaleString('en-IN')}</span>
+                        <span class="prem-price-sub">${isFree ? 'Join Now' : 'Lifetime Access'}</span>
+                    </div>` : `<div><span style="color:#10b981;font-size:0.85rem;font-weight:700">✅ Enrolled</span></div>`}
+                    <div class="btn-container"></div>
+                </div>
+            `;
+
+            const user = getAuthUser();
+            const hasPurchased = user && (
+                (user.purchasedCourses && user.purchasedCourses.includes(id)) || 
+                (user.purchasedCourses && user.purchasedCourses.includes(c.title)) ||
+                enrolled
+            );
+
+            const btnContainer = card.querySelector('.btn-container');
+            if (completed) {
+                const btn = document.createElement('button');
+                btn.className = 'btn-continue';
+                btn.innerHTML = '🏆 View Course';
+                btn.onclick = () => window.location.href = `premium-course-player.html?course=${id}`;
+                btnContainer.appendChild(btn);
+            } else if (hasPurchased) {
+                const btn = document.createElement('button');
+                btn.className = 'btn-continue';
+                btn.innerHTML = `<i class="fas fa-play"></i> Continue (${prog}%)`;
+                btn.onclick = () => window.location.href = `premium-course-player.html?course=${id}`;
+                btnContainer.appendChild(btn);
+            } else if (isFree) {
+                const btn = document.createElement('a');
+                btn.className = 'btn-buy';
+                btn.style.background = '#10b981';
+                btn.href = `premium-course-player.html?course=${id}`;
+                btn.innerHTML = `<i class="fas fa-play-circle"></i> Start for FREE`;
+                btnContainer.appendChild(btn);
+            } else {
+                const btn = document.createElement('button');
+                btn.className = 'btn-buy';
+                btn.innerHTML = `<i class="fas fa-crown"></i> Buy Now — ₹${Number(c.price).toLocaleString('en-IN')}`;
+                btn.onclick = () => window.buyCourse(id, c.title, c.price);
+                btnContainer.appendChild(btn);
+            }
+
+            gridDiv.appendChild(card);
+        });
+
+        sectionContainer.appendChild(gridDiv);
+    }
 }
 
 window.enrollFree = async function(id, title) {

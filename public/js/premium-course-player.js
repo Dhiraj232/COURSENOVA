@@ -1,6 +1,6 @@
 // API base is auto-detected by config.js (localhost in dev, Render in prod)
 const API = window.COURSENOVA_API || 'https://coursenova-ai.onrender.com';
-const token = localStorage.getItem('coursenova_token') || localStorage.getItem('coursenovaToken') || '';
+let token = '';
 const params = new URLSearchParams(window.location.search);
 const courseId = params.get('course');
 
@@ -10,6 +10,7 @@ let progressData = null;
 let examAttemptsLeft = 3;
 
 document.addEventListener('DOMContentLoaded', async () => {
+    token = typeof getAuthToken === 'function' ? getAuthToken() : (localStorage.getItem('token') || '');
     if (!courseId) {
         window.location.href = 'certificates.html';
         return;

@@ -625,7 +625,7 @@
 
         <div id="nursingSection" style="display:none; margin-bottom: 50px;">
             <div class="section-header">
-                <h2 style="border-left-color: #0d9488;">BSc NURSING STUDENTS</h2>
+                <h2 style="border-left-color: #0d9488;">Nursing Practice & Clinical Career Pathways</h2>
             </div>
             <div class="certs-grid" id="nursingCoursesGrid"></div>
         </div>
@@ -639,7 +639,7 @@
 
         <div id="agriSection" style="display:none; margin-bottom: 50px;">
             <div class="section-header">
-                <h2 style="border-left-color: #16a34a;">Agriculture Students</h2>
+                <h2 style="border-left-color: #16a34a;">Agricultural Skills & Agri-Career Programs</h2>
             </div>
             <div class="certs-grid" id="agriCoursesGrid"></div>
         </div>
@@ -650,7 +650,7 @@
 
     <script>
         const API = '';
-        const token = localStorage.getItem('coursenova_token') || localStorage.getItem('coursenovaToken') || '';
+        let token = typeof getAuthToken === 'function' ? getAuthToken() : (localStorage.getItem('token') || '');
 
         let COURSES = [];
         let enrolledIds = [];
@@ -659,7 +659,9 @@
 
         // ─── Init ───
         window.addEventListener('DOMContentLoaded', async () => {
+            token = typeof getAuthToken === 'function' ? getAuthToken() : (localStorage.getItem('token') || '');
             if (!token) document.getElementById('loginCta').style.display = 'block';
+            else document.getElementById('loginCta').style.display = 'none';
             
             // Show skeletons while loading
             document.getElementById('skeletonGrid').innerHTML = Array(6).fill(0).map(() => `
@@ -808,11 +810,40 @@
             const pharmaGrid = document.getElementById('pharmaCoursesGrid');
             const agriGrid = document.getElementById('agriCoursesGrid');
             
-            const freeCourses = coursesList.filter(c => c.isFree);
-            const nursingCourses = coursesList.filter(c => !c.isFree && c.category === 'BSc NURSING STUDENTS');
-            const pharmaCourses = coursesList.filter(c => !c.isFree && c.category === 'B Pharma Students');
-            const agriCourses = coursesList.filter(c => !c.isFree && c.category === 'Agriculture Students');
-            const premiumCourses = coursesList.filter(c => !c.isFree && !['BSc NURSING STUDENTS', 'B Pharma Students', 'Agriculture Students'].includes(c.category));
+            const freeTitles = ["Excel", "AI Basics", "Communication"];
+            const freeCourses = coursesList.filter(c => freeTitles.some(t => c.title.toLowerCase().includes(t.toLowerCase())));
+            
+            const professionalTitles = [
+                "Time Management",
+                "Leadership",
+                "C Programming",
+                "MySQL",
+                "Java",
+                "Git",
+                "AI Product",
+                "Positive Attitude",
+                "DevOps",
+                "MERN",
+                "Full Stack",
+                "Cloud Computing",
+                "Mobile App"
+            ];
+
+            const premiumCourses = coursesList.filter(c => !freeCourses.includes(c) && professionalTitles.some(t => c.title.toLowerCase().includes(t.toLowerCase())));
+            
+            const nursingTitles = [
+                "Clinical Skills",
+                "Pharmacovigilance",
+                "Drug Development",
+                "Emergency",
+                "Hospital Practical",
+                "Pharmaceutical"
+            ];
+
+            const nursingCourses = coursesList.filter(c => !freeCourses.includes(c) && !premiumCourses.includes(c) && nursingTitles.some(t => c.title.toLowerCase().includes(t.toLowerCase())));
+            
+            const agriCourses = coursesList.filter(c => !freeCourses.includes(c) && !premiumCourses.includes(c) && !nursingCourses.includes(c));
+            const pharmaCourses = [];
 
             const getEmptyHtml = (msg) => `<div style="grid-column:1/-1;text-align:center;padding:40px 20px;color:var(--muted);">
                     <div style="font-size:2.5rem;margin-bottom:12px;">📭</div>

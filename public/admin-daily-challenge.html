@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Daily Challenge Upload | COURSENOVA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body { background: #f8fafc; font-family: 'Inter', sans-serif; padding: 40px; }
+        .admin-card { background: white; max-width: 800px; margin: 0 auto; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        h1 { font-family: 'Outfit', sans-serif; font-weight: 800; margin-bottom: 30px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; color: #475569; }
+        input[type="text"], input[type="date"], input[type="file"] { width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px; }
+        .btn { padding: 12px 24px; border-radius: 10px; font-weight: 700; cursor: pointer; border: none; transition: 0.3s; }
+        .btn-primary { background: #2563eb; color: white; }
+        .btn-primary:hover { background: #1d4ed8; }
+        .preview-area { margin-top: 40px; display: none; }
+        .question-item { background: #f1f5f9; padding: 20px; border-radius: 12px; margin-bottom: 15px; border-left: 5px solid #2563eb; }
+        .loading { display: none; margin-top: 20px; color: #2563eb; font-weight: 700; }
+    </style>
+</head>
+<body>
+    <div class="admin-card">
+        <h1>🚀 SSC CGL Daily Challenge Admin</h1>
+        <p style="color: #64748b; margin-bottom: 30px;">Upload an SSC-style PDF question paper. Our system will extract the questions and create a live test.</p>
+
+        <form id="uploadForm">
+            <div class="form-group">
+                <label>Test Date</label>
+                <input type="date" id="testDate" required>
+            </div>
+            <div class="form-group">
+                <label>Exam Type</label>
+                <select id="examType" style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px;">
+                    <option value="SSC CGL">SSC CGL</option>
+                    <option value="Railway Group D">Railway Group D</option>
+                    <option value="CTET">CTET</option>
+                    <option value="Army GD">Army GD</option>
+                    <option value="Bihar Police">Bihar Police</option>
+                    <option value="SSC GD">SSC GD</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Test Title</label>
+                <input type="text" id="testTitle" placeholder="e.g. SSC CGL Daily Set - 02 May 2026" required>
+            </div>
+            <div class="form-group">
+                <label>Upload Question PDF</label>
+                <input type="file" id="pdfFile" accept="application/pdf" required>
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-magic"></i> Process & Generate Test</button>
+        </form>
+
+        <div id="loadingMsg" class="loading"><i class="fas fa-spinner fa-spin"></i> Processing PDF... This may take a minute...</div>
+
+        <div id="previewArea" class="preview-area">
+            <h2 style="margin-bottom: 20px;">Review Extracted Questions</h2>
+            <div id="questionsList"></div>
+            <button class="btn btn-primary" onclick="saveChallenge()" style="margin-top: 20px; background: #10b981;"><i class="fas fa-save"></i> Confirm & Save to Database</button>
+        </div>
+    </div>
+
+    <script>
+        let extractedQuestions = [];
+        const urlParams = new URLSearchParams(window.location.search);
+        const challengeId = urlParams.get('id');
+
+        // Check for existing challenge
+        if (challengeId) {
+            loadExistingChallenge();
+        }
+
+        async function loadExistingChallenge() {
+            try {
+                const res = await fetch(`/api/test/daily-challenge/all`, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                });
+                const data = await res.json();
+                const challenge = data.challenges.find(c => c._id === challengeId);
+                
+                if (challenge) {
+                    document.getElementById('testDate').value = challenge.date;
+                    document.getElementById('testTitle').value = challenge.title;
+                    document.getElementById('examType').value = challenge.examType;
+                    extractedQuestions = challenge.questions;
+                    renderPreview();
+                }
+            } catch (err) {
+                console.error('Failed to load challenge:', err);
+            }
+        }
+
+        document.getElementById('uploadForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const formData = new FormData();
+            formData.append('pdf', document.getElementById('pdfFile').files[0]);
+            formData.append('date', document.getElementById('testDate').value);
+            formData.append('title', document.getElementById('testTitle').value);
+            formData.append('examType', document.getElementById('examType').value);
+
+            document.getElementById('loadingMsg').style.display = 'block';
+            document.getElementById('previewArea').style.display = 'none';
+
+            try {
+                const res = await fetch('/api/admin/daily-challenge/upload', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: formData
+                });
+                const data = await res.json();
+                
+                if (data.ok) {
+                    extractedQuestions = data.questions;
+                    renderPreview();
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            } catch (err) {
+                console.error(err);
+                alert('Upload failed.');
+            } finally {
+                document.getElementById('loadingMsg').style.display = 'none';
+            }
+        };
+
+        function renderPreview() {
+            const list = document.getElementById('questionsList');
+            list.innerHTML = extractedQuestions.map((q, i) => `
+                <div class="question-item">
+                    <strong>Q${i+1}:</strong> ${q.question}<br>
+                    <small>Options: ${q.options.join(', ')}</small><br>
+                    <span style="color: #10b981; font-weight: 700;">Answer: ${q.correctAnswer}</span>
+                </div>
+            `).join('');
+            document.getElementById('previewArea').style.display = 'block';
+        }
+
+        async function saveChallenge() {
+            const payload = {
+                date: document.getElementById('testDate').value,
+                title: document.getElementById('testTitle').value,
+                examType: document.getElementById('examType').value,
+                questions: extractedQuestions
+            };
+
+            try {
+                const res = await fetch('/api/admin/daily-challenge/save', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    alert('Daily Challenge saved successfully!');
+                    window.location.href = 'admin-dashboard.html';
+                }
+            } catch (err) {
+                alert('Save failed.');
+            }
+        }
+    </script>
+</body>
+</html>

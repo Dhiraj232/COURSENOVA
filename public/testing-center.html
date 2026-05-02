@@ -419,7 +419,8 @@
         }
 
         async function openPack(packId) {
-            const token = localStorage.getItem('coursenova_token') || localStorage.getItem('coursenovaToken');
+                        const token = typeof getAuthToken === 'function' ? getAuthToken() : '';
+
             if (!token) {
                 alert('Please login to access mock tests.');
                 window.location.href = 'index.html#login';
@@ -443,7 +444,8 @@
         }
 
         async function initiatePurchase(pack) {
-            const token = localStorage.getItem('coursenova_token') || localStorage.getItem('coursenovaToken');
+                        const token = typeof getAuthToken === 'function' ? getAuthToken() : '';
+
 
             try {
                 // Testing center API can reuse the cashfree course purchase since packs act like courses.

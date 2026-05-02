@@ -7,7 +7,7 @@
     "use strict";
 
     const API_BASE = ''; // Root relative
-    const USER_TOKEN = localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token') || '';
+    const USER_TOKEN = typeof getAuthToken === 'function' ? getAuthToken() : '';
 
     // INITIALIZATION
     document.addEventListener('DOMContentLoaded', function () {

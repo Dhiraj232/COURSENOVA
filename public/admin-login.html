@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login | COURSENOVA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --bg: #0f172a;
+            --white: #ffffff;
+            --border: #1e293b;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
+            color: var(--white);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-card {
+            background: #1e293b;
+            padding: 40px;
+            border-radius: 24px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--border);
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .login-header img {
+            width: 60px;
+            margin-bottom: 15px;
+        }
+
+        .login-header h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.5rem;
+            color: var(--white);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            color: #94a3b8;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 16px;
+            background: #0f172a;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: white;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        input:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+        }
+
+        .btn-login {
+            width: 100%;
+            padding: 14px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 10px;
+        }
+
+        .btn-login:hover {
+            background: #4f46e5;
+            transform: translateY(-2px);
+        }
+
+        .error-msg {
+            background: #fef2f2;
+            color: #ef4444;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            margin-bottom: 20px;
+            display: none;
+            text-align: center;
+        }
+
+        .back-link {
+            display: block;
+            text-align: center;
+            margin-top: 20px;
+            color: #94a3b8;
+            text-decoration: none;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="login-header">
+            <img src="images/coursenova-logo.png" alt="COURSENOVA">
+            <h1>Admin Panel Login</h1>
+        </div>
+
+        <div id="errorBox" class="error-msg"></div>
+
+        <form id="loginForm">
+            <div class="form-group">
+                <label>Administrator Email</label>
+                <input type="email" id="email" placeholder="admin@coursenova.in" required>
+            </div>
+            <div class="form-group">
+                <label>Secret Password</label>
+                <input type="password" id="password" placeholder="••••••••" required>
+            </div>
+            <button type="submit" class="btn-login" id="loginBtn">Authorize Access</button>
+        </form>
+
+        <a href="index.html" class="back-link"><i class="fas fa-arrow-left"></i> Back to Homepage</a>
+    </div>
+
+    <script>
+        const loginForm = document.getElementById('loginForm');
+        const errorBox = document.getElementById('errorBox');
+        const loginBtn = document.getElementById('loginBtn');
+
+        loginForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+
+            loginBtn.innerText = 'Verifying...';
+            loginBtn.disabled = true;
+            errorBox.style.display = 'none';
+
+            try {
+                const res = await fetch('/api/auth/admin-login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await res.json();
+
+                if (data.ok) {
+                    localStorage.clear();
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('role', 'admin');
+                    localStorage.setItem('user', JSON.stringify(data.user));
+
+                    window.location.href = '/admin-dashboard';
+                } else {
+                    errorBox.innerText = data.message || 'Access Denied';
+                    errorBox.style.display = 'block';
+                    loginBtn.innerText = 'Authorize Access';
+                    loginBtn.disabled = false;
+                }
+            } catch (err) {
+                errorBox.innerText = 'Server error. Please try again.';
+                errorBox.style.display = 'block';
+                loginBtn.innerText = 'Authorize Access';
+                loginBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

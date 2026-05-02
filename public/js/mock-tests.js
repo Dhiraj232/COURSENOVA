@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 let allPacks = [];
-const TOKEN = localStorage.getItem('coursenova_token') || localStorage.getItem('coursenovaToken') || '';
+const TOKEN = typeof getAuthToken === 'function' ? getAuthToken() : '';
 const API   = window.COURSENOVA_API || '';
 
 // ─── Toast ─────────────────────────────────────────────────────────────────
@@ -170,18 +170,47 @@ function renderPacks(packs) {
             </div>
         </div>`;
 
-        if (pack.category === 'Tech Free') {
-            if (techFreeGrid) techFreeGrid.innerHTML += cardHTML;
-            techFreeCount++;
-        } else if (pack.category === 'Govt Exam') {
-            if (govtGrid) govtGrid.innerHTML += cardHTML;
-            govtCount++;
-        } else if (pack.category === 'National Exam') {
-            if (nationalGrid) nationalGrid.innerHTML += cardHTML;
-            nationalCount++;
-        } else {
+        const stateBoardTitles = [
+            "CBSE Class 10",
+            "CBSE Class 12 (Science)",
+            "CBSE Class 12 (Arts)",
+            "Bihar Board Class 10",
+            "Bihar Board Class 12 (Science)",
+            "Bihar Board Class 12 (Arts)",
+            "UP Board Class 10",
+            "UP Board Class 12 (Science)",
+            "UP Board Class 12 (Arts)"
+        ];
+
+        const nationalTitles = [
+            "NEET",
+            "JEE Main",
+            "CUET UG",
+            "CUET PG",
+            "NDA"
+        ];
+
+        const collegeTitles = [
+            "BITSAT",
+            "VITEEE",
+            "LPUNEST",
+            "MET (Manipal)",
+            "BHU Entrance",
+            "AMU Entrance"
+        ];
+
+        if (stateBoardTitles.some(t => pack.title.toLowerCase().includes(t.toLowerCase()))) {
             if (freeGrid) freeGrid.innerHTML += cardHTML;
             freeCount++;
+        } else if (nationalTitles.some(t => pack.title.toLowerCase().includes(t.toLowerCase()))) {
+            if (nationalGrid) nationalGrid.innerHTML += cardHTML;
+            nationalCount++;
+        } else if (collegeTitles.some(t => pack.title.toLowerCase().includes(t.toLowerCase()))) {
+            if (techFreeGrid) techFreeGrid.innerHTML += cardHTML;
+            techFreeCount++;
+        } else {
+            if (govtGrid) govtGrid.innerHTML += cardHTML;
+            govtCount++;
         }
     });
 

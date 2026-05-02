@@ -32,7 +32,7 @@ const CourseSchema = new mongoose.Schema({
 
     // Price in INR. 0 = free.
     price: { type: Number, required: true, min: 0, default: 0 },
-    isFree: { type: Boolean, default: false },
+    isFree: { type: Boolean, default: true },
 
     // Premium course gate — true means payment required before access
     isPremium: { type: Boolean, default: false },

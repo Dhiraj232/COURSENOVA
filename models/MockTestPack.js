@@ -7,7 +7,7 @@ const mockTestPackSchema = new mongoose.Schema({
     description: { type: String },
     thumbnail: { type: String, default: 'https://placehold.co/400x200?text=Test+Series' },
     price: { type: Number, default: 0 },
-    isFree: { type: Boolean, default: false },
+    isFree: { type: Boolean, default: true },
     totalTests: { type: Number, default: 0 },
     // Individual tests within this pack
     tests: [{

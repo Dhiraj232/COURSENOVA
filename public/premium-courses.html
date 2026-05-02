@@ -35,9 +35,9 @@
 
   <!-- ── HERO ──────────────────────────────────────────────────── -->
   <section class="prem-hero">
-    <div class="prem-hero-badge">✨ Free & Premium Courses</div>
+    <div class="prem-hero-badge">✨ Free Courses</div>
     <h1>Invest in Your Skills,<br>Get Certified</h1>
-    <p>Expert-curated courses with videos, PDFs, MCQ exams, and verified certificates. Start for free or go premium.</p>
+    <p>Expert-curated courses with videos, PDFs, MCQ exams, and verified certificates. Start learning for free.</p>
     <div class="prem-hero-stats">
       <div class="prem-stat">
         <div class="prem-stat-number" id="coursesCount">10</div>
@@ -59,37 +59,8 @@
   </section>
 
   <!-- ── COURSES GRID ───────────────────────────────────────────── -->
-  <section class="prem-section">
-    <div class="prem-section-title">
-      Explore All Courses <span id="premCourseCount">Loading...</span>
-    </div>
-    <div class="prem-grid" id="premGrid">
-      <!-- Skeleton loaders -->
-      <div class="prem-card" style="min-height:380px">
-        <div class="prem-card-top">
-          <div class="skeleton" style="height:50px;width:50px;border-radius:12px;margin-bottom:14px"></div>
-          <div class="skeleton" style="height:22px;width:60%;margin-bottom:10px"></div>
-          <div class="skeleton" style="height:16px;width:90%;margin-bottom:6px"></div>
-          <div class="skeleton" style="height:16px;width:75%"></div>
-        </div>
-      </div>
-      <div class="prem-card" style="min-height:380px">
-        <div class="prem-card-top">
-          <div class="skeleton" style="height:50px;width:50px;border-radius:12px;margin-bottom:14px"></div>
-          <div class="skeleton" style="height:22px;width:55%;margin-bottom:10px"></div>
-          <div class="skeleton" style="height:16px;width:90%;margin-bottom:6px"></div>
-          <div class="skeleton" style="height:16px;width:70%"></div>
-        </div>
-      </div>
-      <div class="prem-card" style="min-height:380px">
-        <div class="prem-card-top">
-          <div class="skeleton" style="height:50px;width:50px;border-radius:12px;margin-bottom:14px"></div>
-          <div class="skeleton" style="height:22px;width:65%;margin-bottom:10px"></div>
-          <div class="skeleton" style="height:16px;width:90%;margin-bottom:6px"></div>
-          <div class="skeleton" style="height:16px;width:80%"></div>
-        </div>
-      </div>
-    </div>
+  <section class="prem-section" id="coursesContainer">
+    <div style="text-align:center;padding:40px;color:#94a3b8">Loading courses...</div>
   </section>
 
   <!-- ── Toast Notification ────────────────────────────────────── -->
@@ -100,6 +71,6 @@
 
 
   <script src="js/config.js"></script>
-  <script src="js/premium-courses.js"></script>
+  <script src="js/premium-courses.js?v=2.1"></script>
 </body>
 </html>

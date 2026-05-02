@@ -104,11 +104,19 @@
                     throw new Error('Invalid user data received');
                 }
 
-                // ── Save to localStorage — same keys used by dashboard.js ──
-                localStorage.setItem('coursenovaToken', token);
-                localStorage.setItem('coursenova_token', token);   // legacy alias
-                localStorage.setItem('coursenovaUser', JSON.stringify(user));
-                localStorage.setItem('coursenova_user', JSON.stringify(user)); // legacy alias
+                // ── Clear old data before saving new session ──
+                localStorage.clear();
+
+                // ── Debug Logs ──
+                console.log("Login Response:", { token, user });
+
+                // ── Save to localStorage — standardized keys ──
+                localStorage.setItem('token', token);
+                localStorage.setItem('role', user.role);
+                localStorage.setItem('user', JSON.stringify(user));
+                
+                // ── Debug Logs AFTER storage ──
+                console.log("Stored Role:", localStorage.getItem("role"));
 
                 // ── Clean the URL so the token doesn't stay in browser history ──
                 if (window.history && window.history.replaceState) {
@@ -120,8 +128,13 @@
                 document.getElementById('statusMsg').textContent = `Welcome back, ${user.fullName || 'Learner'}! Redirecting to your dashboard…`;
                 document.getElementById('spinner').style.borderTopColor = '#10b981';
 
+                // ── Redirect based on role ──
                 setTimeout(() => {
-                    window.location.replace('dashboard.html');
+                    if (user.role === 'admin') {
+                        window.location.href = '/admin-dashboard';
+                    } else {
+                        window.location.href = '/dashboard';
+                    }
                 }, 1200);
 
             } catch (err) {

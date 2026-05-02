@@ -4,11 +4,18 @@ const UserSchema = new mongoose.Schema({
     googleId: { type: String, required: true, unique: true },
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
+    password: { type: String }, // For manual admin login
     picture: { type: String, default: '' },
 
     // Profile setup (filled after first login)
     profileComplete: { type: Boolean, default: false },
-    role: { type: String, enum: ['college', 'child', 'student', ''], default: '' },
+    role: { type: String, enum: ['student', 'admin', 'college', 'child', 'user', ''], default: 'user' },
+    
+    // Subscription & Streaks
+    isPremium: { type: Boolean, default: false },
+    subscriptionExpiry: { type: Date },
+    streak: { type: Number, default: 0 },
+    lastChallengeDate: { type: String }, // To track streaks (e.g. "2024-05-02")
 
     // College fields
     collegeName: { type: String, default: '' },

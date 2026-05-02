@@ -201,10 +201,14 @@
 <body>
     <div class="quiz-header">
         <div style="display: flex; align-items: center; gap: 20px;">
-            <a href="mock-tests.html" style="color: #64748b; font-size: 1.1rem; text-decoration: none; display: flex; align-items: center; gap: 8px; font-weight: 600;">
+            <a href="javascript:history.back()" style="color: #64748b; font-size: 1.1rem; text-decoration: none; display: flex; align-items: center; gap: 8px; font-weight: 600;">
                 <i class="fas fa-arrow-left"></i> Back
             </a>
             <h2 id="quizTitle" style="font-weight: 800; margin: 0; font-size: 1.2rem;">Practice Test</h2>
+            <select id="langToggle" onchange="toggleLanguage()" style="padding: 5px 10px; border-radius: 8px; border: 1px solid #cbd5e1; font-family: 'Inter', sans-serif; font-weight: 600; cursor: pointer; outline: none;">
+                <option value="en">English</option>
+                <option value="hi">हिंदी</option>
+            </select>
         </div>
         <div id="quizMeta" style="display: flex; align-items: center; gap: 30px;">
             <div class="progress-indicator">Question <span id="currentNum">1</span> / <span id="totalNum">20</span></div>
@@ -239,6 +243,7 @@
     </div>
 
     <script src="js/navigation.js"></script>
+    <script src="js/ssc-data.js"></script>
     <script>
         const urlParams = new URLSearchParams(window.location.search);
         const mode = urlParams.get('mode') || 'practice';
@@ -246,7 +251,12 @@
         const subject = urlParams.get('subject');
         const packId = urlParams.get('packId');
         const courseId = urlParams.get('course');
-        const displayLang = urlParams.get('lang') || 'en';
+        let displayLang = urlParams.get('lang') || 'en';
+
+        function toggleLanguage() {
+            displayLang = document.getElementById('langToggle').value;
+            renderQuestion(currentIndex);
+        }
 
         let questions = [];
         let currentIndex = 0;
@@ -261,6 +271,29 @@
         });
 
         async function loadQuestions() {
+            if (mode === 'daily_ssc') {
+                try {
+                    const res = await fetch(`/api/test/daily-challenge/today/${encodeURIComponent(examType)}`);
+                    const data = await res.json();
+                    if (data.ok && data.challenge && data.challenge.questions.length > 0) {
+                        questions = data.challenge.questions;
+                        document.getElementById('quizTitle').innerText = data.challenge.title;
+                    } else {
+                        questions = sscDailyQuestions || [];
+                        document.getElementById('quizTitle').innerText = `${examType} Daily Set (Sample)`;
+                    }
+                } catch (err) {
+                    questions = sscDailyQuestions || [];
+                    document.getElementById('quizTitle').innerText = `${examType} Daily Set (Sample)`;
+                }
+                document.getElementById('totalNum').innerText = questions.length;
+                timerSeconds = 7200; // 120 minutes
+                renderPalette();
+                renderQuestion(0);
+                startTimer();
+                return;
+            }
+
             let url = '';
             if (courseId) {
                 url = `/api/test/questions/${encodeURIComponent(courseId)}`;

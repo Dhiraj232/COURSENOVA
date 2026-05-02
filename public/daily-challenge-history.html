@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Challenge History | COURSENOVA</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        body { background: #f8fafc; font-family: 'Inter', sans-serif; }
+        .history-container { max-width: 1000px; margin: 40px auto; padding: 0 20px; }
+        .history-header { margin-bottom: 40px; display: flex; justify-content: space-between; align-items: center; }
+        .history-header h1 { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 2.5rem; color: #0f172a; margin: 0; }
+        
+        .history-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        .history-card { background: white; border-radius: 20px; padding: 25px; border: 1px solid #e2e8f0; transition: 0.3s; position: relative; overflow: hidden; }
+        .history-card:hover { transform: translateY(-5px); box-shadow: 0 15px 30px rgba(0,0,0,0.05); }
+        .history-card h3 { font-family: 'Outfit', sans-serif; margin: 0 0 10px 0; font-size: 1.2rem; font-weight: 700; }
+        .history-card p { color: #64748b; font-size: 0.9rem; margin-bottom: 20px; }
+        
+        .btn-download { display: inline-flex; align-items: center; gap: 8px; color: #2563eb; font-weight: 700; text-decoration: none; font-size: 0.9rem; transition: 0.2s; }
+        .btn-download:hover { color: #1d4ed8; text-decoration: underline; }
+        
+        .premium-badge { background: #fef3c7; color: #92400e; padding: 4px 10px; border-radius: 6px; font-size: 0.7rem; font-weight: 800; position: absolute; top: 20px; right: 20px; text-transform: uppercase; }
+        
+        .empty-state { text-align: center; padding: 80px 20px; color: #64748b; }
+        .empty-state i { font-size: 4rem; color: #cbd5e1; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <div id="navbar-placeholder"></div>
+
+    <div class="history-container">
+        <div class="history-header">
+            <div>
+                <h1>📚 Test Archive</h1>
+                <p style="color: #64748b; margin-top: 5px;">Access all previous Daily Challenges and download materials.</p>
+            </div>
+            <a href="daily-challenge.html" style="color: #2563eb; font-weight: 700; text-decoration: none;"><i class="fas fa-arrow-left"></i> Today's Challenge</a>
+        </div>
+
+        <div id="historyGrid" class="history-grid">
+            <!-- Cards will be injected here -->
+        </div>
+
+        <div id="emptyState" class="empty-state" style="display: none;">
+            <i class="fas fa-folder-open"></i>
+            <h2>No Previous Tests Found</h2>
+            <p>Admin hasn't uploaded any past challenges yet.</p>
+        </div>
+    </div>
+
+    <script src="js/navigation.js"></script>
+    <script>
+        async function fetchHistory() {
+            try {
+                const res = await fetch('/api/test/daily-challenge/all');
+                const data = await res.json();
+                
+                if (data.ok && data.challenges.length > 0) {
+                    renderHistory(data.challenges);
+                } else {
+                    document.getElementById('emptyState').style.display = 'block';
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function renderHistory(challenges) {
+            const grid = document.getElementById('historyGrid');
+            grid.innerHTML = challenges.map(c => `
+                <div class="history-card">
+                    ${c.isPremium ? '<span class="premium-badge">PREMIUM</span>' : ''}
+                    <p style="margin-bottom: 5px; font-weight: 800; color: #2563eb;">${c.date}</p>
+                    <h3>${c.title}</h3>
+                    <p>${c.totalQuestions} Questions | 120 Mins</p>
+                    
+                    <div style="display: flex; gap: 20px;">
+                        <a href="/api/admin/daily-challenge/pdf-questions/${c.date}" target="_blank" class="btn-download">
+                            <i class="fas fa-file-download"></i> Questions
+                        </a>
+                        <a href="/api/admin/daily-challenge/pdf-solutions/${c.date}" target="_blank" class="btn-download">
+                            <i class="fas fa-check-circle"></i> Solutions
+                        </a>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        document.addEventListener('DOMContentLoaded', fetchHistory);
+    </script>
+</body>
+</html>

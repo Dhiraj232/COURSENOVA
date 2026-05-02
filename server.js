@@ -181,7 +181,8 @@ app.set('trust proxy', 1);
 
 // ─── 1. CORS — MUST be first, before all other middleware ────────────────────
 const allowedOrigins = [
-  "https://www.coursenova.in"
+  "https://www.coursenova.in",
+  "http://localhost:5000"
 ];
 
 const corsOptions = {
@@ -294,6 +295,17 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// Extensionless routes for key pages
+app.get('/dashboard', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
+});
+app.get('/admin-dashboard', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin-dashboard.html'));
+});
+app.get('/admin-login', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin-login.html'));
+});
+
 // ✅ FIXED: Removed duplicate /auth/logout — logout is handled in routes/auth.js
 
 // ─── JWT Authentication Middleware ──────────────────────────────
@@ -385,6 +397,7 @@ app.use('/api/community-ai', require('./routes/ai'));
 const adminRoutes = require('./routes/adminRoutes');
 const analyticsRoutes = require('./routes/analyticsRoutes');
 app.use('/api/admin', adminRoutes);
+app.use('/api/admin/daily-challenge', require('./routes/dailyChallengeAdmin'));
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 
@@ -519,6 +532,16 @@ app.post('/api/update-profile', async (req, res) => {
   }
 });
 
+const seedDailyChallenges = require('./scripts/seedDailyChallenges');
+app.get('/api/seed-daily-challenges', async (req, res) => {
+    try {
+        await seedDailyChallenges();
+        res.send("Seeding successful! Check your dashboard now.");
+    } catch (err) {
+        res.status(500).send("Seeding failed: " + err.message);
+    }
+});
+
 // simple health check endpoint
 app.get('/api/ping', (req, res) => {
   res.json({ ok: true, message: 'pong' });
@@ -535,6 +558,7 @@ app.get('/api/ping', (req, res) => {
 // This MUST be the last middleware in the chain
 // API-specific 404 handler
 app.all('/api/*', (req, res, next) => {
+  console.log(`[404 Error] ${req.method} ${req.originalUrl}`);
   next(new AppError(`API endpoint ${req.originalUrl} not found!`, 404));
 });
 
@@ -644,5 +668,7 @@ io.on('connection', (socket) => {
 // Attach socketMap to app for use in routes
 app.set('socketMap', socketMap);
 
-server.listen(PORT, () => console.log('COURSENOVA Community API & Chat listening on port', PORT));
+server.listen(PORT, () => {
+    console.log(`[${new Date().toLocaleTimeString()}] COURSENOVA Community API & Chat listening on port ${PORT}`);
+});
 
