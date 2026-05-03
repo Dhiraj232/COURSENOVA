@@ -85,30 +85,43 @@ router.get('/pdf-solutions/:date', async (req, res) => {
 // Helper to parse questions from raw text using regex
 function parseQuestionsFromText(text) {
     const questions = [];
+    // Split text into lines and clean up
+    const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
     
-    // Split by common question patterns (e.g., "1.", "Q1.", etc.)
-    // This is a simplified regex. Real-world OCR text is messy.
-    const questionBlocks = text.split(/(?=\d+[\.\)]\s+)/);
+    let currentQuestion = null;
 
-    questionBlocks.forEach(block => {
-        // Look for options like A. B. C. D.
-        const qMatch = block.match(/(\d+[\.\)]\s+[\s\S]+?)(?=[A-D][\.\)]\s+)/);
-        const optMatch = block.match(/[A-D][\.\)]\s+([\s\S]+?)(?=[A-D][\.\)]\s+|$)/g);
-        
-        if (qMatch && optMatch && optMatch.length >= 4) {
-            const questionText = qMatch[1].replace(/^\d+[\.\)]\s+/, '').trim();
-            const options = optMatch.map(o => o.replace(/^[A-D][\.\)]\s+/, '').trim());
-            
-            // For demo, we default correct answer to first option or guess
-            questions.push({
-                question: questionText,
-                options: options.slice(0, 4),
-                correctAnswer: options[0], // Defaulting for now
-                explanation: "Explanation will be added soon."
-            });
+    lines.forEach(line => {
+        // Look for question start: "1. " or "1) "
+        const qMatch = line.match(/^(\d+)[.)]\s+(.*)/);
+        if (qMatch) {
+            if (currentQuestion) questions.push(currentQuestion);
+            currentQuestion = {
+                question: qMatch[2],
+                options: [],
+                correctAnswer: '',
+                explanation: 'Extracted from PDF'
+            };
+            return;
+        }
+
+        // Look for options: "A) " or "A. "
+        const optMatch = line.match(/^([A-D])[.)]\s+(.*)/);
+        if (optMatch && currentQuestion) {
+            currentQuestion.options.push(optMatch[2]);
+            // Default first option as correct if not specified (manual check recommended)
+            if (currentQuestion.options.length === 1) {
+                currentQuestion.correctAnswer = optMatch[2];
+            }
+            return;
+        }
+
+        // Append to current question if it's a continuation line
+        if (currentQuestion && !optMatch && !qMatch && currentQuestion.options.length === 0) {
+            currentQuestion.question += ' ' + line;
         }
     });
 
+    if (currentQuestion) questions.push(currentQuestion);
     return questions;
 }
 

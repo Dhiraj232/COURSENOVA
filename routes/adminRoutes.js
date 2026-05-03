@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const User = require('../models/User');
 const Course = require('../models/Course');
 const TestResult = require('../models/TestResult');
@@ -75,10 +76,13 @@ router.post('/generate-questions-from-pdf', requireAdmin, upload.single('pdf'), 
 
             if (options.length >= 2) {
                 while (options.length < 4) options.push('—');
+                const safeIdx = (correctIndex >= 0 && correctIndex < 4) ? correctIndex : 0;
+                const correctAnswerStr = ['A', 'B', 'C', 'D'][safeIdx];
                 questions.push({
                     question: questionText,
                     options: options.slice(0, 4),
-                    correctIndex: (correctIndex >= 0 && correctIndex < 4) ? correctIndex : 0,
+                    correctAnswer: correctAnswerStr,
+                    correctIndex: safeIdx,
                     category: 'Imported',
                     subject: 'General'
                 });
@@ -91,6 +95,8 @@ router.post('/generate-questions-from-pdf', requireAdmin, upload.single('pdf'), 
 
     console.log('[PDF Generator] Questions found:', questions.length);
 
+    const lang = req.query.lang || 'en';
+
     if (questions.length === 0) {
         return res.json({ 
             ok: false, 
@@ -98,7 +104,18 @@ router.post('/generate-questions-from-pdf', requireAdmin, upload.single('pdf'), 
         });
     }
 
-    res.json({ ok: true, questions, count: questions.length });
+    // Return field names based on language
+    const formatted = questions.map(q => {
+        if (lang === 'hi') {
+            return {
+                question_hi: q.question,
+                options_hi: q.options
+            };
+        }
+        return q; // English: return as-is (question, options, correctAnswer, category, subject)
+    });
+
+    res.json({ ok: true, questions: formatted, count: formatted.length });
 }));
 
 // Helper for audit trail
@@ -203,6 +220,32 @@ router.post('/questions', requireAdmin, catchAsync(async (req, res) => {
     }
     const question = await PracticeQuestion.create(req.body);
     res.status(201).json({ ok: true, question });
+}));
+
+// ── 3b. ADD HINDI to existing questions (bulk) ──────────────────────────────
+// Payload: [{ _id, question_hi, options_hi }]
+router.post('/questions/add-hindi', requireAdmin, catchAsync(async (req, res) => {
+    const pairs = req.body;
+    if (!Array.isArray(pairs) || pairs.length === 0) {
+        throw new AppError('Payload must be an array of {_id, question_hi, options_hi}', 400);
+    }
+
+    let updated = 0;
+    const errors = [];
+
+    await Promise.all(pairs.map(async ({ _id, question_hi, options_hi }) => {
+        if (!_id) return;
+        try {
+            await PracticeQuestion.findByIdAndUpdate(_id, {
+                $set: { question_hi, options_hi }
+            });
+            updated++;
+        } catch (e) {
+            errors.push(`${_id}: ${e.message}`);
+        }
+    }));
+
+    res.json({ ok: true, updated, errors });
 }));
 
 // ── 4. USER MANAGEMENT ───────────────────────────────────────────────
@@ -313,7 +356,14 @@ router.get('/mock-tests/:id/questions', requireAdmin, catchAsync(async (req, res
     res.json({ ok: true, tests: pack.tests });
 }));
 
-// ── 9. AUDIT LOGS ──────────────────────────────────────────────────
+// ── 9. MARKETPLACE MANAGEMENT ─────────────────────────────────────────
+router.get('/marketplace/all-books', requireAdmin, catchAsync(async (req, res) => {
+    // Explicitly use collection name 'usedbooks' to avoid any Mongoose ambiguity
+    const books = await mongoose.model('UsedBook').find().sort({ createdAt: -1 });
+    res.json({ ok: true, books });
+}));
+
+// ── 10. AUDIT LOGS ──────────────────────────────────────────────────
 router.get('/audit-logs', requireAdmin, catchAsync(async (req, res) => {
     const logs = await AuditLog.find().sort({ createdAt: -1 }).limit(100);
     res.json({ ok: true, logs });

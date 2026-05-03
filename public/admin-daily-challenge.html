@@ -28,20 +28,23 @@
         <p style="color: #64748b; margin-bottom: 30px;">Upload an SSC-style PDF question paper. Our system will extract the questions and create a live test.</p>
 
         <form id="uploadForm">
-            <div class="form-group">
-                <label>Test Date</label>
-                <input type="date" id="testDate" required>
-            </div>
-            <div class="form-group">
-                <label>Exam Type</label>
-                <select id="examType" style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px;">
-                    <option value="SSC CGL">SSC CGL</option>
-                    <option value="Railway Group D">Railway Group D</option>
-                    <option value="CTET">CTET</option>
-                    <option value="Army GD">Army GD</option>
-                    <option value="Bihar Police">Bihar Police</option>
-                    <option value="SSC GD">SSC GD</option>
-                </select>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div class="form-group">
+                    <label>Test Date</label>
+                    <input type="date" id="testDate" required onchange="updateDefaultTitle()">
+                </div>
+                <div class="form-group">
+                    <label>Exam Type</label>
+                    <select id="examType" style="width: 100%; padding: 12px; border: 1px solid #e2e8f0; border-radius: 10px;" onchange="updateDefaultTitle()">
+                        <option value="SSC CGL">SSC CGL</option>
+                        <option value="Railway Group D">Railway Group D</option>
+                        <option value="CTET">CTET</option>
+                        <option value="Army GD">Army GD</option>
+                        <option value="Bihar Police">Bihar Police</option>
+                        <option value="SSC GD">SSC GD</option>
+                        <option value="UP Police">UP Police</option>
+                    </select>
+                </div>
             </div>
             <div class="form-group">
                 <label>Test Title</label>
@@ -51,15 +54,20 @@
                 <label>Upload Question PDF</label>
                 <input type="file" id="pdfFile" accept="application/pdf" required>
             </div>
-            <button type="submit" class="btn btn-primary"><i class="fas fa-magic"></i> Process & Generate Test</button>
+            <button type="submit" class="btn btn-primary" style="width: 100%; font-size: 1.1rem;"><i class="fas fa-magic"></i> Process & Generate Test</button>
         </form>
 
-        <div id="loadingMsg" class="loading"><i class="fas fa-spinner fa-spin"></i> Processing PDF... This may take a minute...</div>
+        <div id="loadingMsg" class="loading" style="text-align: center; padding: 20px;">
+            <i class="fas fa-spinner fa-spin fa-2x"></i><br><br>
+            Processing PDF... Extracting MCQs...
+        </div>
 
         <div id="previewArea" class="preview-area">
-            <h2 style="margin-bottom: 20px;">Review Extracted Questions</h2>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; background:#f0f9ff; padding:15px; border-radius:12px; border:1px solid #bae6fd;">
+                <h3 style="margin:0; color:#0369a1;"><i class="fas fa-list-check"></i> Extracted <span id="qCount">0</span> Questions</h3>
+                <button class="btn btn-primary" onclick="saveChallenge()" style="background: #10b981;"><i class="fas fa-rocket"></i> Publish to Live Challenge</button>
+            </div>
             <div id="questionsList"></div>
-            <button class="btn btn-primary" onclick="saveChallenge()" style="margin-top: 20px; background: #10b981;"><i class="fas fa-save"></i> Confirm & Save to Database</button>
         </div>
     </div>
 
@@ -67,6 +75,21 @@
         let extractedQuestions = [];
         const urlParams = new URLSearchParams(window.location.search);
         const challengeId = urlParams.get('id');
+
+        function updateDefaultTitle() {
+            const dateStr = document.getElementById('testDate').value;
+            const exam = document.getElementById('examType').value;
+            if (dateStr) {
+                const date = new Date(dateStr);
+                const options = { day: '2-digit', month: 'short', year: 'numeric' };
+                const formatted = date.toLocaleDateString('en-GB', options);
+                document.getElementById('testTitle').value = `${exam} Daily Set - ${formatted}`;
+            }
+        }
+
+        // Set default date to today
+        document.getElementById('testDate').valueAsDate = new Date();
+        updateDefaultTitle();
 
         // Check for existing challenge
         if (challengeId) {
@@ -130,11 +153,24 @@
 
         function renderPreview() {
             const list = document.getElementById('questionsList');
+            document.getElementById('qCount').textContent = extractedQuestions.length;
             list.innerHTML = extractedQuestions.map((q, i) => `
                 <div class="question-item">
-                    <strong>Q${i+1}:</strong> ${q.question}<br>
-                    <small>Options: ${q.options.join(', ')}</small><br>
-                    <span style="color: #10b981; font-weight: 700;">Answer: ${q.correctAnswer}</span>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                        <strong>Question ${i+1}</strong>
+                        <span style="background:#dcfce7; color:#166534; padding:2px 8px; border-radius:5px; font-size:0.8rem; font-weight:700;">Status: Ready</span>
+                    </div>
+                    <div style="font-weight:500; margin-bottom:10px;">${q.question}</div>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
+                        ${q.options.map((opt, j) => `
+                            <div style="background:white; padding:8px; border-radius:6px; font-size:0.9rem; border:1px solid #e2e8f0;">
+                                <span style="color:#94a3b8; font-weight:700;">${String.fromCharCode(65+j)})</span> ${opt}
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div style="color: #10b981; font-weight: 700; font-size:0.9rem;">
+                        <i class="fas fa-check-circle"></i> Correct Answer: ${q.correctAnswer}
+                    </div>
                 </div>
             `).join('');
             document.getElementById('previewArea').style.display = 'block';

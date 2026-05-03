@@ -125,14 +125,21 @@ async function loadView(view) {
 
             case 'leaderboard':
                 title.textContent = 'Global Leaderboard';
-                const lbData = await fetchData(`${API_BASE}/daily-challenge/results`);
-                renderLeaderboard(lbData.results);
+                // Fetch all test results for a global view
+                const lbData = await fetchData(`${API_BASE}/daily-challenge/results?limit=100`);
+                renderLeaderboard(lbData.results || []);
                 break;
 
             case 'audit-logs':
                 title.textContent = 'Audit Trail';
                 const auditData = await fetchData(`${API_BASE}/audit-logs`);
                 renderAuditLogs(auditData.logs);
+                break;
+
+            case 'marketplace':
+                title.textContent = 'Marketplace Management';
+                const mktData = await fetchData(`${API_BASE}/marketplace/all-books`);
+                renderMarketplace(mktData.books || []);
                 break;
         }
     } catch (err) {
@@ -149,7 +156,7 @@ async function renderQuestionsUI() {
                     <h3>Question Bank Management</h3>
                     <p style="margin-bottom:20px; color:var(--text-muted);">Manage all practice and mock test questions from here.</p>
                     <div style="display:flex; gap:10px; margin-bottom:20px;">
-                        <input type="text" id="q-search" class="admin-input" placeholder="Search questions...">
+                        <input type="text" id="q-search" class="admin-input" placeholder="Search questions..." onkeyup="if(event.key==='Enter') searchQuestions()">
                         <button class="btn btn-primary" onclick="searchQuestions()">Search</button>
                     </div>
                 </div>
@@ -165,9 +172,14 @@ async function renderQuestionsUI() {
             </div>
         </div>
         <div id="questions-results" class="admin-card">
-            <div style="padding:40px; text-align:center; color:var(--text-muted);">Search for questions to display results</div>
+            <div style="padding:40px; text-align:center; color:var(--text-muted);">
+                <i class="fas fa-spinner fa-spin"></i> Loading recent questions...
+            </div>
         </div>
     `;
+    
+    // Auto-load recent questions
+    setTimeout(() => searchQuestions(''), 100);
 }
 
 function renderDailyChallenge(challenges) {
@@ -384,6 +396,10 @@ function renderMockTests(packs = []) {
 }
 
 // ── COURSE MODAL & LOGIC ─────────────────────────────────────────────
+
+function showAddCourseModal() {
+    renderCourseModal('Add New Course');
+}
 
 function renderCourseModal(title, course = null) {
     const modalContainer = document.getElementById('modal-container');
@@ -620,6 +636,7 @@ function renderMockTestModal(title, pack = null) {
 
 function renderMockTestRow(t = {}, i) {
     const qCount = t.questions ? t.questions.length : 0;
+    const hasHindi = t.questions && t.questions.length > 0 && t.questions[0] && t.questions[0].question_hi;
     const qIds = t.questions ? (Array.isArray(t.questions) && typeof t.questions[0] === 'object' ? t.questions.map(q => q._id).join(', ') : t.questions.join(', ')) : '';
 
     return `
@@ -630,34 +647,51 @@ function renderMockTestRow(t = {}, i) {
                     <input type="number" placeholder="Duration (min)" class="admin-input mt-t-dur" value="${t.durationMinutes || 60}" style="padding:8px;">
                     <input type="text" placeholder="ID (slug)" class="admin-input mt-t-id" value="${t.testId || ''}" style="padding:8px;">
                 </div>
-                <div style="display:flex; align-items:center; gap:15px; background: var(--bg-light); padding:10px; border-radius:8px; border: 1px dashed var(--border);">
-                    <div style="flex:1;">
-                        <span style="font-size:0.8rem; font-weight:600;"><i class="fas fa-list-ol"></i> <span class="q-count-badge">${qCount}</span> Questions Linked</span>
+                <div style="background: var(--bg-light); padding:12px; border-radius:8px; border: 1px dashed var(--border);">
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+                        <span style="font-size:0.8rem; font-weight:600;">
+                            <i class="fas fa-list-ol"></i> <span class="q-count-badge">${qCount}</span> Questions Linked
+                            ${hasHindi ? '<span style="margin-left:8px; background:#fef3c7; color:#d97706; padding:2px 8px; border-radius:20px; font-size:0.7rem;">🇮🇳 Hindi Added</span>' : ''}
+                        </span>
                         <input type="hidden" class="mt-t-qids" value="${qIds}">
                     </div>
-                    <div style="display:flex; gap:10px;">
-                        <input type="file" class="mt-t-pdf-input" accept=".pdf" style="display:none;" onchange="handlePdfToTest(this, ${i})">
-                        <button type="button" class="btn btn-sm btn-outline" onclick="this.previousElementSibling.click()">
-                            <i class="fas fa-file-pdf"></i> ${qCount > 0 ? 'Replace PDF' : 'Upload PDF'}
-                        </button>
+                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                        <!-- English PDF -->
+                        <div>
+                            <div style="font-size:0.7rem; font-weight:700; color:#6366f1; margin-bottom:4px;">🇬🇧 ENGLISH MEDIUM</div>
+                            <input type="file" class="mt-t-pdf-en-input" accept=".pdf" style="display:none;" onchange="handlePdfToTest(this, ${i}, 'en')">
+                            <button type="button" class="btn btn-sm btn-outline mt-t-en-btn" onclick="this.previousElementSibling.click()" style="width:100%; border-color:#6366f1; color:#6366f1;">
+                                <i class="fas fa-file-pdf"></i> ${qCount > 0 ? 'Replace English PDF' : 'Upload English PDF'}
+                            </button>
+                            <div class="pdf-status-en" style="font-size:0.68rem; margin-top:4px; min-height:16px;"></div>
+                        </div>
+                        <!-- Hindi PDF -->
+                        <div>
+                            <div style="font-size:0.7rem; font-weight:700; color:#f59e0b; margin-bottom:4px;">🇮🇳 HINDI MEDIUM</div>
+                            <input type="file" class="mt-t-pdf-hi-input" accept=".pdf" style="display:none;" onchange="handlePdfToTest(this, ${i}, 'hi')">
+                            <button type="button" class="btn btn-sm btn-outline mt-t-hi-btn" onclick="this.previousElementSibling.click()" style="width:100%; border-color:#f59e0b; color:#d97706;">
+                                <i class="fas fa-file-pdf"></i> ${hasHindi ? 'Replace Hindi PDF' : 'Upload Hindi PDF'}
+                            </button>
+                            <div class="pdf-status-hi" style="font-size:0.68rem; margin-top:4px; min-height:16px;"></div>
+                        </div>
                     </div>
                 </div>
-                <div class="pdf-status-msg" style="font-size:0.7rem; margin-top:5px; color:var(--text-muted);"></div>
             </div>
             <button type="button" class="btn-icon danger" onclick="this.closest('.item-row').remove()"><i class="fas fa-trash"></i></button>
         </div>
     `;
 }
 
-async function handlePdfToTest(input, index) {
+async function handlePdfToTest(input, index, lang = 'en') {
     const file = input.files[0];
     if (!file) return;
 
     const row = input.closest('.mt-row');
-    const status = row.querySelector('.pdf-status-msg');
+    const isHindi = lang === 'hi';
+    const status = row.querySelector(isHindi ? '.pdf-status-hi' : '.pdf-status-en');
+    const btn    = row.querySelector(isHindi ? '.mt-t-hi-btn'  : '.mt-t-en-btn');
     const countBadge = row.querySelector('.q-count-badge');
-    const qIdsInput = row.querySelector('.mt-t-qids');
-    const btn = row.querySelector('.btn');
+    const qIdsInput  = row.querySelector('.mt-t-qids');
 
     const formData = new FormData();
     formData.append('pdf', file);
@@ -667,46 +701,84 @@ async function handlePdfToTest(input, index) {
 
     try {
         const token = localStorage.getItem('token');
-        const res = await fetch(`${API_BASE}/generate-questions-from-pdf`, {
+        const res = await fetch(`${API_BASE}/generate-questions-from-pdf?lang=${lang}`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` },
             body: formData
         });
 
         if (!res.ok) {
-            status.innerHTML = `<span style="color:var(--danger)">Error: ${res.status === 404 ? 'Server needs restart (Route not found)' : res.statusText}</span>`;
+            status.innerHTML = `<span style="color:var(--danger)">Error: ${res.status === 404 ? 'Server needs restart' : res.statusText}</span>`;
             btn.disabled = false;
             return;
         }
 
         const data = await res.json();
-
-        if (data.ok) {
-            // Now we need to save these questions to the DB first to get IDs
-            status.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving Questions...';
-            const saveRes = await fetch(`${API_BASE}/questions`, {
-                method: 'POST',
-                headers: { 
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(data.questions)
-            });
-            const saveData = await saveRes.json();
-
-            if (saveData.ok) {
-                const newQIds = saveData.questions.map(q => q._id).join(', ');
-                qIdsInput.value = newQIds;
-                countBadge.textContent = saveData.questions.length;
-                status.innerHTML = `<span style="color:var(--success)">Done! ${data.count} questions added & linked.</span>`;
-                btn.innerHTML = '<i class="fas fa-check"></i> PDF Uploaded';
-            }
-        } else {
-            status.innerHTML = `<span style="color:var(--danger)">Error: ${data.message}</span>`;
+        if (!data.ok) {
+            status.innerHTML = `<span style="color:var(--danger)">${data.message}</span>`;
             btn.disabled = false;
+            return;
+        }
+
+        // ── HINDI: Merge into existing questions ──
+        if (isHindi) {
+            const existingIds = qIdsInput.value.split(',').map(s => s.trim()).filter(Boolean);
+            if (existingIds.length === 0) {
+                status.innerHTML = `<span style="color:var(--danger)">⚠️ Upload English PDF first, then Hindi.</span>`;
+                btn.disabled = false;
+                return;
+            }
+            if (data.questions.length !== existingIds.length) {
+                status.innerHTML = `<span style="color:#d97706;">⚠️ Mismatch: ${data.questions.length} Hindi Qs vs ${existingIds.length} English Qs. Proceeding anyway...</span>`;
+            }
+            status.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding Hindi to questions...';
+
+            const pairPayload = data.questions.map((q, idx) => ({
+                _id: existingIds[idx] || null,
+                question_hi: q.question_hi,
+                options_hi: q.options_hi
+            })).filter(p => p._id);
+
+            const mergeRes = await fetch(`${API_BASE}/questions/add-hindi`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(pairPayload)
+            });
+            const mergeData = await mergeRes.json();
+            if (mergeData.ok) {
+                status.innerHTML = `<span style="color:#d97706; font-weight:600;">✅ Hindi added to ${mergeData.updated} questions!</span>`;
+                btn.innerHTML = '<i class="fas fa-check"></i> Hindi Updated';
+                btn.disabled = false;
+            } else {
+                status.innerHTML = `<span style="color:var(--danger)">Hindi save failed: ${mergeData.message}</span>`;
+                btn.disabled = false;
+            }
+            return;
+        }
+
+        // ── ENGLISH: Create new questions ──
+        status.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving questions to DB...';
+        const saveRes = await fetch(`${API_BASE}/questions`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(data.questions)
+        });
+        const saveData = await saveRes.json();
+        if (saveData.ok) {
+            const newQIds = saveData.questions.map(q => q._id).join(', ');
+            // IMPORTANT: Completely replace the old IDs with new ones from the PDF
+            qIdsInput.value = newQIds; 
+            countBadge.textContent = saveData.questions.length;
+            status.innerHTML = `<span style="color:#6366f1; font-weight:600;">✅ ${saveData.questions.length} Questions imported! (Old ones removed)</span>`;
+            btn.innerHTML = '<i class="fas fa-check"></i> English Uploaded';
+            btn.disabled = false;
+        } else {
+            status.innerHTML = `<span style="color:var(--danger)">Save failed: ${saveData.message || 'DB error'}</span>`;
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-file-pdf"></i> Retry';
         }
     } catch (e) {
-        status.innerHTML = `<span style="color:var(--danger)">Upload failed</span>`;
+        status.innerHTML = `<span style="color:var(--danger)">Upload failed: ${e.message}</span>`;
         btn.disabled = false;
     }
 }
@@ -768,46 +840,264 @@ function addMockTestRow() { const div = document.createElement('div'); div.inner
 
 function renderUsers(users) {
     const content = document.getElementById('content-area');
+    
+    const formatDate = (dateStr) => {
+        if (!dateStr) return 'N/A';
+        const d = new Date(dateStr);
+        return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    };
+
     content.innerHTML = `
         <div class="admin-card">
-            <div class="card-header"><h3>User Directory</h3></div>
+            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <h3>User Directory</h3>
+                <div style="background:#f1f5f9; padding:5px 12px; border-radius:20px; font-size:0.85rem; font-weight:600; color:#475569;">
+                    Total Members: ${users.length}
+                </div>
+            </div>
             <table class="admin-table">
-                <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Actions</th></tr></thead>
+                <thead>
+                    <tr>
+                        <th>User Profile</th>
+                        <th>Phone</th>
+                        <th>Joined On</th>
+                        <th>Account Role</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
                 <tbody>
-                    ${users.map(u => `
+                    ${users.map(u => {
+                        const roleColor = u.role === 'admin' ? '#ef4444' : (u.role === 'STUDENT' ? '#3b82f6' : '#64748b');
+                        const roleBg = u.role === 'admin' ? '#fef2f2' : (u.role === 'STUDENT' ? '#eff6ff' : '#f8fafc');
+                        
+                        return `
                         <tr>
-                            <td><strong>${u.name}</strong></td>
-                            <td>${u.email}</td>
-                            <td><span class="admin-badge">${u.role || 'Guest'}</span></td>
                             <td>
-                                <button class="btn btn-sm btn-outline" onclick="toggleUserBlock('${u._id}', '${u.role}')">${u.role ? 'Block' : 'Unblock'}</button>
+                                <div style="display:flex; align-items:center; gap:12px;">
+                                    <div style="width:36px; height:36px; border-radius:50%; background:#e2e8f0; display:flex; align-items:center; justify-content:center; color:#475569; font-weight:700;">
+                                        ${(u.name || 'U').charAt(0).toUpperCase()}
+                                    </div>
+                                    <div>
+                                        <div style="font-weight:600; color:#0f172a;">${u.name || 'No Name'}</div>
+                                        <div style="font-size:0.75rem; color:#64748b;">${u.email}</div>
+                                    </div>
+                                </div>
                             </td>
-                        </tr>
-                    `).join('')}
+                            <td>
+                                <div style="font-size:0.9rem; color:#475569;">${u.phone || '---'}</div>
+                            </td>
+                            <td>
+                                <div style="font-size:0.9rem; color:#475569;">${formatDate(u.createdAt)}</div>
+                            </td>
+                            <td>
+                                <span class="admin-badge" style="background:${roleBg}; color:${roleColor}; border:1px solid ${roleColor}44; border-radius:12px; padding:2px 10px; font-size:0.7rem;">
+                                    ${(u.role || 'USER').toUpperCase()}
+                                </span>
+                            </td>
+                            <td>
+                                <div style="display:flex; gap:8px;">
+                                    <button class="btn btn-sm btn-outline" style="color:#ef4444; border-color:#fecaca;" onclick="toggleUserBlock('${u._id}', '${u.role}')">
+                                        <i class="fas fa-ban"></i> ${u.isBlocked ? 'Unblock' : 'Block'}
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>`;
+                    }).join('')}
                 </tbody>
             </table>
+            ${users.length === 0 ? '<div style="padding:40px; text-align:center; color:#64748b;">No users registered yet.</div>' : ''}
         </div>
     `;
 }
 
 function renderPayments(payments) {
     const content = document.getElementById('content-area');
+    
+    const formatDate = (dateStr) => {
+        const d = new Date(dateStr);
+        return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) + 
+               ' ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    };
+
     content.innerHTML = `
         <div class="admin-card">
-            <div class="card-header"><h3>Transaction History</h3></div>
+            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <h3>Transaction History</h3>
+                <div style="background:#f1f5f9; padding:5px 12px; border-radius:20px; font-size:0.85rem; font-weight:600; color:#475569;">
+                    Total: ${payments.length} Payments
+                </div>
+            </div>
             <table class="admin-table">
-                <thead><tr><th>User</th><th>Item</th><th>Amount</th><th>Status</th></tr></thead>
+                <thead>
+                    <tr>
+                        <th>Date & Time</th>
+                        <th>User Details</th>
+                        <th>Course / Mock Pack</th>
+                        <th>Amount</th>
+                        <th>Order ID / UTR</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
                 <tbody>
-                    ${payments.map(p => `
+                    ${payments.map(p => {
+                        const status = (p.status || 'pending').toLowerCase();
+                        let badgeStyle = 'background:#fffbeb; color:#d97706; border:1px solid #fde68a;'; // pending
+                        if (status === 'paid' || status === 'success' || status === 'approved') {
+                            badgeStyle = 'background:#f0fdf4; color:#166534; border:1px solid #bbf7d0;';
+                        } else if (status === 'failed' || status === 'rejected') {
+                            badgeStyle = 'background:#fef2f2; color:#991b1b; border:1px solid #fecaca;';
+                        }
+                        
+                        return `
                         <tr>
-                            <td>${p.userId?.name || 'Unknown'}<br><small>${p.userId?.email || ''}</small></td>
-                            <td>${p.itemType} (${p.itemId})</td>
-                            <td>₹${p.amount}</td>
-                            <td><span class="admin-badge ${p.status}">${p.status}</span></td>
+                            <td>
+                                <div style="font-weight:600; font-size:0.9rem;">${formatDate(p.createdAt)}</div>
+                            </td>
+                            <td>
+                                <div style="font-weight:600;">${p.name || p.userId?.name || 'User'}</div>
+                                <div style="font-size:0.75rem; color:#64748b;">${p.email || p.userId?.email || 'N/A'}</div>
+                            </td>
+                            <td>
+                                <div style="max-width:250px; font-weight:500; overflow:hidden; text-overflow:ellipsis;">
+                                    ${p.courseName || p.itemType || 'Premium Access'}
+                                </div>
+                            </td>
+                            <td style="font-weight:700; color:#0f172a;">₹${p.amount}</td>
+                            <td>
+                                <code style="font-size:0.8rem; background:#f8fafc; padding:2px 5px; border-radius:4px;">${p.orderId || p.utr || 'N/A'}</code>
+                            </td>
+                            <td>
+                                <span class="admin-badge" style="${badgeStyle}">
+                                    ${status.toUpperCase()}
+                                </span>
+                            </td>
+                        </tr>`;
+                    }).join('')}
+                </tbody>
+            </table>
+            ${payments.length === 0 ? '<div style="padding:40px; text-align:center; color:#64748b;">No payments found.</div>' : ''}
+        </div>
+    `;
+}
+
+function renderLeaderboard(results) {
+    const content = document.getElementById('content-area');
+    
+    // Sort results by score (descending) and then time (ascending)
+    const sorted = [...results].sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        return a.timeTaken - b.timeTaken;
+    });
+
+    content.innerHTML = `
+        <div class="admin-card">
+            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <h3>Global Leaderboard (Daily Challenge)</h3>
+                <div style="background:#f0f9ff; color:#0369a1; padding:5px 15px; border-radius:20px; font-weight:600; font-size:0.85rem;">
+                    Top Performers: ${sorted.length}
+                </div>
+            </div>
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th style="width:80px;">Rank</th>
+                        <th>Student Name</th>
+                        <th>Score (%)</th>
+                        <th>Time Taken</th>
+                        <th>Test Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${sorted.map((r, i) => {
+                        const rankColor = i === 0 ? '#fbbf24' : (i === 1 ? '#94a3b8' : (i === 2 ? '#b45309' : '#475569'));
+                        const rankBg = i === 0 ? '#fef3c7' : (i === 1 ? '#f1f5f9' : (i === 2 ? '#ffedd5' : 'transparent'));
+                        
+                        return `
+                        <tr>
+                            <td>
+                                <div style="width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:${rankBg}; color:${rankColor}; font-weight:800; border:1px solid ${rankColor}33;">
+                                    ${i + 1}
+                                </div>
+                            </td>
+                            <td>
+                                <div style="font-weight:600;">${r.userId?.name || 'Guest Student'}</div>
+                                <div style="font-size:0.75rem; color:#64748b;">${r.userId?.email || 'Guest Attempt'}</div>
+                            </td>
+                            <td style="font-weight:700; color:#166534;">
+                                ${Math.round((r.score / (r.total || 100)) * 100)}%
+                                <div style="width:100px; height:6px; background:#f1f5f9; border-radius:3px; margin-top:5px;">
+                                    <div style="width:${(r.score / (r.total || 100)) * 100}%; height:100%; background:#10b981; border-radius:3px;"></div>
+                                </div>
+                            </td>
+                            <td>
+                                <span style="font-family:monospace; background:#f8fafc; padding:2px 6px; border-radius:4px;">
+                                    ${r.timeTaken || 0}s
+                                </span>
+                            </td>
+                            <td>
+                                <div style="font-size:0.9rem; color:#475569;">${new Date(r.createdAt || r.timestamp).toLocaleDateString('en-GB', { day:'2-digit', month:'short' })}</div>
+                            </td>
+                        </tr>`;
+                    }).join('')}
+                </tbody>
+            </table>
+            ${sorted.length === 0 ? '<div style="padding:40px; text-align:center; color:#64748b;">No leaderboard data available yet.</div>' : ''}
+        </div>
+    `;
+}
+
+function renderCertificates(certs) {
+    const content = document.getElementById('content-area');
+    
+    const formatDate = (dateStr) => {
+        const d = new Date(dateStr);
+        return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    };
+
+    content.innerHTML = `
+        <div class="admin-card">
+            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                <h3>Certificates Issued</h3>
+                <div style="background:#fdf4ff; color:#a21caf; padding:5px 15px; border-radius:20px; font-weight:600; font-size:0.85rem; border:1px solid #f5d0fe;">
+                    Total Issued: ${certs.length}
+                </div>
+            </div>
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Student Name</th>
+                        <th>Course Completed</th>
+                        <th>Certificate ID</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${certs.map(c => `
+                        <tr>
+                            <td>
+                                <div style="font-weight:600; color:#475569;">${formatDate(c.updatedAt || c.createdAt)}</div>
+                            </td>
+                            <td>
+                                <div style="font-weight:600;">${c.userId?.name || 'Anonymous User'}</div>
+                                <div style="font-size:0.75rem; color:#64748b;">${c.userId?.email || 'N/A'}</div>
+                            </td>
+                            <td>
+                                <div style="font-weight:600; color:#4f46e5;"><i class="fas fa-graduation-cap"></i> ${c.courseName}</div>
+                            </td>
+                            <td>
+                                <code style="background:#f1f5f9; padding:3px 8px; border-radius:6px; font-size:0.8rem; border:1px solid #e2e8f0;">${c.certId || 'GEN-PENDING'}</code>
+                            </td>
+                            <td>
+                                <a href="verify-certificate.html?id=${c.certId}" target="_blank" class="btn btn-sm btn-outline">
+                                    <i class="fas fa-external-link-alt"></i> View Certificate
+                                </a>
+                            </td>
                         </tr>
                     `).join('')}
                 </tbody>
             </table>
+            ${certs.length === 0 ? '<div style="padding:40px; text-align:center; color:#64748b;">No certificates issued yet.</div>' : ''}
         </div>
     `;
 }
@@ -829,6 +1119,87 @@ function renderAuditLogs(logs) {
                     `).join('')}
                 </tbody>
             </table>
+        </div>
+    `;
+}
+
+function renderMarketplace(books) {
+    const content = document.getElementById('content-area');
+    
+    // Platform Commission (10%)
+    const commissionRate = 0.10; 
+
+    content.innerHTML = `
+        <div class="admin-card">
+            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid #f1f5f9; padding-bottom:15px; margin-bottom:20px;">
+                <div>
+                    <h3 style="margin:0; font-size:1.4rem;">Marketplace Inventory (Used Books)</h3>
+                    <p style="margin:5px 0 0; color:#64748b; font-size:0.85rem;">Monitoring ${books.length} active peer-to-peer listings.</p>
+                </div>
+                <div style="background:#f0fdf4; color:#166534; padding:8px 20px; border-radius:30px; font-weight:700; font-size:0.9rem; border:1px solid #bbf7d0;">
+                    Live on Store: ${books.length}
+                </div>
+            </div>
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th style="width:280px;">Book & Author</th>
+                        <th>College & Category</th>
+                        <th>Price</th>
+                        <th>Seller Details</th>
+                        <th>Commission (10%)</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${books.map(b => {
+                        const price = b.price || 0;
+                        const commission = (price * commissionRate).toFixed(0);
+                        const sellerPayout = (price - commission).toFixed(0);
+                        const statusColor = b.status === 'active' ? '#10b981' : '#ef4444';
+                        
+                        return `
+                        <tr>
+                            <td>
+                                <div style="display:flex; align-items:center; gap:12px;">
+                                    <div style="width:50px; height:65px; background:#f8fafc; border-radius:6px; overflow:hidden; border:1px solid #e2e8f0; flex-shrink:0;">
+                                        <img src="/uploads/books/${b.image}" onerror="this.src='images/book-placeholder.png'" style="width:100%; height:100%; object-fit:cover;">
+                                    </div>
+                                    <div>
+                                        <div style="font-weight:700; color:#1e293b; line-height:1.2; margin-bottom:4px;">${b.title}</div>
+                                        <div style="font-size:0.75rem; color:#6366f1; font-weight:600;">by ${b.author || 'Unknown'}</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div style="font-weight:600; font-size:0.85rem; color:#334155;">${b.category}</div>
+                                <div style="font-size:0.7rem; color:#64748b; margin-top:2px;"><i class="fas fa-university"></i> ${b.college || 'N/A'}</div>
+                                <div style="display:inline-block; font-size:0.65rem; background:#f1f5f9; color:#475569; padding:1px 6px; border-radius:4px; margin-top:4px;">
+                                    ${b.condition || 'Used'}
+                                </div>
+                            </td>
+                            <td>
+                                <div style="font-weight:700; color:#0f172a; font-size:1.1rem;">₹${price}</div>
+                            </td>
+                            <td>
+                                <div style="font-weight:600; color:#1e293b; font-size:0.85rem;">${b.sellerName || 'Anonymous'}</div>
+                                <div style="font-size:0.75rem; color:#64748b;"><i class="fab fa-whatsapp" style="color:#25d366"></i> ${b.contactNumber || b.whatsapp || 'N/A'}</div>
+                                <div style="font-size:0.7rem; color:#64748b;">${b.sellerEmail || ''}</div>
+                            </td>
+                            <td>
+                                <div style="font-weight:700; color:#059669; font-size:0.95rem;">+ ₹${commission}</div>
+                                <div style="font-size:0.65rem; color:#94a3b8;">Payout: ₹${sellerPayout}</div>
+                            </td>
+                            <td>
+                                <span class="admin-badge" style="background:${b.status === 'active' ? '#f0fdf4' : '#fef2f2'}; color:${statusColor}; border:1px solid ${statusColor}44; font-size:0.7rem; padding:4px 10px;">
+                                    ${b.status.toUpperCase()}
+                                </span>
+                            </td>
+                        </tr>`;
+                    }).join('')}
+                </tbody>
+            </table>
+            ${books.length === 0 ? '<div style="padding:50px; text-align:center; color:#94a3b8;"><i class="fas fa-book-open" style="font-size:3rem; margin-bottom:15px; opacity:0.3;"></i><br>No book listings found in UsedBooks.</div>' : ''}
         </div>
     `;
 }

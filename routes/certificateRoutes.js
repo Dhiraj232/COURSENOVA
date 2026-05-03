@@ -202,6 +202,35 @@ router.post('/email/:certId', async (req, res) => {
     }
 });
 
+// ── GET /api/certificates/verify/:certId ──────────────────────────────────────
+// Public endpoint to verify a certificate ID
+router.get('/verify/:certId', async (req, res) => {
+    try {
+        const { certId } = req.params;
+        // Search ONLY by certId case-insensitively
+        const record = await CourseProgress.findOne({ 
+            certId: { $regex: new RegExp(`^${certId.trim()}$`, 'i') } 
+        }).populate('userId', 'name email');
+
+        if (!record) {
+            return res.status(404).json({ ok: false, message: 'Certificate ID is invalid or not found in our records.' });
+        }
+
+        res.json({
+            ok: true,
+            certificate: {
+                studentName: record.userId ? record.userId.name : 'Unknown Student',
+                courseName: record.courseName || record.courseId,
+                issueDate: record.earnedAt || record.updatedAt,
+                certId: record.certId
+            }
+        });
+    } catch (err) {
+        console.error('Verify Error:', err);
+        res.status(500).json({ ok: false, message: 'Server error during verification: ' + err.message });
+    }
+});
+
 // ── GET /api/certificates/fetch/:userId/:courseId ──────────────────────────────
 // Fetch dynamic certificate data for a specific user and course
 router.get('/fetch/:userId/:courseId', async (req, res) => {
@@ -291,30 +320,6 @@ router.get('/my', async (req, res) => {
     }
 });
 
-// ── GET /api/certificates/verify/:certId ──────────────────────────────────────
-// Public endpoint to verify a certificate ID
-router.get('/verify/:certId', async (req, res) => {
-    try {
-        const { certId } = req.params;
-        const record = await CourseProgress.findOne({ certId, testPassed: true })
-            .populate('userId', 'name');
-
-        if (!record) {
-            return res.status(404).json({ ok: false, message: 'Certificate ID is invalid or not found in our records.' });
-        }
-
-        res.json({
-            ok: true,
-            certificate: {
-                studentName: record.userId ? record.userId.name : 'Unknown Student',
-                courseName: record.courseId,
-                issueDate: record.earnedAt || record.updatedAt,
-                certId: record.certId
-            }
-        });
-    } catch (err) {
-        res.status(500).json({ ok: false, message: 'Server error during verification.' });
-    }
-});
+// End of routes
 
 module.exports = router;

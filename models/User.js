@@ -4,6 +4,7 @@ const UserSchema = new mongoose.Schema({
     googleId: { type: String, required: true, unique: true },
     name: { type: String, required: true },
     email: { type: String, required: true, unique: true },
+    phone: { type: String, default: '' },
     password: { type: String }, // For manual admin login
     picture: { type: String, default: '' },
 

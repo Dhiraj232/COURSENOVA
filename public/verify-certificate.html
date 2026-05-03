@@ -139,16 +139,6 @@
             overflow: hidden;
         }
 
-        .result-card.valid::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 4px;
-            height: 100%;
-            background: var(--success);
-        }
-
         .status-header {
             display: flex;
             align-items: center;
@@ -156,23 +146,11 @@
             margin-bottom: 20px;
         }
 
-        .status-icon {
-            font-size: 1.25rem;
-        }
-
         .status-text {
             font-weight: 700;
             font-size: 0.9rem;
             text-transform: uppercase;
             letter-spacing: 1px;
-        }
-
-        .valid .status-text {
-            color: var(--success);
-        }
-
-        .invalid .status-text {
-            color: var(--danger);
         }
 
         .detail-row {
@@ -201,26 +179,15 @@
             font-weight: 600;
         }
 
-        /* Animation */
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        .animate {
-            animation: fadeIn 0.4s ease forwards;
-        }
+        .animate { animation: fadeIn 0.4s ease forwards; }
 
         .spinner {
-            width: 20px;
-            height: 20px;
+            width: 20px; height: 20px;
             border: 2px solid rgba(255, 255, 255, 0.3);
             border-top: 2px solid white;
             border-radius: 50%;
@@ -228,18 +195,8 @@
             display: none;
         }
 
-        @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
-        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
-
-    <!-- Favicon -->
     <link rel="icon" type="image/png" href="/images/coursenova-logo.png">
 </head>
 
@@ -254,7 +211,7 @@
         <form id="verifyForm">
             <div class="input-group">
                 <label for="certId">Certificate ID</label>
-                <input type="text" id="certId" placeholder="e.g. RENV-J72B-9M21" required>
+                <input type="text" id="certId" placeholder="e.g. RENV-MO9NDOY1" required>
             </div>
             <button type="submit" class="btn-verify" id="verifyBtn">
                 <span class="btn-text">Verify Authenticity</span>
@@ -262,9 +219,7 @@
             </button>
         </form>
 
-        <div id="resultArea" class="result-area animate">
-            <!-- Results will be injected here -->
-        </div>
+        <div id="resultArea" class="result-area animate"></div>
 
         <a href="index.html" class="btn-back">
             <i class="fas fa-arrow-left"></i> Back to Homepage
@@ -282,7 +237,6 @@
 
             if (!certId) return;
 
-            // UI Feedback
             btn.disabled = true;
             spinner.style.display = 'block';
             btnText.style.opacity = '0.5';
@@ -300,26 +254,34 @@
                     });
 
                     resultArea.innerHTML = `
-                        <div class="result-card valid">
+                        <div class="result-card valid" style="border: 2px solid var(--success); background: #f0fdf4;">
                             <div class="status-header">
-                                <i class="fas fa-check-circle status-icon" style="color:var(--success)"></i>
-                                <span class="status-text">Verified Certificate</span>
+                                <div style="width:40px; height:40px; background:var(--success); border-radius:50%; display:flex; align-items:center; justify-content:center; color:white;">
+                                    <i class="fas fa-check"></i>
+                                </div>
+                                <span class="status-text" style="color:var(--success); font-size:1.1rem;">Verified Authentic</span>
                             </div>
-                            <div class="detail-row">
-                                <div class="detail-label">Student Name</div>
-                                <div class="detail-value">${data.certificate.studentName}</div>
+                            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-top:15px;">
+                                <div class="detail-row">
+                                    <div class="detail-label">Issued To</div>
+                                    <div class="detail-value" style="color:#0f172a;">${data.certificate.studentName}</div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Status</div>
+                                    <div class="detail-value" style="color:var(--success);">Active & Valid</div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Course</div>
+                                    <div class="detail-value">${data.certificate.courseName || 'Professional Course'}</div>
+                                </div>
+                                <div class="detail-row">
+                                    <div class="detail-label">Date of Issue</div>
+                                    <div class="detail-value">${date}</div>
+                                </div>
                             </div>
-                            <div class="detail-row">
-                                <div class="detail-label">Course Completed</div>
-                                <div class="detail-value">${data.certificate.courseName}</div>
-                            </div>
-                            <div class="detail-row">
-                                <div class="detail-label">Issue Date</div>
-                                <div class="detail-value">${date}</div>
-                            </div>
-                            <div class="detail-row">
-                                <div class="detail-label">Certificate ID</div>
-                                <div class="detail-value" style="font-family:monospace; color:var(--primary)">${data.certificate.certId}</div>
+                            <div class="detail-row" style="margin-top:20px; padding-top:15px; border-top:1px solid #dcfce7;">
+                                <div class="detail-label">Verification ID</div>
+                                <div class="detail-value" style="font-family:monospace; font-size:1.1rem; color:var(--primary);">${data.certificate.certId}</div>
                             </div>
                         </div>
                     `;
@@ -335,7 +297,7 @@
                     `;
                 }
             } catch (err) {
-                alert('Verification service is temporarily unavailable. Please try again later.');
+                alert('Verification service error. Please try again.');
             } finally {
                 btn.disabled = false;
                 spinner.style.display = 'none';
@@ -343,14 +305,12 @@
             }
         });
 
-        // Auto-fill from URL if present
         const urlParams = new URLSearchParams(window.location.search);
         const urlCertId = urlParams.get('id');
         if (urlCertId) {
             document.getElementById('certId').value = urlCertId;
-            document.getElementById('verifyBtn').click();
+            setTimeout(() => document.getElementById('verifyBtn').click(), 500);
         }
     </script>
 </body>
-
 </html>

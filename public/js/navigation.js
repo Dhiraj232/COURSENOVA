@@ -77,7 +77,6 @@ function setupNavigation() {
     if (!navMenu) return;
 
     const links = [
-        { name: 'Home', href: 'index.html', key: 'home' },
         { name: 'Courses', href: 'certificates.html', key: 'courses' },
         { name: 'Mock Tests', href: 'mock-tests.html', key: 'tests' },
         { name: 'Daily Challenge <span class="nav-badge" style="background:#ef4444;color:white;font-size:0.65rem;padding:2px 6px;border-radius:10px;margin-left:4px;vertical-align:top;font-weight:700;">NEW 🔥</span>', href: 'daily-challenge.html', key: 'daily-challenge' },

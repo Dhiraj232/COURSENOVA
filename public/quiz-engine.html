@@ -304,8 +304,9 @@
             }
 
             try {
+                const token = localStorage.getItem('token') || localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token') || '';
                 const res = await fetch(url, {
-                    headers: { 'Authorization': `Bearer ${localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token')}` }
+                    headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const data = await res.json();
 
@@ -315,28 +316,36 @@
                 } else if (data.ok) {
                     if (packId) {
                         if (data.locked) {
-                            alert('This pack is locked.'); window.location.href = 'mock-tests.html'; return;
+                            document.getElementById('questionText').innerText = "🔒 This test pack is locked. Please purchase to unlock.";
+                            return;
                         }
                         const targetSub = urlParams.get('subject');
                         const subtest = data.pack.tests.find(t => t.testTitle === targetSub) || data.pack.tests[0];
-                        questions = subtest.questions;
+                        if (!subtest) {
+                            document.getElementById('questionText').innerText = "No test found in this pack.";
+                            return;
+                        }
+                        questions = subtest.questions || [];
                         document.getElementById('quizTitle').innerText = `${data.pack.title} - ${subtest.testTitle}`;
                         timerSeconds = (subtest.durationMinutes || 30) * 60;
                     } else {
-                        questions = data.questions;
+                        questions = data.questions || [];
                         document.getElementById('quizTitle').innerText = `${subject} Practice`;
                     }
+                } else {
+                    document.getElementById('questionText').innerText = `Error: ${data.message || 'Failed to load questions'}`;
+                    return;
                 }
 
                 if (!questions || questions.length === 0) {
-                    document.getElementById('questionText').innerText = "No questions found.";
+                    document.getElementById('questionText').innerText = "No questions found. Please upload questions for this test via admin panel.";
                     return;
                 }
 
                 document.getElementById('totalNum').innerText = questions.length;
                 renderPalette();
                 renderQuestion(0);
-            } catch (err) { console.error(err); }
+            } catch (err) { console.error(err); document.getElementById('questionText').innerText = "Network error loading questions."; }
         }
 
         function renderPalette() {
@@ -349,10 +358,20 @@
         function renderQuestion(index) {
             currentIndex = index;
             const q = questions[index];
-            const qText = (displayLang === 'hi' && q.question_hi) ? q.question_hi : q.question;
-            const qOpts = (displayLang === 'hi' && q.options_hi && q.options_hi.length) ? q.options_hi : q.options;
+            
+            let qText = q.question;
+            let qOpts = q.options;
 
-            document.getElementById('questionText').innerText = qText;
+            if (displayLang === 'hi') {
+                if (q.question_hi) {
+                    qText = q.question_hi;
+                    qOpts = (q.options_hi && q.options_hi.length === q.options.length) ? q.options_hi : q.options;
+                } else {
+                    qText = `<span style="color:#ef4444">[Hindi translation missing]</span><br>${q.question}`;
+                }
+            }
+
+            document.getElementById('questionText').innerHTML = qText;
             document.getElementById('currentNum').innerText = index + 1;
 
             const grid = document.getElementById('optionsGrid');

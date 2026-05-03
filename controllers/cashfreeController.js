@@ -339,19 +339,21 @@ exports.createOrder = async (req, res) => {
         // ── Generate unique order ID ─────────────────────────────
         const orderId = `coursenova_${String(userId).slice(-6)}_${Date.now()}`;
 
-        const baseUrl = process.env.BASE_URL || 'https://www.coursenova.in';
-        const isLocal = false;
+        const baseUrl = (sdkMode === 'production') 
+            ? 'https://www.coursenova.in' 
+            : (process.env.BASE_URL || 'http://localhost:5000');
 
         // return_url: redirect back to context with verify params
         let returnUrl = `${baseUrl}/course-content.html?course=${course._id}&payment=verify&order_id={order_id}`;
         if (itemType === 'mock') {
-            // Use custom ID if available for mock tests (cleaner URLs)
             const mockParam = course.id || course._id;
             returnUrl = `${baseUrl}/mock-tests.html?payment=verify&order_id={order_id}&pack_id=${mockParam}`;
         }
 
         // notify_url: Ensure Cashfree webhooks definitely reach our server
-        const notifyUrl = `${baseUrl}/api/cashfree/webhook`;
+        const notifyUrl = (sdkMode === 'production')
+            ? 'https://www.coursenova.in/api/cashfree/webhook'
+            : `${baseUrl}/api/cashfree/webhook`;
 
         const orderMeta = { return_url: returnUrl, notify_url: notifyUrl };
 
@@ -387,7 +389,7 @@ exports.createOrder = async (req, res) => {
             
             return res.status(502).json({
                 ok:      false,
-                message: 'Cashfree API rejected the order.',
+                message: `Cashfree Error: ${errMsg}`, // Show specific error to user
                 details: errMsg,
                 code:    errCode
             });

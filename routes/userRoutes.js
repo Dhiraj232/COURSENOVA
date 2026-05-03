@@ -38,6 +38,21 @@ router.put('/profile/update', requireAuth, async (req, res) => {
     }
 });
 
+// ── POST /api/user/update-phone ─────────────────────────────────────────
+router.post('/update-phone', requireAuth, async (req, res) => {
+    try {
+        const { phone } = req.body;
+        const user = await StoreUser.findById(req.userId);
+        if (!user) return res.status(404).json({ ok: false, message: 'User not found' });
+
+        user.phone = phone;
+        await user.save();
+        res.json({ ok: true, message: 'Phone updated successfully' });
+    } catch (err) {
+        res.status(500).json({ ok: false, message: 'Failed to update phone' });
+    }
+});
+
 // ── GET /api/user/courses ─────────────────────────────────────────
 router.get('/courses', requireAuth, async (req, res) => {
     try {

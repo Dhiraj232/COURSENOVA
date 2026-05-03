@@ -222,6 +222,11 @@ async function fetchDashboardOverview(token) {
  * UI SYNC ENGINE - Matching User Requirements exactly
  */
 function updateDashboardUI(data, userStats) {
+    // Check if phone is missing
+    if (!data.user.phone || data.user.phone === '') {
+        showPhoneUpdateModal(data.user);
+    }
+
     // A. Main Counters (Using User's Specific Names)
     setElText('enrolledCount', userStats.enrolledCourses || data.totalCourses);
     setElText('testsTakenCount', userStats.testsTaken || data.totalTests);
@@ -257,6 +262,86 @@ function updateDashboardUI(data, userStats) {
     
     // F. Special Access UI
     updateAccessBadges(userStats.isPremium);
+}
+
+function showPhoneUpdateModal(user) {
+    // Remove existing modal if any
+    const old = document.getElementById('phoneUpdateModal');
+    if (old) old.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'phoneUpdateModal';
+    overlay.style.cssText = `
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(15, 23, 42, 0.95); z-index: 99999;
+        display: flex; align-items: center; justify-content: center;
+        backdrop-filter: blur(10px);
+    `;
+
+    overlay.innerHTML = `
+        <div style="background: #1e293b; padding: 40px; border-radius: 24px; width: 100%; max-width: 450px; border: 1px solid rgba(255,255,255,0.1); text-align: center; box-shadow: 0 25px 50px rgba(0,0,0,0.5);">
+            <div style="width: 70px; height: 70px; background: #6366f1; border-radius: 20px; display: flex; align-items: center; justify-content: center; margin: 0 auto 25px; font-size: 2rem; color: white;">
+                <i class="fas fa-mobile-screen-button"></i>
+            </div>
+            <h2 style="color: white; margin-bottom: 10px; font-family: 'Outfit', sans-serif;">Complete Your Profile</h2>
+            <p style="color: #94a3b8; font-size: 0.95rem; line-height: 1.6; margin-bottom: 30px;">
+                Hey <strong>${user.name.split(' ')[0]}</strong>, please provide your mobile number to access the dashboard and premium resources.
+            </p>
+            <div style="text-align: left; margin-bottom: 25px;">
+                <label style="display: block; color: #f1f5f9; font-size: 0.85rem; font-weight: 600; margin-bottom: 8px;">Mobile Number</label>
+                <div style="position: relative;">
+                    <span style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #64748b; font-weight: 700;">+91</span>
+                    <input type="tel" id="userPhoneInput" maxlength="10" placeholder="10-digit number" 
+                        style="width: 100%; padding: 14px 14px 14px 50px; background: #0f172a; border: 1px solid #334155; border-radius: 12px; color: white; font-size: 1.1rem; outline: none; transition: 0.3s;"
+                        oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                </div>
+                <p id="phoneError" style="color: #f87171; font-size: 0.75rem; margin-top: 8px; display: none;">Please enter a valid 10-digit mobile number.</p>
+            </div>
+            <button onclick="saveUserPhone()" style="width: 100%; padding: 14px; background: #6366f1; color: white; border: none; border-radius: 12px; font-weight: 700; font-size: 1rem; cursor: pointer; transition: 0.3s; box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);">
+                Confirm & Continue <i class="fas fa-arrow-right" style="margin-left: 8px;"></i>
+            </button>
+            <p style="margin-top: 20px; font-size: 0.75rem; color: #475569;">Your information is secure with COURSENOVA.</p>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+}
+
+async function saveUserPhone() {
+    const phone = document.getElementById('userPhoneInput').value;
+    const errorEl = document.getElementById('phoneError');
+    const token = localStorage.getItem('token') || localStorage.getItem('coursenovaToken');
+
+    if (phone.length !== 10) {
+        errorEl.style.display = 'block';
+        return;
+    }
+    errorEl.style.display = 'none';
+
+    try {
+        const res = await fetch('/api/user/update-phone', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ phone })
+        });
+        const data = await res.json();
+        if (data.ok) {
+            // Update local storage user data too
+            const user = JSON.parse(localStorage.getItem('user') || localStorage.getItem('coursenovaUser'));
+            user.phone = phone;
+            localStorage.setItem('user', JSON.stringify(user));
+            localStorage.setItem('coursenovaUser', JSON.stringify(user));
+            
+            document.getElementById('phoneUpdateModal').remove();
+            showLiveNotification("Profile updated successfully!");
+        } else {
+            alert("Error: " + data.message);
+        }
+    } catch (err) {
+        alert("Failed to save phone. Please try again.");
+    }
 }
 
 function renderActivityTimeline(activities) {
