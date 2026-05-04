@@ -371,8 +371,10 @@ function handleAuthRedirect() {
             // Force save to localStorage
             localStorage.setItem('coursenovaToken', token);
             localStorage.setItem('coursenova_token', token);
+            localStorage.setItem('token', token);
             localStorage.setItem('coursenovaUser', userStr);
             localStorage.setItem('coursenova_user', userStr);
+            localStorage.setItem('user', userStr);
 
             // Clean up the URL
             window.history.replaceState({}, document.title, window.location.pathname);

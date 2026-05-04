@@ -304,7 +304,7 @@
             }
 
             try {
-                const token = localStorage.getItem('token') || localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token') || '';
+                const token = typeof getAuthToken === 'function' ? getAuthToken() : (localStorage.getItem('token') || localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token') || '');
                 const res = await fetch(url, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
@@ -462,7 +462,7 @@
                 const res = await fetch(endpoint, {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('coursenovaToken')}`,
+                        'Authorization': `Bearer ${typeof getAuthToken === 'function' ? getAuthToken() : (localStorage.getItem('token') || localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token'))}`,
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify(payload)

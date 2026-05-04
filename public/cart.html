@@ -332,7 +332,7 @@
 
         async function loadCart() {
             try {
-                const token = localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token');
+                                const token = typeof getAuthToken === 'function' ? getAuthToken() : (localStorage.getItem('token') || localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token'));
                 if (!token) {
                     document.getElementById('cart-items-container').innerHTML = `
                         <div class="empty-cart">

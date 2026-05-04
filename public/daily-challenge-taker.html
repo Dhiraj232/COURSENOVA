@@ -309,7 +309,7 @@
         document.addEventListener('DOMContentLoaded', async () => {
             const urlParams = new URLSearchParams(window.location.search);
             const examId = urlParams.get('id');
-            const token = localStorage.getItem('token');
+                        const token = typeof getAuthToken === 'function' ? getAuthToken() : (localStorage.getItem('token') || localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token'));
 
             if (!examId || !token) {
                 window.location.href = 'daily-challenge.html';
@@ -417,7 +417,7 @@
 
         async function submitExam() {
             clearInterval(timerInterval);
-            const token = localStorage.getItem('token');
+                        const token = typeof getAuthToken === 'function' ? getAuthToken() : (localStorage.getItem('token') || localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token'));
             
             // Calculate results locally for instant feedback
             let correct = 0;

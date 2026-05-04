@@ -3,7 +3,7 @@
  * Handles Forum, Doubts, Chat, and Notifications
  */
 
-const token = localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token');
+const token = typeof getAuthToken === 'function' ? getAuthToken() : (localStorage.getItem('token') || localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token'));
 const user = JSON.parse(localStorage.getItem('coursenovaUser') || localStorage.getItem('coursenova_user') || '{}');
 const socket = typeof io !== 'undefined' ? io(window.COURSENOVA_API || undefined) : null;
 

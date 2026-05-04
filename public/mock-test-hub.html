@@ -113,7 +113,7 @@
         ];
 
         async function init() {
-            let token = localStorage.getItem('coursenova_token') || localStorage.getItem('coursenovaToken') || localStorage.getItem('token');
+            let token = typeof getAuthToken === 'function' ? getAuthToken() : (localStorage.getItem('token') || localStorage.getItem('coursenova_token') || localStorage.getItem('coursenovaToken'));
             if (!token) {
                 alert('Please login to view tests.');
                 window.location.href = 'signup.html';
@@ -187,7 +187,7 @@
         }
 
         document.getElementById('buyBtn').onclick = async () => {
-            const token = localStorage.getItem('token');
+            const token = typeof getAuthToken === 'function' ? getAuthToken() : (localStorage.getItem('token') || localStorage.getItem('coursenova_token') || localStorage.getItem('coursenovaToken'));
             try {
                 const res = await fetch('/api/cashfree/create-order', {
                     method: 'POST',

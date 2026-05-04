@@ -640,7 +640,8 @@
 
 
         function getToken() {
-            return localStorage.getItem('coursenova_token') || localStorage.getItem('coursenovaToken') || '';
+            if (typeof getAuthToken === 'function') return getAuthToken();
+            return localStorage.getItem('token') || localStorage.getItem('coursenova_token') || localStorage.getItem('coursenovaToken') || '';
         }
 
         async function init() {

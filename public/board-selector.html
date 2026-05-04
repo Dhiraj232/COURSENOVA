@@ -111,7 +111,7 @@
         document.getElementById('boardTitle').innerText = selectedBoard;
 
         async function init() {
-            const token = localStorage.getItem('token') || localStorage.getItem('coursenova_token') || localStorage.getItem('coursenovaToken');
+            const token = typeof getAuthToken === 'function' ? getAuthToken() : (localStorage.getItem('token') || localStorage.getItem('coursenova_token') || localStorage.getItem('coursenovaToken'));
             if (!token) { window.location.href = 'signup.html'; return; }
 
             try {
