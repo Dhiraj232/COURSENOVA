@@ -640,8 +640,17 @@
 
 
         function getToken() {
-            if (typeof getAuthToken === 'function') return getAuthToken();
-            return localStorage.getItem('token') || localStorage.getItem('coursenova_token') || localStorage.getItem('coursenovaToken') || '';
+            let t = '';
+            if (typeof getAuthToken === 'function') {
+                t = getAuthToken();
+                console.log('[Auth] Retrieved via helper:', t ? 'EXISTS' : 'MISSING');
+            }
+            
+            if (!t || t === 'null' || t === 'undefined') {
+                t = localStorage.getItem('token') || localStorage.getItem('coursenova_token') || localStorage.getItem('coursenovaToken') || '';
+                console.log('[Auth] Retrieved via fallback:', t ? 'EXISTS' : 'MISSING');
+            }
+            return (t === 'null' || t === 'undefined') ? '' : t;
         }
 
         async function init() {
@@ -740,8 +749,11 @@
 
                 // Handle expired/invalid token
                 if (res.status === 401) {
+                    console.error('[Auth] Token unauthorized (401). Clearing session...');
+                    localStorage.removeItem('token');
                     localStorage.removeItem('coursenova_token');
                     localStorage.removeItem('coursenovaToken');
+                    localStorage.removeItem('user');
                     alert('Session expired. Please log in again.');
                     window.location.href = 'signup.html';
                     return;

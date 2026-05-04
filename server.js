@@ -182,6 +182,7 @@ app.set('trust proxy', 1);
 // ─── 1. CORS — MUST be first, before all other middleware ────────────────────
 const allowedOrigins = [
   "https://www.coursenova.in",
+  "https://coursenova.in",
   "http://localhost:5000"
 ];
 
@@ -584,7 +585,8 @@ process.on('unhandledRejection', err => {
 const io = require('socket.io')(server, {
   cors: {
     origin: [
-      "https://www.coursenova.in"
+      "https://www.coursenova.in",
+      "https://coursenova.in"
     ],
     methods: ["GET", "POST"]
   }

@@ -9,8 +9,20 @@
  * - Responsive mobile menu handling
  * 
  * @author COURSENOVA Development Team
- * @version 1.0.0
+ * @version 1.1.0
  */
+
+// 0. DOMAIN ENFORCEMENT (Canonical URL)
+// This ensures that user sessions (localStorage) are consistent by forcing the www subdomain.
+(function enforceCanonicalDomain() {
+    const hostname = window.location.hostname;
+    const isProduction = hostname.includes('coursenova.in');
+    
+    if (isProduction && hostname === 'coursenova.in') {
+        console.warn('🔄 Redirecting to canonical domain (www.coursenova.in) to ensure session persistence...');
+        window.location.replace('https://www.coursenova.in' + window.location.pathname + window.location.search + window.location.hash);
+    }
+})();
 
 // 1. AUTH HELPERS
 /**
@@ -508,9 +520,17 @@ function setupUserDropdown() {
         if (userJson) {
             user = JSON.parse(userJson);
             // Synchronize keys for backward compatibility
-            localStorage.setItem('token', token);
-            localStorage.setItem('user', userJson);
-            localStorage.setItem('role', role);
+            // Synchronize keys for backward compatibility - Only if truthy to avoid saving "null" string
+            if (token && token !== 'null' && token !== 'undefined') {
+                localStorage.setItem('token', token);
+            }
+            if (userJson && userJson !== 'null' && userJson !== 'undefined') {
+                localStorage.setItem('user', userJson);
+                // Also update the variants to ensure consistency
+                localStorage.setItem('coursenovaUser', userJson);
+                localStorage.setItem('coursenova_user', userJson);
+            }
+            if (role) localStorage.setItem('role', role);
         }
     } catch (e) {
         console.error('Error parsing user data', e);
