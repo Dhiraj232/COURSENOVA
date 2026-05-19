@@ -687,62 +687,14 @@
             }
 
             try {
-                // ── 1. Try loading premium course data first ──────────────────────
-                let premiumData = null;
-                try {
-                    const pRes = await fetch(`${API}/api/premium/all-courses`, {
-                        headers: { Authorization: 'Bearer ' + token }
-                    });
-                    const pData = await pRes.json();
-                    if (pData.ok && Array.isArray(pData.courses)) {
-                        premiumData = pData.courses.find(c =>
-                            String(c._id) === courseId ||
-                            (c.title || '').toLowerCase() === courseId.toLowerCase() ||
-                            (c.slug || '').toLowerCase() === courseId.toLowerCase()
-                        );
-                    }
-                } catch (pe) { console.warn('Premium courses fetch error:', pe); }
+                // ── 1. Auto-enroll instantly (Idempotent) ──────────────────────
+                await fetch(`${API}/api/enrollments/enroll-free`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+                    body: JSON.stringify({ courseId })
+                }).catch(e => console.warn('Auto-enroll error:', e));
 
-                if (premiumData) {
-                    courseIsPremium = premiumData.isPremium || (!premiumData.isFree && premiumData.price > 0);
-                    coursePrice     = premiumData.price || 0;
-                    courseMongoId   = String(premiumData._id); // CRITICAL: Always use ObjectId for payment requests
-
-                    console.log(`[Init] Premium Course Detected: ${premiumData.title} | ID: ${courseMongoId} | Enrolled: ${premiumData.enrolled}`);
-
-                    if (courseIsPremium && !premiumData.enrolled && coursePrice > 0) {
-                        document.getElementById('gateTitle').textContent   = premiumData.title || courseId;
-                        document.getElementById('gateSubtitle').textContent = premiumData.description || 'Unlock full access to learn and earn your certificate';
-                        document.getElementById('gatePrice').textContent   = '₹' + Number(coursePrice).toLocaleString('en-IN');
-                        document.getElementById('premiumGate').classList.add('show');
-                        document.getElementById('loadingScreen').style.display = 'none';
-                        return;
-                    }
-
-                    if (premiumData.quizQuestions && premiumData.quizQuestions.length > 0) {
-                        examQuestions = premiumData.quizQuestions;
-                    }
-                    examAttempts = premiumData.examAttemptsLeft !== undefined ? premiumData.examAttemptsLeft : 3;
-                }
-
-                // ── 2. Auto-enroll free courses ───────────────────────────────────
-                if (!courseIsPremium) {
-                    try {
-                        const checkRes = await fetch(`${API}/api/enrollments/check?courseId=${encodeURIComponent(courseId)}`, {
-                            headers: { Authorization: 'Bearer ' + token }
-                        });
-                        const checkData = await checkRes.json();
-                        if (checkData.ok && !checkData.enrolled) {
-                            await fetch(`${API}/api/enrollments/enroll-free`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-                                body: JSON.stringify({ courseId })
-                            });
-                        }
-                    } catch (ee) { console.warn('Auto-enroll error:', ee); }
-                }
-
-                // ── 3. Load course details (lessons + progress) ───────────────────
+                // ── 2. Load course details (lessons + progress + quiz) ───────────────────
                 const res = await fetch(`${API}/api/course/details?courseId=${encodeURIComponent(courseId)}`, {
                     headers: { Authorization: 'Bearer ' + token }
                 });
@@ -763,6 +715,9 @@
 
                 if (data.ok && data.course && data.course.lessons && data.course.lessons.length > 0) {
                     allLessons = data.course.lessons.slice().sort((a, b) => (a.order || 0) - (b.order || 0));
+                    if (data.course.quizQuestions && data.course.quizQuestions.length > 0) {
+                        examQuestions = data.course.quizQuestions;
+                    }
                 } else if (!data.ok && data.message) {
                     document.getElementById('videoWrapper').innerHTML = `<div style="padding:40px;text-align:center;color:#ef4444;font-weight:bold;">❌ ${data.message}</div>`;
                     allLessons = [];
@@ -848,7 +803,16 @@
             if (lesson.pdfUrl && lesson.pdfUrl !== 'dummy_document.pdf') {
                 pdfCard.style.display = 'block';
                 if (checkPdf) checkPdf.style.display = 'flex';
-                const pdfSrc = lesson.pdfUrl.startsWith('http') ? lesson.pdfUrl : `${API}/${lesson.pdfUrl}`;
+                let pdfSrc = lesson.pdfUrl.startsWith('http') ? lesson.pdfUrl : `${API}/${lesson.pdfUrl}`;
+                
+                // Automatically convert Google Drive view links to preview links so they can be iframed
+                if (pdfSrc.includes('drive.google.com/file/d/')) {
+                    pdfSrc = pdfSrc.replace(/\/view.*$/, '/preview').replace(/\/edit.*$/, '/preview');
+                    if (!pdfSrc.endsWith('/preview')) {
+                        pdfSrc += '/preview';
+                    }
+                }
+
                 pw.innerHTML = `<iframe src="${pdfSrc}" title="Study Material"></iframe>`;
                 dlLink.href = pdfSrc;
                 dlLink.style.display = 'flex';
