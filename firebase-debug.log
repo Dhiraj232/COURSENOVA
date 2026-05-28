@@ -1,0 +1,89 @@
+[debug] [2026-04-17T09:52:42.511Z] ----------------------------------------------------------------------
+[debug] [2026-04-17T09:52:42.512Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\dhira\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js init
+[debug] [2026-04-17T09:52:42.513Z] CLI Version:   15.15.0
+[debug] [2026-04-17T09:52:42.513Z] Platform:      win32
+[debug] [2026-04-17T09:52:42.513Z] Node Version:  v24.14.0
+[debug] [2026-04-17T09:52:42.513Z] Time:          Fri Apr 17 2026 15:22:42 GMT+0530 (India Standard Time)
+[debug] [2026-04-17T09:52:42.513Z] ----------------------------------------------------------------------
+[debug] 
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  C:\coursenova
+
+Before we get started, keep in mind:
+
+  * You are currently outside your home directory
+
+[info] 
+=== Project Setup
+[info] 
+[info] First, let's associate this project directory with a Firebase project.
+[info] You can create multiple project aliases by running firebase use --add, 
+[info] 
+[debug] [2026-04-17T09:54:13.735Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-04-17T09:54:13.735Z] > authorizing via signed-in user (coursenova.in@gmail.com)
+[debug] [2026-04-17T09:54:13.737Z] Checked if tokens are valid: true, expires at: 1776423132255
+[debug] [2026-04-17T09:54:13.738Z] Checked if tokens are valid: true, expires at: 1776423132255
+[debug] [2026-04-17T09:54:13.739Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects pageSize=100
+[debug] [2026-04-17T09:54:13.753Z] *** [apiv2] error from fetch(https://firebase.googleapis.com/v1beta1/projects?pageSize=100, {"headers":{},"method":"GET","signal":{"reason":""}}): FetchError: request to https://firebase.googleapis.com/v1beta1/projects?pageSize=100 failed, reason: getaddrinfo ENOTFOUND firebase.googleapis.com
+[debug] [2026-04-17T09:54:13.753Z] Failed to make request to https://firebase.googleapis.com/v1beta1/projects?pageSize=100
+[debug] [2026-04-17T09:54:13.777Z] FirebaseError: Failed to make request to https://firebase.googleapis.com/v1beta1/projects?pageSize=100
+    at RetryOperation._fn (C:\Users\dhira\AppData\Roaming\npm\node_modules\firebase-tools\lib\apiv2.js:282:31)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+[error] 
+[error] Error: Failed to list Firebase projects. See firebase-debug.log for more info.
+[debug] [2026-04-17T09:58:25.433Z] ----------------------------------------------------------------------
+[debug] [2026-04-17T09:58:25.435Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\dhira\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js init
+[debug] [2026-04-17T09:58:25.436Z] CLI Version:   15.15.0
+[debug] [2026-04-17T09:58:25.436Z] Platform:      win32
+[debug] [2026-04-17T09:58:25.436Z] Node Version:  v24.14.0
+[debug] [2026-04-17T09:58:25.436Z] Time:          Fri Apr 17 2026 15:28:25 GMT+0530 (India Standard Time)
+[debug] [2026-04-17T09:58:25.436Z] ----------------------------------------------------------------------
+[debug] 
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  C:\coursenova
+
+Before we get started, keep in mind:
+
+  * You are currently outside your home directory
+
+[info] 
+=== Project Setup
+[info] 
+[info] First, let's associate this project directory with a Firebase project.
+[info] You can create multiple project aliases by running firebase use --add, 
+[info] 
+[debug] [2026-04-17T09:58:45.663Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-04-17T09:58:45.664Z] > authorizing via signed-in user (coursenova.in@gmail.com)
+[debug] [2026-04-17T09:58:45.665Z] Checked if tokens are valid: true, expires at: 1776423132255
+[debug] [2026-04-17T09:58:45.665Z] Checked if tokens are valid: true, expires at: 1776423132255
+[debug] [2026-04-17T09:58:45.666Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects pageSize=100
+[debug] [2026-04-17T09:58:46.619Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects 200
+[debug] [2026-04-17T09:58:46.619Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects [omitted]
+[info] 
+=== Hosting Setup
+[debug] [2026-04-17T09:59:06.733Z] Checked if tokens are valid: true, expires at: 1776423132255
+[debug] [2026-04-17T09:59:06.733Z] Checked if tokens are valid: true, expires at: 1776423132255
+[debug] [2026-04-17T09:59:06.733Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/coursenova-55b75 [none]
+[debug] [2026-04-17T09:59:07.616Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/coursenova-55b75 200
+[debug] [2026-04-17T09:59:07.617Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/coursenova-55b75 {"projectId":"coursenova-55b75","projectNumber":"99132639048","displayName":"Coursenova","name":"projects/coursenova-55b75","resources":{"hostingSite":"coursenova-55b75"},"state":"ACTIVE","etag":"1_54be9949-08f2-47ee-ba9d-c155913b48fe"}
+[info] 
+[info] Your public directory is the folder (relative to your project directory) that
+[info] will contain Hosting assets to be uploaded with firebase deploy. If you
+[info] have a build process for your assets, use your build's output directory.
+[info] 
