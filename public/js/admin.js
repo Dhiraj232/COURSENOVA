@@ -141,6 +141,12 @@ async function loadView(view) {
                 const mktData = await fetchData(`${API_BASE}/marketplace/all-books`);
                 renderMarketplace(mktData.books || []);
                 break;
+
+            case 'slides':
+                title.textContent = 'Slideshow Banner Management';
+                const slidesData = await fetchData(`${API_BASE}/slides`);
+                renderSlides(slidesData.slides || []);
+                break;
         }
     } catch (err) {
         contentArea.innerHTML = `<div class="error-state"><i class="fas fa-exclamation-circle"></i><p>Error: ${err.message}</p></div>`;
@@ -1338,4 +1344,230 @@ async function deleteMockTest(id) {
         }); 
         loadView('mock-tests'); 
     } 
+}
+
+// ── SLIDESHOW BANNER MANAGEMENT VIEWS ─────────────────────────────────
+
+function renderSlides(slides = []) {
+    const content = document.getElementById('content-area');
+    
+    content.innerHTML = `
+        <div class="admin-card">
+            <div class="card-header">
+                <h3>Homepage Slideshow Banners</h3>
+                <button class="btn btn-primary" onclick="showAddSlideModal()">+ Add New Slide</button>
+            </div>
+            
+            <div style="padding: 24px;">
+                <p style="margin-bottom: 20px; color: var(--text-muted); font-size: 0.9rem;">
+                    Banners appear in the homepage visual section. Recommended image size: 800x450 pixels (approx. 16:9 ratio) or wide landscape. Seeding default banners provides gorgeous gradient cards by default.
+                </p>
+                
+                <div class="slides-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 24px;">
+                    ${slides.length === 0 ? `
+                        <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: var(--text-muted);">
+                            <i class="fas fa-images" style="font-size: 3rem; opacity: 0.3; margin-bottom: 10px;"></i>
+                            <p>No slides found. Click '+ Add New Slide' to create one.</p>
+                        </div>
+                    ` : slides.map(s => {
+                        const isDefault = s.image.startsWith('default_slide');
+                        const imgUrl = isDefault ? '#' : `/uploads/slides/${s.image}`;
+                        
+                        return `
+                            <div class="admin-card slide-manage-card" style="display: flex; flex-direction: column; height: 100%; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);">
+                                <div class="slide-preview-box" style="height: 150px; position: relative; overflow: hidden; background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%); display: flex; align-items: center; justify-content: center; color: white; padding: 15px; text-align: center;">
+                                    ${isDefault ? `
+                                        <div>
+                                            <div style="font-weight: 700; font-size: 0.95rem; margin-bottom: 4px; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">${s.title}</div>
+                                            <div style="font-size: 0.75rem; opacity: 0.9; max-width: 250px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">${s.subtitle}</div>
+                                            <div style="position: absolute; top: 8px; left: 8px; background: rgba(0,0,0,0.6); padding: 2px 8px; border-radius: 20px; font-size: 0.65rem; font-weight: 600;">Seeded Banner</div>
+                                        </div>
+                                    ` : `
+                                        <img src="${imgUrl}" alt="${s.title}" style="width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; z-index: 1;">
+                                        <div style="position: absolute; bottom: 0; left: 0; width: 100%; background: rgba(0,0,0,0.65); color: white; padding: 8px; z-index: 2; font-size: 0.75rem; text-align: left;">
+                                            <strong style="display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${s.title}</strong>
+                                        </div>
+                                    `}
+                                </div>
+                                <div style="padding: 16px; flex: 1; display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem;">
+                                    <div><strong>Title:</strong> ${s.title}</div>
+                                    <div><strong>Subtitle:</strong> <span class="text-muted">${s.subtitle || '—'}</span></div>
+                                    <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"><strong>Link:</strong> <a href="${s.link || '#'}" target="_blank" style="color: var(--primary); text-decoration: none;">${s.link || '—'}</a></div>
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: auto; padding-top: 10px; border-top: 1px solid var(--border);">
+                                        <span><strong>Order:</strong> ${s.order}</span>
+                                        <span class="admin-badge" style="background: ${s.isActive ? '#ecfdf5' : '#fee2e2'}; color: ${s.isActive ? '#10b981' : '#ef4444'}">
+                                            ${s.isActive ? 'Active' : 'Hidden'}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div style="padding: 12px 16px; background: #f8fafc; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end;">
+                                    <button class="btn btn-sm btn-outline" onclick="editSlide('${s._id}')">
+                                        <i class="fas fa-edit"></i> Edit
+                                    </button>
+                                    <button class="btn btn-sm btn-outline danger" onclick="deleteSlide('${s._id}')" style="color: var(--danger)">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function showAddSlideModal() {
+    renderSlideModal('Add New Slide Banner');
+}
+
+async function editSlide(id) {
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_BASE}/slides`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.ok) {
+            const slide = data.slides.find(s => s._id === id);
+            if (slide) {
+                renderSlideModal('Edit Slide Banner', slide);
+            } else {
+                alert('Slide not found');
+            }
+        } else {
+            alert('Failed to load slides info');
+        }
+    } catch (err) {
+        alert('Error loading slide details');
+    }
+}
+
+function renderSlideModal(title, slide = null) {
+    const modalContainer = document.getElementById('modal-container');
+    const isEdit = !!slide;
+
+    modalContainer.innerHTML = `
+        <div class="modal-content admin-card" style="max-width: 550px; width: 95%; max-height: 90vh; display: flex; flex-direction: column;">
+            <div class="card-header">
+                <h3>${title}</h3>
+                <button class="btn btn-icon" onclick="closeModal()">×</button>
+            </div>
+            
+            <form id="slideForm" style="flex: 1; overflow-y: auto; padding: 24px;">
+                <div class="form-group">
+                    <label>Slide Title *</label>
+                    <input type="text" id="slideTitle" class="admin-input" value="${slide?.title || ''}" required placeholder="e.g. Special Discount Offer">
+                </div>
+                
+                <div class="form-group">
+                    <label>Subtitle / Description</label>
+                    <textarea id="slideSubtitle" class="admin-input" style="height: 60px;" placeholder="e.g. Get up to 40% off on premium batches. Limited time only.">${slide?.subtitle || ''}</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Banner Image File * ${isEdit ? '(Leave empty to keep existing)' : ''}</label>
+                    <input type="file" id="slideImage" class="admin-input" accept="image/*" ${isEdit ? '' : 'required'}>
+                    ${slide ? `<div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">Current: ${slide.image}</div>` : ''}
+                </div>
+                
+                <div class="form-group">
+                    <label>Action Redirection Link</label>
+                    <input type="text" id="slideLink" class="admin-input" value="${slide?.link || ''}" placeholder="e.g. /premium-courses.html or https://www.google.com">
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="form-group">
+                        <label>Display Order Sequence</label>
+                        <input type="number" id="slideOrder" class="admin-input" value="${slide?.order || 0}" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label>Visibility Status</label>
+                        <select id="slideActive" class="admin-input">
+                            <option value="true" ${slide?.isActive !== false ? 'selected' : ''}>Active / Visible</option>
+                            <option value="false" ${slide?.isActive === false ? 'selected' : ''}>Inactive / Hidden</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div style="margin-top: 30px; display: flex; gap: 15px; justify-content: flex-end; border-top: 1px solid var(--border); padding-top: 20px;">
+                    <button type="button" class="btn btn-outline" onclick="closeModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">${isEdit ? 'Save Changes' : 'Create Slide'}</button>
+                </div>
+            </form>
+        </div>
+    `;
+    
+    modalContainer.classList.add('active');
+    
+    document.getElementById('slideForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        handleSlideSubmit(slide?._id);
+    });
+}
+
+async function handleSlideSubmit(id) {
+    const isEdit = !!id;
+    const token = localStorage.getItem('token');
+    
+    const formData = new FormData();
+    formData.append('title', document.getElementById('slideTitle').value);
+    formData.append('subtitle', document.getElementById('slideSubtitle').value);
+    formData.append('link', document.getElementById('slideLink').value);
+    formData.append('order', document.getElementById('slideOrder').value);
+    formData.append('isActive', document.getElementById('slideActive').value);
+    
+    const fileInput = document.getElementById('slideImage');
+    if (fileInput.files.length > 0) {
+        formData.append('image', fileInput.files[0]);
+    }
+    
+    const submitBtn = document.querySelector('#slideForm button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Processing...';
+    
+    try {
+        const url = isEdit ? `${API_BASE}/slides/${id}` : `${API_BASE}/slides`;
+        const method = isEdit ? 'PUT' : 'POST';
+        
+        const res = await fetch(url, {
+            method,
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: formData
+        });
+        
+        const data = await res.json();
+        if (data.ok) {
+            closeModal();
+            loadView('slides');
+        } else {
+            alert(`Error: ${data.message || 'Operation failed'}`);
+            submitBtn.disabled = false;
+            submitBtn.textContent = isEdit ? 'Save Changes' : 'Create Slide';
+        }
+    } catch (err) {
+        alert('Network error while saving slide banner');
+        submitBtn.disabled = false;
+        submitBtn.textContent = isEdit ? 'Save Changes' : 'Create Slide';
+    }
+}
+
+async function deleteSlide(id) {
+    if (confirm('Are you sure you want to permanently delete this slide banner?')) {
+        const token = localStorage.getItem('token');
+        try {
+            const res = await fetch(`${API_BASE}/slides/${id}`, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (data.ok) {
+                loadView('slides');
+            } else {
+                alert(`Delete failed: ${data.message}`);
+            }
+        } catch (e) {
+            alert('Network error deleting slide banner');
+        }
+    }
 }

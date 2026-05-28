@@ -405,6 +405,7 @@ app.use('/api/dashboard', dashboardRoutes);
 
 // Serve uploaded screenshots and generated certificates as static files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads/slides', express.static(path.join(__dirname, 'uploads', 'slides')));
 app.use('/certificates', express.static(path.join(__dirname, 'certificates')));
 
 // ─── Cashfree API Routes ──────────────────────────────────────────────

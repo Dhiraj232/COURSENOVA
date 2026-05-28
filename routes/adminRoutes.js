@@ -369,4 +369,194 @@ router.get('/audit-logs', requireAdmin, catchAsync(async (req, res) => {
     res.json({ ok: true, logs });
 }));
 
+// ── 11. SLIDESHOW BANNER MANAGEMENT ─────────────────────────────────
+const path = require('path');
+const Slide = require('../models/Slide');
+
+// Multer storage setup for slide images
+const slideStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const uploadPath = path.join(__dirname, '..', 'uploads', 'slides');
+        cb(null, uploadPath);
+    },
+    filename: (req, file, cb) => {
+        const ext = path.extname(file.originalname);
+        cb(null, `slide_${Date.now()}${ext}`);
+    }
+});
+
+const uploadSlide = multer({
+    storage: slideStorage,
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype.startsWith('image/')) cb(null, true);
+        else cb(new Error('Only image files allowed'), false);
+    }
+});
+
+// Ensure slide uploads directory exists
+const fs = require('fs');
+const slideUploadDir = path.join(__dirname, '..', 'uploads', 'slides');
+if (!fs.existsSync(slideUploadDir)) {
+    fs.mkdirSync(slideUploadDir, { recursive: true });
+}
+
+// 11a. Public endpoint to retrieve active slides
+router.get('/slides/active', catchAsync(async (req, res) => {
+    let slides = await Slide.find({ isActive: true }).sort({ order: 1 });
+    
+    // Self-healing / Auto-seeding of 6 default slideshow cards if DB is empty
+    if (slides.length === 0) {
+        console.log('[Slides Seeder] No slides found in DB. Auto-seeding 6 default slides...');
+        const defaultSlides = [
+            {
+                title: 'Celebrating Years of COURSENOVA',
+                subtitle: 'OFFER IS LIVE! Get Up To 40% OFF on premium exam batches! Limited Time Only.',
+                image: 'default_slide_1.png',
+                link: '/premium-courses.html',
+                order: 1,
+                isActive: true
+            },
+            {
+                title: 'Detailed Syllabus-Based Notes',
+                subtitle: 'Designed specifically for Indian colleges. Access physics, math, and coding theory.',
+                image: 'default_slide_2.png',
+                link: '/certificates.html',
+                order: 2,
+                isActive: true
+            },
+            {
+                title: 'Exam-focused Practice MCQs & Tests',
+                subtitle: 'Test your academic prep with subject-level practice questions. Boost your GPA.',
+                image: 'default_slide_3.png',
+                link: '/practice.html',
+                order: 3,
+                isActive: true
+            },
+            {
+                title: 'Earn Verified College Certificates',
+                subtitle: 'Complete final course assignments to download verified certificates shareable on LinkedIn.',
+                image: 'default_slide_4.png',
+                link: '/certificates.html',
+                order: 4,
+                isActive: true
+            },
+            {
+                title: 'Free Daily Practice Challenges',
+                subtitle: 'Compete in college leaderboards, complete the daily challenge, and earn student points.',
+                image: 'default_slide_5.png',
+                link: '/daily-challenge.html',
+                order: 5,
+                isActive: true
+            },
+            {
+                title: 'Used Books Marketplace Hub',
+                subtitle: 'Sell college course books or buy syllabus textbooks locally in your university campus.',
+                image: 'default_slide_6.png',
+                link: '/store.html',
+                order: 6,
+                isActive: true
+            }
+        ];
+        
+        slides = await Slide.insertMany(defaultSlides);
+    }
+    
+    res.json({ ok: true, slides });
+}));
+
+// 11b. Admin-only: Retrieve all slides for slide manager
+router.get('/slides', requireAdmin, catchAsync(async (req, res) => {
+    const slides = await Slide.find().sort({ order: 1, createdAt: -1 });
+    res.json({ ok: true, slides });
+}));
+
+// 11c. Admin-only: Create a new slide banner (supports file upload)
+router.post('/slides', requireAdmin, uploadSlide.single('image'), catchAsync(async (req, res) => {
+    const { title, subtitle, link, order, isActive } = req.body;
+    
+    if (!title) {
+        throw new AppError('Slide title is required', 400);
+    }
+    if (!req.file) {
+        throw new AppError('Slide banner image upload is required', 400);
+    }
+
+    const newSlide = await Slide.create({
+        title,
+        subtitle: subtitle || '',
+        image: req.file.filename,
+        link: link || '',
+        order: Number(order) || 0,
+        isActive: isActive === 'true' || isActive === true
+    });
+
+    await logAdminAction(req, 'CREATE_SLIDE', newSlide._id, 'Slide', { title: newSlide.title });
+    res.status(201).json({ ok: true, slide: newSlide });
+}));
+
+// 11d. Admin-only: Edit an existing slide banner (supports replacing file upload)
+router.put('/slides/:id', requireAdmin, uploadSlide.single('image'), catchAsync(async (req, res) => {
+    const slide = await Slide.findById(req.params.id);
+    if (!slide) {
+        throw new AppError('Slide not found', 404);
+    }
+
+    const { title, subtitle, link, order, isActive } = req.body;
+    
+    if (title !== undefined) slide.title = title;
+    if (subtitle !== undefined) slide.subtitle = subtitle;
+    if (link !== undefined) slide.link = link;
+    if (order !== undefined) slide.order = Number(order) || 0;
+    if (isActive !== undefined) slide.isActive = isActive === 'true' || isActive === true;
+
+    // If a new image file is uploaded, update and optionally delete the old image file
+    if (req.file) {
+        const oldImageName = slide.image;
+        slide.image = req.file.filename;
+
+        // Try to remove old image if it wasn't a seeded default slide image
+        if (oldImageName && !oldImageName.startsWith('default_slide')) {
+            const oldImagePath = path.join(__dirname, '..', 'uploads', 'slides', oldImageName);
+            if (fs.existsSync(oldImagePath)) {
+                try {
+                    fs.unlinkSync(oldImagePath);
+                } catch (e) {
+                    console.error('[Admin API] Error removing old slide image file:', e);
+                }
+            }
+        }
+    }
+
+    await slide.save();
+    await logAdminAction(req, 'UPDATE_SLIDE', slide._id, 'Slide', { title: slide.title });
+    res.json({ ok: true, slide });
+}));
+
+// 11e. Admin-only: Delete a slide banner and its image file
+router.delete('/slides/:id', requireAdmin, catchAsync(async (req, res) => {
+    const slide = await Slide.findById(req.params.id);
+    if (!slide) {
+        throw new AppError('Slide not found', 404);
+    }
+
+    const imageName = slide.image;
+    await Slide.findByIdAndDelete(req.params.id);
+
+    // Delete image file from server if it wasn't a seeded default slide
+    if (imageName && !imageName.startsWith('default_slide')) {
+        const imagePath = path.join(__dirname, '..', 'uploads', 'slides', imageName);
+        if (fs.existsSync(imagePath)) {
+            try {
+                fs.unlinkSync(imagePath);
+            } catch (e) {
+                console.error('[Admin API] Error removing slide image file:', e);
+            }
+        }
+    }
+
+    await logAdminAction(req, 'DELETE_SLIDE', slide._id, 'Slide', { title: slide.title });
+    res.json({ ok: true, message: 'Slide deleted successfully' });
+}));
+
 module.exports = router;

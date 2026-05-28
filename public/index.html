@@ -44,7 +44,7 @@
         media="print" onload="this.media='all'">
 
     <!-- External CSS -->
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=3.0">
     <link rel="stylesheet" href="css/navigation.css">
 
     <!-- Deferred Scripts to avoid render blocking -->
@@ -74,8 +74,36 @@
         </div>
     </nav>
 
+    <!-- ==================== FULL-WIDTH BANNER SLIDER (PW Style) ==================== -->
+    <section class="banner-slider-section" id="home">
+        <div class="banner-slider" id="homeSlideshow">
+            <div class="banner-slides-track" id="slidesWrapper">
+                <!-- Slides loaded dynamically from API -->
+                <div class="banner-slide active">
+                    <div class="banner-slide-gradient" style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);">
+                        <div class="banner-slide-inner">
+                            <span class="banner-badge"><i class="fas fa-spinner fa-spin"></i> Loading</span>
+                            <h2 class="banner-title">COURSENOVA</h2>
+                            <p class="banner-subtitle">Loading premium content...</p>
+                            <a class="banner-cta" href="#">Explore Now →</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Navigation Arrows -->
+            <button class="banner-arrow banner-arrow-prev" id="prevSlide" aria-label="Previous Slide">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+            <button class="banner-arrow banner-arrow-next" id="nextSlide" aria-label="Next Slide">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+            <!-- Indicator Dots -->
+            <div class="banner-dots" id="slideDots"></div>
+        </div>
+    </section>
+
     <!-- ==================== HERO SECTION ==================== -->
-    <section class="hero" id="home">
+    <section class="hero" id="home-info">
         <div class="hero-content">
             <h1 id="heroTitle">Smart Learning Platform for Indian Students</h1>
             <p>Notes, Practice Questions & Certificates Designed for Indian Colleges</p>
@@ -255,6 +283,214 @@
         function handleViewCourses() {
             window.location.href = 'certificates.html';
         }
+
+        // ==================== AUTOMATED SLIDESHOW SCRIPT ====================
+        let currentSlideIndex = 0;
+        let slideInterval = null;
+        let slideDataArray = [];
+
+        async function initSlideshow() {
+            const wrapper = document.getElementById('slidesWrapper');
+            if (!wrapper) return;
+
+            try {
+                const res = await fetch('/api/admin/slides/active');
+                const data = await res.json();
+                if (data.ok && data.slides && data.slides.length > 0) {
+                    slideDataArray = data.slides;
+                    renderSlideshow(slideDataArray);
+                    startSlideTimer();
+                } else {
+                    renderFallbackSlides();
+                }
+            } catch (err) {
+                console.error('Failed to load active slides:', err);
+                renderFallbackSlides();
+            }
+        }
+
+        function renderSlideshow(slides) {
+            const wrapper = document.getElementById('slidesWrapper');
+            const dotsContainer = document.getElementById('slideDots');
+            if (!wrapper) return;
+
+            wrapper.innerHTML = '';
+            dotsContainer.innerHTML = '';
+
+            slides.forEach((slide, idx) => {
+                const isDefault = slide.image && slide.image.startsWith('default_slide');
+                const imgUrl = isDefault ? '' : (slide.image ? `/uploads/slides/${slide.image}` : '');
+
+                // Create slide element
+                const slideEl = document.createElement('div');
+                slideEl.className = `slide ${idx === 0 ? 'active' : ''}`;
+                if (slide.link) {
+                    slideEl.style.cursor = 'pointer';
+                    slideEl.addEventListener('click', () => {
+                        window.location.href = slide.link;
+                    });
+                }
+
+                if (isDefault) {
+                    // Seeded default slides are rendered as responsive cards with gradients so they work out-of-the-box!
+                    const gradients = [
+                        'linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%)', // deep blue
+                        'linear-gradient(135deg, #0f766e 0%, #14b8a6 100%)', // teal
+                        'linear-gradient(135deg, #b45309 0%, #f59e0b 100%)', // gold
+                        'linear-gradient(135deg, #6d28d9 0%, #8b5cf6 100%)', // purple
+                        'linear-gradient(135deg, #be185d 0%, #ec4899 100%)', // rose
+                        'linear-gradient(135deg, #1f2937 0%, #4b5563 100%)'  // sleek dark
+                    ];
+                    const gradient = gradients[idx % gradients.length];
+                    slideEl.style.background = gradient;
+                    slideEl.innerHTML = `
+                        <div class="default-slide-content">
+                            <div class="slide-glow"></div>
+                            <span class="slide-badge"><i class="fas fa-star"></i> Featured</span>
+                            <h3 class="slide-title">${escapeHTML(slide.title)}</h3>
+                            <p class="slide-desc">${escapeHTML(slide.subtitle)}</p>
+                            <button class="slide-btn">Explore Now <i class="fas fa-arrow-right"></i></button>
+                        </div>
+                    `;
+                } else {
+                    // Custom uploaded slide images - cover the full area edge-to-edge
+                    slideEl.innerHTML = `
+                        <img src="${imgUrl}" alt="${escapeHTML(slide.title)}" class="slide-image" style="width: 100% !important; height: 100% !important; object-fit: fill !important; display: block !important;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div class="slide-overlay-fallback" style="display: none; background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); width: 100%; height: 100%; align-items: center; justify-content: center; color: white; flex-direction: column; padding: 2rem; text-align: center;">
+                            <h3>${escapeHTML(slide.title)}</h3>
+                            <p>${escapeHTML(slide.subtitle)}</p>
+                        </div>
+                    `;
+                }
+
+                wrapper.appendChild(slideEl);
+
+                // Create indicator dot
+                const dot = document.createElement('div');
+                dot.className = `slide-dot ${idx === 0 ? 'active' : ''}`;
+                dot.addEventListener('click', () => {
+                    goToSlide(idx);
+                });
+                dotsContainer.appendChild(dot);
+            });
+
+            // Set up hover events to pause autocomplete
+            const container = document.getElementById('homeSlideshow');
+            if (container) {
+                container.addEventListener('mouseenter', () => stopSlideTimer());
+                container.addEventListener('mouseleave', () => startSlideTimer());
+            }
+
+            // Immediately set the correct active height and dot styles
+            updateSlideUI();
+        }
+
+        function renderFallbackSlides() {
+            const backupData = [
+                {
+                    title: 'Welcome to COURSENOVA',
+                    subtitle: 'Smart syllabus-based notes and certificates designed for Indian college students.',
+                    image: 'default_slide_1.png',
+                    link: '/certificates.html'
+                },
+                {
+                    title: 'Practice Questions & Test Hub',
+                    subtitle: 'Crack exam prep with subject-level practice questions and community leaderboard streaks.',
+                    image: 'default_slide_2.png',
+                    link: '/practice.html'
+                }
+            ];
+            slideDataArray = backupData;
+            renderSlideshow(backupData);
+            startSlideTimer();
+        }
+
+        function escapeHTML(str) {
+            if (!str) return '';
+            return str
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        function startSlideTimer() {
+            stopSlideTimer();
+            if (slideDataArray.length <= 1) return;
+            slideInterval = setInterval(() => {
+                nextSlide();
+            }, 4000);
+        }
+
+        function stopSlideTimer() {
+            if (slideInterval) {
+                clearInterval(slideInterval);
+                slideInterval = null;
+            }
+        }
+
+        function updateSlideUI() {
+            const slides = document.querySelectorAll('#slidesWrapper .slide');
+            const dots = document.querySelectorAll('#slideDots .slide-dot');
+            
+            slides.forEach((slide, idx) => {
+                if (idx === currentSlideIndex) {
+                    slide.classList.add('active');
+                    adjustSliderHeight(slide);
+                } else {
+                    slide.classList.remove('active');
+                }
+            });
+
+            dots.forEach((dot, idx) => {
+                if (idx === currentSlideIndex) {
+                    dot.classList.add('active');
+                } else {
+                    dot.classList.remove('active');
+                }
+            });
+        }
+
+        function adjustSliderHeight(slide) {
+            // Height is handled strictly by CSS media queries to prevent overflow
+            const container = document.getElementById('homeSlideshow');
+            if (container) {
+                container.style.height = ''; // Clear inline styles
+            }
+        }
+
+        function nextSlide() {
+            if (slideDataArray.length <= 1) return;
+            currentSlideIndex = (currentSlideIndex + 1) % slideDataArray.length;
+            updateSlideUI();
+        }
+
+        function prevSlide() {
+            if (slideDataArray.length <= 1) return;
+            currentSlideIndex = (currentSlideIndex - 1 + slideDataArray.length) % slideDataArray.length;
+            updateSlideUI();
+        }
+
+        function goToSlide(index) {
+            currentSlideIndex = index;
+            updateSlideUI();
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initSlideshow();
+
+            const prevBtn = document.getElementById('prevSlide');
+            const nextBtn = document.getElementById('nextSlide');
+            if (prevBtn) prevBtn.addEventListener('click', () => prevSlide());
+            if (nextBtn) nextBtn.addEventListener('click', () => nextSlide());
+
+            // Handle window resizing to keep height responsive
+            window.addEventListener('resize', () => {
+                const activeSlide = document.querySelector('#slidesWrapper .slide.active');
+                if (activeSlide) adjustSliderHeight(activeSlide);
+            });
+        });
     </script>
 </body>
 
