@@ -208,6 +208,12 @@ app.options('*', cors(corsOptions));
 // Apply CORS to all routes (only once)
 app.use(cors(corsOptions));
 
+// Global X-Robots-Tag middleware for Google Search Console indexing
+app.use((req, res, next) => {
+    res.setHeader("X-Robots-Tag", "index, follow");
+    next();
+});
+
 // Force WWW and HTTPS Redirect Middleware (Production only)
 app.use((req, res, next) => {
   const host = req.headers.host || '';

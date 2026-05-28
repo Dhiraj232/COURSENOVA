@@ -1,20 +1,4 @@
-# robots.txt for COURSENOVA
-# Website URL: https://www.coursenova.in/
-
 User-agent: *
 Allow: /
 
-# Exclude sensitive private student areas and admin dashboard
-Disallow: /dashboard.html
-Disallow: /my-courses.html
-Disallow: /my-certificates.html
-Disallow: /course-content.html
-Disallow: /admin-dashboard.html
-Disallow: /admin-login.html
-Disallow: /checkout.html
-Disallow: /payment.html
-Disallow: /cart.html
-Disallow: /orders.html
-
-# Path to sitemap
 Sitemap: https://www.coursenova.in/sitemap.xml
