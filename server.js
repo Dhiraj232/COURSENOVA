@@ -311,6 +311,21 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
+// Explicit routes to ensure robots.txt and sitemap.xml are served with cache-prevention headers
+app.get('/robots.txt', (req, res) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.sendFile(path.join(__dirname, 'public', 'robots.txt'));
+});
+
+app.get('/sitemap.xml', (req, res) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.sendFile(path.join(__dirname, 'public', 'sitemap.xml'));
+});
+
 // Serve frontend static files from the specialized 'public' directory
 app.use(express.static(path.join(__dirname, 'public'), {
   maxAge: 0, // Disable caching during restoration/development
@@ -434,13 +449,6 @@ app.use('/api/admin/daily-challenge', require('./routes/dailyChallengeAdmin'));
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 
-// Explicit routes to ensure robots.txt and sitemap.xml are always accessible
-app.get('/robots.txt', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'robots.txt'));
-});
-app.get('/sitemap.xml', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'sitemap.xml'));
-});
 
 // Serve uploaded screenshots and generated certificates as static files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
