@@ -208,6 +208,32 @@ app.options('*', cors(corsOptions));
 // Apply CORS to all routes (only once)
 app.use(cors(corsOptions));
 
+// Force WWW and HTTPS Redirect Middleware (Production only)
+app.use((req, res, next) => {
+  const host = req.headers.host || '';
+  
+  // Bypass redirects for local development or native Render URLs to avoid development issues
+  if (host.includes('localhost') || host.includes('render.com') || process.env.NODE_ENV !== 'production') {
+      return next();
+  }
+  
+  // 1. Force Redirect from Non-WWW to WWW
+  if (!host.startsWith('www.')) {
+      const targetHost = 'www.' + host;
+      console.log(`[301 Redirect] WWW: Redirecting to https://${targetHost}${req.originalUrl}`);
+      return res.redirect(301, `https://${targetHost}${req.originalUrl}`);
+  }
+  
+  // 2. Force Redirect from HTTP to HTTPS
+  const isHttps = req.secure || req.headers['x-forwarded-proto'] === 'https';
+  if (!isHttps) {
+      console.log(`[301 Redirect] HTTPS: Redirecting to https://${host}${req.originalUrl}`);
+      return res.redirect(301, `https://${host}${req.originalUrl}`);
+  }
+  
+  next();
+});
+
 // ─── 2. Body Parsers ─────────────────────────────────────────────────────────
 app.use(express.json({ 
   limit: '10mb',
@@ -402,6 +428,13 @@ app.use('/api/admin/daily-challenge', require('./routes/dailyChallengeAdmin'));
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 
+// Explicit routes to ensure robots.txt and sitemap.xml are always accessible
+app.get('/robots.txt', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'robots.txt'));
+});
+app.get('/sitemap.xml', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'sitemap.xml'));
+});
 
 // Serve uploaded screenshots and generated certificates as static files
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
