@@ -15,77 +15,52 @@ const DailyChallenge = require('../models/DailyChallenge');
 const AuditLog = require('../models/AuditLog');
 const Notification = require('../models/Notification');
 
-// ── 10. PDF TO QUESTIONS GENERATOR ──────────────────────────────────
+// ── PDF QUESTION PARSER ──────────────────────────────────────────────
 const multer = require('multer');
-const { PDFParse } = require('pdf-parse');
+const pdfParse = require('pdf-parse'); // ← correct: pdf-parse exports a function directly
 const upload = multer({ storage: multer.memoryStorage() });
 
-async function parsePdfBuffer(buffer) {
-    const parser = new PDFParse({ verbosity: 0, data: buffer });
-    const result = await parser.getText();
-    return result.text || '';
-}
-
-router.post('/generate-questions-from-pdf', requireAdmin, upload.single('pdf'), catchAsync(async (req, res) => {
-    console.log('[PDF Generator] Request received. File present:', !!req.file, 'Size:', req.file?.size);
-    if (!req.file) throw new AppError('No PDF file uploaded', 400);
-
-    let text = '';
-    try {
-        text = await parsePdfBuffer(req.file.buffer);
-        console.log('[PDF Generator] Text extracted, length:', text.length);
-        console.log('[PDF Generator] First 500 chars:', text.substring(0, 500));
-    } catch (pdfErr) {
-        console.error('[PDF Generator] PDF parse error:', pdfErr.message);
-        return res.json({ ok: false, message: `Failed to read PDF: ${pdfErr.message}` });
-    }
-
+// ── Parse MCQ questions from raw PDF text ────────────────────────────
+function parseMCQFromText(text) {
     const questions = [];
-
-    // Strategy 1: Split by numbered lines like "1." or "1)"
     const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-    console.log('[PDF Generator] Total lines:', lines.length);
 
     let i = 0;
     while (i < lines.length) {
         const line = lines[i];
-
-        // Check if line starts with a question number
-        const qMatch = line.match(/^(\d+)[\.\)]\s+(.+)/);
+        // Match lines like: "1. Question" or "1) Question" or "Q1. Question"
+        const qMatch = line.match(/^(?:Q?\s*(\d+)[.)]\s*)(.+)/i);
         if (qMatch) {
             const questionText = qMatch[2].trim();
             const options = [];
             let correctIndex = 0;
             let j = i + 1;
 
-            // Collect option lines that follow
-            while (j < lines.length && j < i + 15) {
+            while (j < lines.length && j < i + 20) {
                 const optLine = lines[j];
-                const optMatch = optLine.match(/^([A-Da-d])[\.\)\s]\s*(.+)/);
-                const ansMatch = optLine.match(/(?:ans(?:wer)?|correct)[:\s]+([A-Da-d])/i);
-                
+                // Match: "A) text", "A. text", "A text", "(A) text"
+                const optMatch = optLine.match(/^(?:\()?([A-Da-d])(?:\)|[.)]\s*|\s+)(.+)/);
+                // Match: "Answer: B" or "Ans: b" or "Correct: C"
+                const ansMatch = optLine.match(/^(?:ans(?:wer)?|correct\s*(?:answer)?|key)\s*[:\-]\s*([A-Da-d])/i);
+
                 if (optMatch) {
                     options.push(optMatch[2].trim());
                 } else if (ansMatch) {
                     correctIndex = ansMatch[1].toUpperCase().charCodeAt(0) - 65;
-                } else if (options.length > 0 && /^\d+[\.\)]/.test(optLine)) {
-                    // Next question started
-                    break;
+                } else if (options.length > 0 && /^(?:Q?\s*\d+[.)])/.test(optLine)) {
+                    break; // Next question started
                 }
                 j++;
             }
 
             if (options.length >= 2) {
+                // Pad to 4 options if needed
                 while (options.length < 4) options.push('—');
-                const safeIdx = (correctIndex >= 0 && correctIndex < 4) ? correctIndex : 0;
-                const correctAnswerStr = ['A', 'B', 'C', 'D'][safeIdx];
+                const safeIdx = correctIndex >= 0 && correctIndex < 4 ? correctIndex : 0;
                 questions.push({
                     question: questionText,
                     options: options.slice(0, 4),
-                    correctAnswer: correctAnswerStr,
-                    correctIndex: safeIdx,
-                    category: 'Imported',
-                    subject: 'General'
+                    correctIndex: safeIdx
                 });
                 i = j;
                 continue;
@@ -93,31 +68,83 @@ router.post('/generate-questions-from-pdf', requireAdmin, upload.single('pdf'), 
         }
         i++;
     }
+    return questions;
+}
 
-    console.log('[PDF Generator] Questions found:', questions.length);
+// ── POST /api/admin/generate-questions-from-pdf (generic preview) ─────
+router.post('/generate-questions-from-pdf', requireAdmin, upload.single('pdf'), catchAsync(async (req, res) => {
+    if (!req.file) throw new AppError('No PDF file uploaded', 400);
 
-    const lang = req.query.lang || 'en';
+    let text = '';
+    try {
+        const result = await pdfParse(req.file.buffer);
+        text = result.text || '';
+    } catch (pdfErr) {
+        return res.json({ ok: false, message: `Failed to read PDF: ${pdfErr.message}` });
+    }
+
+    const questions = parseMCQFromText(text);
 
     if (questions.length === 0) {
-        return res.json({ 
-            ok: false, 
-            message: `No MCQ questions detected. Make sure your PDF has format: "1. Question text" followed by "A) Option 1". Raw text preview: "${text.substring(0, 300)}"` 
+        return res.json({
+            ok: false,
+            message: `No MCQ questions detected. Format your PDF as:\n1. Question text\nA) Option 1\nB) Option 2\nC) Option 3\nD) Option 4\nAnswer: B\n\nPreview of extracted text: "${text.substring(0, 400)}"`
         });
     }
 
-    // Return field names based on language
-    const formatted = questions.map(q => {
-        if (lang === 'hi') {
-            return {
-                question_hi: q.question,
-                options_hi: q.options
-            };
-        }
-        return q; // English: return as-is (question, options, correctAnswer, category, subject)
+    res.json({ ok: true, questions, count: questions.length });
+}));
+
+// ── POST /api/admin/courses/:id/upload-questions-pdf ──────────────────
+// Parses a PDF and SAVES questions directly into the course in MongoDB
+router.post('/courses/:id/upload-questions-pdf', requireAdmin, upload.single('pdf'), catchAsync(async (req, res) => {
+    if (!req.file) throw new AppError('No PDF file uploaded', 400);
+
+    const course = await Course.findById(req.params.id);
+    if (!course) throw new AppError('Course not found', 404);
+
+    let text = '';
+    try {
+        const result = await pdfParse(req.file.buffer);
+        text = result.text || '';
+    } catch (pdfErr) {
+        return res.json({ ok: false, message: `Failed to read PDF: ${pdfErr.message}` });
+    }
+
+    const parsed = parseMCQFromText(text);
+
+    if (parsed.length === 0) {
+        return res.json({
+            ok: false,
+            message: `No MCQ questions found in PDF. Use format:\n1. Question\nA) Option A\nB) Option B\nC) Option C\nD) Option D\nAnswer: A`
+        });
+    }
+
+    // replace=true: replace all questions; replace=false: append
+    const shouldReplace = req.query.replace === 'true';
+    if (shouldReplace) {
+        course.quizQuestions = parsed;
+    } else {
+        course.quizQuestions.push(...parsed);
+    }
+
+    await course.save();
+
+    await logAdminAction(req, 'PDF_QUESTIONS_UPLOADED', course._id, 'Course', {
+        title: course.title,
+        questionsAdded: parsed.length,
+        mode: shouldReplace ? 'replace' : 'append'
     });
 
-    res.json({ ok: true, questions: formatted, count: formatted.length });
+    res.json({
+        ok: true,
+        message: `✅ ${parsed.length} questions ${shouldReplace ? 'saved' : 'added'} to "${course.title}"`,
+        questionsAdded: parsed.length,
+        totalQuestions: course.quizQuestions.length,
+        questions: parsed
+    });
 }));
+
 
 // Helper for audit trail
 async function logAdminAction(req, action, targetId, targetModel, details = {}) {

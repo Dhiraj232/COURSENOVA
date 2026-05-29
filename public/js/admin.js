@@ -471,10 +471,35 @@ function renderCourseModal(title, course = null) {
                 </div>
 
                 <div id="tab-quiz" class="tab-pane">
-                    <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
-                        <h4>Final Exam Quiz</h4>
-                        <button type="button" class="btn btn-sm btn-primary" onclick="addQuizRow()">+ Add Question</button>
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; flex-wrap:wrap; gap:10px;">
+                        <h4 style="margin:0;">Final Exam Quiz</h4>
+                        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                            <label for="pdfQuizUpload" class="btn btn-sm" style="background:linear-gradient(135deg,#6366f1,#a855f7);color:#fff;cursor:pointer;display:flex;align-items:center;gap:6px;padding:7px 14px;border-radius:8px;font-weight:700;font-size:0.82rem;" title="Upload a PDF with MCQ questions to auto-fill the quiz">
+                                <i class="fas fa-file-pdf"></i> Upload Questions PDF
+                            </label>
+                            <input type="file" id="pdfQuizUpload" accept=".pdf" style="display:none" onchange="previewPDFQuestions(event, '${course?._id || ''}')">
+                            <button type="button" class="btn btn-sm btn-primary" onclick="addQuizRow()">+ Add Question</button>
+                        </div>
                     </div>
+
+                    <!-- PDF Preview Panel (hidden by default) -->
+                    <div id="pdfPreviewPanel" style="display:none; background:#f8fafc; border:1.5px solid #e2e8f0; border-radius:12px; padding:16px; margin-bottom:16px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+                            <div>
+                                <strong id="pdfPreviewTitle" style="color:#1e293b;">📄 PDF Preview</strong>
+                                <span id="pdfPreviewCount" style="background:#ede9fe;color:#6366f1;font-size:0.75rem;font-weight:700;padding:2px 10px;border-radius:20px;margin-left:8px;"></span>
+                            </div>
+                            <div style="display:flex; gap:8px; align-items:center;">
+                                <label style="font-size:0.82rem;color:#475569;font-weight:600;display:flex;align-items:center;gap:5px;">
+                                    <input type="checkbox" id="pdfReplaceMode" checked style="accent-color:#6366f1;"> Replace existing questions
+                                </label>
+                                <button type="button" id="pdfSaveBtn" onclick="savePDFQuestions()" class="btn btn-sm" style="background:#10b981;color:#fff;font-weight:700;">✅ Save to Course</button>
+                                <button type="button" onclick="document.getElementById('pdfPreviewPanel').style.display='none'; window._pdfParsedQ=[];" class="btn btn-sm btn-outline">Cancel</button>
+                            </div>
+                        </div>
+                        <div id="pdfQPreviewList" style="max-height:260px; overflow-y:auto; display:flex; flex-direction:column; gap:10px;"></div>
+                    </div>
+
                     <div id="quiz-list" class="item-list">
                         ${quiz.map((q, i) => renderQuizRow(q, i)).join('')}
                     </div>
@@ -534,7 +559,128 @@ function renderQuizRow(q = {}, i) {
     `;
 }
 
-async function handleCourseSubmit(id) {
+    // ── PDF QUESTION UPLOAD ──────────────────────────────────────────
+    window._pdfParsedQ = [];     // temp store for parsed questions
+    window._pdfCourseId = null;  // current course _id being edited
+
+window.previewPDFQuestions = async function(event, courseId) {
+    const file = event.target.files[0];
+    if (!file) return;
+    event.target.value = ''; // reset so same file can be re-uploaded
+
+    window._pdfCourseId = courseId;
+    const panel = document.getElementById('pdfPreviewPanel');
+    const previewList = document.getElementById('pdfQPreviewList');
+    const countEl = document.getElementById('pdfPreviewCount');
+    const saveBtn = document.getElementById('pdfSaveBtn');
+
+    panel.style.display = 'block';
+    previewList.innerHTML = '<div style="text-align:center;padding:20px;color:#64748b;"><i class="fas fa-spinner fa-spin"></i> Parsing PDF...</div>';
+    countEl.textContent = '';
+    saveBtn.disabled = true;
+
+    const fd = new FormData();
+    fd.append('pdf', file);
+
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_BASE}/generate-questions-from-pdf`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: fd
+        });
+        const data = await res.json();
+
+        if (!data.ok || !data.questions || data.questions.length === 0) {
+            previewList.innerHTML = `<div style="color:#ef4444;font-size:0.88rem;white-space:pre-wrap;background:#fef2f2;padding:14px;border-radius:8px;">❌ ${data.message || 'No questions found.'}</div>`;
+            countEl.textContent = '0 questions';
+            return;
+        }
+
+        window._pdfParsedQ = data.questions;
+        countEl.textContent = `${data.questions.length} questions found`;
+        saveBtn.disabled = false;
+
+        previewList.innerHTML = data.questions.map((q, i) => `
+            <div style="background:white;border:1px solid #e2e8f0;border-radius:8px;padding:12px;">
+                <div style="font-weight:700;font-size:0.88rem;color:#1e293b;margin-bottom:8px;">Q${i+1}. ${q.question}</div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
+                    ${q.options.map((opt, j) => `
+                        <div style="font-size:0.8rem;padding:4px 8px;border-radius:5px;background:${j === q.correctIndex ? '#dcfce7' : '#f8fafc'};color:${j === q.correctIndex ? '#166534' : '#475569'};">
+                            ${['A','B','C','D'][j]}) ${opt} ${j === q.correctIndex ? '✓' : ''}
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `).join('');
+    } catch (err) {
+        previewList.innerHTML = `<div style="color:#ef4444;">❌ Error: ${err.message}</div>`;
+    }
+};
+
+window.savePDFQuestions = async function() {
+    const questions = window._pdfParsedQ;
+    const courseId = window._pdfCourseId;
+    if (!questions || questions.length === 0) { alert('No questions to save'); return; }
+
+    const quizList = document.getElementById('quiz-list');
+    const replaceMode = document.getElementById('pdfReplaceMode').checked;
+
+    if (!courseId) {
+        // New course not saved yet — just inject into the quiz form rows
+        if (replaceMode) quizList.innerHTML = '';
+        questions.forEach(q => quizList.insertAdjacentHTML('beforeend', renderQuizRow(q, quizList.querySelectorAll('.quiz-row').length)));
+        document.getElementById('pdfPreviewPanel').style.display = 'none';
+        window._pdfParsedQ = [];
+        alert(`✅ ${questions.length} questions added to the form. Click "Save Changes" to persist.`);
+        return;
+    }
+
+    const saveBtn = document.getElementById('pdfSaveBtn');
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
+
+    try {
+        const token = localStorage.getItem('token');
+
+        // Get current questions from the course (to append if needed)
+        let finalQuestions = questions;
+        if (!replaceMode) {
+            const currentRes = await fetch(`${API_BASE}/courses`, { headers: { 'Authorization': `Bearer ${token}` } });
+            const currentData = await currentRes.json();
+            const currentCourse = (currentData.courses || []).find(c => c._id === courseId);
+            const existing = (currentCourse?.quizQuestions || []);
+            finalQuestions = [...existing, ...questions];
+        }
+
+        // Save directly to course
+        const res = await fetch(`${API_BASE}/courses/${courseId}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ quizQuestions: finalQuestions })
+        });
+        const data = await res.json();
+
+        if (!data.ok) throw new Error(data.message || 'Save failed');
+
+        // Also update the quiz form rows visually
+        if (replaceMode) quizList.innerHTML = '';
+        questions.forEach(q => quizList.insertAdjacentHTML('beforeend', renderQuizRow(q, quizList.querySelectorAll('.quiz-row').length)));
+
+        document.getElementById('pdfPreviewPanel').style.display = 'none';
+        window._pdfParsedQ = [];
+        saveBtn.textContent = '✅ Save to Course';
+        saveBtn.disabled = false;
+        alert(`✅ ${questions.length} questions saved to course successfully!`);
+    } catch (err) {
+        saveBtn.textContent = '✅ Save to Course';
+        saveBtn.disabled = false;
+        alert('Error saving questions: ' + err.message);
+    }
+};
+
+
+    async function handleCourseSubmit(id) {
     const payload = {
         title: document.getElementById('courseTitle').value,
         slug: document.getElementById('courseSlug').value,
