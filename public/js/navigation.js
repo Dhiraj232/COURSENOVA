@@ -89,30 +89,30 @@ function setupNavigation() {
     if (!navMenu) return;
 
     const links = [
-        { name: 'Courses', href: 'certificates.html', key: 'courses' },
-        { name: 'Mock Tests', href: 'mock-tests.html', key: 'tests' },
-        { name: 'Daily Challenge <span class="nav-badge" style="background:#ef4444;color:white;font-size:0.65rem;padding:2px 6px;border-radius:10px;margin-left:4px;vertical-align:top;font-weight:700;">NEW 🔥</span>', href: 'daily-challenge.html', key: 'daily-challenge' },
-        { name: 'Community', href: 'community.html', key: 'community' },
-        { name: 'Store', href: 'store.html', key: 'store' },
-        { name: 'About', href: 'about.html', key: 'about' }
+        { name: 'Courses', href: 'certificates', key: 'courses' },
+        { name: 'Mock Tests', href: 'mock-tests', key: 'tests' },
+        { name: 'Daily Challenge <span class="nav-badge" style="background:#ef4444;color:white;font-size:0.65rem;padding:2px 6px;border-radius:10px;margin-left:4px;vertical-align:top;font-weight:700;">NEW 🔥</span>', href: 'daily-challenge', key: 'daily-challenge' },
+        { name: 'Community', href: 'community', key: 'community' },
+        { name: 'Store', href: 'store', key: 'store' },
+        { name: 'About', href: 'about', key: 'about' }
     ];
 
     const currentPage = getCurrentPage();
 
     // Inject normalized links
     navMenu.innerHTML = links.map(link => {
-        let isActive = (link.href === currentPage + '.html') || (link.href === 'index.html' && currentPage === 'index');
+        let isActive = (link.href === currentPage) || (link.href === '/' && currentPage === 'index');
         
         if (link.dropdown) {
             // Check if any dropdown item is active
-            const isDropdownActive = link.dropdown.some(d => d.href === currentPage + '.html' || (currentPage === 'my-certificates' && d.href === 'certificates.html'));
+            const isDropdownActive = link.dropdown.some(d => d.href === currentPage || (currentPage === 'my-certificates' && d.href === 'certificates'));
             
             let dropdownHtml = `<li class="nav-dropdown">
                 <a href="${link.href}" class="nav-dropdown-toggle ${isDropdownActive ? 'active' : ''}">${link.name} <i class="fas fa-chevron-down ChevronIcon"></i></a>
                 <ul class="nav-dropdown-menu">`;
             
             link.dropdown.forEach(d => {
-                let isSubActive = (d.href === currentPage + '.html') || (currentPage === 'my-certificates' && d.href === 'certificates.html');
+                let isSubActive = (d.href === currentPage) || (currentPage === 'my-certificates' && d.href === 'certificates');
                 dropdownHtml += `<li><a href="${d.href}" class="${isSubActive ? 'active' : ''}">${d.name}</a></li>`;
             });
             
@@ -120,7 +120,7 @@ function setupNavigation() {
             return dropdownHtml;
         } else {
             // Specific active rules
-            if (currentPage === 'mock-tests' && link.href === 'mock-tests.html') isActive = true;
+            if (currentPage === 'mock-tests' && link.href === 'mock-tests') isActive = true;
 
             return `<li><a href="${link.href}" class="${isActive ? 'active' : ''}">${link.name}</a></li>`;
         }
@@ -415,17 +415,17 @@ if (typeof window !== 'undefined') {
  */
 function getPageLinks() {
     return {
-        home: 'index.html',
-        courses: 'certificates.html',
-        practice: 'practice.html',
-        store: 'store.html',
-        community: 'community.html',
-        certificates: 'my-certificates.html',
-        login: 'signup.html',
-        signup: 'signup.html',
-        dashboard: 'dashboard.html',
-        profile: 'profile.html',
-        analytics: 'analytics.html'
+        home: '/',
+        courses: 'certificates',
+        practice: 'practice',
+        store: 'store',
+        community: 'community',
+        certificates: 'my-certificates',
+        login: 'signup',
+        signup: 'signup',
+        dashboard: 'dashboard',
+        profile: 'profile',
+        analytics: 'analytics'
     };
 }
 
@@ -541,8 +541,8 @@ function setupUserDropdown() {
     if (!user) {
         navButtons.innerHTML = `
             <div id="guestButtons" style="display: flex; gap: 1rem; align-items: center;">
-                <a href="signup.html" class="btn-login" style="text-decoration: none;">Login</a>
-                <a href="signup.html" class="btn-signup">
+                <a href="signup" class="btn-login" style="text-decoration: none;">Login</a>
+                <a href="signup" class="btn-signup">
                     <i class="fas fa-user-plus"></i> Signup
                 </a>
             </div>
@@ -554,7 +554,7 @@ function setupUserDropdown() {
     const firstName = user.name || user.fullName ? (user.name || user.fullName).split(' ')[0] : 'User';
     const email = user.email || '';
     const initial = firstName.charAt(0).toUpperCase();
-    const dashboardLink = role === 'admin' ? 'admin-dashboard.html' : 'dashboard.html';
+    const dashboardLink = role === 'admin' ? 'admin-dashboard' : 'dashboard';
 
     // Create user menu HTML
     const userMenuHTML = `
@@ -582,18 +582,18 @@ function setupUserDropdown() {
                     </li>
                     ${role !== 'admin' ? `
                     <li class="dropdown-item">
-                        <a href="mock-tests.html" onclick="window.closeUserDropdown()">
+                        <a href="mock-tests" onclick="window.closeUserDropdown()">
                             <i class="fas fa-file-alt"></i> Mock Tests
                         </a>
                     </li>
                     <li class="dropdown-item">
-                        <a href="my-certificates.html" onclick="window.closeUserDropdown()">
+                        <a href="my-certificates" onclick="window.closeUserDropdown()">
                             <i class="fas fa-trophy"></i> My Certificates
                         </a>
                     </li>
                     ` : ''}
                     <li class="dropdown-item">
-                        <a href="community.html" onclick="window.closeUserDropdown()">
+                        <a href="community" onclick="window.closeUserDropdown()">
                             <i class="fas fa-users"></i> Community
                         </a>
                     </li>
@@ -681,7 +681,7 @@ async function logoutUser(event) {
     sessionStorage.clear();
 
     setTimeout(() => {
-        window.location.href = 'index.html?logout=success';
+        window.location.href = '/?logout=success';
     }, 800);
 }
 

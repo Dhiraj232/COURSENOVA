@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const compression = require('compression');
 const fs = require('fs');
 
 const path = require('path');
@@ -172,6 +173,7 @@ process.on('uncaughtException', err => {
 });
 
 const app = express();
+app.use(compression());
 // ─── Security Middlewares ─────────────────────────────────────────
 
 // 1. Helmet for Security Headers with CSP for YouTube
@@ -237,6 +239,19 @@ app.use((req, res, next) => {
       return res.redirect(301, `https://${host}${req.originalUrl}`);
   }
   
+  next();
+});
+
+// Force Trailing Slash Removal Middleware (e.g. /about/ -> /about) to prevent duplicate content
+app.use((req, res, next) => {
+  if (req.method === 'GET' || req.method === 'HEAD') {
+    if (req.path.length > 1 && req.path.endsWith('/')) {
+      const cleanPath = req.path.slice(0, -1);
+      const query = req.url.slice(req.path.length);
+      console.log(`[301 Redirect] Trailing Slash: Redirecting ${req.originalUrl} to ${cleanPath}${query}`);
+      return res.redirect(301, cleanPath + query);
+    }
+  }
   next();
 });
 
@@ -326,11 +341,66 @@ app.get('/sitemap.xml', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'sitemap.xml'));
 });
 
+// 1. 301 Redirect direct .html requests to extensionless (except index.html -> /)
+app.use((req, res, next) => {
+    if ((req.method === 'GET' || req.method === 'HEAD') && req.path.endsWith('.html')) {
+        let cleanPath = req.path.slice(0, -5);
+        if (cleanPath.endsWith('/index')) {
+            cleanPath = cleanPath.slice(0, -6);
+        }
+        if (cleanPath === '') {
+            cleanPath = '/';
+        }
+        const query = req.url.slice(req.path.length);
+        console.log(`[301 Redirect] HTML: Redirecting ${req.originalUrl} to ${cleanPath}${query}`);
+        return res.redirect(301, cleanPath + query);
+    }
+    next();
+});
+
+// 2. Serve HTML files extensionless (e.g. /about -> about.html)
+app.use((req, res, next) => {
+    if (req.method === 'GET' || req.method === 'HEAD') {
+        let cleanPath = req.path;
+        if (cleanPath.endsWith('/') && cleanPath.length > 1) {
+            cleanPath = cleanPath.slice(0, -1);
+        }
+        if (path.extname(cleanPath)) {
+            return next();
+        }
+        if (cleanPath.startsWith('/api/')) {
+            return next();
+        }
+        const filePath = path.join(__dirname, 'public', cleanPath + '.html');
+        fs.access(filePath, fs.constants.F_OK, (err) => {
+            if (!err) {
+                res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+                res.setHeader('Pragma', 'no-cache');
+                res.setHeader('Expires', '0');
+                return res.sendFile(filePath);
+            }
+            next();
+        });
+    } else {
+        next();
+    }
+});
+
 // Serve frontend static files from the specialized 'public' directory
 app.use(express.static(path.join(__dirname, 'public'), {
-  maxAge: 0, // Disable caching during restoration/development
   setHeaders: (res, filePath) => {
-    if (filePath.endsWith('.html') || filePath.endsWith('.js') || filePath.endsWith('.css')) {
+    const ext = path.extname(filePath).toLowerCase();
+    
+    // HTML files, robots.txt, and sitemap.xml should NEVER be cached
+    if (ext === '.html' || filePath.endsWith('robots.txt') || filePath.endsWith('sitemap.xml')) {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    } else if (process.env.NODE_ENV === 'production') {
+      // Long-term caching for static assets in production (1 year)
+      res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    } else {
+      // Disable caching for development
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');

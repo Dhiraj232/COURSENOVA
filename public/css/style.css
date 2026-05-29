@@ -1858,3 +1858,111 @@ textarea {
         font-size: 0.8rem;
     }
 }
+
+/* ==================== ADVANCED SEO MARKETING HUB ==================== */
+.seo-marketing-hub {
+    padding: 5rem 2rem;
+    background-color: var(--white);
+}
+
+.seo-hub-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    text-align: center;
+}
+
+.seo-hub-subtitle {
+    color: var(--text-light);
+    font-size: 1.1rem;
+    margin-top: -1.5rem;
+    margin-bottom: 3.5rem;
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.seo-hub-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 2.5rem;
+    text-align: left;
+}
+
+.seo-hub-card {
+    background: var(--white);
+    padding: 2.5rem 2rem;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(229, 231, 235, 0.5);
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.seo-hub-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.seo-hub-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 20px 40px rgba(30, 58, 138, 0.08);
+    border-color: rgba(99, 102, 241, 0.2);
+}
+
+.seo-hub-card:hover::before {
+    opacity: 1;
+}
+
+.seo-card-icon {
+    font-size: 2rem;
+    color: var(--primary-color);
+    background: rgba(99, 102, 241, 0.08);
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.seo-hub-card:hover .seo-card-icon {
+    background: var(--primary-color);
+    color: var(--white);
+    transform: rotateY(180deg);
+}
+
+.seo-hub-card h3 {
+    font-size: 1.25rem;
+    color: var(--primary-color);
+    font-weight: 700;
+    margin-bottom: 0.75rem;
+}
+
+.seo-hub-card p {
+    font-size: 0.95rem;
+    color: var(--text-light);
+    line-height: 1.6;
+}
+
+@media (max-width: 768px) {
+    .seo-marketing-hub {
+        padding: 3.5rem 1rem;
+    }
+    .seo-hub-subtitle {
+        font-size: 1rem;
+        margin-bottom: 2.5rem;
+    }
+    .seo-hub-grid {
+        gap: 1.5rem;
+    }
+}

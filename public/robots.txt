@@ -1,4 +1,23 @@
 User-agent: *
 Allow: /
+Disallow: /dashboard
+Disallow: /profile
+Disallow: /admin-dashboard
+Disallow: /admin-login
+Disallow: /admin-payments
+Disallow: /admin-daily-challenge
+Disallow: /cart
+Disallow: /checkout
+Disallow: /payment
+Disallow: /my-courses
+Disallow: /my-certificates
+Disallow: /daily-challenge-taker
+Disallow: /daily-challenge-history
+Disallow: /test-player
+Disallow: /testing-center
+Disallow: /premium-course-player
+Disallow: /quiz-engine
+Disallow: /quiz-results
+Disallow: /auth-callback
 
 Sitemap: https://www.coursenova.in/sitemap.xml

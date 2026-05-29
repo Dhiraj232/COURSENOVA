@@ -8,13 +8,13 @@
         <priority>1.0</priority>
     </url>
     <url>
-        <loc>https://www.coursenova.in/about.html</loc>
+        <loc>https://www.coursenova.in/about</loc>
         <lastmod>2026-05-28</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.8</priority>
     </url>
     <url>
-        <loc>https://www.coursenova.in/signup.html</loc>
+        <loc>https://www.coursenova.in/signup</loc>
         <lastmod>2026-05-28</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.7</priority>
@@ -22,31 +22,31 @@
 
     <!-- Core Educational Sections -->
     <url>
-        <loc>https://www.coursenova.in/certificates.html</loc>
+        <loc>https://www.coursenova.in/certificates</loc>
         <lastmod>2026-05-28</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.9</priority>
     </url>
     <url>
-        <loc>https://www.coursenova.in/premium-courses.html</loc>
+        <loc>https://www.coursenova.in/premium-courses</loc>
         <lastmod>2026-05-28</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.9</priority>
     </url>
     <url>
-        <loc>https://www.coursenova.in/mock-tests.html</loc>
+        <loc>https://www.coursenova.in/mock-tests</loc>
         <lastmod>2026-05-28</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.9</priority>
     </url>
     <url>
-        <loc>https://www.coursenova.in/practice.html</loc>
+        <loc>https://www.coursenova.in/practice</loc>
         <lastmod>2026-05-28</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.9</priority>
     </url>
     <url>
-        <loc>https://www.coursenova.in/daily-challenge.html</loc>
+        <loc>https://www.coursenova.in/daily-challenge</loc>
         <lastmod>2026-05-28</lastmod>
         <changefreq>daily</changefreq>
         <priority>0.8</priority>
@@ -54,13 +54,13 @@
 
     <!-- Community & Marketplace -->
     <url>
-        <loc>https://www.coursenova.in/community.html</loc>
+        <loc>https://www.coursenova.in/community</loc>
         <lastmod>2026-05-28</lastmod>
         <changefreq>weekly</changefreq>
         <priority>0.8</priority>
     </url>
     <url>
-        <loc>https://www.coursenova.in/store.html</loc>
+        <loc>https://www.coursenova.in/store</loc>
         <lastmod>2026-05-28</lastmod>
         <changefreq>daily</changefreq>
         <priority>0.8</priority>
@@ -68,7 +68,7 @@
 
     <!-- Utility & Verification -->
     <url>
-        <loc>https://www.coursenova.in/verify-certificate.html</loc>
+        <loc>https://www.coursenova.in/verify-certificate</loc>
         <lastmod>2026-05-28</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.5</priority>
@@ -76,13 +76,13 @@
 
     <!-- Legal Pages -->
     <url>
-        <loc>https://www.coursenova.in/privacy-policy.html</loc>
+        <loc>https://www.coursenova.in/privacy-policy</loc>
         <lastmod>2026-05-28</lastmod>
         <changefreq>yearly</changefreq>
         <priority>0.3</priority>
     </url>
     <url>
-        <loc>https://www.coursenova.in/terms-and-conditions.html</loc>
+        <loc>https://www.coursenova.in/terms-and-conditions</loc>
         <lastmod>2026-05-28</lastmod>
         <changefreq>yearly</changefreq>
         <priority>0.3</priority>

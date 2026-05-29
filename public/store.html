@@ -4,28 +4,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Peer-to-Peer College Book Marketplace | COURSENOVA</title>
+    <title>Used Books Marketplace & Student Store | COURSENOVA</title>
 
     <!-- SEO Meta Tags -->
-    <meta name="title" content="Peer-to-Peer College Book Marketplace | COURSENOVA">
-    <meta name="description" content="Buy and sell used textbooks, exam guides, and semester notes directly with your college peers on COURSENOVA Book Store. Save money on college books.">
-    <meta name="keywords" content="college book store, buy used textbooks, sell textbooks, peer-to-peer book exchange, coursenova marketplace">
+    <meta name="title" content="Used Books Marketplace & Student Store | COURSENOVA">
+    <meta name="description" content="Buy, sell, or exchange used college textbooks and study materials on COURSENOVA's student marketplace. Save money on syllabus-aligned books.">
+    <meta name="keywords" content="college book store, buy used textbooks, sell textbooks, peer-to-peer book exchange, coursenova marketplace, bookstore">
     <meta name="robots" content="index, follow">
     <meta name="googlebot" content="index, follow">
-    <link rel="canonical" href="https://www.coursenova.in/store.html">
+    <link rel="canonical" href="https://www.coursenova.in/store">
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://www.coursenova.in/store.html">
-    <meta property="og:title" content="Peer-to-Peer College Book Marketplace | COURSENOVA">
-    <meta property="og:description" content="Buy and sell used textbooks, exam guides, and semester notes directly with your college peers on COURSENOVA Book Store. Save money on college books.">
+    <meta property="og:url" content="https://www.coursenova.in/store">
+    <meta property="og:title" content="Used Books Marketplace & Student Store | COURSENOVA">
+    <meta property="og:description" content="Buy, sell, or exchange used textbooks directly with your college peers on COURSENOVA Book Store. Save money on college books.">
     <meta property="og:image" content="https://www.coursenova.in/assets/og-banner.png">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://www.coursenova.in/store.html">
-    <meta property="twitter:title" content="Peer-to-Peer College Book Marketplace | COURSENOVA">
-    <meta property="twitter:description" content="Buy and sell used textbooks, exam guides, and semester notes directly with your college peers on COURSENOVA Book Store. Save money on college books.">
+    <meta property="twitter:url" content="https://www.coursenova.in/store">
+    <meta property="twitter:title" content="Used Books Marketplace & Student Store | COURSENOVA">
+    <meta property="twitter:description" content="Buy, sell, or exchange used textbooks directly with your college peers on COURSENOVA Book Store. Save money on college books.">
     <meta property="twitter:image" content="https://www.coursenova.in/assets/og-banner.png">
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
@@ -862,7 +862,7 @@
     <!-- --------------- COURSENOVA NAVBAR --------------- -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
-            <a href="index.html" class="logo"><img src="images/coursenova-logo.png" alt="COURSENOVA"> <span>COURSENOVA</span></a>
+            <a href="/" class="logo"><img src="images/coursenova-logo.png" alt="COURSENOVA"> <span>COURSENOVA</span></a>
             <ul class="nav-menu" id="navMenu"></ul>
             <div class="nav-buttons" id="navButtons"></div>
             <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
@@ -1275,7 +1275,7 @@
 
         // --- NAVIGATE TO BOOK DETAIL ---
         function goToBook(id) {
-            window.location.href = `book-detail.html?id=${id}`;
+            window.location.href = `book-detail?id=${id}`;
         }
 
         // --- STATS ---
@@ -1341,7 +1341,7 @@
                     <div class="icon"></div>
                     <h3>Login Required</h3>
                     <p>Please log in to view and manage your listings</p>
-                    <a href="signup.html" class="apply-btn" style="display:inline-block;max-width:180px;margin:0 auto;text-decoration:none;text-align:center;">Login / Sign Up</a>
+                    <a href="signup" class="apply-btn" style="display:inline-block;max-width:180px;margin:0 auto;text-decoration:none;text-align:center;">Login / Sign Up</a>
                 </div>`;
                 return;
             }
