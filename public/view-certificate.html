@@ -278,6 +278,47 @@
             box-shadow: 0 10px 20px rgba(0,0,0,0.1);
         }
 
+        .cert-wrapper {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 750px;
+            overflow: visible;
+        }
+
+        .certificate-canvas {
+            transform-origin: top center;
+            flex-shrink: 0;
+            transition: transform 0.2s ease;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column !important;
+                padding: 1rem !important;
+                justify-content: flex-start !important;
+            }
+            .controls {
+                position: relative !important;
+                top: 0 !important;
+                right: 0 !important;
+                flex-direction: row !important;
+                justify-content: center !important;
+                width: 100% !important;
+                margin-bottom: 1.5rem !important;
+                flex-wrap: wrap !important;
+                gap: 0.5rem !important;
+            }
+            .controls .btn {
+                padding: 0.6rem 1rem !important;
+                font-size: 0.82rem !important;
+                flex: 1 !important;
+                min-width: 120px !important;
+                justify-content: center !important;
+            }
+        }
+
         @media print {
             body { padding: 0; background: white; }
             .controls { display: none; }
@@ -294,6 +335,7 @@
 
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="/images/coursenova-logo.png">
+<link rel="stylesheet" href="css/responsive.css">
 </head>
 <body>
     <div class="controls">
@@ -308,10 +350,11 @@
         </button>
     </div>
 
-    <div class="certificate-canvas" id="certCanvas">
-        <div class="bg-pattern"></div>
-        <div class="border-accent"></div>
-        <div class="inner-frame"></div>
+    <div class="cert-wrapper">
+        <div class="certificate-canvas" id="certCanvas">
+            <div class="bg-pattern"></div>
+            <div class="border-accent"></div>
+            <div class="inner-frame"></div>
 
         <!-- Verified Ribbon -->
         <div class="verified-ribbon">
@@ -350,6 +393,7 @@
                 <span class="signature-img">Coursenova</span>
                 <div class="issued-by">Issued by</div>
             </div>
+        </div>
         </div>
     </div>
 
@@ -403,6 +447,7 @@
 
                     // Reveal canvas
                     document.getElementById('certCanvas').style.display = 'block';
+                    adjustCertificateScale();
 
                     // Setup Download Handler
                     document.getElementById('btnDownload').onclick = async () => {
@@ -429,6 +474,29 @@
                 alert(`Connection Error: ${err.message}\n\nPlease check if the server is running on Port 5000 and MongoDB is connected.`);
             }
         });
+        function adjustCertificateScale() {
+            const canvas = document.getElementById('certCanvas');
+            const wrapper = document.querySelector('.cert-wrapper');
+            if (!canvas || !wrapper) return;
+            
+            const windowWidth = window.innerWidth;
+            const padding = windowWidth < 768 ? 20 : 64; // smaller padding on mobile
+            const targetWidth = 1050;
+            const targetHeight = 750;
+            
+            if (windowWidth < (targetWidth + padding)) {
+                const scale = (windowWidth - padding) / targetWidth;
+                canvas.style.transform = `scale(${scale})`;
+                wrapper.style.minHeight = `${targetHeight * scale}px`;
+                wrapper.style.height = `${targetHeight * scale}px`;
+            } else {
+                canvas.style.transform = 'none';
+                wrapper.style.minHeight = `${targetHeight}px`;
+                wrapper.style.height = 'auto';
+            }
+        }
+
+        window.addEventListener('resize', adjustCertificateScale);
     </script>
 </body>
 </html>

@@ -19,6 +19,10 @@
     --white: #ffffff;
 }
 
+body {
+    padding-top: 76px;
+}
+
 /* Base Navbar Structure - CONSTANT ACROSS ALL THEMES */
 .navbar {
     position: fixed !important;
