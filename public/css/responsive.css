@@ -21,7 +21,9 @@ img, video, iframe, embed, object, canvas, svg { max-width: 100%; height: auto; 
    ============================================================ */
 @media (max-width: 768px) {
   .navbar { padding: 0.7rem 1rem !important; }
+  .navbar.scrolled { padding: 0.7rem 1rem !important; }
   .nav-container { gap: 0 !important; }
+  .logo { min-width: auto !important; }
   .logo img { height: 44px !important; }
   .logo span { font-size: 1.05rem !important; }
   .menu-toggle { display: flex !important; align-items: center; }
@@ -35,6 +37,7 @@ img, video, iframe, embed, object, canvas, svg { max-width: 100%; height: auto; 
   .logo span { font-size: 0.95rem !important; }
   .logo img { height: 36px !important; }
   .navbar { padding: 0.5rem 0.75rem !important; }
+  .navbar.scrolled { padding: 0.5rem 0.75rem !important; }
   .nav-buttons { gap: 0.4rem !important; }
   .btn-signup { padding: 0.38rem 0.6rem !important; font-size: 0.75rem !important; }
   .user-avatar-small { width: 30px !important; height: 30px !important; font-size: 0.78rem !important; }
@@ -123,6 +126,22 @@ img, video, iframe, embed, object, canvas, svg { max-width: 100%; height: auto; 
   .book-card { font-size: 0.88rem; }
   .sell-btn-wrap { position: fixed !important; bottom: 1.2rem; right: 1.2rem; z-index: 999; }
   .filter-sidebar { position: relative !important; top: 0 !important; margin-bottom: 1.5rem !important; }
+  .stats-bar {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    width: 100% !important;
+  }
+  .stat-item {
+    max-width: none !important;
+    border-right: none !important;
+    border-bottom: 1px solid var(--border) !important;
+  }
+  .stat-item:nth-child(even) {
+    border-left: 1px solid var(--border) !important;
+  }
+  .stat-item:nth-child(3), .stat-item:nth-child(4) {
+    border-bottom: none !important;
+  }
 }
 
 @media (max-width: 480px) {
@@ -182,20 +201,50 @@ img, video, iframe, embed, object, canvas, svg { max-width: 100%; height: auto; 
 @media (max-width: 992px) {
   .dashboard-container, .dashboard-grid {
     grid-template-columns: 1fr !important;
-    flex-direction: column !important;
   }
   .dashboard-sidebar {
     width: 100% !important;
     height: auto !important;
     position: relative !important;
-    flex-direction: row !important;
-    overflow-x: auto !important;
+    top: 0 !important;
     border-right: none !important;
-    border-bottom: 1px solid #e2e8f0;
-    padding: 0.6rem !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+    padding: 0.5rem 1rem !important;
+    background: #ffffff !important;
+    overflow-x: auto !important;
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    z-index: 100 !important;
   }
-  .sidebar-nav { flex-direction: row !important; gap: 0.3rem !important; }
-  .sidebar-nav a { white-space: nowrap; padding: 0.5rem 0.8rem !important; font-size: 0.82rem !important; }
+  .sidebar-user {
+    display: none !important;
+  }
+  .sidebar-footer {
+    display: none !important;
+  }
+  .sidebar-nav {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 0.5rem !important;
+    width: 100% !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+  }
+  .sidebar-nav::-webkit-scrollbar {
+    display: none !important;
+  }
+  .sidebar-nav a {
+    white-space: nowrap !important;
+    padding: 0.6rem 1rem !important;
+    font-size: 0.85rem !important;
+    border-radius: 10px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    transform: none !important;
+  }
   .dashboard-main { padding: 1.2rem 1rem !important; }
   .stats-grid { grid-template-columns: 1fr 1fr !important; gap: 0.8rem !important; }
 }
@@ -344,6 +393,9 @@ img, video, iframe, embed, object, canvas, svg { max-width: 100%; height: auto; 
     white-space: nowrap;
     display: flex !important;
     gap: 0.3rem !important;
+  }
+  .admin-sidebar .sidebar-header, .admin-sidebar .sidebar-footer {
+    display: none !important;
   }
   .admin-sidebar .sidebar-nav, .admin-sidebar ul { flex-direction: row !important; display: flex !important; }
   .sidebar-item, .admin-sidebar li { flex-shrink: 0; }
@@ -570,4 +622,23 @@ input, select, textarea {
 @media (max-width: 768px) {
   ::-webkit-scrollbar { width: 0px; height: 0px; }
   * { scrollbar-width: none; }
+}
+
+/* ============================================================
+   24. ABOUT US PAGE
+   ============================================================ */
+@media (max-width: 968px) {
+  .founder-img {
+    height: 380px !important;
+    object-fit: cover !important;
+  }
+  .founder-image-container::before {
+    top: -8px !important;
+    left: -8px !important;
+  }
+}
+@media (max-width: 576px) {
+  .founder-img {
+    height: 280px !important;
+  }
 }
