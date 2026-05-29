@@ -157,6 +157,26 @@ router.post('/posts/:postId/like', requireAuth, async (req, res) => {
     }
 });
 
+// Delete post (Admin only)
+router.delete('/posts/:postId', requireAuth, async (req, res) => {
+    try {
+        const user = await User.findById(req.userId);
+        if (!user || user.role !== 'admin') {
+            return res.status(403).json({ ok: false, message: 'Admin privileges required' });
+        }
+        const post = await Post.findByIdAndDelete(req.params.postId);
+        if (!post) return res.status(404).json({ ok: false, message: 'Post not found' });
+        
+        // Also delete associated comments
+        await Comment.deleteMany({ postId: req.params.postId });
+        
+        res.json({ ok: true, message: 'Post deleted successfully' });
+    } catch (err) {
+        res.status(500).json({ ok: false, message: 'Failed to delete post' });
+    }
+});
+
+
 // ─── DOUBTS ────────────────────────────────────────────────────
 
 // Get recent doubts
@@ -301,13 +321,49 @@ router.post('/doubts/:doubtId/answers/:answerId/upvote', requireAuth, async (req
     }
 });
 
+// Delete doubt (Admin only)
+router.delete('/doubts/:doubtId', requireAuth, async (req, res) => {
+    try {
+        const user = await User.findById(req.userId);
+        if (!user || user.role !== 'admin') {
+            return res.status(403).json({ ok: false, message: 'Admin privileges required' });
+        }
+        const doubt = await Doubt.findByIdAndDelete(req.params.doubtId);
+        if (!doubt) return res.status(404).json({ ok: false, message: 'Doubt not found' });
+        
+        res.json({ ok: true, message: 'Doubt deleted successfully' });
+    } catch (err) {
+        res.status(500).json({ ok: false, message: 'Failed to delete doubt' });
+    }
+});
+
+
 // ─── LEADERBOARD ───────────────────────────────────────────────
 
 router.get('/leaderboard', async (req, res) => {
     try {
-        const entries = await CommunityLeaderboard.find().sort({ points: -1 }).limit(10);
+        // Query the real StoreUser model directly, sorting by points
+        const topUsers = await User.find()
+            .sort({ points: -1 })
+            .limit(10)
+            .select('name points picture');
+
+        const entries = await Promise.all(topUsers.map(async (u) => {
+            const postsCount = await Post.countDocuments({ userId: u._id });
+            const answersCount = await Doubt.countDocuments({ 'answers.userId': u._id });
+            return {
+                userId: u._id,
+                username: u.name,
+                userPicture: u.picture,
+                points: u.points || 0,
+                posts: postsCount,
+                answers: answersCount
+            };
+        }));
+
         res.json({ ok: true, entries });
     } catch (err) {
+        console.error('Leaderboard fetch error:', err);
         res.status(500).json({ ok: false, message: 'Server error' });
     }
 });
@@ -355,7 +411,7 @@ router.post('/follow/:followingId', requireAuth, async (req, res) => {
 
 router.get('/notifications', requireAuth, async (req, res) => {
     try {
-        const notifs = await Notification.find({ recipientId: req.userId })
+        const notifs = await Notification.find({ type: 'announcement' })
             .sort({ createdAt: -1 })
             .limit(20);
         res.json({ ok: true, notifications: notifs });

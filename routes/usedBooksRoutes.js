@@ -42,6 +42,8 @@ function requireAuth(req, res, next) {
         req.userId = decoded.userId || decoded.id;
         req.userEmail = decoded.email || '';
         req.userName = decoded.name || '';
+        req.userRole = decoded.role || '';
+        req.user = decoded;
         next();
     } catch (e) {
         return res.status(401).json({ ok: false, message: 'Invalid or expired token' });
@@ -75,11 +77,16 @@ router.get('/', async (req, res) => {
     try {
         const { 
             search, category, maxPrice, minPrice, location, condition, 
-            lat, lng, radius = 5000, userCollege,
+            lat, lng, radius = 5000, userCollege, college,
             page = 1, limit = 50 
         } = req.query;
 
         let filter = { status: 'active' };
+
+        // 0. College Filter
+        if (college) {
+            filter.college = { $regex: college, $options: 'i' };
+        }
 
         // 1. Location-based Filter (Haversine/2dsphere)
         if (lat && lng) {
@@ -275,23 +282,31 @@ router.put('/:id', requireAuth, upload.single('image'), async (req, res) => {
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
-// DELETE /api/used-books/:id — delete own book
+// DELETE /api/used-books/:id — delete own book (or admin delete)
 // ──────────────────────────────────────────────────────────────────────────────
 router.delete('/:id', requireAuth, async (req, res) => {
     try {
         const book = await UsedBook.findById(req.params.id);
         if (!book) return res.status(404).json({ ok: false, message: 'Book not found' });
-        if (book.sellerId.toString() !== req.userId.toString()) {
+        
+        // Owner or admin can delete
+        if (book.sellerId.toString() !== req.userId.toString() && req.userRole !== 'admin') {
             return res.status(403).json({ ok: false, message: 'You can only delete your own listings' });
         }
 
         if (book.image) {
             const imgPath = path.join(__dirname, '..', 'uploads', 'books', book.image);
-            if (fs.existsSync(imgPath)) fs.unlinkSync(imgPath);
+            if (fs.existsSync(imgPath)) {
+                try {
+                    fs.unlinkSync(imgPath);
+                } catch (e) {
+                    console.error("Failed to delete book image:", e);
+                }
+            }
         }
 
         await UsedBook.findByIdAndDelete(req.params.id);
-        res.json({ ok: true, message: 'Book removed' });
+        res.json({ ok: true, message: 'Book removed successfully' });
     } catch (err) {
         res.status(500).json({ ok: false, message: err.message });
     }

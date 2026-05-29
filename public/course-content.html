@@ -637,6 +637,14 @@
         let completedLessons = [];
         let currentVideoWatched = false;
         let currentPdfRead = false;
+        let resolvedCourseTitle = ''; // ← stores the proper course name
+
+        // Convert slug → Title Case (fallback when API title is missing)
+        function slugToTitle(slug) {
+            return (slug || '')
+                .replace(/-/g, ' ')
+                .replace(/\b\w/g, c => c.toUpperCase());
+        }
 
 
         function getToken() {
@@ -738,14 +746,23 @@
                 const desc = (data.ok && data.course) ? data.course.description : '';
                 document.getElementById('sidebarDesc').textContent = desc || 'Complete all lessons to earn your certificate.';
 
+                // Resolve the proper course title from API, fallback to slug conversion
+                if (data.ok && data.course && data.course.title) {
+                    resolvedCourseTitle = data.course.title;
+                } else {
+                    resolvedCourseTitle = slugToTitle(courseId);
+                }
+
             } catch (e) {
                 console.error('Failed to load course details:', e);
                 document.getElementById('videoWrapper').innerHTML = '<div style="padding:40px;text-align:center;color:#ef4444;font-weight:bold;">Server connection failed. Please restart your local server.</div>';
                 allLessons = [];
             }
 
-            document.getElementById('pageTitle').textContent = courseId;
-            document.getElementById('sidebarTitle').textContent = courseId;
+            // Use the resolved title (never show raw slug)
+            document.getElementById('pageTitle').textContent = resolvedCourseTitle || slugToTitle(courseId);
+            document.getElementById('sidebarTitle').textContent = resolvedCourseTitle || slugToTitle(courseId);
+            document.title = (resolvedCourseTitle || slugToTitle(courseId)) + ' | COURSENOVA';
             renderLessonList();
             loadLesson(0);
             document.getElementById('loadingScreen').style.display = 'none';

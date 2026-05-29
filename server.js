@@ -271,7 +271,7 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       "default-src": ["'self'"],
-      "frame-src": ["'self'", "https://www.youtube.com", "https://youtube.com", "https://docs.google.com", "https://drive.google.com", "https://sdk.cashfree.com", "https://sandbox.cashfree.com", "https://api.cashfree.com"],
+      "frame-src": ["'self'", "https://www.youtube.com", "https://youtube.com", "https://docs.google.com", "https://drive.google.com", "https://sdk.cashfree.com", "https://sandbox.cashfree.com", "https://api.cashfree.com", "https://www.google.com", "https://maps.google.com"],
       "img-src": ["'self'", "data:", "blob:", "https://res.cloudinary.com", "https://images.unsplash.com", "https://*.google.com", "https://*.googleusercontent.com", "https://i.ytimg.com", "https://yt3.ggpht.com", "https://ui-avatars.com", "https://cdni.iconscout.com"],
       "script-src": ["'self'", "'unsafe-inline'", "https://www.googletagmanager.com", "https://*.google.com", "https://sdk.cashfree.com", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net", "https://cdn.socket.io"],
       "script-src-elem": ["'self'", "'unsafe-inline'", "https://www.googletagmanager.com", "https://*.google.com", "https://sdk.cashfree.com", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net", "https://cdn.socket.io"],
@@ -715,8 +715,6 @@ global.io = io; // Set globally for cross-module notifications
 // Community Chat & Real-Time Dashboard Logic (Socket.io)
 const socketMap = new Map(); // userId -> Set of socketIds
 
-const CommunityChat = require('./models/CommunityChat');
-
 io.on('connection', (socket) => {
   console.log('⚡ New Socket Connection:', socket.id);
 
@@ -727,57 +725,6 @@ io.on('connection', (socket) => {
     socket.userId = cleanUserId;
     socket.join(`user:${cleanUserId}`);
     console.log(`👤 User Verified: ${cleanUserId} | Joined Room: user:${cleanUserId}`);
-  });
-
-  socket.on('join-room', async (roomId) => {
-    socket.join(roomId);
-    console.log(`📡 Socket ${socket.id} joined channel: ${roomId}`);
-    
-    // Fetch last 50 messages from DB
-    try {
-        const chat = await CommunityChat.findOne({ roomId });
-        if (chat) {
-            socket.emit('chat-history', chat.messages.slice(-50));
-        } else {
-            // Initialize room if it doesn't exist (group rooms)
-            const globalRooms = ['JEE', 'NEET', 'Coding', 'General'];
-            if (globalRooms.includes(roomId)) {
-                await CommunityChat.create({ roomId, type: 'group' });
-            }
-        }
-    } catch (err) {
-        console.error('Chat history error:', err);
-    }
-  });
-
-  socket.on('send-message', async (data) => {
-    // data: { roomId, senderId, senderName, senderPicture, text }
-    const { roomId, senderId, senderName, senderPicture, text } = data;
-    
-    try {
-        // Save to DB
-        await CommunityChat.findOneAndUpdate(
-            { roomId },
-            { 
-                $push: { messages: { senderId, senderName, senderPicture, text } },
-                lastMessage: text,
-                lastMessageTime: new Date()
-            },
-            { upsert: true }
-        );
-
-        // Broadcast to room
-        io.to(roomId).emit('receive-message', {
-            senderId, senderName, senderPicture, text, timestamp: new Date()
-        });
-    } catch (err) {
-        console.error('Message save error:', err);
-    }
-  });
-
-  socket.on('typing', (data) => {
-      // data: { roomId, username, isTyping }
-      socket.to(data.roomId).emit('user-typing', data);
   });
 
   socket.on('disconnect', () => {

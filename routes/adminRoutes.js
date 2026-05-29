@@ -13,6 +13,7 @@ const AppError = require('../utils/AppError');
 const Payment = require('../models/Payment');
 const DailyChallenge = require('../models/DailyChallenge');
 const AuditLog = require('../models/AuditLog');
+const Notification = require('../models/Notification');
 
 // ── 10. PDF TO QUESTIONS GENERATOR ──────────────────────────────────
 const multer = require('multer');
@@ -363,6 +364,44 @@ router.get('/marketplace/all-books', requireAdmin, catchAsync(async (req, res) =
     res.json({ ok: true, books });
 }));
 
+router.delete('/marketplace/books/:id', requireAdmin, catchAsync(async (req, res) => {
+    const UsedBook = mongoose.model('UsedBook');
+    const book = await UsedBook.findById(req.params.id);
+    if (!book) throw new AppError('Book not found', 404);
+
+    if (book.image) {
+        const path = require('path');
+        const fs = require('fs');
+        const imgPath = path.join(__dirname, '..', 'uploads', 'books', book.image);
+        if (fs.existsSync(imgPath)) {
+            try {
+                fs.unlinkSync(imgPath);
+            } catch (err) {
+                console.error("Failed to delete book image:", err);
+            }
+        }
+    }
+
+    await UsedBook.findByIdAndDelete(req.params.id);
+
+    // Audit Log
+    try {
+        const AuditLog = require('../models/AuditLog');
+        await AuditLog.create({
+            adminId: req.user.userId || req.user.id,
+            adminEmail: req.user.email || 'admin@coursenova.in',
+            action: 'DELETE_USED_BOOK',
+            targetModel: 'UsedBook',
+            targetId: book._id.toString(),
+            details: `Deleted book "${book.title}" by seller ${book.sellerName}`
+        });
+    } catch (e) {
+        console.warn("Audit log creation failed:", e.message);
+    }
+
+    res.json({ ok: true, message: 'Book listing deleted successfully' });
+}));
+
 // ── 10. AUDIT LOGS ──────────────────────────────────────────────────
 router.get('/audit-logs', requireAdmin, catchAsync(async (req, res) => {
     const logs = await AuditLog.find().sort({ createdAt: -1 }).limit(100);
@@ -557,6 +596,39 @@ router.delete('/slides/:id', requireAdmin, catchAsync(async (req, res) => {
 
     await logAdminAction(req, 'DELETE_SLIDE', slide._id, 'Slide', { title: slide.title });
     res.json({ ok: true, message: 'Slide deleted successfully' });
+}));
+
+// ── 12. BROADCAST ANNOUNCEMENTS / NOTIFICATIONS ─────────────────────
+// Create announcement (Admin only)
+router.post('/notifications', requireAdmin, catchAsync(async (req, res) => {
+    const { message } = req.body;
+    if (!message) throw new AppError('Message is required', 400);
+
+    const announcement = await Notification.create({
+        recipientId: null, // null for broadcast
+        senderId: req.userId,
+        senderName: 'Admin',
+        type: 'announcement',
+        message
+    });
+
+    await logAdminAction(req, 'CREATE_ANNOUNCEMENT', announcement._id, 'Notification', { message: message.substring(0, 50) });
+    res.status(201).json({ ok: true, announcement });
+}));
+
+// List announcements (Admin only)
+router.get('/notifications', requireAdmin, catchAsync(async (req, res) => {
+    const announcements = await Notification.find({ type: 'announcement' }).sort({ createdAt: -1 });
+    res.json({ ok: true, announcements });
+}));
+
+// Delete announcement (Admin only)
+router.delete('/notifications/:id', requireAdmin, catchAsync(async (req, res) => {
+    const announcement = await Notification.findByIdAndDelete(req.params.id);
+    if (!announcement) throw new AppError('Announcement not found', 404);
+
+    await logAdminAction(req, 'DELETE_ANNOUNCEMENT', req.params.id, 'Notification');
+    res.json({ ok: true, message: 'Announcement deleted successfully' });
 }));
 
 module.exports = router;

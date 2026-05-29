@@ -1,6 +1,6 @@
 /**
  * COURSENOVA Community JS
- * Handles Forum, Doubts, Chat, and Notifications
+ * Handles Forum, Doubts, Notifications, and AI Assistant
  */
 
 const token = typeof getAuthToken === 'function' ? getAuthToken() : (localStorage.getItem('token') || localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token'));
@@ -8,7 +8,6 @@ const user = JSON.parse(localStorage.getItem('coursenovaUser') || localStorage.g
 const socket = typeof io !== 'undefined' ? io(window.COURSENOVA_API || undefined) : null;
 
 let currentSection = 'feed';
-let currentChannel = 'general';
 
 document.addEventListener('DOMContentLoaded', () => {
     loadSection('feed');
@@ -69,7 +68,10 @@ function renderPosts(posts, targetId) {
                         <span>${new Date(p.createdAt).toLocaleDateString()} • ${p.category}</span>
                     </div>
                 </div>
-                <button class="btn-comm" style="padding:4px 12px; background:#f1f5f9; color:#64748b; font-size:12px;" onclick="followUser('${p.userId}')">Follow</button>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <button class="btn-comm" style="padding:4px 12px; background:#f1f5f9; color:#64748b; font-size:12px;" onclick="followUser('${p.userId}')">Follow</button>
+                    ${user.role === 'admin' ? `<button class="btn-comm" style="padding:4px 12px; background:#ef4444; color:white; font-size:12px;" onclick="deletePost('${p._id}')"><i class="fas fa-trash"></i> Delete</button>` : ''}
+                </div>
             </div>
             <div class="post-content">
                 <h2>${p.title}</h2>
@@ -142,6 +144,23 @@ async function likePost(postId, btn) {
     } catch (e) { console.error(e); }
 }
 
+async function deletePost(postId) {
+    if (!confirm('Are you sure you want to delete this post?')) return;
+    try {
+        const res = await fetch(`/api/community/posts/${postId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.ok) {
+            alert('Post deleted successfully');
+            fetchPosts();
+        } else {
+            alert(data.message || 'Failed to delete post');
+        }
+    } catch (e) { console.error(e); }
+}
+
 // ─── DOUBTS ──────────────────────────────────────────────────
 
 async function fetchDoubts() {
@@ -155,6 +174,8 @@ async function fetchDoubts() {
 function renderDoubts(doubts) {
     const container = document.getElementById('communityFeed');
     if (!container) return;
+    const currentUserId = user._id || user.id;
+
     container.innerHTML = doubts.map(d => `
         <div class="post-card">
             <div class="post-header">
@@ -165,9 +186,12 @@ function renderDoubts(doubts) {
                         <span>${new Date(d.createdAt).toLocaleString()}</span>
                     </div>
                 </div>
-                <span class="badge" style="background:${d.bestAnswer ? '#22c55e' : '#e0f2fe'}; color:${d.bestAnswer ? 'white' : '#0369a1'}; padding:4px 10px; border-radius:20px; font-size:12px;">
-                    ${d.bestAnswer ? '<i class="fas fa-check-circle"></i> Solved' : 'Unsolved Doubt'}
-                </span>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span class="badge" style="background:${d.bestAnswer ? '#22c55e' : '#e0f2fe'}; color:${d.bestAnswer ? 'white' : '#0369a1'}; padding:4px 10px; border-radius:20px; font-size:12px;">
+                        ${d.bestAnswer ? '<i class="fas fa-check-circle"></i> Solved' : 'Unsolved Doubt'}
+                    </span>
+                    ${user.role === 'admin' ? `<button class="btn-comm" style="padding:4px 12px; background:#ef4444; color:white; font-size:12px;" onclick="deleteDoubt('${d._id}')"><i class="fas fa-trash"></i> Delete</button>` : ''}
+                </div>
             </div>
             <div class="post-content">
                 <h2 style="font-size:1.4rem;">${d.question}</h2>
@@ -188,9 +212,9 @@ function renderDoubts(doubts) {
                                 <strong style="color:var(--comm-primary); font-size:0.85rem;">${a.username}${a.isInstructor ? ' <i class="fas fa-check-circle" title="Instructor"></i>' : ''}</strong>
                             </div>
                             <div style="display:flex; align-items:center; gap:12px;">
-                                ${d.userId === user.id && !d.bestAnswer ? `<button class="btn-comm" style="background:#22c55e; color:white; font-size:11px; padding:4px 8px;" onclick="markBestAnswer('${d._id}', '${a._id}')">Mark Best</button>` : ''}
+                                ${d.userId === currentUserId && !d.bestAnswer ? `<button class="btn-comm" style="background:#22c55e; color:white; font-size:11px; padding:4px 8px;" onclick="markBestAnswer('${d._id}', '${a._id}')">Mark Best</button>` : ''}
                                 <div class="upvote-box" style="display:flex; align-items:center; gap:5px; cursor:pointer; color:#64748b;" onclick="upvoteAnswer('${d._id}', '${a._id}', this)">
-                                    <i class="fa${(a.upvotes || []).includes(user.id) ? 's' : 'r'} fa-thumbs-up"></i> 
+                                    <i class="fa${(a.upvotes || []).includes(currentUserId) ? 's' : 'r'} fa-thumbs-up"></i> 
                                     <span>${(a.upvotes || []).length}</span>
                                 </div>
                             </div>
@@ -205,6 +229,23 @@ function renderDoubts(doubts) {
             </div>
         </div>
     `).join('');
+}
+
+async function deleteDoubt(doubtId) {
+    if (!confirm('Are you sure you want to delete this doubt?')) return;
+    try {
+        const res = await fetch(`/api/community/doubts/${doubtId}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.ok) {
+            alert('Doubt deleted successfully');
+            fetchDoubts();
+        } else {
+            alert(data.message || 'Failed to delete doubt');
+        }
+    } catch (e) { console.error(e); }
 }
 
 async function markBestAnswer(doubtId, answerId) {
@@ -318,25 +359,13 @@ async function loadMiniLeaderboard() {
     } catch (e) { console.error(e); }
 }
 
-// ─── CHAT SOCKET ─────────────────────────────────────────────
+// ─── SOCKET WORKFLOW ─────────────────────────────────────────
 
 function setupSocket() {
     if (!socket) return;
+    const currentUserId = user._id || user.id;
     socket.on('connect', () => {
-        socket.emit('identify', user.id);
-        socket.emit('join-room', currentChannel);
-    });
-
-    socket.on('chat-history', (history) => {
-        const container = document.getElementById('chatMsgs');
-        if (container) {
-            container.innerHTML = '';
-            history.forEach(msg => appendChatMessage(msg));
-        }
-    });
-
-    socket.on('receive-message', (data) => {
-        appendChatMessage(data);
+        socket.emit('identify', currentUserId);
     });
 
     socket.on('new_post', (post) => {
@@ -371,67 +400,6 @@ function setupSocket() {
     socket.on('new_answer', (data) => {
         if (currentSection === 'doubts') fetchDoubts();
     });
-}
-
-function loadChannels() {
-    const chatW = document.getElementById('chatWidget');
-    if (chatW) chatW.classList.add('active');
-    switchRoom('General');
-}
-
-function switchRoom(roomId) {
-    if (!socket) return;
-    
-    // UI Update
-    const chatW = document.getElementById('chatWidget');
-    if (chatW) chatW.classList.add('active');
-    
-    currentChannel = roomId;
-    const currC = document.getElementById('currentChannel');
-    if (currC) currC.innerText = '# ' + roomId;
-    
-    const input = document.getElementById('chatInput');
-    if (input) input.placeholder = `Message to #${roomId}...`;
-
-    // Clear and leave old room is handled by server, we just join new
-    socket.emit('join-room', roomId);
-    
-    // Clear display while waiting for history
-    const container = document.getElementById('chatMsgs');
-    if (container) container.innerHTML = '<div style="font-size:12px; color:#94a3b8; text-align:center;">Joining room...</div>';
-}
-
-function sendChatMessage() {
-    const input = document.getElementById('chatInput');
-    const text = input.value.trim();
-    if (!text || !token) return;
-
-    const msgData = {
-        room: currentChannel,
-        sender: user.fullName || 'Anonymous',
-        text: text,
-        avatar: user.picture || `https://ui-avatars.com/api/?name=${user.fullName || 'User'}`,
-        ts: new Date()
-    };
-
-    socket.emit('send-message', msgData);
-    input.value = '';
-}
-
-function appendChatMessage(data) {
-    const container = document.getElementById('chatMsgs');
-    if (!container) return;
-    const div = document.createElement('div');
-    div.style.cssText = 'margin-bottom:15px; display:flex; gap:10px;';
-    div.innerHTML = `
-        <img src="${data.avatar}" style="width:30px; height:30px; border-radius:50%;">
-        <div>
-            <div style="font-size:12px; font-weight:700;">${data.sender} <span style="font-weight:400; color:#94a3b8; font-size:10px;">${new Date(data.ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span></div>
-            <div style="font-size:14px; color:#475569;">${data.text}</div>
-        </div>
-    `;
-    container.appendChild(div);
-    container.scrollTop = container.scrollHeight;
 }
 
 // ─── AI ASSISTANT ──────────────────────────────────────────
@@ -487,6 +455,7 @@ function openModal(id) {
     const modal = document.getElementById(id);
     if (modal) modal.classList.add('active');
 }
+
 function closeModal(id) { 
     const modal = document.getElementById(id);
     if (modal) modal.classList.remove('active'); 
@@ -501,7 +470,8 @@ async function checkNotifications() {
         const data = await res.json();
         const badge = document.getElementById('notifBadge');
         if (data.ok && badge) {
-            const unread = data.notifications.filter(n => !n.isRead).length;
+            const lastReadTime = localStorage.getItem('coursenova_last_read_notif') || 0;
+            const unread = data.notifications.filter(n => new Date(n.createdAt).getTime() > Number(lastReadTime)).length;
             if (unread > 0) {
                 badge.innerText = unread;
                 badge.style.display = 'inline-block';
@@ -510,6 +480,63 @@ async function checkNotifications() {
             }
         }
     } catch (e) { }
+}
+
+async function openNotifications() {
+    currentSection = 'notifications';
+    const container = document.getElementById('communityFeed');
+    if (!container) return;
+    
+    // UI Active state
+    document.querySelectorAll('.nav-link').forEach(l => {
+        l.classList.remove('active');
+        if (l.innerText.toLowerCase().includes('notification')) l.classList.add('active');
+    });
+
+    container.innerHTML = '<div style="text-align:center; padding:50px;"><i class="fas fa-spinner fa-spin"></i> Loading Notifications...</div>';
+
+    try {
+        const res = await fetch('/api/community/notifications', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.ok) {
+            markNotificationsAsRead();
+            
+            if (data.notifications.length === 0) {
+                container.innerHTML = '<div class="no-content" style="padding: 40px; text-align: center; color: var(--comm-text-light);"><i class="fas fa-bell-slash" style="font-size: 3rem; margin-bottom: 15px; opacity: 0.3;"></i><p>No new notifications from the Admin.</p></div>';
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="section-card" style="padding: 30px; background: white; border-radius: 20px; box-shadow: var(--comm-shadow);">
+                    <h2 style="margin-bottom: 25px; text-align: center;"><i class="fas fa-bell" style="color:var(--comm-primary)"></i> Admin Announcements</h2>
+                    <div style="display:flex; flex-direction:column; gap:15px;">
+                        ${data.notifications.map(n => `
+                            <div style="padding: 20px; background: #f8fafc; border-radius: 16px; border-left: 4px solid var(--comm-primary); position: relative;">
+                                <div style="display:flex; justify-content:space-between; margin-bottom:8px; align-items: center;">
+                                    <span style="font-weight: 700; color: var(--comm-primary); font-size: 0.9rem;"><i class="fas fa-bullhorn"></i> Announcement</span>
+                                    <span style="font-size: 11px; color: var(--comm-text-light);">${new Date(n.createdAt).toLocaleString()}</span>
+                                </div>
+                                <div style="font-size: 1.05rem; color: #334155; line-height: 1.5;">${n.message}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        } else {
+            container.innerHTML = `<div class="error">${data.message || 'Failed to load notifications.'}</div>`;
+        }
+    } catch (e) {
+        console.error(e);
+        container.innerHTML = '<div class="error">Failed to load notifications.</div>';
+    }
+}
+
+function markNotificationsAsRead() {
+    localStorage.setItem('coursenova_last_read_notif', Date.now());
+    const badge = document.getElementById('notifBadge');
+    if (badge) badge.style.display = 'none';
 }
 
 async function fetchFullLeaderboard() {

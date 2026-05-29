@@ -147,6 +147,21 @@ async function loadView(view) {
                 const slidesData = await fetchData(`${API_BASE}/slides`);
                 renderSlides(slidesData.slides || []);
                 break;
+
+            case 'community':
+                title.textContent = 'Community Moderation';
+                const pRes = await fetch('/api/community/posts');
+                const dRes = await fetch('/api/community/doubts');
+                const pData = await pRes.json();
+                const dData = await dRes.json();
+                renderCommunityAdmin(pData.posts || [], dData.doubts || []);
+                break;
+
+            case 'notifications':
+                title.textContent = 'Broadcast Announcements';
+                const nData = await fetchData(`${API_BASE}/notifications`);
+                renderNotificationsAdmin(nData.announcements || []);
+                break;
         }
     } catch (err) {
         contentArea.innerHTML = `<div class="error-state"><i class="fas fa-exclamation-circle"></i><p>Error: ${err.message}</p></div>`;
@@ -1155,6 +1170,7 @@ function renderMarketplace(books) {
                         <th>Seller Details</th>
                         <th>Commission (10%)</th>
                         <th>Status</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -1201,6 +1217,11 @@ function renderMarketplace(books) {
                                     ${b.status.toUpperCase()}
                                 </span>
                             </td>
+                            <td>
+                                <button class="btn btn-sm" onclick="deleteMarketplaceBook('${b._id}')" style="background:#ef4444; color:#fff; border:none; padding:6px 12px; border-radius:6px; font-weight:600; cursor:pointer; font-size: 0.8rem; transition: background 0.2s;">
+                                    <i class="fas fa-trash-alt"></i> Delete
+                                </button>
+                            </td>
                         </tr>`;
                     }).join('')}
                 </tbody>
@@ -1211,6 +1232,27 @@ function renderMarketplace(books) {
 }
 
 // Additional functions from previous version like editCourse, deleteCourse, etc.
+async function deleteMarketplaceBook(id) {
+    if (!confirm('Are you sure you want to delete this listing as Admin?')) return;
+    const token = localStorage.getItem('token');
+    
+    try {
+        const res = await fetch(`${API_BASE}/marketplace/books/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.ok) {
+            alert('Listing deleted successfully!');
+            loadView('marketplace');
+        } else {
+            alert(data.message || 'Failed to delete listing.');
+        }
+    } catch (err) {
+        alert('Error: ' + err.message);
+    }
+}
+
 async function editCourse(id) {
     const token = localStorage.getItem('token');
     const res = await fetch(`${API_BASE}/courses`, { headers: { 'Authorization': `Bearer ${token}` } });
@@ -1569,5 +1611,210 @@ async function deleteSlide(id) {
         } catch (e) {
             alert('Network error deleting slide banner');
         }
+    }
+}
+
+// ── COMMUNITY MODERATION & BROADCAST NOTIFICATIONS ─────────────
+
+function renderCommunityAdmin(posts, doubts) {
+    const content = document.getElementById('content-area');
+    content.innerHTML = `
+        <div class="modal-tabs" style="margin-bottom:20px;">
+            <button class="modal-tab-btn active" id="btn-tab-posts" onclick="switchCommunityTab('posts')">Posts (${posts.length})</button>
+            <button class="modal-tab-btn" id="btn-tab-doubts" onclick="switchCommunityTab('doubts')">Doubts (${doubts.length})</button>
+        </div>
+        
+        <div id="admin-posts-container" class="admin-card community-tab-content" style="padding:24px;">
+            <div class="card-header" style="margin-bottom: 15px;">
+                <h3>Community Feed Posts</h3>
+            </div>
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Author</th>
+                        <th>Category</th>
+                        <th>Likes / Comments</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${posts.map(p => `
+                        <tr>
+                            <td><strong>${p.title}</strong></td>
+                            <td>${p.username}</td>
+                            <td><span class="admin-badge">${p.category}</span></td>
+                            <td>${p.likesCount} Likes / ${p.commentsCount} Comments</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline danger" onclick="deleteCommunityItem('${p._id}', 'post')" style="color:var(--danger)">Delete</button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+            ${posts.length === 0 ? '<div style="padding:40px; text-align:center; color:#64748b;">No posts in the community.</div>' : ''}
+        </div>
+        
+        <div id="admin-doubts-container" class="admin-card community-tab-content" style="display:none; padding:24px;">
+            <div class="card-header" style="margin-bottom: 15px;">
+                <h3>Community Doubts</h3>
+            </div>
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Doubt / Question</th>
+                        <th>Author</th>
+                        <th>Answers</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${doubts.map(d => `
+                        <tr>
+                            <td><strong>${d.question}</strong></td>
+                            <td>${d.username}</td>
+                            <td>${d.answers.length} Answers</td>
+                            <td>
+                                <span class="admin-badge" style="background:${d.bestAnswer ? '#ecfdf5' : '#eff6ff'}; color:${d.bestAnswer ? '#10b981' : '#3b82f6'}">
+                                    ${d.bestAnswer ? 'Solved' : 'Open'}
+                                </span>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline danger" onclick="deleteCommunityItem('${d._id}', 'doubt')" style="color:var(--danger)">Delete</button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+            ${doubts.length === 0 ? '<div style="padding:40px; text-align:center; color:#64748b;">No doubts in the community.</div>' : ''}
+        </div>
+    `;
+}
+
+function switchCommunityTab(tab) {
+    document.querySelectorAll('.community-tab-content').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.modal-tab-btn').forEach(btn => btn.classList.remove('active'));
+    
+    if (tab === 'posts') {
+        document.getElementById('admin-posts-container').style.display = 'block';
+        document.getElementById('btn-tab-posts').classList.add('active');
+    } else {
+        document.getElementById('admin-doubts-container').style.display = 'block';
+        document.getElementById('btn-tab-doubts').classList.add('active');
+    }
+}
+
+async function deleteCommunityItem(id, type) {
+    if (!confirm(`Are you sure you want to delete this ${type}?`)) return;
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(`/api/community/${type === 'post' ? 'posts' : 'doubts'}/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.ok) {
+            alert(`${type.toUpperCase()} deleted successfully!`);
+            loadView('community');
+        } else {
+            alert(data.message || `Failed to delete ${type}`);
+        }
+    } catch (e) {
+        console.error(e);
+        alert(`Error deleting ${type}`);
+    }
+}
+
+function renderNotificationsAdmin(announcements) {
+    const content = document.getElementById('content-area');
+    content.innerHTML = `
+        <div class="stats-grid">
+            <div class="stat-card" style="grid-column: span 2; padding:24px;">
+                <div class="stat-info" style="width:100%;">
+                    <h3>Create Broadcast Notification</h3>
+                    <p style="margin-bottom:20px; color:var(--text-muted);">Send a global announcement to all users in the community.</p>
+                    <div style="display:flex; flex-direction:column; gap:15px; max-width:600px;">
+                        <textarea id="announcementMessage" class="admin-input" style="height:120px;" placeholder="Type your announcement message here..."></textarea>
+                        <button class="btn btn-primary" onclick="submitAnnouncement()" style="align-self:flex-start;">Publish Notification</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="admin-card" style="margin-top:30px; padding:24px;">
+            <div class="card-header" style="margin-bottom: 15px;">
+                <h3>Sent Announcements</h3>
+            </div>
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Date & Time</th>
+                        <th>Message</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${announcements.map(a => `
+                        <tr>
+                            <td style="white-space:nowrap;">${new Date(a.createdAt).toLocaleString()}</td>
+                            <td style="line-height:1.4;">${a.message}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline danger" onclick="deleteAnnouncement('${a._id}')" style="color:var(--danger)">Delete</button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+            ${announcements.length === 0 ? '<div style="padding:40px; text-align:center; color:#64748b;">No announcements sent yet.</div>' : ''}
+        </div>
+    `;
+}
+
+async function submitAnnouncement() {
+    const message = document.getElementById('announcementMessage').value.trim();
+    if (!message) return alert('Please enter a message');
+    
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch('/api/admin/notifications', {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}` 
+            },
+            body: JSON.stringify({ message })
+        });
+        const data = await res.json();
+        if (data.ok) {
+            alert('Notification published successfully!');
+            loadView('notifications');
+        } else {
+            alert(data.message || 'Failed to publish notification');
+        }
+    } catch (e) {
+        console.error(e);
+        alert('Error publishing announcement');
+    }
+}
+
+async function deleteAnnouncement(id) {
+    if (!confirm('Are you sure you want to delete this announcement?')) return;
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(`/api/admin/notifications/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.ok) {
+            alert('Announcement deleted successfully!');
+            loadView('notifications');
+        } else {
+            alert(data.message || 'Failed to delete announcement');
+        }
+    } catch (e) {
+        console.error(e);
+        alert('Error deleting announcement');
     }
 }

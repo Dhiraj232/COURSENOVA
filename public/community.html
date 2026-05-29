@@ -317,40 +317,6 @@
 			border: 1px solid #f1f5f9;
 		}
 
-		/* Real-time Group Chat Widget */
-		.chat-widget {
-			position: fixed;
-			bottom: 30px;
-			left: 30px;
-			width: 320px;
-			background: white;
-			border-radius: 20px;
-			box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-			overflow: hidden;
-			transition: all 0.3s;
-			z-index: 900;
-			border: 1px solid #eee;
-		}
-
-		.chat-widget:not(.active) {
-			height: 50px;
-			width: 200px;
-		}
-
-		.chat-widget.active {
-			height: 450px;
-		}
-
-		.chat-widget-header {
-			background: #1e293b;
-			color: white;
-			padding: 12px 20px;
-			display: flex;
-			justify-content: space-between;
-			align-items: center;
-			cursor: pointer;
-		}
-
 		/* Modal Styles */
 		.modal {
 			position: fixed;
@@ -404,7 +370,7 @@
 </head>
 
 <body>
-<body>
+<body>
 	<!-- Navbar -->
 	<nav class="navbar" id="navbar">
 		<div class="nav-container">
@@ -419,23 +385,13 @@
 		<aside class="sidebar-left">
 			<nav>
 				<ul>
-					<li><a class="nav-link active" onclick="loadSection('feed')"><i class="fas fa-stream"></i> Home
-							Feed</a></li>
-					<li><a class="nav-link" onclick="loadSection('doubts')"><i class="fas fa-comment-dots"></i> Doubt
-							Solve</a></li>
-					<li><a class="nav-link" onclick="loadSection('leaderboard')"><i class="fas fa-medal"></i>
-							Leaderboard</a></li>
-					<li><a class="nav-link" onclick="loadChannels()"><i class="fas fa-comments"></i> Chat Groups</a>
-					</li>
+					<li><a class="nav-link active" onclick="loadSection('feed')"><i class="fas fa-stream"></i> Home Feed</a></li>
+					<li><a class="nav-link" onclick="loadSection('doubts')"><i class="fas fa-comment-dots"></i> Doubt Solve</a></li>
+					<li><a class="nav-link" onclick="loadSection('leaderboard')"><i class="fas fa-medal"></i> Leaderboard</a></li>
 					<li><a class="nav-link" onclick="openNotifications()"><i class="fas fa-bell"></i> Notifications
 							<span id="notifBadge"
 								style="display:none; background:#ef4444; color:white; padding:2px 6px; border-radius:10px; font-size:10px; margin-left:5px;">0</span></a>
 					</li>
-					<li style="margin-top:20px; padding:0 16px; font-size:0.75rem; color:#94a3b8; text-transform:uppercase; font-weight:800; letter-spacing:1px;">Groups</li>
-					<li><a class="nav-link" onclick="switchRoom('General')"><i class="fas fa-hashtag"></i> General</a></li>
-					<li><a class="nav-link" onclick="switchRoom('JEE')"><i class="fas fa-hashtag"></i> JEE Prep</a></li>
-					<li><a class="nav-link" onclick="switchRoom('NEET')"><i class="fas fa-hashtag"></i> NEET Prep</a></li>
-					<li><a class="nav-link" onclick="switchRoom('Coding')"><i class="fas fa-hashtag"></i> Coding</a></li>
 				</ul>
 			</nav>
 		</aside>
@@ -571,25 +527,6 @@
 				onkeypress="if(event.key==='Enter') sendAICommMessage()">
 			<button onclick="sendAICommMessage()"
 				style="background:var(--comm-primary); color:white; border:none; width:40px; border-radius:10px; cursor:pointer;"><i
-					class="fas fa-paper-plane"></i></button>
-		</div>
-	</div>
-
-	<!-- Real-time Chat Widget -->
-	<div class="chat-widget" id="chatWidget">
-		<div class="chat-widget-header" onclick="document.getElementById('chatWidget').classList.toggle('active')">
-			<span><i class="fas fa-comments"></i> Group Chat</span>
-			<span id="currentChannel"># general</span>
-		</div>
-		<div class="chat-messages" id="chatMsgs"
-			style="height:340px; padding:15px; overflow-y:auto; display:flex; flex-direction:column; background:#f8fafc;">
-			<!-- Real-time messages here -->
-		</div>
-		<div style="padding:10px; background:white; display:flex; border-top:1px solid #eee;">
-			<input type="text" id="chatInput" placeholder="Message to #general..."
-				style="flex:1; border:none; padding:8px;" onkeypress="if(event.key==='Enter') sendChatMessage()">
-			<button onclick="sendChatMessage()"
-				style="border:none; background:none; color:var(--comm-primary); cursor:pointer;"><i
 					class="fas fa-paper-plane"></i></button>
 		</div>
 	</div>

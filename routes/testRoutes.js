@@ -205,43 +205,53 @@ const QUESTION_BANKS = {
 // ── PROTECTED ROUTES ────────────────────────────────────────────────
 
 // GET /api/test/daily-challenge/stats
-router.get('/daily-challenge/stats', async (req, res) => {
+router.get('/daily-challenge/stats', requireAuth, async (req, res) => {
     try {
-        const authHeader = req.headers.authorization;
-        if (!authHeader) return res.status(401).json({ ok: false, message: 'Unauthorized' });
+        const userId = req.userId;
+        const User = require('../models/User');
+        const user = await User.findById(userId);
 
-        const todayStr = new Date().toISOString().split('T')[0];
-        const userId = req.user.id;
+        // 1. Calculate Streak with Auto-Reset on missed days
+        let streak = 0;
+        if (user) {
+            const today = new Date().toISOString().split('T')[0];
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayStr = yesterday.toISOString().split('T')[0];
+            
+            if (user.lastChallengeDate && user.lastChallengeDate !== today && user.lastChallengeDate !== yesterdayStr) {
+                user.streak = 0;
+                await user.save();
+            }
+            streak = user.streak || 0;
+        }
 
-        // Get user's result for today
-        const todayResult = await TestResult.findOne({ 
-            userId, 
-            courseId: `daily_ssc_${todayStr}` 
-        });
-
-        // Get global rank for today
+        // 2. Calculate Global Rank by total points comparison
         let rank = 'N/A';
-        if (todayResult) {
-            const betterCount = await TestResult.countDocuments({ 
-                courseId: `daily_ssc_${todayStr}`, 
-                score: { $gt: todayResult.score } 
+        if (user) {
+            const betterCount = await User.countDocuments({ 
+                points: { $gt: user.points || 0 } 
             });
             rank = betterCount + 1;
         }
 
-        // Mock streak for now (in production, track consecutive days in User model)
-        const streak = 5; 
+        // 3. Get User's actual last Daily Challenge result
+        const lastResult = await TestResult.findOne({ 
+            userId, 
+            courseId: { $regex: /^daily_challenge_/ }
+        }).sort({ timestamp: -1 });
 
         res.json({ 
             ok: true, 
-            score: todayResult ? todayResult.score : 0,
-            correct: todayResult ? todayResult.correctQuestions : 0,
-            rank,
+            score: lastResult ? lastResult.score : 0,
+            correct: lastResult ? lastResult.correctQuestions : 0,
+            totalQuestions: lastResult ? lastResult.totalQuestions : 15,
+            rank: rank !== 'N/A' ? rank : '--',
             streak
         });
     } catch (err) {
-        console.error(err);
-        res.status(500).json({ ok: false });
+        console.error("Fetch daily challenge stats error:", err);
+        res.status(500).json({ ok: false, error: 'Server error' });
     }
 });
 
@@ -293,18 +303,17 @@ router.get('/daily-challenge/all', requireAdmin, async (req, res) => {
 router.post('/daily-challenge/submit', requireAuth, async (req, res) => {
     try {
         const { challengeId, answers, score, correct, wrong, accuracy, timeTaken } = req.body;
-        const userId = req.user.id || req.user.userId;
+        const userId = req.userId;
 
         // 1. Save Result
         const result = await TestResult.create({
             userId,
             courseId: `daily_challenge_${challengeId}`,
-            score,
-            correctQuestions: correct,
-            wrongQuestions: wrong,
-            accuracy,
-            timeTaken,
-            examType: 'Daily Challenge'
+            score: Number(score),
+            passed: true, // required by schema, mark true as completed
+            totalQuestions: Number(correct) + Number(wrong),
+            correctQuestions: Number(correct),
+            timestamp: new Date()
         });
 
         // 2. Update User Streaks & Points

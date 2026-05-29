@@ -472,6 +472,11 @@
         const IMG_BASE = '/uploads/books/';
         const bookId = new URLSearchParams(window.location.search).get('id');
         const socket = typeof io !== 'undefined' ? io() : null;
+        let isAdmin = false;
+        try {
+            const user = JSON.parse(localStorage.getItem('coursenova_user') || localStorage.getItem('coursenovaUser') || '{}');
+            isAdmin = user.role === 'admin';
+        } catch(e){}
 
         if (socket && bookId) {
             socket.emit('join-room', `book-${bookId}`);
@@ -540,20 +545,33 @@
 
                     <!-- Map Section -->
                     <div class="seller-card" style="padding: 10px; overflow: hidden;">
-                        <h3 style="margin: 10px 0 10px 10px;">Seller Location</h3>
+                        <h3 style="margin: 10px 0 10px 10px;">📍 Seller Location</h3>
                         ${b.location && b.location.coordinates && b.location.coordinates[0] !== 0 ? `
                             <iframe 
                                 width="100%" 
-                                height="250" 
+                                height="220" 
                                 frameborder="0" 
                                 style="border:0; border-radius: 10px;" 
                                 src="https://www.google.com/maps?q=${b.location.coordinates[1]},${b.location.coordinates[0]}&z=15&output=embed"
-                                allowfullscreen>
+                                allowfullscreen loading="lazy">
                             </iframe>
-                            <button class="btn-chat" style="margin-top: 10px; width: 100%;" onclick="window.open('https://www.google.com/maps/dir/?api=1&destination=${b.location.coordinates[1]},${b.location.coordinates[0]}', '_blank')">
+                            <button class="btn-chat" id="directionsBtn" style="margin-top: 10px; width: 100%;" onclick="getDirections(${b.location.coordinates[1]}, ${b.location.coordinates[0]})">
                                 <i class="fas fa-directions"></i> Get Directions
                             </button>
                         ` : '<p style="padding: 20px; text-align: center; color: var(--muted);">Location not provided</p>'}
+                    </div>
+
+                    <!-- User's Real Location -->
+                    <div class="seller-card" id="myLocationCard" style="padding: 16px; background: linear-gradient(135deg, #f0f9ff, #e0f2fe);">
+                        <h3 style="margin: 0 0 10px 0; font-size: 0.85rem; color: #0369a1;">🌐 Your Current Location</h3>
+                        <div id="myLocStatus" style="font-size: 0.88rem; color: #0c4a6e; display:flex; align-items:center; gap:8px;">
+                            <i class="fas fa-spinner fa-spin" style="color: #0284c7;"></i>
+                            <span>Detecting your location...</span>
+                        </div>
+                        <div id="myLocCoords" style="font-size: 0.78rem; color: #64748b; margin-top: 6px; display:none;"></div>
+                        <button onclick="refreshMyLocation()" style="margin-top: 10px; padding: 6px 16px; border: 1.5px solid #0284c7; border-radius: 6px; background: transparent; color: #0284c7; font-weight: 600; font-size: 0.82rem; cursor: pointer;">
+                            <i class="fas fa-sync-alt"></i> Refresh Location
+                        </button>
                     </div>
 
                     <!-- Seller Card -->
@@ -590,6 +608,13 @@
                                 <i class="fas fa-comment-dots"></i> Chat
                             </button>
                         </div>
+                        ${isAdmin ? `
+                        <div style="margin-top: 15px;">
+                            <button class="btn-delete-admin" onclick="deleteBookAdmin()" style="width:100%; padding:12px; background:#ef4444; color:#fff; border:none; border-radius:10px; font-weight:700; cursor:pointer; font-size: 0.9rem; transition: all 0.2s;">
+                                <i class="fas fa-trash-alt"></i> Delete Listing (Admin)
+                            </button>
+                        </div>
+                        ` : ''}
                     </div>
 
                     <!-- Chat -->
@@ -611,6 +636,79 @@
         }
 
         // --- CONTACT SELLER ---
+        async function deleteBookAdmin() {
+            if (!confirm('Are you sure you want to delete this listing as Admin?')) return;
+            const token = typeof getAuthToken === 'function' ? getAuthToken() : (localStorage.getItem('token') || '');
+            if (!token) { alert('Login token not found.'); return; }
+            
+            try {
+                const res = await fetch(`${API}/${bookId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const data = await res.json();
+                if (!data.ok) throw new Error(data.message);
+                alert('Listing deleted successfully by admin!');
+                window.location.href = 'store';
+            } catch (err) {
+                alert('Error: ' + err.message);
+            }
+        }
+
+        // --- USER REAL LOCATION ---
+        let userLatVal = null, userLngVal = null;
+
+        function refreshMyLocation() {
+            const statusEl = document.getElementById('myLocStatus');
+            const coordsEl = document.getElementById('myLocCoords');
+            if (!statusEl) return;
+            statusEl.innerHTML = '<i class="fas fa-spinner fa-spin" style="color:#0284c7;"></i> <span>Detecting location...</span>';
+            if (coordsEl) coordsEl.style.display = 'none';
+
+            if (!navigator.geolocation) {
+                statusEl.innerHTML = '<i class="fas fa-times-circle" style="color:#ef4444;"></i> <span>Geolocation not supported by your browser</span>';
+                return;
+            }
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    userLatVal = pos.coords.latitude;
+                    userLngVal = pos.coords.longitude;
+                    const accuracy = Math.round(pos.coords.accuracy);
+                    statusEl.innerHTML = `<i class="fas fa-map-marker-alt" style="color:#0284c7;"></i> <span style="font-weight:600;">Live Location Captured ✅</span>`;
+                    if (coordsEl) {
+                        coordsEl.textContent = `Lat: ${userLatVal.toFixed(5)}, Lng: ${userLngVal.toFixed(5)} (±${accuracy}m accuracy)`;
+                        coordsEl.style.display = 'block';
+                    }
+                },
+                (err) => {
+                    const msgs = {
+                        1: 'Location permission denied. Please allow in browser settings.',
+                        2: 'Position unavailable. Try again.',
+                        3: 'Location request timed out. Try again.'
+                    };
+                    statusEl.innerHTML = `<i class="fas fa-exclamation-triangle" style="color:#f59e0b;"></i> <span>${msgs[err.code] || err.message}</span>`;
+                },
+                { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+            );
+        }
+
+        function getDirections(sellerLat, sellerLng) {
+            const dest = `${sellerLat},${sellerLng}`;
+            if (userLatVal && userLngVal) {
+                // Use user's live location as origin
+                window.open(`https://www.google.com/maps/dir/${userLatVal},${userLngVal}/${dest}`, '_blank');
+            } else {
+                // Fallback: just open destination
+                window.open(`https://www.google.com/maps/dir/?api=1&destination=${dest}`, '_blank');
+            }
+        }
+
+        // Auto detect user location once page is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(refreshMyLocation, 500);
+        });
+
+
         function contactSeller(phone) {
             if (!phone) { alert('Contact number not provided by seller'); return; }
             if (confirm(`Call seller at ${phone}?`)) {
