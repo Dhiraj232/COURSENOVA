@@ -14,7 +14,7 @@ async function cleanupStateBoards() {
             "Punjab Board Class 12 (Commerce) Free Mock Tests",
             "UP Board Class 12 (Commerce) Free Mock Tests"
         ];
-
+// practice-tests
         console.log(`Deleting specific packs: \n${packsToDelete.join('\n')}`);
         
         const deleteResult = await MockTestPack.deleteMany({ title: { $in: packsToDelete } });
