@@ -277,6 +277,11 @@ app.get('/sitemap.xml', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'sitemap.xml'));
 });
 
+// ─── Health Check (bypasses ALL middleware — keeps Render service alive) ──────
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'ok', uptime: process.uptime() });
+});
+
 // ─── 2. Body Parsers ─────────────────────────────────────────────────────────
 app.use(express.json({ 
   limit: '10mb',
@@ -746,5 +751,25 @@ app.set('socketMap', socketMap);
 
 server.listen(PORT, () => {
     console.log(`[${new Date().toLocaleTimeString()}] COURSENOVA Community API & Chat listening on port ${PORT}`);
-});
 
+    // ─── Self-Ping Keep-Alive (prevents Render free tier from sleeping) ────────
+    // Pings /health every 13 minutes to keep the server warm for Googlebot crawls.
+    // Render free tier sleeps after 15 min of inactivity — this prevents that.
+    if (process.env.NODE_ENV === 'production') {
+        const KEEP_ALIVE_URL = process.env.RENDER_EXTERNAL_URL
+            ? `${process.env.RENDER_EXTERNAL_URL}/health`
+            : 'https://www.coursenova.in/health';
+        const INTERVAL_MS = 13 * 60 * 1000; // 13 minutes
+
+        setInterval(() => {
+            const https = require('https');
+            https.get(KEEP_ALIVE_URL, (res) => {
+                console.log(`[Keep-Alive] Pinged ${KEEP_ALIVE_URL} → ${res.statusCode}`);
+            }).on('error', (err) => {
+                console.warn(`[Keep-Alive] Ping failed: ${err.message}`);
+            });
+        }, INTERVAL_MS);
+
+        console.log(`[Keep-Alive] Self-ping enabled every 13 min → ${KEEP_ALIVE_URL}`);
+    }
+});
