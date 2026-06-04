@@ -210,10 +210,17 @@ app.options('*', cors(corsOptions));
 // Apply CORS to all routes (only once)
 app.use(cors(corsOptions));
 
-// Global X-Robots-Tag middleware for Google Search Console indexing
+// Global X-Robots-Tag middleware for Google Search Console indexing (pages only)
 app.use((req, res, next) => {
-    res.setHeader("X-Robots-Tag", "index, follow");
-    next();
+  const pathLower = req.path.toLowerCase();
+  // Exclude configuration files, assets, and API routes from indexation headers
+  const excludedExtensions = ['.txt', '.xml', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.css', '.js', '.woff', '.woff2', '.ttf', '.eot', '.webp', '.avif', '.json', '.webmanifest'];
+  const isExcluded = excludedExtensions.some(ext => pathLower.endsWith(ext)) || pathLower.startsWith('/api/');
+  
+  if (!isExcluded) {
+      res.setHeader("X-Robots-Tag", "index, follow");
+  }
+  next();
 });
 
 // Force WWW and HTTPS Redirect Middleware (Production only)
@@ -253,6 +260,21 @@ app.use((req, res, next) => {
     }
   }
   next();
+});
+
+// High-performance routes for robots.txt & sitemap.xml (defined early to bypass sessions/helmet)
+app.get('/robots.txt', (req, res) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.sendFile(path.join(__dirname, 'public', 'robots.txt'));
+});
+
+app.get('/sitemap.xml', (req, res) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.sendFile(path.join(__dirname, 'public', 'sitemap.xml'));
 });
 
 // ─── 2. Body Parsers ─────────────────────────────────────────────────────────
@@ -326,20 +348,7 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Explicit routes to ensure robots.txt and sitemap.xml are served with cache-prevention headers
-app.get('/robots.txt', (req, res) => {
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
-    res.sendFile(path.join(__dirname, 'public', 'robots.txt'));
-});
-
-app.get('/sitemap.xml', (req, res) => {
-    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
-    res.sendFile(path.join(__dirname, 'public', 'sitemap.xml'));
-});
+// Note: robots.txt and sitemap.xml routes have been moved to the top of the middleware chain for optimization
 
 // 1. 301 Redirect direct .html requests to extensionless (except index.html -> /)
 app.use((req, res, next) => {
