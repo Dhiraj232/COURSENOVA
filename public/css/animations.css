@@ -1,0 +1,205 @@
+/* =============================================================
+   COURSENOVA — ANIMATION SYSTEM
+   Scroll-triggered animations, micro-interactions, skeletons
+   ============================================================= */
+
+/* ── KEYFRAMES ─────────────────────────────────────────────── */
+@keyframes cn-fadeInUp {
+  from { opacity: 0; transform: translateY(28px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes cn-fadeInLeft {
+  from { opacity: 0; transform: translateX(-28px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes cn-fadeInRight {
+  from { opacity: 0; transform: translateX(28px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes cn-fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes cn-scaleIn {
+  from { opacity: 0; transform: scale(0.88); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes cn-slideDown {
+  from { opacity: 0; transform: translateY(-16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes cn-shimmer {
+  0%   { background-position: -400px 0; }
+  100% { background-position: 400px 0; }
+}
+
+@keyframes cn-pulse {
+  0%, 100% { transform: scale(1); }
+  50%       { transform: scale(1.04); }
+}
+
+@keyframes cn-float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-10px); }
+}
+
+@keyframes cn-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes cn-ripple {
+  to { transform: scale(4); opacity: 0; }
+}
+
+@keyframes cn-gradientShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes cn-countUp {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes cn-barGrow {
+  from { width: 0; }
+}
+
+@keyframes cn-badgePop {
+  0%   { transform: scale(0) rotate(-12deg); opacity: 0; }
+  60%  { transform: scale(1.15) rotate(3deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+/* ── SCROLL-TRIGGERED: BASE STATE ─────────────────────────── */
+.cn-animate {
+  opacity: 0;
+  transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.165, 0.84, 0.44, 1);
+  will-change: opacity, transform;
+}
+
+.cn-fade-up    { transform: translateY(30px); }
+.cn-fade-left  { transform: translateX(-30px); }
+.cn-fade-right { transform: translateX(30px); }
+.cn-fade-in    { transform: none; }
+.cn-scale-in   { transform: scale(0.9); }
+
+/* ── SCROLL-TRIGGERED: VISIBLE STATE (added by JS) ─────────── */
+.cn-animate.cn-visible {
+  opacity: 1;
+  transform: none;
+}
+
+/* ── STAGGER DELAYS ────────────────────────────────────────── */
+.cn-delay-1 { transition-delay: 0.1s; }
+.cn-delay-2 { transition-delay: 0.2s; }
+.cn-delay-3 { transition-delay: 0.3s; }
+.cn-delay-4 { transition-delay: 0.4s; }
+.cn-delay-5 { transition-delay: 0.5s; }
+.cn-delay-6 { transition-delay: 0.6s; }
+
+/* ── SKELETON LOADING ──────────────────────────────────────── */
+.cn-skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+  background-size: 800px 100%;
+  animation: cn-shimmer 1.4s infinite ease-in-out;
+  border-radius: 6px;
+}
+
+.cn-skeleton-text {
+  height: 14px;
+  margin-bottom: 8px;
+  border-radius: 4px;
+}
+
+.cn-skeleton-text.w-3-4 { width: 75%; }
+.cn-skeleton-text.w-1-2 { width: 50%; }
+.cn-skeleton-text.w-1-4 { width: 25%; }
+
+.cn-skeleton-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+}
+
+.cn-skeleton-card {
+  border-radius: 16px;
+  height: 200px;
+}
+
+/* ── FLOATING ANIMATION ────────────────────────────────────── */
+.cn-float {
+  animation: cn-float 3s ease-in-out infinite;
+}
+
+.cn-float-slow {
+  animation: cn-float 5s ease-in-out infinite;
+}
+
+/* ── PULSE ─────────────────────────────────────────────────── */
+.cn-pulse {
+  animation: cn-pulse 2s ease-in-out infinite;
+}
+
+/* ── GRADIENT ANIMATED BACKGROUND ─────────────────────────── */
+.cn-gradient-animated {
+  background-size: 200% 200%;
+  animation: cn-gradientShift 6s ease infinite;
+}
+
+/* ── RIPPLE BUTTON EFFECT ──────────────────────────────────── */
+.cn-ripple-container {
+  position: relative;
+  overflow: hidden;
+}
+
+.cn-ripple-wave {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.35);
+  transform: scale(0);
+  animation: cn-ripple 0.6s linear;
+  pointer-events: none;
+}
+
+/* ── PAGE TRANSITION ───────────────────────────────────────── */
+.cn-page-enter {
+  animation: cn-fadeIn 0.35s ease forwards;
+}
+
+/* ── BADGE POP ─────────────────────────────────────────────── */
+.cn-badge-pop {
+  animation: cn-badgePop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+/* ── PROGRESS BAR GROW ─────────────────────────────────────── */
+.cn-progress-bar {
+  animation: cn-barGrow 1.2s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
+  animation-delay: 0.3s;
+}
+
+/* ── REDUCED MOTION: Disable all animations ────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .cn-animate,
+  .cn-float,
+  .cn-float-slow,
+  .cn-pulse,
+  .cn-gradient-animated {
+    animation: none !important;
+    transition: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .cn-skeleton {
+    animation: none;
+    background: #f0f0f0;
+  }
+}

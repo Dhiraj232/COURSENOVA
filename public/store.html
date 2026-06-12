@@ -4,12 +4,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Used Books Marketplace & Student Store | COURSENOVA</title>
+    <title>Used Books Marketplace &amp; Student Bookstore | COURSENOVA</title>
 
     <!-- SEO Meta Tags -->
-    <meta name="title" content="Used Books Marketplace & Student Store | COURSENOVA">
-    <meta name="description" content="Buy, sell, or exchange used college textbooks and study materials on COURSENOVA's student marketplace. Save money on syllabus-aligned books.">
-    <meta name="keywords" content="college book store, buy used textbooks, sell textbooks, peer-to-peer book exchange, coursenova marketplace, bookstore">
+    <meta name="title" content="Used Books Marketplace &amp; Student Bookstore | COURSENOVA">
+    <meta name="description" content="Buy, sell, or exchange used college textbooks, competitive exam guides, and study materials directly with other students. Find syllabus-aligned books with zero fees.">
+    <meta name="keywords" content="used books marketplace, buy used textbooks, sell college books, student bookstore, peer-to-peer book exchange, coursenova store, engineering books, school textbooks">
     <meta name="robots" content="index, follow">
     <meta name="googlebot" content="index, follow">
     <link rel="canonical" href="https://www.coursenova.in/store">
@@ -17,37 +17,15 @@
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://www.coursenova.in/store">
-    <meta property="og:title" content="Used Books Marketplace & Student Store | COURSENOVA">
-    <meta property="og:description" content="Buy, sell, or exchange used textbooks directly with your college peers on COURSENOVA Book Store. Save money on college books.">
-    <meta property="og:image" content="https://www.coursenova.in/assets/og-banner.png">
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Used Books Marketplace & Student Store | COURSENOVA</title>
-
-    <!-- SEO Meta Tags -->
-    <meta name="title" content="Used Books Marketplace & Student Store | COURSENOVA">
-    <meta name="description" content="Buy, sell, or exchange used college textbooks and study materials on COURSENOVA's student marketplace. Save money on syllabus-aligned books.">
-    <meta name="keywords" content="college book store, buy used textbooks, sell textbooks, peer-to-peer book exchange, coursenova marketplace, bookstore">
-    <meta name="robots" content="index, follow">
-    <meta name="googlebot" content="index, follow">
-    <link rel="canonical" href="https://www.coursenova.in/store">
-
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://www.coursenova.in/store">
-    <meta property="og:title" content="Used Books Marketplace & Student Store | COURSENOVA">
-    <meta property="og:description" content="Buy, sell, or exchange used textbooks directly with your college peers on COURSENOVA Book Store. Save money on college books.">
+    <meta property="og:title" content="Used Books Marketplace &amp; Student Bookstore | COURSENOVA">
+    <meta property="og:description" content="Buy, sell, or exchange used college textbooks and study materials directly with your peers on COURSENOVA. Save money on syllabus-aligned books.">
     <meta property="og:image" content="https://www.coursenova.in/assets/og-banner.png">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="https://www.coursenova.in/store">
-    <meta property="twitter:title" content="Used Books Marketplace & Student Store | COURSENOVA">
-    <meta property="twitter:description" content="Buy, sell, or exchange used textbooks directly with your college peers on COURSENOVA Book Store. Save money on college books.">
+    <meta property="twitter:title" content="Used Books Marketplace &amp; Student Bookstore | COURSENOVA">
+    <meta property="twitter:description" content="Buy, sell, or exchange used college textbooks and study materials directly with your peers on COURSENOVA. Save money on syllabus-aligned books.">
     <meta property="twitter:image" content="https://www.coursenova.in/assets/og-banner.png">
 
     <!-- Structured Data (JSON-LD) -->
@@ -56,21 +34,62 @@
       "@context": "https://schema.org",
       "@graph": [
         {
-          "@type": "WebPage",
+          "@type": "Organization",
+          "@id": "https://www.coursenova.in/#organization",
+          "name": "COURSENOVA",
+          "url": "https://www.coursenova.in/",
+          "logo": "https://www.coursenova.in/images/coursenova-logo.png",
+          "sameAs": [
+            "https://www.linkedin.com/in/dhiraj-kumar-6a0542379/?skipRedirect=true",
+            "https://github.com/Dhiraj232",
+            "https://www.instagram.com/dhir_aj1504/"
+          ]
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://www.coursenova.in/#website",
+          "name": "COURSENOVA",
+          "url": "https://www.coursenova.in/",
+          "publisher": {
+            "@id": "https://www.coursenova.in/#organization"
+          }
+        },
+        {
+          "@type": "CollectionPage",
           "@id": "https://www.coursenova.in/store#webpage",
           "url": "https://www.coursenova.in/store",
-          "name": "Used Books Marketplace & Student Store | COURSENOVA",
-          "description": "Buy, sell, or exchange used college textbooks and study materials on COURSENOVA's student marketplace. Save money on syllabus-aligned books.",
+          "name": "Used Books Marketplace & Student Bookstore | COURSENOVA",
+          "description": "Buy, sell, or exchange used college textbooks, competitive exam guides, and study materials directly with other students. Find syllabus-aligned books with zero fees.",
           "isPartOf": {
-            "@type": "WebSite",
-            "@id": "https://www.coursenova.in/#website",
-            "name": "COURSENOVA",
-            "url": "https://www.coursenova.in/"
+            "@id": "https://www.coursenova.in/#website"
+          },
+          "about": {
+            "@type": "Thing",
+            "name": "Used Textbooks & Study Materials"
           }
+        },
+        {
+          "@type": "BreadcrumbList",
+          "@id": "https://www.coursenova.in/store#breadcrumb",
+          "itemListElement": [
+            {
+              "@type": "ListItem",
+              "position": 1,
+              "name": "Home",
+              "item": "https://www.coursenova.in/"
+            },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": "Store",
+              "item": "https://www.coursenova.in/store"
+            }
+          ]
         }
       ]
     }
     </script>
+
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
@@ -918,59 +937,357 @@
             background: white;
             cursor: pointer;
         }
+
+        /* -- Marketplace Info & SEO Content -- */
+        .marketplace-info-sec {
+            max-width: 1280px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .seo-intro-grid {
+            display: grid;
+            grid-template-columns: 1.3fr 1fr;
+            gap: 40px;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.05);
+            margin-bottom: 40px;
+            border: 1px solid var(--border);
+        }
+
+        @media(max-width: 900px) {
+            .seo-intro-grid {
+                grid-template-columns: 1fr;
+                padding: 30px 20px;
+                gap: 30px;
+            }
+        }
+
+        .seo-text h2 {
+            font-size: 1.7rem;
+            color: var(--brand);
+            font-weight: 800;
+            margin-bottom: 20px;
+            line-height: 1.3;
+        }
+
+        .seo-text h3 {
+            font-size: 1.2rem;
+            color: var(--text);
+            margin: 24px 0 12px;
+            font-weight: 700;
+        }
+
+        .seo-text p {
+            font-size: 0.95rem;
+            line-height: 1.7;
+            color: var(--muted);
+            margin-bottom: 16px;
+        }
+
+        .seo-text a {
+            color: var(--brand);
+            font-weight: 600;
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .seo-text a:hover {
+            text-decoration: underline;
+            color: var(--brand2);
+        }
+
+        .seo-features {
+            background: #f8f9ff;
+            border-radius: 16px;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            border: 1px solid var(--border);
+            height: fit-content;
+        }
+
+        .feature-card {
+            display: flex;
+            gap: 16px;
+            align-items: flex-start;
+        }
+
+        .feature-card i {
+            font-size: 1.4rem;
+            color: var(--brand);
+            background: #eeebff;
+            padding: 12px;
+            border-radius: 10px;
+            flex-shrink: 0;
+        }
+
+        .feature-card h4 {
+            font-size: 0.98rem;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 6px;
+        }
+
+        .feature-card p {
+            font-size: 0.85rem;
+            color: var(--muted);
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        /* -- FAQ Section -- */
+        .faq-section {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.05);
+            margin-bottom: 40px;
+            border: 1px solid var(--border);
+        }
+
+        .faq-section h2 {
+            font-size: 1.7rem;
+            color: var(--brand);
+            font-weight: 800;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .faq-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .faq-item {
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            background: white;
+            transition: all 0.2s ease;
+        }
+
+        .faq-item:hover {
+            border-color: var(--brand2);
+        }
+
+        .faq-question {
+            width: 100%;
+            padding: 18px 24px;
+            background: none;
+            border: none;
+            text-align: left;
+            font-size: 1.02rem;
+            font-weight: 700;
+            color: var(--text);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: inherit;
+        }
+
+        .faq-question i {
+            color: var(--brand);
+            transition: transform 0.2s;
+        }
+
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+            background: #fafbff;
+        }
+
+        .faq-answer p {
+            padding: 20px 24px;
+            margin: 0;
+            font-size: 0.92rem;
+            line-height: 1.6;
+            color: var(--muted);
+            border-top: 1.5px solid var(--border);
+        }
+
+        .faq-item.active .faq-answer {
+            max-height: 300px;
+        }
+
+        .faq-item.active .faq-question i {
+            transform: rotate(180deg);
+        }
+
+        /* -- Empty State Upgrades -- */
+        .empty-placeholder-section {
+            text-align: center;
+            padding: 20px 0;
+            grid-column: 1 / -1;
+        }
+
+        .empty-alert-card {
+            background: #fffbfa;
+            border: 1px dashed var(--orange);
+            border-radius: 16px;
+            padding: 40px 30px;
+            margin-bottom: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 4px 16px rgba(225, 112, 85, 0.05);
+        }
+
+        .empty-alert-card i {
+            font-size: 3rem;
+            color: var(--orange);
+            background: #fff0eb;
+            padding: 16px;
+            border-radius: 50%;
+        }
+
+        .empty-alert-card h4 {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--text);
+            margin: 0;
+        }
+
+        .empty-alert-card p {
+            font-size: 0.95rem;
+            color: var(--muted);
+            margin: 0;
+            max-width: 600px;
+            line-height: 1.6;
+        }
+
+        .empty-section-title {
+            font-size: 1.25rem;
+            font-weight: 800;
+            color: var(--text);
+            margin: 40px 0 20px;
+            text-align: left;
+            position: relative;
+            padding-left: 14px;
+            border-left: 4px solid var(--brand);
+        }
+
+        .featured-categories-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 16px;
+            margin-bottom: 40px;
+        }
+
+        .cat-card-featured {
+            background: white;
+            border: 1.5px solid var(--border);
+            border-radius: 14px;
+            padding: 24px 16px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .cat-card-featured:hover {
+            border-color: var(--brand);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(108, 92, 231, 0.12);
+        }
+
+        .cat-card-featured i {
+            font-size: 1.8rem;
+            color: var(--brand);
+        }
+
+        .cat-card-featured span {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text);
+        }
+
+        .sample-listings-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 40px;
+            margin-bottom: 10px;
+        }
+
+        .sample-badge {
+            background: #e0f2fe;
+            color: #0369a1;
+            font-size: 0.72rem;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
     </style>
+
     <link rel="stylesheet" href="css/navigation.css">
     <script src="js/navigation.js" defer></script>
 
-    <!-- Favicon -->
     <link rel="icon" type="image/png" href="/images/coursenova-logo.png">
-<link rel="stylesheet" href="css/responsive.css">
+    <link rel="stylesheet" href="css/responsive.css">
+</head>
 
-<body>
-    <!-- --------------- COURSENOVA NAVBAR --------------- -->
-    <nav class="navbar" id="navbar">
-        <div class="nav-container">
-            <a href="/" class="logo"><img src="images/coursenova-logo.png" alt="COURSENOVA"> <span>COURSENOVA</span></a>
-            <ul class="nav-menu" id="navMenu"></ul>
-            <div class="nav-buttons" id="navButtons"></div>
-            <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
-        </div>
-    </nav>
-    <div class="store-hero">
-        <h1>Used Books Marketplace</h1>
-        <p>Buy &amp; sell used books directly with students near you - No middlemen!</p>
-        <button class="sell-btn-hero" id="openSellModal">
-            <i class="fas fa-plus-circle"></i> Sell Your Book
-        </button>
-    </div>
+<body>
+    <!-- --------------- COURSENOVA HEADER & NAVBAR --------------- -->
+    <header class="site-header">
+        <nav class="navbar" id="navbar">
+            <div class="nav-container">
+                <a href="/" class="logo"><img src="images/coursenova-logo.png" alt="COURSENOVA"> <span>COURSENOVA</span></a>
+                <ul class="nav-menu" id="navMenu"></ul>
+                <div class="nav-buttons" id="navButtons"></div>
+                <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+            </div>
+        </nav>
+    </header>
 
-    <!-- --------------- STATS --------------- -->
-    <div class="stats-bar">
-        <div class="stat-item">
-            <div class="stat-num" id="statBooks">0</div>
-            <div class="stat-lbl">Books Listed</div>
-        </div>
-        <div class="stat-item">
-            <div class="stat-num" id="statSellers">0</div>
-            <div class="stat-lbl">Active Sellers</div>
-        </div>
-        <div class="stat-item">
-            <div class="stat-num" id="statAvg">0</div>
-            <div class="stat-lbl">Avg Price</div>
-        </div>
-        <div class="stat-item">
-            <div class="stat-num" id="statCategories">0</div>
-            <div class="stat-lbl">Categories</div>
-        </div>
-    </div>
+    <main class="store-main-content">
+        <!-- --------------- HERO SECTION --------------- -->
+        <section class="store-hero" aria-label="Store Hero Banner">
+            <h1>Used Books Marketplace &amp; Student Bookstore</h1>
+            <p>Buy, sell, or exchange used college textbooks, competitive exam guides, and school books directly with peers near you - zero fees, zero middlemen!</p>
+            <button class="sell-btn-hero" id="openSellModal">
+                <i class="fas fa-plus-circle"></i> Sell Your Book
+            </button>
+        </section>
 
-    <!-- --------------- MAIN LAYOUT --------------- -->
-    <div class="store-layout">
+        <!-- --------------- STATS SECTION --------------- -->
+        <section class="stats-bar" aria-label="Marketplace Statistics">
+            <div class="stat-item">
+                <div class="stat-num" id="statBooks">0</div>
+                <div class="stat-lbl">Books Listed</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-num" id="statSellers">0</div>
+                <div class="stat-lbl">Active Sellers</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-num" id="statAvg">0</div>
+                <div class="stat-lbl">Avg Price</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-num" id="statCategories">0</div>
+                <div class="stat-lbl">Categories</div>
+            </div>
+        </section>
 
-        <!-- -- Filter Sidebar -- -->
-        <aside class="filter-sidebar">
-            <h3><i class="fas fa-sliders-h"></i> Filters</h3>
-
+        <!-- --------------- MAIN MARKETPLACE LAYOUT --------------- -->
+        <div class="store-layout">
+            <!-- -- Filter Sidebar -- -->
+            <aside class="filter-sidebar">
+                <h3><i class="fas fa-sliders-h"></i> Filters</h3>
             <div class="filter-group">
                 <label>Category</label>
                 <select id="filterCategory">
@@ -1184,8 +1501,276 @@
     <!-- --------------- TOAST --------------- -->
     <div class="toast" id="toast"></div>
 
+    </main><!-- /store-main-content -->
+
+    <!-- ===============================================================
+         SEO RICH CONTENT SECTIONS — Prevents Soft 404
+         These sections contain static, crawlable text for Google.
+    ================================================================ -->
+    <div class="marketplace-info-sec" id="seo-content">
+
+        <!-- ── BREADCRUMB NAV ── -->
+        <nav aria-label="Breadcrumb" style="margin-bottom:24px; font-size:0.88rem; color:var(--muted);">
+            <ol style="list-style:none;padding:0;margin:0;display:flex;gap:6px;flex-wrap:wrap;">
+                <li><a href="/" style="color:var(--brand);font-weight:600;text-decoration:none;">Home</a></li>
+                <li style="color:var(--muted);">/</li>
+                <li style="color:var(--text);font-weight:600;">Used Books Marketplace</li>
+            </ol>
+        </nav>
+
+        <!-- ── INTRO SECTION ── -->
+        <section class="seo-intro-grid" aria-labelledby="intro-heading">
+            <div class="seo-text">
+                <h2 id="intro-heading">India's Trusted Peer-to-Peer Used Books Marketplace for Students</h2>
+
+                <p>Welcome to the <strong>COURSENOVA Used Books Marketplace</strong> — a student-first, zero-fee platform designed to help college students, school learners, and competitive exam aspirants across India buy, sell, and exchange used textbooks and study materials directly with each other. Whether you are looking for an <strong>engineering textbook</strong>, a <strong>UPSC preparation guide</strong>, a <strong>CBSE Class 12 science book</strong>, or a <strong>medical entrance reference</strong>, you will find it here at a fraction of its original cost.</p>
+
+                <p>The rising cost of new academic books is a significant burden for Indian students. A single semester's worth of textbooks can cost thousands of rupees — money that families struggle to allocate year after year. COURSENOVA's marketplace was built to solve this problem. By connecting buyers and sellers directly, we eliminate the middleman entirely, ensuring that the savings go straight to you.</p>
+
+                <h3>Why Choose COURSENOVA for Used Books?</h3>
+                <p>Unlike traditional second-hand bookstores where you get a fraction of your book's value, our platform lets you <strong>set your own price</strong> and negotiate directly with buyers. Sellers keep 100% of what they earn — there are no listing fees, no commission cuts, and no hidden charges. For buyers, this means access to quality used books at honest prices, often 40–70% cheaper than buying new.</p>
+
+                <p>Our marketplace is tightly integrated with the COURSENOVA educational ecosystem. When you're not hunting for books, you can explore our <a href="/premium-courses">premium online courses</a>, join the vibrant <a href="/community">student community</a>, or sharpen your exam readiness with <a href="/mock-tests">free mock tests</a> and <a href="/practice">practice sessions</a>. Learn more about our mission on the <a href="/about">About COURSENOVA</a> page or <a href="/">return to the homepage</a>.</p>
+
+                <h3>How to Sell Your Old Books</h3>
+                <p>Selling is as simple as clicking the <strong>"Sell Your Book"</strong> button, filling in your book's title, author, condition, price, and uploading a clear photo. Your listing goes live instantly and is visible to thousands of students across India. When a buyer contacts you, coordinate directly via the provided contact number — no involvement from COURSENOVA needed.</p>
+
+                <p>We support books across all major academic disciplines including <strong>Engineering (CSE, ECE, Mechanical, Civil)</strong>, <strong>Medical and Allied Health Sciences</strong>, <strong>Commerce and MBA</strong>, <strong>Arts and Humanities</strong>, <strong>School (Class 1–12)</strong>, and all major <strong>Competitive Exams</strong> such as JEE, NEET, UPSC, CAT, GATE, SSC, and Banking exams.</p>
+            </div>
+
+            <aside class="seo-features" aria-label="Marketplace Benefits">
+                <div class="feature-card">
+                    <i class="fas fa-hand-holding-usd" aria-hidden="true"></i>
+                    <div>
+                        <h4>Zero Fees, Zero Commission</h4>
+                        <p>List your books and keep every rupee you earn. No hidden charges, ever.</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-users" aria-hidden="true"></i>
+                    <div>
+                        <h4>Direct Peer-to-Peer Exchange</h4>
+                        <p>Connect directly with buyers and sellers in your city or college for faster transactions.</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-map-marker-alt" aria-hidden="true"></i>
+                    <div>
+                        <h4>Location-Based Discovery</h4>
+                        <p>Find books available near your college or neighbourhood with smart geolocation filters.</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-shield-alt" aria-hidden="true"></i>
+                    <div>
+                        <h4>Verified Student Community</h4>
+                        <p>Every seller is a COURSENOVA-registered student, making transactions safer and more trustworthy.</p>
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <i class="fas fa-bolt" aria-hidden="true"></i>
+                    <div>
+                        <h4>Instant Listings, Real-Time Alerts</h4>
+                        <p>New book listings appear instantly with live notifications so you never miss a deal.</p>
+                    </div>
+                </div>
+            </aside>
+        </section>
+
+        <!-- ── HOW IT WORKS ── -->
+        <section aria-labelledby="how-heading" style="background:white;border-radius:20px;padding:40px;box-shadow:0 4px 24px rgba(0,0,0,.05);margin-bottom:40px;border:1px solid var(--border);">
+            <h2 id="how-heading" style="font-size:1.7rem;color:var(--brand);font-weight:800;margin-bottom:30px;text-align:center;">How the COURSENOVA Book Marketplace Works</h2>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:30px;max-width:960px;margin:0 auto;">
+                <article style="text-align:center;">
+                    <div style="width:56px;height:56px;background:linear-gradient(135deg,var(--brand),var(--brand2));border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                        <i class="fas fa-user-plus" style="color:white;font-size:1.2rem;"></i>
+                    </div>
+                    <h3 style="font-size:1rem;font-weight:700;margin-bottom:8px;">1. Create Your Account</h3>
+                    <p style="font-size:0.88rem;color:var(--muted);line-height:1.6;">Sign up for free with Google. No lengthy forms — your academic profile is set up in seconds.</p>
+                </article>
+                <article style="text-align:center;">
+                    <div style="width:56px;height:56px;background:linear-gradient(135deg,var(--accent),#00b894);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                        <i class="fas fa-book-open" style="color:white;font-size:1.2rem;"></i>
+                    </div>
+                    <h3 style="font-size:1rem;font-weight:700;margin-bottom:8px;">2. List or Browse Books</h3>
+                    <p style="font-size:0.88rem;color:var(--muted);line-height:1.6;">Sellers click "Sell Your Book" and fill a simple form. Buyers search or browse the live catalogue.</p>
+                </article>
+                <article style="text-align:center;">
+                    <div style="width:56px;height:56px;background:linear-gradient(135deg,var(--orange),#fdcb6e);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                        <i class="fas fa-comments" style="color:white;font-size:1.2rem;"></i>
+                    </div>
+                    <h3 style="font-size:1rem;font-weight:700;margin-bottom:8px;">3. Contact &amp; Negotiate</h3>
+                    <p style="font-size:0.88rem;color:var(--muted);line-height:1.6;">Buyers contact sellers directly via the listed number. Agree on price and pickup location.</p>
+                </article>
+                <article style="text-align:center;">
+                    <div style="width:56px;height:56px;background:linear-gradient(135deg,#6c5ce7,#a29bfe);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                        <i class="fas fa-check-circle" style="color:white;font-size:1.2rem;"></i>
+                    </div>
+                    <h3 style="font-size:1rem;font-weight:700;margin-bottom:8px;">4. Exchange &amp; Save</h3>
+                    <p style="font-size:0.88rem;color:var(--muted);line-height:1.6;">Exchange the book, save up to 70% vs. buying new, and mark your listing as sold when done.</p>
+                </article>
+            </div>
+        </section>
+
+        <!-- ── FEATURED CATEGORIES ── -->
+        <section aria-labelledby="cat-heading">
+            <h2 id="cat-heading" class="empty-section-title">Browse by Subject Category</h2>
+            <p style="font-size:0.92rem;color:var(--muted);margin-bottom:24px;">Use the filters above or click a category below to find second-hand books for your specific field of study.</p>
+            <nav class="featured-categories-grid" aria-label="Book Categories">
+                <a href="/store?category=Engineering" class="cat-card-featured" style="text-decoration:none;">
+                    <i class="fas fa-cogs" aria-hidden="true"></i>
+                    <span>Engineering</span>
+                    <small style="font-size:0.74rem;color:var(--muted);">CSE · ECE · Mech · Civil</small>
+                </a>
+                <a href="/store?category=Medical" class="cat-card-featured" style="text-decoration:none;">
+                    <i class="fas fa-heartbeat" aria-hidden="true"></i>
+                    <span>Medical</span>
+                    <small style="font-size:0.74rem;color:var(--muted);">MBBS · Nursing · BDS</small>
+                </a>
+                <a href="/store?category=Commerce" class="cat-card-featured" style="text-decoration:none;">
+                    <i class="fas fa-chart-line" aria-hidden="true"></i>
+                    <span>Commerce</span>
+                    <small style="font-size:0.74rem;color:var(--muted);">CA · MBA · BCom</small>
+                </a>
+                <a href="/store?category=Science" class="cat-card-featured" style="text-decoration:none;">
+                    <i class="fas fa-flask" aria-hidden="true"></i>
+                    <span>Science</span>
+                    <small style="font-size:0.74rem;color:var(--muted);">BSc · Physics · Chemistry</small>
+                </a>
+                <a href="/store?category=Arts" class="cat-card-featured" style="text-decoration:none;">
+                    <i class="fas fa-palette" aria-hidden="true"></i>
+                    <span>Arts &amp; Humanities</span>
+                    <small style="font-size:0.74rem;color:var(--muted);">History · Literature · PSIR</small>
+                </a>
+                <a href="/store?category=School" class="cat-card-featured" style="text-decoration:none;">
+                    <i class="fas fa-school" aria-hidden="true"></i>
+                    <span>School (K-12)</span>
+                    <small style="font-size:0.74rem;color:var(--muted);">CBSE · ICSE · State Boards</small>
+                </a>
+                <a href="/store?category=Competitive" class="cat-card-featured" style="text-decoration:none;">
+                    <i class="fas fa-trophy" aria-hidden="true"></i>
+                    <span>Competitive Exams</span>
+                    <small style="font-size:0.74rem;color:var(--muted);">JEE · NEET · UPSC · CAT</small>
+                </a>
+                <a href="/store?category=Other" class="cat-card-featured" style="text-decoration:none;">
+                    <i class="fas fa-ellipsis-h" aria-hidden="true"></i>
+                    <span>Other Books</span>
+                    <small style="font-size:0.74rem;color:var(--muted);">Self-help · Fiction · More</small>
+                </a>
+            </nav>
+        </section>
+
+        <!-- ── FAQ SECTION ── -->
+        <section class="faq-section" aria-labelledby="faq-heading">
+            <h2 id="faq-heading">Frequently Asked Questions — Used Books Marketplace</h2>
+            <div class="faq-grid" itemscope itemtype="https://schema.org/FAQPage">
+
+                <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+                    <button class="faq-question" onclick="toggleFaq(this)" aria-expanded="false">
+                        <span itemprop="name">Is it free to list a book for sale on COURSENOVA?</span>
+                        <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                    </button>
+                    <div class="faq-answer" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+                        <p itemprop="text">Yes, completely free. COURSENOVA charges <strong>zero listing fees and zero commission</strong> on any sale. You simply list your book, a buyer contacts you directly, and you keep the full agreed price. There are no hidden charges, subscription fees, or transaction deductions of any kind.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+                    <button class="faq-question" onclick="toggleFaq(this)" aria-expanded="false">
+                        <span itemprop="name">What types of books can I buy or sell here?</span>
+                        <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                    </button>
+                    <div class="faq-answer" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+                        <p itemprop="text">You can list or find any academic book — including college textbooks, university reference books, CBSE/ICSE/state board school books, engineering books (CSE, ECE, Mechanical, Civil), medical books (MBBS, BDS, Nursing), commerce books (CA, MBA, BCom), competitive exam guides (JEE, NEET, UPSC, CAT, GATE, SSC, Banking), and general reading material. All conditions are accepted: Like New, Good, Used, and Old.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+                    <button class="faq-question" onclick="toggleFaq(this)" aria-expanded="false">
+                        <span itemprop="name">How do I contact a seller after finding a book I want?</span>
+                        <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                    </button>
+                    <div class="faq-answer" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+                        <p itemprop="text">Click on any book listing to open its detail page. The seller's contact number is displayed there. You can call or WhatsApp the seller directly to discuss the price, condition, and arrange a convenient pickup or meetup. COURSENOVA acts purely as the platform — the transaction happens directly between you and the seller.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+                    <button class="faq-question" onclick="toggleFaq(this)" aria-expanded="false">
+                        <span itemprop="name">How do I find used books near my college or city?</span>
+                        <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                    </button>
+                    <div class="faq-answer" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+                        <p itemprop="text">When you open the Store page, COURSENOVA automatically requests your location to show books listed nearby (within 5 km by default). You can also use the <strong>College / Location filter</strong> in the sidebar to search by college name. Additionally, the distance (in km) to each seller is shown on every book card so you can easily find what's closest to you.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+                    <button class="faq-question" onclick="toggleFaq(this)" aria-expanded="false">
+                        <span itemprop="name">Is it safe to buy or sell used books on this platform?</span>
+                        <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                    </button>
+                    <div class="faq-answer" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+                        <p itemprop="text">All sellers on COURSENOVA are registered students who have authenticated with Google Sign-In. We recommend meeting in a public place (like your campus library or canteen) to exchange books. Always verify the book's condition matches the listing photos before completing the transaction. If you encounter any suspicious listing, you can report it and our team will review it promptly.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+                    <button class="faq-question" onclick="toggleFaq(this)" aria-expanded="false">
+                        <span itemprop="name">How much can I save by buying used books here?</span>
+                        <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                    </button>
+                    <div class="faq-answer" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+                        <p itemprop="text">On average, students save <strong>40% to 70%</strong> compared to buying new textbooks. For example, a new engineering textbook priced at ₹600–₹800 in a campus bookstore is often available in Good or Like-New condition here for ₹150–₹350. Over a 4-year degree, this can amount to savings of ₹10,000 or more per student.</p>
+                    </div>
+                </div>
+
+                <div class="faq-item" itemscope itemprop="mainEntity" itemtype="https://schema.org/Question">
+                    <button class="faq-question" onclick="toggleFaq(this)" aria-expanded="false">
+                        <span itemprop="name">Can I also access online courses on COURSENOVA?</span>
+                        <i class="fas fa-chevron-down" aria-hidden="true"></i>
+                    </button>
+                    <div class="faq-answer" itemscope itemprop="acceptedAnswer" itemtype="https://schema.org/Answer">
+                        <p itemprop="text">Absolutely! The Used Books Marketplace is just one part of COURSENOVA. The platform also offers <a href="/premium-courses" style="color:var(--brand);font-weight:600;">premium online courses</a> for engineering, competitive exams, and skill development, a lively <a href="/community" style="color:var(--brand);font-weight:600;">student discussion community</a>, <a href="/mock-tests" style="color:var(--brand);font-weight:600;">mock tests</a>, <a href="/daily-challenge" style="color:var(--brand);font-weight:600;">daily challenges</a>, and <a href="/practice" style="color:var(--brand);font-weight:600;">practice exercises</a> — all built for Indian students.</p>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ── INTERNAL LINKS / EXPLORE MORE ── -->
+        <section aria-labelledby="explore-heading" style="background:linear-gradient(135deg,#6c5ce7 0%,#a29bfe 60%,#00cec9 100%);border-radius:20px;padding:40px;margin-bottom:40px;color:white;text-align:center;">
+            <h2 id="explore-heading" style="font-size:1.6rem;font-weight:800;margin-bottom:12px;">Explore Everything COURSENOVA Has to Offer</h2>
+            <p style="font-size:0.97rem;opacity:0.9;margin-bottom:30px;max-width:640px;margin-left:auto;margin-right:auto;">The Used Books Store is one part of your complete student toolkit. Discover courses, tests, community discussions, and more.</p>
+            <nav aria-label="Site Navigation Links" style="display:flex;flex-wrap:wrap;justify-content:center;gap:14px;">
+                <a href="/" style="background:rgba(255,255,255,0.15);backdrop-filter:blur(6px);border:1.5px solid rgba(255,255,255,0.3);color:white;padding:12px 24px;border-radius:50px;font-weight:700;text-decoration:none;font-size:0.92rem;transition:all .25s;">
+                    <i class="fas fa-home" aria-hidden="true"></i> Home
+                </a>
+                <a href="/premium-courses" style="background:rgba(255,255,255,0.15);backdrop-filter:blur(6px);border:1.5px solid rgba(255,255,255,0.3);color:white;padding:12px 24px;border-radius:50px;font-weight:700;text-decoration:none;font-size:0.92rem;transition:all .25s;">
+                    <i class="fas fa-graduation-cap" aria-hidden="true"></i> Courses
+                </a>
+                <a href="/mock-tests" style="background:rgba(255,255,255,0.15);backdrop-filter:blur(6px);border:1.5px solid rgba(255,255,255,0.3);color:white;padding:12px 24px;border-radius:50px;font-weight:700;text-decoration:none;font-size:0.92rem;transition:all .25s;">
+                    <i class="fas fa-file-alt" aria-hidden="true"></i> Mock Tests
+                </a>
+                <a href="/practice" style="background:rgba(255,255,255,0.15);backdrop-filter:blur(6px);border:1.5px solid rgba(255,255,255,0.3);color:white;padding:12px 24px;border-radius:50px;font-weight:700;text-decoration:none;font-size:0.92rem;transition:all .25s;">
+                    <i class="fas fa-dumbbell" aria-hidden="true"></i> Practice
+                </a>
+                <a href="/community" style="background:rgba(255,255,255,0.15);backdrop-filter:blur(6px);border:1.5px solid rgba(255,255,255,0.3);color:white;padding:12px 24px;border-radius:50px;font-weight:700;text-decoration:none;font-size:0.92rem;transition:all .25s;">
+                    <i class="fas fa-users" aria-hidden="true"></i> Community
+                </a>
+                <a href="/daily-challenge" style="background:rgba(255,255,255,0.15);backdrop-filter:blur(6px);border:1.5px solid rgba(255,255,255,0.3);color:white;padding:12px 24px;border-radius:50px;font-weight:700;text-decoration:none;font-size:0.92rem;transition:all .25s;">
+                    <i class="fas fa-bolt" aria-hidden="true"></i> Daily Challenge
+                </a>
+                <a href="/about" style="background:rgba(255,255,255,0.15);backdrop-filter:blur(6px);border:1.5px solid rgba(255,255,255,0.3);color:white;padding:12px 24px;border-radius:50px;font-weight:700;text-decoration:none;font-size:0.92rem;transition:all .25s;">
+                    <i class="fas fa-info-circle" aria-hidden="true"></i> About Us
+                </a>
+            </nav>
+        </section>
+
+    </div><!-- /marketplace-info-sec -->
+
     <!-- --------------- SCRIPTS --------------- -->
-    <script src="/socket.io/socket.io.js"></script>
+    <script src="/socket.io/socket.io.js" defer></script>
     <script>
         const API = '/api/used-books';
         const IMG_BASE = '/uploads/books/';
@@ -1666,6 +2251,23 @@
             t.textContent = msg;
             t.className = `toast show ${type}`;
             setTimeout(() => t.classList.remove('show'), 3000);
+        }
+    </script>
+
+    <script>
+        // FAQ accordion toggle
+        function toggleFaq(btn) {
+            const item = btn.closest('.faq-item');
+            const isActive = item.classList.contains('active');
+            // Close all
+            document.querySelectorAll('.faq-item.active').forEach(el => {
+                el.classList.remove('active');
+                el.querySelector('.faq-question').setAttribute('aria-expanded', 'false');
+            });
+            if (!isActive) {
+                item.classList.add('active');
+                btn.setAttribute('aria-expanded', 'true');
+            }
         }
     </script>
 </body>
