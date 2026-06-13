@@ -631,3 +631,193 @@ body.dashboard-body {
     background: #10b981; color: white;
 }
 .btn-action-vault:hover { background: #059669; transform: scale(1.02); }
+
+/* ── CONTINUE LEARNING STYLES ───────────────────────────────── */
+.continue-learning-card {
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+    border: 1px solid rgba(99, 102, 241, 0.25);
+    border-radius: 24px;
+    padding: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 30px;
+    color: white;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    position: relative;
+    overflow: hidden;
+}
+
+.continue-learning-card::before {
+    content: '';
+    position: absolute;
+    top: -50px;
+    right: -50px;
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.continue-info {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.continue-icon {
+    font-size: 3.5rem;
+    filter: drop-shadow(0 8px 16px rgba(99, 102, 241, 0.3));
+}
+
+.continue-details h3 {
+    font-size: 1.35rem;
+    font-weight: 800;
+    margin: 0 0 6px 0;
+    color: white;
+    letter-spacing: -0.3px;
+}
+
+.continue-details p {
+    font-size: 0.88rem;
+    color: #94a3b8;
+    margin: 0 0 15px 0;
+}
+
+.continue-progress {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    min-width: 250px;
+}
+
+.continue-progress-bar {
+    flex-grow: 1;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.continue-progress-fill {
+    height: 100%;
+    background: linear-gradient(to right, #10b981, #34d399);
+    border-radius: 10px;
+}
+
+.continue-progress-text {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #10b981;
+}
+
+.btn-continue {
+    background: var(--primary-gradient);
+    color: white;
+    padding: 14px 28px;
+    border-radius: 12px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: all 0.3s;
+    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.35);
+    white-space: nowrap;
+}
+
+.btn-continue:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+    opacity: 0.95;
+}
+
+@media (max-width: 768px) {
+    .continue-learning-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 20px;
+    }
+    .continue-progress {
+        width: 100%;
+        min-width: 0;
+    }
+    .btn-continue {
+        width: 100%;
+        text-align: center;
+    }
+}
+
+/* ── STREAK WEEK CALENDAR VISUAL ────────────────────────────── */
+.streak-tracker-week {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    margin-top: 10px;
+    background: #f8fafc;
+    padding: 6px;
+    border-radius: 10px;
+    border: 1px solid #f1f5f9;
+}
+
+.day-dot {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #e2e8f0;
+    color: #94a3b8;
+    font-size: 0.65rem;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s;
+}
+
+.day-dot.active {
+    background: #10b981;
+    color: white;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.4);
+}
+
+.day-dot.today {
+    border: 2px solid #6366f1;
+    color: #6366f1;
+}
+.day-dot.today.active {
+    color: white;
+}
+
+/* ── ACHIEVEMENT BADGE ITEMS ────────────────────────────────── */
+.badge-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    width: calc(33.33% - 8px);
+    text-align: center;
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 12px 6px;
+    border: 1px solid #f1f5f9;
+    transition: all 0.3s;
+}
+
+.badge-item:hover {
+    transform: translateY(-2px);
+    border-color: #6366f1;
+    background: #eef2ff;
+}
+
+.badge-icon {
+    font-size: 1.8rem;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.1));
+}
+
+.badge-name {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #334155;
+}
+
+.badge-item.locked {
+    opacity: 0.45;
+    filter: grayscale(1);
+}

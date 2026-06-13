@@ -75,7 +75,10 @@ async function loadVaultCourses(token) {
         const data = await res.json();
 
         if (data.ok && data.courses.length > 0) {
-            // Fetch progress
+            let lastActiveCourse = null;
+            let lastActiveTime = 0;
+
+            // Fetch progress and track the most recently active course
             await Promise.all(data.courses.map(async (e) => {
                 try {
                     const pRes = await fetch(`/api/course/progress?courseId=${encodeURIComponent(e.courseName)}`, {
@@ -85,9 +88,56 @@ async function loadVaultCourses(token) {
                     if (pData.ok && pData.record) {
                         PROGRESS_MAP[e.courseName] = pData.record.progressPercent || 0;
                         COMPLETED_MAP[e.courseName] = pData.record.testPassed;
+                        
+                        const updateTime = new Date(pData.record.updatedAt).getTime();
+                        if (updateTime > lastActiveTime) {
+                            lastActiveTime = updateTime;
+                            lastActiveCourse = e.courseName;
+                        }
                     }
                 } catch (err) {}
             }));
+
+            // Render Continue Learning Banner if applicable
+            const continueSec = document.getElementById('continueLearningSection');
+            const continueCard = document.getElementById('continueLearningCard');
+            const activeCourseName = lastActiveCourse || data.courses[0].courseName;
+
+            if (activeCourseName && continueSec && continueCard) {
+                const c = COURSES_MAP[activeCourseName] || {
+                    id: activeCourseName,
+                    title: activeCourseName,
+                    icon: '🎓',
+                    level: 'Beginner',
+                    duration: 'Self-paced',
+                    lessonCount: 3,
+                    quizCount: 35,
+                    description: 'Enrolled Course'
+                };
+                const progress = PROGRESS_MAP[activeCourseName] || 0;
+
+                continueCard.innerHTML = `
+                    <div class="continue-learning-card">
+                        <div class="continue-info">
+                            <div class="continue-icon">${c.icon}</div>
+                            <div class="continue-details">
+                                <h3>${c.title}</h3>
+                                <p>${c.description || 'Resume your learning path from where you left off.'}</p>
+                                <div class="continue-progress">
+                                    <div class="continue-progress-bar">
+                                        <div class="continue-progress-fill" style="width: ${progress}%"></div>
+                                    </div>
+                                    <span class="continue-progress-text">${progress}% complete</span>
+                                </div>
+                            </div>
+                        </div>
+                        <a href="course-content.html?course=${encodeURIComponent(c.id)}" class="btn-continue">
+                            <i class="fas fa-play"></i> Resume Course
+                        </a>
+                    </div>
+                `;
+                continueSec.style.display = 'block';
+            }
 
             grid.innerHTML = data.courses.map(e => {
                 const c = COURSES_MAP[e.courseName] || {
@@ -262,6 +312,67 @@ function updateDashboardUI(data, userStats) {
     
     // F. Special Access UI
     updateAccessBadges(userStats.isPremium);
+
+    // G. Referral Code Loader
+    const token = typeof getAuthToken === 'function' ? getAuthToken() : (localStorage.getItem('token') || localStorage.getItem('coursenovaToken'));
+    if (token) {
+        fetch('/api/referral/my-code', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        })
+        .then(res => res.json())
+        .then(codeData => {
+            if (codeData.ok && codeData.referralCode) {
+                const referralInput = document.getElementById('referralCodeInput');
+                if (referralInput) {
+                    referralInput.value = codeData.referralCode;
+                }
+            }
+        })
+        .catch(err => console.warn('[Referral] Failed to fetch code:', err));
+    }
+
+    // H. Achievements rendering
+    const badgeContainer = document.getElementById('achievementsBadgeContainer');
+    if (badgeContainer) {
+        const badgeList = [
+            { name: 'Course Starter', icon: '🚀', unlocked: (userStats.enrolledCourses || 0) >= 1 },
+            { name: 'Streak Master', icon: '🔥', unlocked: (userStats.streak || 0) >= 3 },
+            { name: 'Point Collector', icon: '🪙', unlocked: (userStats.points || 0) >= 200 },
+            { name: 'Quiz Champion', icon: '🏆', unlocked: (userStats.avgAccuracy || 0) >= 80 },
+            { name: 'Elite Member', icon: '👑', unlocked: !!userStats.isPremium },
+            { name: 'Super Scholar', icon: '🎓', unlocked: (userStats.points || 0) >= 1000 }
+        ];
+        
+        badgeContainer.innerHTML = badgeList.map(b => `
+            <div class="badge-item ${b.unlocked ? '' : 'locked'}" title="${b.unlocked ? 'Unlocked!' : 'Locked'}">
+                <span class="badge-icon">${b.icon}</span>
+                <span class="badge-name">${b.name}</span>
+            </div>
+        `).join('');
+    }
+
+    // I. Streak Week Calendar Visual
+    const streak = userStats.streak || 0;
+    const todayIndex = new Date().getDay(); // 0 is Sunday, 1-6 is Mon-Sat
+    const activeDays = new Set();
+    if (streak > 0) {
+        for (let i = 0; i < Math.min(streak, 7); i++) {
+            let d = todayIndex - i;
+            if (d < 0) d += 7;
+            activeDays.add(d);
+        }
+    }
+    const dayDots = document.querySelectorAll('#streakWeekVisual .day-dot');
+    dayDots.forEach(dot => {
+        const dayVal = parseInt(dot.getAttribute('data-day'));
+        dot.classList.remove('active', 'today');
+        if (activeDays.has(dayVal)) {
+            dot.classList.add('active');
+        }
+        if (dayVal === todayIndex) {
+            dot.classList.add('today');
+        }
+    });
 }
 
 function showPhoneUpdateModal(user) {
@@ -414,3 +525,27 @@ function getActivityIcon(type) {
 }
 function getActivityBg(type) { return type.includes('passed') || type.includes('sold') ? 'rgba(16, 185, 129, 0.1)' : 'rgba(99, 102, 241, 0.1)'; }
 function getActivityColor(type) { return type.includes('passed') || type.includes('sold') ? '#059669' : '#6366f1'; }
+
+// Copy Referral Code to Clipboard
+window.copyReferralCode = function(event) {
+    if (event) event.preventDefault();
+    const referralInput = document.getElementById('referralCodeInput');
+    if (!referralInput || referralInput.value === 'LOADING...') return;
+    
+    referralInput.select();
+    referralInput.setSelectionRange(0, 99999); // For mobile devices
+    
+    navigator.clipboard.writeText(referralInput.value)
+        .then(() => {
+            showLiveNotification("Referral code copied to clipboard!");
+        })
+        .catch(() => {
+            try {
+                document.execCommand('copy');
+                showLiveNotification("Referral code copied to clipboard!");
+            } catch (err) {
+                console.error('[Referral] Copy failed:', err);
+            }
+        });
+};
+

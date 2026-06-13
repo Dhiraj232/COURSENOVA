@@ -577,6 +577,10 @@ app.use('/api/dashboard', dashboardRoutes);
 // ─── Notification Routes ───────────────────────────────────────
 app.use('/api/notifications', require('./routes/notificationRoutes'));
 
+// ─── Referral Routes ───────────────────────────────────────────
+app.use('/api/referral', require('./routes/referralRoutes'));
+
+
 
 // Serve uploaded screenshots and generated certificates as static files with caching
 const staticCacheOptions = {

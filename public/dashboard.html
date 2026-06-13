@@ -78,6 +78,16 @@
                 </div>
             </header>
 
+            <!-- Continue Learning Section -->
+            <section class="continue-learning-section" id="continueLearningSection" style="display: none; margin-bottom: 30px;">
+                <div class="vault-header" style="margin-bottom: 15px;">
+                    <h2><i class="fas fa-play-circle" style="color: #6366f1;"></i> Continue Learning</h2>
+                </div>
+                <div id="continueLearningCard">
+                    <!-- Injected by JS -->
+                </div>
+            </section>
+
             <!-- A. OVERVIEW CARDS -->
             <section class="stats-ribbon">
                 <div class="stat-card glass">
@@ -87,11 +97,23 @@
                         <p>Courses Enrolled</p>
                     </div>
                 </div>
-                <div class="stat-card glass">
-                    <div class="stat-icon green"><i class="fas fa-fire"></i></div>
-                    <div class="stat-info">
-                        <h4 id="streakDisplay">0 Days</h4>
-                        <p>Daily Streak</p>
+                <div class="stat-card glass" style="display: flex; flex-direction: column; align-items: flex-start; gap: 8px;">
+                    <div style="display: flex; align-items: center; gap: 15px; width: 100%;">
+                        <div class="stat-icon green"><i class="fas fa-fire"></i></div>
+                        <div class="stat-info">
+                            <h4 id="streakDisplay">0 Days</h4>
+                            <p>Daily Streak</p>
+                        </div>
+                    </div>
+                    <!-- Streak Calendar Visual -->
+                    <div class="streak-tracker-week" id="streakWeekVisual">
+                        <span class="day-dot" data-day="1" title="Monday">M</span>
+                        <span class="day-dot" data-day="2" title="Tuesday">T</span>
+                        <span class="day-dot" data-day="3" title="Wednesday">W</span>
+                        <span class="day-dot" data-day="4" title="Thursday">T</span>
+                        <span class="day-dot" data-day="5" title="Friday">F</span>
+                        <span class="day-dot" data-day="6" title="Saturday">S</span>
+                        <span class="day-dot" data-day="0" title="Sunday">S</span>
                     </div>
                 </div>
                 <div class="stat-card glass">
@@ -225,6 +247,30 @@
                         <div class="stat-main-box">
                             <h1 id="studentPoints">0 pts</h1>
                             <p id="userRank">Rank #--</p>
+                        </div>
+                    </div>
+
+                    <!-- Achievement Badges -->
+                    <div class="activity-card glass" style="margin-bottom: 30px;">
+                        <div class="card-header">
+                            <h3><i class="fas fa-award"></i> Achievements</h3>
+                        </div>
+                        <div class="badges-row" id="achievementsBadgeContainer" style="display:flex; gap:12px; flex-wrap:wrap; padding:10px 0;">
+                            <!-- Injected dynamically by user stats -->
+                        </div>
+                    </div>
+
+                    <!-- Invite & Earn (Referrals) -->
+                    <div class="activity-card glass" style="margin-bottom: 30px;">
+                        <div class="card-header">
+                            <h3><i class="fas fa-gift"></i> Invite & Earn</h3>
+                        </div>
+                        <div style="padding: 10px 0;">
+                            <p style="font-size: 0.85rem; color:#64748b; margin-bottom: 15px;">Share your referral code with friends to earn bonus loyalty points on purchase!</p>
+                            <div style="display: flex; gap: 10px; align-items: center;">
+                                <input type="text" id="referralCodeInput" class="btn-logout-sidebar" style="background:#f8fafc; border:1px dashed #cbd5e1; color:#0f172a; flex:1; text-align:center; font-family:monospace; font-size:1rem; font-weight:700; cursor:text; padding: 8px; width: 100%;" readonly value="LOADING...">
+                                <button class="btn-sm-view" onclick="copyReferralCode(event)" style="padding:10px 15px; font-weight:700;">Copy</button>
+                            </div>
                         </div>
                     </div>
 
