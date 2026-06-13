@@ -437,6 +437,9 @@ app.get('/admin-dashboard', (req, res) => {
 app.get('/admin-login', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin-login.html'));
 });
+app.get('/cgpa-calculator', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'cgpa-calculator.html'));
+});
 
 // ✅ FIXED: Removed duplicate /auth/logout — logout is handled in routes/auth.js
 
