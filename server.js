@@ -12,7 +12,8 @@ const { OAuth2Client } = require('google-auth-library');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const xss = require('xss-clean');
-const { logSuspiciousActivity } = require('./middleware/security');
+const mongoSanitize = require('express-mongo-sanitize');
+const { logSuspiciousActivity, paymentLimiter } = require('./middleware/security');
 
 
 // Environment variables loaded at the very top
@@ -335,6 +336,15 @@ app.use((req, res, next) => {
     xss()(req, res, next);
 });
 
+// ─── NoSQL Injection Sanitization ────────────────────────────────────────────
+// Strips MongoDB operators ($eq, $gt, etc.) from req.body, req.query, req.params
+app.use(mongoSanitize({
+    replaceWith: '_',
+    onSanitize: ({ req, key }) => {
+        logSuspiciousActivity(`NoSQL injection attempt in field: ${key}`, req);
+    }
+}));
+
 
 
 // Express Session Middleware
@@ -342,9 +352,10 @@ app.use(session({
   secret: JWT_SECRET,
   resave: false,
   saveUninitialized: false,
+  name: 'cn.sid', // Non-default cookie name to avoid fingerprinting
   cookie: {
-    secure: false, // Must be false for Local HTTP
-    httpOnly: true,
+    secure: isProduction, // HTTPS-only in production, allow HTTP locally
+    httpOnly: true,       // Prevents client-side JS access to cookie
     sameSite: 'lax',
     maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
   }
@@ -552,8 +563,8 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads'), staticCacheO
 app.use('/uploads/slides', express.static(path.join(__dirname, 'uploads', 'slides'), staticCacheOptions));
 app.use('/certificates', express.static(path.join(__dirname, 'certificates'), staticCacheOptions));
 
-// ─── Cashfree API Routes ──────────────────────────────────────────────
-app.use('/api/cashfree', require('./routes/cashfree'));
+// ─── Cashfree API Routes (Payment-rate-limited) ──────────────────────────────
+app.use('/api/cashfree', paymentLimiter, require('./routes/cashfree'));
 
 
 // ────────────────────────────────────────────────────────────
@@ -622,12 +633,14 @@ app.get('/api/messages', (req, res) => {
   res.json(msgs);
 });
 
-// Post a message
-app.post('/api/messages', (req, res) => {
+// Post a message — requires authentication to prevent spam
+app.post('/api/messages', require('./middleware/auth').requireAuth, (req, res) => {
   const { bookId, from, text } = req.body;
   if (!bookId || !text) return res.status(400).json({ ok: false, message: 'bookId and text required' });
+  // Use authenticated user's name if available
+  const senderName = req.user?.name || from || 'Anonymous';
   const msgs = readMessages();
-  const msg = { id: Date.now(), bookId, from: from || 'Anonymous', text, ts: Date.now() };
+  const msg = { id: Date.now(), bookId, from: senderName, text, ts: Date.now() };
   msgs.push(msg);
   writeMessages(msgs);
   res.json({ ok: true, message: 'Message saved', msg });
@@ -652,20 +665,22 @@ app.get('/api/subjects', (req, res) => {
   }
 });
 
-// ---------------- Profile Update ----------------
-app.post('/api/update-profile', async (req, res) => {
+// ---------------- Profile Update (Authenticated) ----------------
+app.post('/api/update-profile', require('./middleware/auth').requireAuth, async (req, res) => {
   try {
-    const { userId, fullName, email, collegeName, department, year, childClass } = req.body;
-    if (!userId) return res.status(400).json({ ok: false, message: 'User ID required' });
+    const { fullName, email, collegeName, department, year, childClass } = req.body;
+    // Use the authenticated user's ID from the JWT token — prevents IDOR attacks
+    const userId = req.userId || req.user?.id;
+    if (!userId) return res.status(401).json({ ok: false, message: 'Authentication required' });
 
     const user = await StoreUser.findById(userId);
     if (!user) return res.status(404).json({ ok: false, message: 'User not found' });
 
-    // Update fields if provided
-    if (fullName) user.name = fullName;
-    if (email) user.email = email;
-    if (collegeName) user.collegeName = collegeName;
-    if (department) user.department = department;
+    // Update only allowed fields
+    if (fullName) user.name = fullName.slice(0, 100); // Limit length
+    if (email) user.email = email.toLowerCase().slice(0, 150);
+    if (collegeName) user.collegeName = collegeName.slice(0, 200);
+    if (department) user.department = department.slice(0, 100);
     if (year) user.year = year;
     if (childClass) user.childClass = childClass;
 
@@ -679,7 +694,8 @@ app.post('/api/update-profile', async (req, res) => {
 });
 
 const seedDailyChallenges = require('./scripts/seedDailyChallenges');
-app.get('/api/seed-daily-challenges', async (req, res) => {
+// ⚠️ Admin-only: Seed endpoint is protected by requireAdmin
+app.get('/api/seed-daily-challenges', require('./middleware/auth').requireAdmin, async (req, res) => {
     try {
         await seedDailyChallenges();
         res.send("Seeding successful! Check your dashboard now.");

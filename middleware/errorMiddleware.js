@@ -67,12 +67,11 @@ const sendErrorProd = (err, req, res) => {
         });
     }
 
-    // 3. Programming or other unknown error: return actual error message for debugging
+    // 3. Programming or other unknown error: NEVER expose internals to client in production
     console.error('❌ ERROR:', err);
     res.status(500).json({
         success: false,
-        message: err.message || 'Internal Server Error',
-        stack: err.stack
+        message: 'Something went wrong on our end. Please try again later.'
     });
 };
 
