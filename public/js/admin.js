@@ -2011,9 +2011,9 @@ async function deleteFeedback(id) {
     if (!confirm('Are you sure you want to delete this feedback?')) return;
     const token = localStorage.getItem('token');
     try {
-        const res = await fetch(\`/api/feedback/\${id}\`, {
+        const res = await fetch(`/api/feedback/${id}`, {
             method: 'DELETE',
-            headers: { 'Authorization': \`Bearer \${token}\` }
+            headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await res.json();
         if (data.ok) {
