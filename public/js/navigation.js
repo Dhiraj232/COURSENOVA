@@ -92,13 +92,13 @@ function setupNavigation() {
         { name: 'Courses', href: 'certificates', key: 'courses' },
         { name: 'Mock Tests', href: 'mock-tests', key: 'tests' },
         { name: 'Daily Challenge <span class="nav-badge" style="background:#ef4444;color:white;font-size:0.65rem;padding:2px 6px;border-radius:10px;margin-left:4px;vertical-align:top;font-weight:700;">NEW 🔥</span>', href: 'daily-challenge', key: 'daily-challenge' },
+        { name: 'Store', href: 'store', key: 'store' },
         { name: 'College', href: '#', key: 'college', dropdown: [
             { name: 'CGPA Calculator', href: 'cgpa-calculator' },
             { name: 'University Mock Tests', href: 'mock-tests' },
             { name: 'Syllabus & Notes', href: 'store' },
             { name: 'Campus Community', href: 'community' }
         ] },
-        { name: 'Store', href: 'store', key: 'store' },
         { name: 'About', href: 'about', key: 'about' }
     ];
 
