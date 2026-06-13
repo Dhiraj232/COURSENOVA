@@ -13,7 +13,8 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const xss = require('xss-clean');
 const mongoSanitize = require('express-mongo-sanitize');
-const { logSuspiciousActivity, paymentLimiter } = require('./middleware/security');
+const { logSuspiciousActivity, paymentLimiter, preventInjection } = require('./middleware/security');
+const notificationService = require('./services/notificationService');
 
 
 // Environment variables loaded at the very top
@@ -68,7 +69,13 @@ if (!MONGO_URI) {
   process.exit(1);
 }
 
-mongoose.connect(MONGO_URI)
+mongoose.connect(MONGO_URI, {
+    maxPoolSize: 20,              // Keep up to 20 connections open in pool
+    minPoolSize: 5,               // Always maintain at least 5 connections
+    socketTimeoutMS: 45000,       // Close sockets after 45s of inactivity
+    serverSelectionTimeoutMS: 5000, // Timeout after 5s if replica set is down
+    family: 4                     // Force IPv4 to skip potential DNS lags
+})
   .then(() => console.log('✅ MongoDB connected:', MONGO_URI.split('@').pop() || MONGO_URI))
   .catch(err => {
       console.error('❌ MongoDB connection error:', err.message);
@@ -107,6 +114,11 @@ passport.use(new GoogleStrategy({
         });
         await user.save();
         console.log('New user registered:', user.email);
+        // Send welcome email (non-blocking)
+        try {
+          const emailService = require('./services/emailService');
+          emailService.sendWelcomeEmail(user).catch(() => {});
+        } catch(e) {}
       } else {
         user.lastLogin = new Date();
         user.name = profile.displayName;
@@ -175,6 +187,11 @@ process.on('uncaughtException', err => {
 
 const app = express();
 app.use(compression());
+// Global Permissions-Policy header
+app.use((req, res, next) => {
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(), interest-cohort=()");
+  next();
+});
 // ─── Security Middlewares ─────────────────────────────────────────
 
 // 1. Helmet for Security Headers with CSP for YouTube
@@ -326,8 +343,9 @@ const apiLimiter = rateLimit({
   }
 });
 
-// Apply rate limiter to all API routes
+// Apply rate limiter and injection prevention to all API routes
 app.use('/api/', apiLimiter);
+app.use('/api/', preventInjection);
 
 // ─── XSS Protection — skip multipart/form-data (file uploads) ─────────────
 app.use((req, res, next) => {
@@ -461,6 +479,11 @@ app.use((req, res, next) => {
   if (authHeader.startsWith('Bearer ')) {
     const token = authHeader.slice(7);
     try {
+      const tokenBlacklist = require('./services/tokenBlacklist');
+      if (tokenBlacklist.isBlacklisted(token)) {
+        return next(); // Ignore blacklisted token (treat as unauthenticated)
+      }
+      
       const decoded = jwt.verify(token, JWT_SECRET);
       req.user = {
         id: decoded.userId || decoded.id,
@@ -550,6 +573,9 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/admin/daily-challenge', require('./routes/dailyChallengeAdmin'));
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+
+// ─── Notification Routes ───────────────────────────────────────
+app.use('/api/notifications', require('./routes/notificationRoutes'));
 
 
 // Serve uploaded screenshots and generated certificates as static files with caching
@@ -780,6 +806,16 @@ app.set('socketMap', socketMap);
 
 server.listen(PORT, () => {
     console.log(`[${new Date().toLocaleTimeString()}] COURSENOVA Community API & Chat listening on port ${PORT}`);
+
+    // ─── Initialize Notification Schedulers after DB connection settles ────────
+    setTimeout(() => {
+        try {
+            const { initScheduler } = require('./services/schedulerService');
+            initScheduler();
+        } catch (err) {
+            console.warn('[Scheduler] Failed to initialize:', err.message);
+        }
+    }, 5000); // 5s delay ensures MongoDB is fully connected
 
     // ─── Self-Ping Keep-Alive (prevents Render free tier from sleeping) ────────
     // Pings /health every 13 minutes to keep the server warm for Googlebot crawls.

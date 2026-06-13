@@ -203,3 +203,9 @@
     background: #f0f0f0;
   }
 }
+
+/* ── CONTENT VISIBILITY AUTO ───────────────────────────────── */
+.content-visibility-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 350px; /* Default height estimation to prevent scrollbar jumps */
+}

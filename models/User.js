@@ -42,6 +42,26 @@ const UserSchema = new mongoose.Schema({
     rank: { type: Number, default: 0 },
     badges: [{ type: String }],
 
+    // Notification Preferences
+    notificationPreferences: {
+        push: { type: Boolean, default: true },
+        inApp: { type: Boolean, default: true },
+        dailyChallenge: { type: Boolean, default: true },
+        mockTest: { type: Boolean, default: true },
+        discounts: { type: Boolean, default: true },
+        newCourses: { type: Boolean, default: true },
+        orderUpdates: { type: Boolean, default: true },
+        courseProgress: { type: Boolean, default: true },
+        announcements: { type: Boolean, default: true }
+    },
+
+    // Tracks last time each reminder type was sent (prevents duplicate daily sends)
+    lastNotifiedAt: {
+        type: Map,
+        of: Date,
+        default: {}
+    },
+
     lastLogin: { type: Date, default: Date.now },
     createdAt: { type: Date, default: Date.now }
 });

@@ -104,6 +104,18 @@ router.post('/', authMiddleware, async (req, res) => {
         });
 
         await order.save();
+
+        // Send order confirmation email
+        try {
+            const emailService = require('../services/emailService');
+            await emailService.sendOrderStatusEmail(
+                { email: order.buyer.buyerEmail, name: order.buyer.buyerName },
+                order,
+                'confirmed'
+            );
+        } catch (mailErr) {
+            console.error('[ordersRoutes] Failed to send confirmation email:', mailErr.message);
+        }
         
         // Log Activity for Dashboard Feed
         try {
@@ -216,6 +228,18 @@ router.put('/:orderId/status', authMiddleware, async (req, res) => {
 
         order.updatedAt = new Date();
         await order.save();
+
+        // Send status update email
+        try {
+            const emailService = require('../services/emailService');
+            await emailService.sendOrderStatusEmail(
+                { email: order.buyer.buyerEmail, name: order.buyer.buyerName },
+                order,
+                status
+            );
+        } catch (mailErr) {
+            console.error('[ordersRoutes] Failed to send status update email:', mailErr.message);
+        }
 
         res.json({ ok: true, message: 'Order status updated', order });
     } catch (error) {

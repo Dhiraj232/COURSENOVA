@@ -164,9 +164,18 @@ async function loadView(view) {
                 break;
 
             case 'notifications':
-                title.textContent = 'Broadcast Announcements';
-                const nData = await fetchData(`${API_BASE}/notifications`);
-                renderNotificationsAdmin(nData.announcements || []);
+                title.textContent = 'Broadcast Notifications';
+                try {
+                    const [analyticsRes, historyRes] = await Promise.allSettled([
+                        fetchData(`${API_BASE}/notifications/analytics`),
+                        fetchData(`${API_BASE}/notifications/history`)
+                    ]);
+                    const analytics = analyticsRes.status === 'fulfilled' ? analyticsRes.value.analytics : {};
+                    const history = historyRes.status === 'fulfilled' ? historyRes.value.notifications : [];
+                    renderNotificationsAdmin(analytics, history);
+                } catch (e) {
+                    renderNotificationsAdmin({}, []);
+                }
                 break;
         }
     } catch (err) {
@@ -309,8 +318,29 @@ function renderDashboard(stats) {
                 </div>
             </div>
         </div>
+
+        <div class="dashboard-grid" style="margin-top: 24px;">
+            <div class="admin-card">
+                <div class="card-header">
+                    <h3>Revenue Analytics (Last 7 Days)</h3>
+                </div>
+                <div style="padding: 24px;">
+                    <canvas id="revenueChart" style="max-height: 250px;"></canvas>
+                </div>
+            </div>
+
+            <div class="admin-card">
+                <div class="card-header">
+                    <h3>Daily Active Users</h3>
+                </div>
+                <div style="padding: 24px;">
+                    <canvas id="activeUsersChart" style="max-height: 250px;"></canvas>
+                </div>
+            </div>
+        </div>
     `;
 
+    // 1. Overview statsChart
     const ctx = document.getElementById('statsChart').getContext('2d');
     new Chart(ctx, {
         type: 'bar',
@@ -323,6 +353,53 @@ function renderDashboard(stats) {
             }]
         },
         options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+
+    // 2. Revenue Chart
+    const revCtx = document.getElementById('revenueChart').getContext('2d');
+    new Chart(revCtx, {
+        type: 'line',
+        data: {
+            labels: stats.revenueData ? stats.revenueData.labels : [],
+            datasets: [{
+                label: 'Revenue (INR)',
+                data: stats.revenueData ? stats.revenueData.values : [],
+                borderColor: '#10b981',
+                backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.35
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+
+    // 3. Active Users Chart
+    const actCtx = document.getElementById('activeUsersChart').getContext('2d');
+    new Chart(actCtx, {
+        type: 'line',
+        data: {
+            labels: stats.activeUserData ? stats.activeUserData.labels : [],
+            datasets: [{
+                label: 'Active Users',
+                data: stats.activeUserData ? stats.activeUserData.values : [],
+                borderColor: '#3b82f6',
+                backgroundColor: 'rgba(59, 130, 246, 0.08)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.35
+            }]
+        },
+        options: {
+            responsive: true,
             plugins: { legend: { display: false } },
             scales: { y: { beginAtZero: true } }
         }
@@ -2030,5 +2107,209 @@ async function deleteFeedback(id) {
     } catch (e) {
         console.error(e);
         alert('Error deleting feedback');
+    }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// NOTIFICATION ADMIN PANEL
+// Full broadcast center with analytics, history, and targeted sending
+// ─────────────────────────────────────────────────────────────────────────────
+
+function renderNotificationsAdmin(analytics = {}, history = []) {
+    const content = document.getElementById('content-area');
+
+    // Analytics summary
+    const total = analytics.total || 0;
+    const opened = analytics.opened || 0;
+    const clicked = analytics.clicked || 0;
+    const pushSent = analytics.pushSent || 0;
+    const deliveryRate = analytics.deliveryRate || 0;
+    const ctr = analytics.ctr || 0;
+
+    content.innerHTML = `
+    <div style="display:flex;flex-direction:column;gap:28px;">
+
+        <!-- Analytics Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#4f46e5"><i class="fas fa-bell"></i></div>
+                <div class="stat-info"><h3>${total.toLocaleString()}</h3><p>Total Sent</p></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#10b981"><i class="fas fa-eye"></i></div>
+                <div class="stat-info"><h3>${opened.toLocaleString()}</h3><p>Opened</p></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#f59e0b"><i class="fas fa-mouse-pointer"></i></div>
+                <div class="stat-info"><h3>${clicked.toLocaleString()}</h3><p>Clicked</p></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#6366f1"><i class="fas fa-mobile-alt"></i></div>
+                <div class="stat-info"><h3>${pushSent.toLocaleString()}</h3><p>Push Sent</p></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#0ea5e9"><i class="fas fa-chart-line"></i></div>
+                <div class="stat-info"><h3>${deliveryRate}%</h3><p>Open Rate</p></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#ec4899"><i class="fas fa-hand-pointer"></i></div>
+                <div class="stat-info"><h3>${ctr}%</h3><p>CTR</p></div>
+            </div>
+        </div>
+
+        <!-- Broadcast Form -->
+        <div class="table-container" style="border-radius:16px;overflow:visible;">
+            <div class="table-header" style="padding:20px 24px 0;">
+                <h3 style="margin:0;display:flex;align-items:center;gap:8px;"><i class="fas fa-bullhorn" style="color:#4f46e5"></i> Send Notification</h3>
+            </div>
+            <div style="padding:20px 24px 24px;">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                    <div>
+                        <label style="display:block;font-size:0.8rem;font-weight:600;color:#374151;margin-bottom:6px;">Title *</label>
+                        <input type="text" id="notifTitle" placeholder="e.g. New SSC CGL Course Available!" maxlength="150"
+                            style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:0.85rem;outline:none;box-sizing:border-box">
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:0.8rem;font-weight:600;color:#374151;margin-bottom:6px;">Action URL</label>
+                        <input type="text" id="notifUrl" placeholder="e.g. /certificates or /daily-challenge"
+                            style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:0.85rem;outline:none;box-sizing:border-box">
+                    </div>
+                </div>
+                <div style="margin-top:14px;">
+                    <label style="display:block;font-size:0.8rem;font-weight:600;color:#374151;margin-bottom:6px;">Message *</label>
+                    <textarea id="notifMessage" rows="3" placeholder="Enter your notification message..." maxlength="500"
+                        style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:0.85rem;outline:none;resize:vertical;box-sizing:border-box"></textarea>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px;">
+                    <div>
+                        <label style="display:block;font-size:0.8rem;font-weight:600;color:#374151;margin-bottom:6px;">Button Label</label>
+                        <input type="text" id="notifActionLabel" placeholder="View, Claim Offer, Start Now..." value="View"
+                            style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:0.85rem;outline:none;box-sizing:border-box">
+                    </div>
+                    <div>
+                        <label style="display:block;font-size:0.8rem;font-weight:600;color:#374151;margin-bottom:6px;">Target</label>
+                        <select id="notifTarget" style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:0.85rem;outline:none;background:white;box-sizing:border-box">
+                            <option value="all">All Users</option>
+                            <option value="specific">Specific User IDs</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="specificUsersRow" style="margin-top:14px;display:none;">
+                    <label style="display:block;font-size:0.8rem;font-weight:600;color:#374151;margin-bottom:6px;">User IDs (comma-separated)</label>
+                    <textarea id="notifUserIds" rows="2" placeholder="userId1, userId2, userId3..."
+                        style="width:100%;padding:10px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:0.85rem;outline:none;resize:none;box-sizing:border-box"></textarea>
+                </div>
+                <div style="margin-top:18px;display:flex;gap:10px;align-items:center;">
+                    <button onclick="sendAdminNotification()" id="notifSendBtn"
+                        style="padding:10px 24px;background:linear-gradient(135deg,#4f46e5,#7c3aed);color:white;border:none;border-radius:10px;font-size:0.85rem;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;">
+                        <i class="fas fa-paper-plane"></i> Send Now
+                    </button>
+                    <span id="notifSendStatus" style="font-size:0.8rem;color:#6b7280;"></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Table -->
+        <div class="table-container">
+            <div class="table-header" style="padding:16px 24px;display:flex;justify-content:space-between;align-items:center;">
+                <h3 style="margin:0;"><i class="fas fa-history" style="color:#4f46e5"></i> Notification History</h3>
+                <span style="font-size:0.78rem;color:#6b7280;">${history.length} records</span>
+            </div>
+            <table class="data-table">
+                <thead>
+                    <tr><th>Type</th><th>Title</th><th>Message</th><th>Date</th><th>Actions</th></tr>
+                </thead>
+                <tbody>
+                    ${history.length === 0 ? `<tr><td colspan="5" style="text-align:center;color:#9ca3af;padding:30px;">No notifications sent yet</td></tr>` :
+                        history.map(n => `
+                        <tr>
+                            <td><span style="background:#eef2ff;color:#4f46e5;padding:3px 10px;border-radius:20px;font-size:0.72rem;font-weight:700;">${n.type}</span></td>
+                            <td style="font-weight:600;font-size:0.82rem;">${n.title || '-'}</td>
+                            <td style="font-size:0.78rem;color:#6b7280;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${n.message || '-'}</td>
+                            <td style="font-size:0.78rem;color:#9ca3af;">${new Date(n.createdAt).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' })}</td>
+                            <td>
+                                <button onclick="deleteAdminNotification('${n._id}')" class="btn btn-danger" style="padding:4px 10px;font-size:0.72rem;">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>`).join('')
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+    `;
+
+    // Target select toggle
+    document.getElementById('notifTarget')?.addEventListener('change', function() {
+        document.getElementById('specificUsersRow').style.display = this.value === 'specific' ? 'block' : 'none';
+    });
+}
+
+async function sendAdminNotification() {
+    const title = document.getElementById('notifTitle')?.value?.trim();
+    const message = document.getElementById('notifMessage')?.value?.trim();
+    const actionUrl = document.getElementById('notifUrl')?.value?.trim() || '/';
+    const actionLabel = document.getElementById('notifActionLabel')?.value?.trim() || 'View';
+    const target = document.getElementById('notifTarget')?.value;
+    const userIdsRaw = document.getElementById('notifUserIds')?.value?.trim();
+    const statusEl = document.getElementById('notifSendStatus');
+    const sendBtn = document.getElementById('notifSendBtn');
+
+    if (!title || !message) {
+        if (statusEl) statusEl.textContent = '⚠️ Title and message are required';
+        return;
+    }
+
+    const payload = { title, message, actionUrl, actionLabel };
+
+    if (target === 'specific' && userIdsRaw) {
+        payload.targetUserIds = userIdsRaw.split(',').map(s => s.trim()).filter(Boolean);
+    }
+
+    if (sendBtn) { sendBtn.disabled = true; sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...'; }
+    if (statusEl) statusEl.textContent = '';
+
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`/api/admin/notifications/broadcast`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        if (data.ok) {
+            if (statusEl) statusEl.innerHTML = `<span style="color:#10b981;"><i class="fas fa-check-circle"></i> ${data.message}</span>`;
+            // Clear form
+            ['notifTitle','notifMessage','notifUrl'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+            // Reload view after 2s
+            setTimeout(() => loadView('notifications'), 2000);
+        } else {
+            if (statusEl) statusEl.innerHTML = `<span style="color:#ef4444;">❌ ${data.message}</span>`;
+        }
+    } catch (e) {
+        if (statusEl) statusEl.innerHTML = `<span style="color:#ef4444;">❌ Failed to send notification</span>`;
+    } finally {
+        if (sendBtn) { sendBtn.disabled = false; sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send Now'; }
+    }
+}
+
+async function deleteAdminNotification(id) {
+    if (!confirm('Delete this notification?')) return;
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(`/api/admin/notifications/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.ok) loadView('notifications');
+        else alert(data.message || 'Delete failed');
+    } catch (e) {
+        alert('Failed to delete notification');
     }
 }

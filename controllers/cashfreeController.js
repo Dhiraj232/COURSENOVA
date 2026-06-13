@@ -168,7 +168,7 @@ async function getItemById(itemId) {
             { title: String(itemId) }
         ].filter(q => q._id !== null || q.slug || q.title)
     });
-    if (c) return { _id: c._id, title: c.title, slug: c.slug };
+    if (c) return { _id: c._id, title: c.title, slug: c.slug, type: 'course' };
 
     // Try Mock Pack
     const m = await MockTestPack.findOne({
@@ -178,7 +178,7 @@ async function getItemById(itemId) {
             { title: String(itemId) }
         ]
     });
-    if (m) return { _id: m._id, title: m.title, id: m.id };
+    if (m) return { _id: m._id, title: m.title, id: m.id, type: 'mock' };
 
     return null;
 }
@@ -233,7 +233,23 @@ async function enrollUser({ userId, courseId, paymentId, amount, orderId, course
         };
     }
 
-    await User.findByIdAndUpdate(userId, updateData);
+    const user = await User.findByIdAndUpdate(userId, updateData, { new: true });
+
+    // Send purchase email notification
+    if (user && user.email) {
+        try {
+            const emailService = require('../services/emailService');
+            await emailService.sendPurchaseEmail(user, {
+                title: courseTitle,
+                price: amount,
+                orderId: orderId,
+                type: (itemMeta && itemMeta.type === 'mock') ? 'Mock Test' : 'Course'
+            });
+            console.log(`[enrollUser] ✅ Purchase email sent to ${user.email} for ${courseTitle}`);
+        } catch (emailErr) {
+            console.error('[enrollUser] ❌ Failed to send purchase email:', emailErr.message);
+        }
+    }
 
     // 3. Transaction record (non-fatal)
     try {

@@ -14,6 +14,15 @@
 
 // 0. DOMAIN ENFORCEMENT (Canonical URL)
 // This ensures that user sessions (localStorage) are consistent by forcing the www subdomain.
+(function loadPerformanceEngine() {
+    if (document.getElementById('coursenova-performance-engine')) return;
+    const script = document.createElement('script');
+    script.id = 'coursenova-performance-engine';
+    script.src = '/js/performance.js';
+    script.defer = true;
+    document.head.appendChild(script);
+})();
+
 (function enforceCanonicalDomain() {
     const hostname = window.location.hostname;
     const isProduction = hostname.includes('coursenova.in');
@@ -67,6 +76,9 @@ document.addEventListener('DOMContentLoaded', function () {
     setupScrollEffects();
     setupHashNavigation();
     setupUserDropdown(); // Fixed function name
+
+    // ── Auto-load Notification Center (injects bell icon + panel on all pages) ──
+    loadNotificationSystem();
 });
 
 // ==================== 2. DETECT CURRENT PAGE ====================
@@ -634,6 +646,11 @@ function setupUserDropdown() {
                             <i class="fas fa-users"></i> Community
                         </a>
                     </li>
+                    <li class="dropdown-item" id="pwaInstallItem" style="display: none;">
+                        <a href="#" onclick="window.installPWA(event)">
+                            <i class="fas fa-download"></i> Install App
+                        </a>
+                    </li>
                     
                     <li class="dropdown-divider"></li>
                     
@@ -648,6 +665,12 @@ function setupUserDropdown() {
     `;
 
     navButtons.innerHTML = userMenuHTML;
+
+    // Show PWA install item if prompt is deferred
+    if (window.deferredPrompt) {
+        const installItem = document.getElementById('pwaInstallItem');
+        if (installItem) installItem.style.display = 'block';
+    }
 }
 
 /**
@@ -759,3 +782,75 @@ if (typeof window !== 'undefined') {
     window.getAuthUser = getAuthUser;
 }
 console.log('✅ Navigation system initialized');
+
+// ==================== 14. NOTIFICATION SYSTEM AUTO-LOADER ====================
+/**
+ * Dynamically loads the notification system (js + css) on all pages.
+ * Skips admin, signup, and public-only pages where notifications aren't needed.
+ */
+function loadNotificationSystem() {
+    const token = getAuthToken();
+    if (!token) return; // Don't load for guests
+
+    const skipPages = ['admin-dashboard', 'admin-login', 'signup', 'auth-callback', 'verify-certificate'];
+    const currentPage = getCurrentPage();
+    if (skipPages.includes(currentPage)) return;
+
+    // Skip if already loaded
+    if (document.querySelector('script[src*="notifications.js"]')) return;
+
+    // Inject CSS
+    if (!document.querySelector('link[href*="notifications.css"]')) {
+        const link = document.createElement('link');
+        link.rel = 'stylesheet';
+        link.href = '/css/notifications.css';
+        document.head.appendChild(link);
+    }
+
+    // Inject JS (defer so it doesn't block render)
+    const script = document.createElement('script');
+    script.src = '/js/notifications.js';
+    script.defer = true;
+    document.head.appendChild(script);
+}
+
+// ── PWA Installation Event Listeners ─────────────────────────────────────────
+window.deferredPrompt = null;
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    window.deferredPrompt = e;
+    
+    // Display the install item in dropdown if it is rendered
+    const installItem = document.getElementById('pwaInstallItem');
+    if (installItem) {
+        installItem.style.display = 'block';
+    }
+});
+
+window.installPWA = async function(event) {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    
+    const promptEvent = window.deferredPrompt;
+    if (!promptEvent) return;
+    
+    promptEvent.prompt();
+    const { outcome } = await promptEvent.userChoice;
+    console.log(`[PWA] Install prompt outcome: ${outcome}`);
+    
+    window.deferredPrompt = null;
+    const installItem = document.getElementById('pwaInstallItem');
+    if (installItem) {
+        installItem.style.display = 'none';
+    }
+    
+    window.closeUserDropdown();
+};
+
+window.addEventListener('appinstalled', (event) => {
+    console.log('[PWA] CourseNova was successfully installed!');
+    window.deferredPrompt = null;
+});

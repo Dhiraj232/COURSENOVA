@@ -177,6 +177,23 @@ router.get('/me', catchAsync(async (req, res, next) => {
 
 // @route   GET /auth/logout
 router.get('/logout', (req, res, next) => {
+    // Extract token to blacklist it
+    const auth = req.headers.authorization || '';
+    const token = auth.startsWith('Bearer ') ? auth.slice(7) : (req.query.token || '');
+
+    if (token) {
+        try {
+            const decoded = jwt.decode(token);
+            const tokenBlacklist = require('../services/tokenBlacklist');
+            const remainingTime = decoded && decoded.exp ? (decoded.exp - Math.floor(Date.now() / 1000)) : 7 * 24 * 60 * 60;
+            if (remainingTime > 0) {
+                tokenBlacklist.blacklistToken(token, remainingTime);
+            }
+        } catch (blacklistErr) {
+            console.error('[Logout] Failed to blacklist token:', blacklistErr.message);
+        }
+    }
+
     req.logout((err) => {
         if (err) return next(new AppError('Logout process failed', 500));
 
