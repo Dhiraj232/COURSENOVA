@@ -92,8 +92,12 @@ function setupNavigation() {
         { name: 'Courses', href: 'certificates', key: 'courses' },
         { name: 'Mock Tests', href: 'mock-tests', key: 'tests' },
         { name: 'Daily Challenge <span class="nav-badge" style="background:#ef4444;color:white;font-size:0.65rem;padding:2px 6px;border-radius:10px;margin-left:4px;vertical-align:top;font-weight:700;">NEW 🔥</span>', href: 'daily-challenge', key: 'daily-challenge' },
-        { name: 'CGPA', href: 'cgpa-calculator', key: 'cgpa' },
-        { name: 'Community', href: 'community', key: 'community' },
+        { name: 'College', href: '#', key: 'college', dropdown: [
+            { name: 'CGPA Calculator', href: 'cgpa-calculator' },
+            { name: 'University Mock Tests', href: 'mock-tests' },
+            { name: 'Syllabus & Notes', href: 'store' },
+            { name: 'Campus Community', href: 'community' }
+        ] },
         { name: 'Store', href: 'store', key: 'store' },
         { name: 'About', href: 'about', key: 'about' }
     ];
@@ -137,6 +141,29 @@ function setupNavigation() {
             if (href.startsWith('#')) return; // handled by hash scroll
             e.preventDefault();
             navigateToPage(href);
+        });
+    });
+
+    // Mobile dropdown toggle click handler
+    const dropdownToggles = navMenu.querySelectorAll('.nav-dropdown-toggle');
+    dropdownToggles.forEach(toggle => {
+        toggle.addEventListener('click', function(e) {
+            if (window.innerWidth <= 768) {
+                e.preventDefault();
+                e.stopPropagation();
+                const parent = this.closest('.nav-dropdown');
+                parent.classList.toggle('active-mobile');
+                
+                // Toggle chevron rotation
+                const icon = this.querySelector('.ChevronIcon');
+                if (icon) {
+                    if (parent.classList.contains('active-mobile')) {
+                        icon.style.transform = 'rotate(180deg)';
+                    } else {
+                        icon.style.transform = 'none';
+                    }
+                }
+            }
         });
     });
 }

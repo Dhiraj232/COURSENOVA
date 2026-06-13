@@ -549,6 +549,33 @@ body.dark-theme .dropdown-divider {
     .btn-signup i {
         display: none !important;
     }
+
+    /* Mobile Dropdown styling */
+    .nav-dropdown {
+        width: 100% !important;
+    }
+    
+    .nav-dropdown-menu {
+        position: static !important;
+        transform: none !important;
+        box-shadow: none !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        display: none !important;
+        padding: 0.2rem 0.5rem 0.2rem 1.5rem !important;
+        border: none !important;
+        background: transparent !important;
+        width: 100% !important;
+    }
+
+    .nav-dropdown.active-mobile .nav-dropdown-menu {
+        display: block !important;
+    }
+
+    .nav-dropdown-menu a {
+        font-size: 0.95rem !important;
+        padding: 0.5rem 1rem !important;
+    }
 }
 
 @media (max-width: 480px) {
