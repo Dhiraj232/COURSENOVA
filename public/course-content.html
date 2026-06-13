@@ -970,8 +970,7 @@
             });
 
             const unanswered = answers.filter(a => a === -1).length;
-            if (unanswered > 0) {
-                alert(`Please answer all questions. ${unanswered} question(s) unanswered.`);
+            if (unanswered > 0 && !confirm(`You have ${unanswered} unanswered question(s). Submit anyway? (Unanswered questions will be marked as incorrect)`)) {
                 return;
             }
 
