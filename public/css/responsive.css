@@ -103,15 +103,39 @@ img, video, iframe, embed, object, canvas, svg { max-width: 100%; height: auto; 
   .section-title { font-size: 1.7rem !important; margin-bottom: 1.5rem !important; }
 
   /* Footer */
-  .footer-container { grid-template-columns: 1fr 1fr !important; gap: 2rem !important; }
+  .footer-container { grid-template-columns: 1fr 1fr !important; gap: 2.5rem !important; }
+}
+
+@media (max-width: 576px) {
+  .footer-container { 
+    grid-template-columns: 1fr !important; 
+    text-align: center; 
+    gap: 2rem !important; 
+  }
+  .footer-brand-column .footer-logo {
+    justify-content: center;
+  }
+  .footer-social-links {
+    justify-content: center;
+  }
+  .footer-links-column h4::after, .footer-newsletter-column h4::after {
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  .footer-bottom {
+    flex-direction: column !important;
+    text-align: center;
+    gap: 1rem !important;
+  }
+  .footer-bottom-links {
+    justify-content: center;
+  }
 }
 
 @media (max-width: 480px) {
   .trust-container { grid-template-columns: 1fr !important; }
   .steps-container { grid-template-columns: 1fr !important; }
   .courses-grid { grid-template-columns: 1fr !important; }
-  .footer-container { grid-template-columns: 1fr !important; text-align: center; }
-  .footer-logo { margin: 0 auto; }
   .section-title { font-size: 1.4rem !important; }
 }
 

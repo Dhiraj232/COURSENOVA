@@ -431,6 +431,98 @@
 
     <div class="toast-container" id="toastContainer"></div>
 
+    <!-- ==================== FOOTER ==================== -->
+    <footer class="footer">
+        <div class="footer-glow"></div>
+        <div class="footer-container">
+            <div class="footer-brand-column">
+                <a href="/" class="footer-logo">
+                    <img src="images/coursenova-logo.png" alt="COURSENOVA Logo">
+                    <span>COURSENOVA</span>
+                </a>
+                <p class="footer-tagline">Empowering Indian students and professionals with premium courses, syllabus-aligned notes, mock exams, and verified certificates.</p>
+                <div class="footer-social-links">
+                    <a href="https://www.linkedin.com/in/dhiraj-kumar-6a0542379/?skipRedirect=true" target="_blank" aria-label="LinkedIn" class="social-link linkedin"><i class="fa-brands fa-linkedin-in"></i></a>
+                    <a href="https://github.com/Dhiraj232" target="_blank" aria-label="GitHub" class="social-link github"><i class="fa-brands fa-github"></i></a>
+                    <a href="https://www.instagram.com/dhir_aj1504/" target="_blank" aria-label="Instagram" class="social-link instagram"><i class="fa-brands fa-instagram"></i></a>
+                </div>
+            </div>
+            
+            <div class="footer-links-column">
+                <h4>Products</h4>
+                <ul>
+                    <li><a href="certificates">Certificate Courses</a></li>
+                    <li><a href="mock-tests">Mock Test Hub</a></li>
+                    <li><a href="practice">Practice Zone</a></li>
+                    <li><a href="store">Study Notes Store</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-links-column">
+                <h4>Company</h4>
+                <ul>
+                    <li><a href="about">About Us</a></li>
+                    <li><a href="mailto:dhirajkumar464748@gmail.com">Contact Us</a></li>
+                    <li><a href="community">Community Hub</a></li>
+                    <li><a href="verify-certificate">Verify Certificate</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-newsletter-column">
+                <h4>Stay Updated</h4>
+                <p>Subscribe to our newsletter for new course alerts, mock tests, and career opportunities.</p>
+                <form class="newsletter-form" id="newsletterForm" onsubmit="handleNewsletterSubmit(event)">
+                    <div class="input-group">
+                        <input type="email" placeholder="Enter your email" required aria-label="Email address" id="newsletterEmail">
+                        <button type="submit" aria-label="Subscribe"><i class="fas fa-paper-plane"></i></button>
+                    </div>
+                    <span class="newsletter-msg" id="newsletterMsg"></span>
+                </form>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p class="copyright">&copy; 2026 COURSENOVA. Founded & Developed by <a href="about" class="founder-link">Dhiraj Kumar Kushwaha</a>. All rights reserved.</p>
+            <div class="footer-bottom-links">
+                <a href="privacy-policy">Privacy Policy</a>
+                <a href="terms-and-conditions">Terms of Service</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        function handleNewsletterSubmit(event) {
+            event.preventDefault();
+            const emailInput = document.getElementById('newsletterEmail');
+            const submitBtn = event.currentTarget.querySelector('button');
+            const msgSpan = document.getElementById('newsletterMsg');
+            
+            if (!emailInput || !submitBtn || !msgSpan) return;
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            
+            setTimeout(() => {
+                emailInput.value = '';
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-check"></i>';
+                submitBtn.style.background = '#10b981';
+                submitBtn.style.color = '#fff';
+                
+                msgSpan.textContent = '🎉 Thank you for subscribing!';
+                msgSpan.className = 'newsletter-msg success show';
+                
+                setTimeout(() => {
+                    submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i>';
+                    submitBtn.style.background = '';
+                    submitBtn.style.color = '';
+                    msgSpan.className = 'newsletter-msg';
+                    msgSpan.textContent = '';
+                }, 4000);
+            }, 1200);
+        }
+    </script>
+
     <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
     <script src="js/config.js"></script>
     <script src="js/navigation.js"></script>

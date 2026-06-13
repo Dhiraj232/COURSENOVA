@@ -127,16 +127,27 @@
 
                 // ── Quick status update then redirect ──
                 document.getElementById('statusTitle').textContent = '✅ Signed in!';
-                document.getElementById('statusMsg').textContent = `Welcome back, ${user.fullName || 'Learner'}! Redirecting to your dashboard…`;
+
+                // ── Smart redirect: go back to where the user was, or dashboard ──
+                let redirectTo = '/dashboard';
+
+                if (user.role === 'admin') {
+                    redirectTo = '/admin-dashboard';
+                } else {
+                    // Check if we saved a "return to" page before login
+                    const savedRedirect = localStorage.getItem('cn_redirect_after_login');
+                    if (savedRedirect && savedRedirect !== '/' && !savedRedirect.includes('signup') && !savedRedirect.includes('auth-callback')) {
+                        redirectTo = savedRedirect;
+                        localStorage.removeItem('cn_redirect_after_login'); // clean up
+                    }
+                }
+
+                const destName = redirectTo === '/dashboard' ? 'your dashboard' : 'the page you were on';
+                document.getElementById('statusMsg').textContent = `Welcome back, ${user.fullName || 'Learner'}! Redirecting to ${destName}…`;
                 document.getElementById('spinner').style.borderTopColor = '#10b981';
 
-                // ── Redirect based on role ──
                 setTimeout(() => {
-                    if (user.role === 'admin') {
-                        window.location.href = '/admin-dashboard';
-                    } else {
-                        window.location.href = '/dashboard';
-                    }
+                    window.location.href = redirectTo;
                 }, 1200);
 
             } catch (err) {

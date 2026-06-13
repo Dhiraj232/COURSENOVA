@@ -539,6 +539,15 @@ function setupUserDropdown() {
 
     // If no user, show Login/Signup buttons
     if (!user) {
+        // Save the current page so we can return here after login
+        const currentPath = window.location.pathname + window.location.search;
+        // Don't save auth/callback pages as the return destination
+        const skipPages = ['/auth-callback', '/signup', '/admin-login'];
+        const shouldSaveRedirect = !skipPages.some(p => currentPath.includes(p));
+        if (shouldSaveRedirect && currentPath !== '/') {
+            localStorage.setItem('cn_redirect_after_login', currentPath);
+        }
+
         navButtons.innerHTML = `
             <div id="guestButtons" style="display: flex; gap: 1rem; align-items: center;">
                 <a href="signup" class="btn-login" style="text-decoration: none;">Login</a>
