@@ -467,6 +467,10 @@
                         <label class="form-label">Grading System</label>
                         <select id="gradingSystem" class="cgpa-select" onchange="changeGradingSystem()">
                             <option value="ugc">UGC 10-Point Scale (Standard)</option>
+                            <option value="lpu">Lovely Professional University (LPU)</option>
+                            <option value="cu">Chandigarh University (CU)</option>
+                            <option value="amity">Amity University</option>
+                            <option value="galgotias">Galgotias University</option>
                             <option value="aktu">AKTU / MAKAUT 10-Point Scale</option>
                             <option value="gpa4">International 4-Point GPA Scale</option>
                             <option value="custom">Custom Scale...</option>
@@ -559,6 +563,18 @@
         // Preset scales
         const scales = {
             ugc: {
+                'O': 10, 'A+': 9, 'A': 8, 'B+': 7, 'B': 6, 'C': 5, 'P': 4, 'F': 0
+            },
+            lpu: {
+                'O': 10, 'A+': 9, 'A': 8, 'B+': 7, 'B': 6, 'C': 5, 'D': 4, 'E': 0, 'F': 0
+            },
+            cu: {
+                'O': 10, 'A+': 9, 'A': 8, 'B+': 7, 'B': 6, 'C': 5, 'D': 4, 'F': 0
+            },
+            amity: {
+                'A+': 10, 'A': 9, 'A-': 8, 'B+': 7, 'B': 6, 'B-': 5, 'C+': 4, 'C': 3, 'F': 0
+            },
+            galgotias: {
                 'O': 10, 'A+': 9, 'A': 8, 'B+': 7, 'B': 6, 'C': 5, 'P': 4, 'F': 0
             },
             aktu: {
