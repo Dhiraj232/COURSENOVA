@@ -262,9 +262,12 @@ router.get('/questions/:courseId', requireAuth, async (req, res) => {
     try {
         const course = await Course.findOne({
             $or: [
-                { title: courseId },
-                { slug: courseId.toLowerCase().replace(/\s+/g, '-') }
-            ]
+                { _id: courseId.match(/^[0-9a-fA-F]{24}$/) ? courseId : null },
+                { slug: courseId.toLowerCase().trim() },
+                { slug: courseId.toLowerCase().replace(/-/g, ' ').trim() },
+                { slug: courseId.toLowerCase().replace(/\s+/g, '-').trim() },
+                { title: courseId }
+            ].filter(q => q._id !== null || q.slug || q.title)
         });
 
         if (course && course.quizQuestions && course.quizQuestions.length >= 5) {

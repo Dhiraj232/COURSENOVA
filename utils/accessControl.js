@@ -34,7 +34,10 @@ async function checkAccess(userId, itemId) {
         // Try as Course
         const courseOrQuery = [
             { slug: String(itemId).toLowerCase().trim() },
-            { title: String(itemId) }
+            { slug: String(itemId).toLowerCase().replace(/-/g, ' ').trim() },
+            { slug: String(itemId).toLowerCase().replace(/\s+/g, '-').trim() },
+            { title: String(itemId) },
+            { title: { $regex: new RegExp('^' + String(itemId).replace(/[-_]/g, ' ').replace(/\s+/g, '\\s*') + '$', 'i') } }
         ];
         if (isObjectId) courseOrQuery.push({ _id: itemId });
         item = await Course.findOne({ $or: courseOrQuery }).lean();

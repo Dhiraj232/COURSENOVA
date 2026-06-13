@@ -27,7 +27,10 @@ router.get('/details', async (req, res) => {
 
         const orQuery = [
             { title: courseId },
-            { slug: courseId.toLowerCase().replace(/\s+/g, '-') }
+            { title: { $regex: new RegExp('^' + courseId.replace(/[-_]/g, ' ').replace(/\s+/g, '\\s*') + '$', 'i') } },
+            { slug: courseId.toLowerCase().trim() },
+            { slug: courseId.toLowerCase().replace(/\s+/g, '-').trim() },
+            { slug: courseId.toLowerCase().replace(/-/g, ' ').trim() }
         ];
         if (String(courseId).match(/^[0-9a-fA-F]{24}$/)) {
             orQuery.push({ _id: courseId });
@@ -130,7 +133,12 @@ const handleProgress = async (req, res) => {
         if (lessonId && !record.completedLessons.includes(lessonId)) {
             record.completedLessons.push(lessonId);
             const course = await Course.findOne({
-                $or: [{ title: courseId }, { slug: courseId.toLowerCase().replace(/\s+/g, '-') }]
+                $or: [
+                    { title: courseId },
+                    { slug: courseId.toLowerCase().trim() },
+                    { slug: courseId.toLowerCase().replace(/\s+/g, '-').trim() },
+                    { slug: courseId.toLowerCase().replace(/-/g, ' ').trim() }
+                ]
             });
             await Activity.create({
                 userId: req.userId,
@@ -209,10 +217,12 @@ router.post('/submit-test', async (req, res) => {
         let dbCorrectAnswers = correctAnswers || [];
         let course = await Course.findOne({
             $or: [
+                { _id: courseId.match(/^[0-9a-fA-F]{24}$/) ? courseId : null },
                 { title: courseId },
-                { slug: courseId.toLowerCase().replace(/\s+/g, '-') },
-                { _id: courseId.match(/^[0-9a-fA-F]{24}$/) ? courseId : null }
-            ].filter(q => q._id !== null)
+                { slug: courseId.toLowerCase().trim() },
+                { slug: courseId.toLowerCase().replace(/\s+/g, '-').trim() },
+                { slug: courseId.toLowerCase().replace(/-/g, ' ').trim() }
+            ].filter(q => q._id !== null || q.title || q.slug)
         });
 
         if (course && course.quizQuestions && course.quizQuestions.length > 0) {

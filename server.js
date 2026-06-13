@@ -465,6 +465,7 @@ app.use((req, res, next) => {
 app.use('/api/books', booksRoutes);
 app.use('/api/orders', ordersRoutes);
 app.use('/api/cart', cartRoutes);
+app.use('/api/feedback', require('./routes/feedbackRoutes'));
 app.use('/api/sellers', sellersRoutes);
 app.use('/api/reviews', reviewsRoutes);
 app.use('/api/wishlist', wishlistRoutes);
@@ -489,9 +490,8 @@ app.use((err, req, res, next) => {
 });
 
 // ─── Premium Course Routes ─────────────────────────────────────
-app.use('/api/premium', require('./routes/premiumCourseRoutes'));
-
-// ─── Course Platform Routes ───────────────────────────────────
+const premiumCourseRoutes = require('./routes/premiumCourseRoutes');
+app.use('/api/premium', premiumCourseRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/enrollments', enrollmentRoutes);
 app.use('/api/certificates', certificateRoutes);
@@ -501,8 +501,7 @@ app.use('/api/enrollments', enrollmentRoutes); // Standard plural alias
 app.use('/api/my-courses', enrollmentRoutes); // Udemy-style alias
 app.use('/api/test', require('./routes/testRoutes')); // New test endpoint
 
-// ─── Practice & AI Routes (New) ──────────────────────────────
-app.use('/api/practice', require('./routes/practice'));
+
 app.use('/api/mocktest', require('./routes/mockTestRoutes'));
 app.use('/api/ai', require('./routes/ai'));
 

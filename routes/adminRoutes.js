@@ -17,7 +17,16 @@ const Notification = require('../models/Notification');
 
 // ── PDF QUESTION PARSER ──────────────────────────────────────────────
 const multer = require('multer');
-const pdfParse = require('pdf-parse'); // ← correct: pdf-parse exports a function directly
+const pdfParseModule = require('pdf-parse');
+const pdfParse = typeof pdfParseModule === 'function' ? pdfParseModule : async function(buffer) {
+    const { PDFParse } = pdfParseModule;
+    if (PDFParse) {
+        const parser = new PDFParse({ verbosity: 0, data: buffer });
+        const result = await parser.getText();
+        return { text: result.text || '' };
+    }
+    throw new Error('pdf-parse module is not a function and does not export PDFParse');
+};
 const upload = multer({ storage: multer.memoryStorage() });
 
 // ── Parse MCQ questions from raw PDF text ────────────────────────────
@@ -323,8 +332,18 @@ router.get('/certificates', requireAdmin, catchAsync(async (req, res) => {
 router.get('/certificates/verify/:certId', catchAsync(async (req, res) => {
     const cert = await CourseProgress.findOne({ certId: req.params.certId })
         .populate('userId', 'name email');
-    if (!cert) throw new AppError('Certificate ID invalid or not found', 404);
-    res.json({ ok: true, cert });
+    if (!cert) return res.json({ ok: false, message: 'Certificate not found or invalid ID.' });
+
+    res.json({
+        ok: true,
+        certificate: {
+            certId: cert.certId,
+            studentName: cert.userId?.name || 'Unknown Student',
+            studentEmail: cert.userId?.email || '',
+            courseName: cert.courseName || 'Professional Course',
+            issueDate: cert.updatedAt || cert.createdAt
+        }
+    });
 }));
 
 // ── 6. PAYMENT MANAGEMENT ──────────────────────────────────────────
@@ -479,7 +498,7 @@ router.get('/slides/active', catchAsync(async (req, res) => {
                 title: 'Celebrating Years of COURSENOVA',
                 subtitle: 'OFFER IS LIVE! Get Up To 40% OFF on premium exam batches! Limited Time Only.',
                 image: 'default_slide_1.png',
-                link: '/premium-courses.html',
+                link: '/certificates.html',
                 order: 1,
                 isActive: true
             },
@@ -495,7 +514,7 @@ router.get('/slides/active', catchAsync(async (req, res) => {
                 title: 'Exam-focused Practice MCQs & Tests',
                 subtitle: 'Test your academic prep with subject-level practice questions. Boost your GPA.',
                 image: 'default_slide_3.png',
-                link: '/practice.html',
+                link: '/mock-tests.html',
                 order: 3,
                 isActive: true
             },

@@ -116,9 +116,11 @@ async function findItem(itemId) {
     const course = await Course.findOne({ 
         $or: [
             { _id: String(itemId).match(/^[0-9a-fA-F]{24}$/) ? itemId : null },
-            { slug: String(itemId).toLowerCase().trim().replace(/\s+/g, '-') },
+            { slug: String(itemId).toLowerCase().trim() },
+            { slug: String(itemId).toLowerCase().replace(/-/g, ' ').trim() },
+            { slug: String(itemId).toLowerCase().replace(/\s+/g, '-').trim() },
             { title: { $regex: titleRegex } }
-        ]
+        ].filter(q => q._id !== null || q.slug || q.title)
     });
     if (course) {
         console.log(`[findItem] ✅ Found course: ${course.title}`);
@@ -160,9 +162,11 @@ async function getItemById(itemId) {
     const c = await Course.findOne({
         $or: [
             { _id: isObjectId ? itemId : null },
-            { slug: String(itemId).toLowerCase() },
+            { slug: String(itemId).toLowerCase().trim() },
+            { slug: String(itemId).toLowerCase().replace(/-/g, ' ').trim() },
+            { slug: String(itemId).toLowerCase().replace(/\s+/g, '-').trim() },
             { title: String(itemId) }
-        ]
+        ].filter(q => q._id !== null || q.slug || q.title)
     });
     if (c) return { _id: c._id, title: c.title, slug: c.slug };
 

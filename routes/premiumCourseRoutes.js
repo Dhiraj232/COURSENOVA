@@ -10,18 +10,11 @@ const { checkAccess } = require('../utils/accessControl');
 
 const MAX_EXAM_ATTEMPTS = 3;
 
-// Helper is no longer needed locally as we use utils/accessControl.js
-
 // ─── GET /api/premium/courses ─────────────────────────────────────────────────
-// Public — lists all active premium courses. Strips quiz answers.
+// Public — lists all active premium/free courses. Strips quiz answers.
 router.get('/courses', optionalAuth, async (req, res) => {
     try {
         const courses = await Course.find({
-            $or: [
-                { isPremium: true },
-                { isFree: true },
-                { price: { $gt: 0 } }
-            ],
             isActive: true 
         })
             .select('-quizQuestions.correctIndex -__v')
@@ -54,9 +47,11 @@ router.get('/course/:id', optionalAuth, async (req, res) => {
         const course = await Course.findOne({
             $or: [
                 { _id: String(courseId).match(/^[0-9a-fA-F]{24}$/) ? courseId : null },
-                { slug: String(courseId).toLowerCase().replace(/\s+/g, '-') },
+                { slug: String(courseId).toLowerCase().trim() },
+                { slug: String(courseId).toLowerCase().replace(/-/g, ' ').trim() },
+                { slug: String(courseId).toLowerCase().replace(/\s+/g, '-').trim() },
                 { title: String(courseId) }
-            ]
+            ].filter(q => q._id !== null || q.slug || q.title)
         }).lean();
         
         if (!course) return res.status(404).json({ ok: false, message: 'Course not found' });
@@ -115,23 +110,39 @@ router.get('/course/:id', optionalAuth, async (req, res) => {
     }
 });
 
-// Payments are now handled entirely by routes/cashfree.js
-// /create-order and /verify-payment endpoints have been migrated there.
-
 // ─── GET /api/premium/access/:courseId ───────────────────────────────────────
 // Returns enrollment status + progress + exam attempts left.
 router.get('/access/:courseId', requireAuth, async (req, res) => {
     try {
         const { courseId } = req.params;
         const userId = String(req.userId);
-        const enrolled = await checkAccess(userId, courseId);
+        
+        // Find course first to get exact _id or slug
+        const course = await Course.findOne({
+            $or: [
+                { _id: String(courseId).match(/^[0-9a-fA-F]{24}$/) ? courseId : null },
+                { slug: String(courseId).toLowerCase().trim() },
+                { slug: String(courseId).toLowerCase().replace(/-/g, ' ').trim() },
+                { slug: String(courseId).toLowerCase().replace(/\s+/g, '-').trim() },
+                { title: String(courseId) }
+            ].filter(q => q._id !== null || q.slug || q.title)
+        });
+
+        if (!course) return res.status(404).json({ ok: false, message: 'Course not found' });
+        const enrolled = await checkAccess(userId, String(course._id));
 
         let progress = null;
         let examAttemptsLeft = MAX_EXAM_ATTEMPTS;
 
         if (enrolled) {
-            const p  = await CourseProgress.findOne({ userId, courseId }).lean();
-            const ea = await ExamAttempt.findOne({ userId, courseId }).lean();
+            const p  = await CourseProgress.findOne({ 
+                userId, 
+                $or: [{ courseId: String(course._id) }, { courseId: course.slug }] 
+            }).lean();
+            const ea = await ExamAttempt.findOne({ 
+                userId, 
+                $or: [{ courseId: String(course._id) }, { courseId: course.slug }] 
+            }).lean();
             if (p)  progress = p;
             if (ea) examAttemptsLeft = Math.max(0, MAX_EXAM_ATTEMPTS - ea.attempts);
         }
@@ -154,14 +165,31 @@ router.post('/submit-exam', requireAuth, async (req, res) => {
 
         const userId = String(req.userId);
 
+        // Fetch course quiz
+        const course = await Course.findOne({
+            $or: [
+                { _id: courseId.match(/^[0-9a-fA-F]{24}$/) ? courseId : null },
+                { slug: String(courseId).toLowerCase().trim() },
+                { slug: String(courseId).toLowerCase().replace(/-/g, ' ').trim() },
+                { slug: String(courseId).toLowerCase().replace(/\s+/g, '-').trim() },
+                { title: courseId }
+            ].filter(q => q._id !== null || q.slug || q.title)
+        });
+        if (!course) {
+            return res.status(404).json({ ok: false, message: 'Course not found' });
+        }
+
         // Enrollment guard
-        const enrolled = await checkAccess(userId, courseId);
+        const enrolled = await checkAccess(userId, String(course._id));
         if (!enrolled) return res.status(403).json({ ok: false, message: 'Not enrolled in this course' });
 
-        // Retry limit
-        let attemptDoc = await ExamAttempt.findOne({ userId, courseId });
+        // Retry limit (check under both course ID and course slug for backward compatibility)
+        let attemptDoc = await ExamAttempt.findOne({ 
+            userId, 
+            $or: [{ courseId: String(course._id) }, { courseId: course.slug }] 
+        });
         if (!attemptDoc) {
-            attemptDoc = new ExamAttempt({ userId, courseId, attempts: 0 });
+            attemptDoc = new ExamAttempt({ userId, courseId: String(course._id), attempts: 0 });
         }
         if (attemptDoc.attempts >= MAX_EXAM_ATTEMPTS) {
             return res.status(403).json({
@@ -171,15 +199,7 @@ router.post('/submit-exam', requireAuth, async (req, res) => {
             });
         }
 
-        // Fetch course quiz
-        const course = await Course.findOne({
-            $or: [
-                { _id: courseId.match(/^[0-9a-fA-F]{24}$/) ? courseId : null },
-                { slug: courseId },
-                { title: courseId }
-            ]
-        });
-        if (!course || !course.quizQuestions || course.quizQuestions.length === 0) {
+        if (!course.quizQuestions || course.quizQuestions.length === 0) {
             return res.status(400).json({ ok: false, message: 'No quiz questions found for this course' });
         }
 
@@ -202,8 +222,11 @@ router.post('/submit-exam', requireAuth, async (req, res) => {
         const attemptsLeft = Math.max(0, MAX_EXAM_ATTEMPTS - attemptDoc.attempts);
 
         // Update CourseProgress
-        let progress = await CourseProgress.findOne({ userId, courseId });
-        if (!progress) progress = new CourseProgress({ userId, courseId });
+        let progress = await CourseProgress.findOne({ 
+            userId, 
+            $or: [{ courseId: String(course._id) }, { courseId: course.slug }] 
+        });
+        if (!progress) progress = new CourseProgress({ userId, courseId: String(course._id) });
 
         progress.score      = score;
         progress.testPassed = passed;
@@ -223,10 +246,10 @@ router.post('/submit-exam', requireAuth, async (req, res) => {
         try {
             const TestResult = require('../models/TestResult');
             const Activity2  = require('../models/Activity');
-            await TestResult.create({ userId, courseId, courseName: course.title, score, passed, totalQuestions: total, correctQuestions: correct });
-            await Activity2.create({ userId, type: passed ? 'test_passed' : 'test_failed', title: `Final Exam: ${course.title}`, courseId, courseName: course.title, score });
+            await TestResult.create({ userId, courseId: String(course._id), courseName: course.title, score, passed, totalQuestions: total, correctQuestions: correct });
+            await Activity2.create({ userId, type: passed ? 'test_passed' : 'test_failed', title: `Final Exam: ${course.title}`, courseId: String(course._id), courseName: course.title, score });
             if (passed) {
-                await Activity2.create({ userId, type: 'certificate_earned', title: `Certificate: ${course.title}`, courseId, courseName: course.title });
+                await Activity2.create({ userId, type: 'certificate_earned', title: `Certificate: ${course.title}`, courseId: String(course._id), courseName: course.title });
             }
         } catch (e) { console.warn('Log error:', e.message); }
 
@@ -255,15 +278,28 @@ router.get('/certificate/:courseId', requireAuth, async (req, res) => {
         const userId   = String(req.userId);
         const { courseId } = req.params;
 
-        const progress = await CourseProgress.findOne({ userId, courseId, testPassed: true }).lean();
+        const course = await Course.findOne({
+            $or: [
+                { _id: String(courseId).match(/^[0-9a-fA-F]{24}$/) ? courseId : null },
+                { slug: String(courseId).toLowerCase().trim() },
+                { slug: String(courseId).toLowerCase().replace(/-/g, ' ').trim() },
+                { slug: String(courseId).toLowerCase().replace(/\s+/g, '-').trim() },
+                { title: String(courseId) }
+            ].filter(q => q._id !== null || q.slug || q.title)
+        });
+
+        if (!course) return res.status(404).json({ ok: false, message: 'Course not found' });
+
+        const progress = await CourseProgress.findOne({ 
+            userId, 
+            $or: [{ courseId: String(course._id) }, { courseId: course.slug }], 
+            testPassed: true 
+        }).lean();
         if (!progress || !progress.certId) {
             return res.status(404).json({ ok: false, message: 'Certificate not found. Pass the exam first.' });
         }
 
         const user = String(userId).match(/^[0-9a-fA-F]{24}$/) ? await User.findById(userId) : await User.findOne({ email: String(userId) });
-        const course = await Course.findById(courseId).lean()
-            || await Course.findOne({ slug: courseId }).lean()
-            || await Course.findOne({ title: courseId }).lean();
 
         res.json({
             ok:       true,
@@ -272,7 +308,7 @@ router.get('/certificate/:courseId', requireAuth, async (req, res) => {
             score:    progress.score,
             userName: user ? user.name  : 'Student',
             userEmail: user ? user.email : '',
-            courseName: course ? course.title : courseId
+            courseName: course.title
         });
     } catch (err) {
         console.error('Certificate fetch error:', err);
@@ -281,9 +317,7 @@ router.get('/certificate/:courseId', requireAuth, async (req, res) => {
 });
 
 // ─── GET /api/premium/all-courses ────────────────────────────────────────────
-// Public — lists ALL active courses (free + premium) merged.
-// If user is logged in (optionalAuth), each course is annotated with
-// { enrolled, progress }. Quiz answer keys are never exposed here.
+// Public — lists ALL active courses merged.
 router.get('/all-courses', optionalAuth, async (req, res) => {
     try {
         const courses = await Course.find({ isActive: true })
@@ -318,4 +352,3 @@ router.get('/all-courses', optionalAuth, async (req, res) => {
 });
 
 module.exports = router;
-

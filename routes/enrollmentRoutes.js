@@ -98,9 +98,11 @@ router.post('/enroll-free', async (req, res) => {
         const course = await Course.findOne({
             $or: [
                 { _id: id.match(/^[0-9a-fA-F]{24}$/) ? id : null },
-                { slug: id.toLowerCase().replace(/\s+/g, '-') },
+                { slug: id.toLowerCase().trim() },
+                { slug: id.toLowerCase().replace(/-/g, ' ').trim() },
+                { slug: id.toLowerCase().replace(/\s+/g, '-').trim() },
                 { title: id }
-            ]
+            ].filter(q => q._id !== null || q.slug || q.title)
         });
 
         if (!course) return res.status(404).json({ ok: false, message: 'Course not found' });

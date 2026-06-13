@@ -106,6 +106,12 @@ async function loadView(view) {
                 renderCertificates(certData.certs);
                 break;
 
+            case 'feedback':
+                title.textContent = 'Student Feedback';
+                const fbData = await fetchData(`/api/feedback/admin`);
+                renderFeedbackAdmin(fbData.feedbacks || []);
+                break;
+
             case 'questions':
                 title.textContent = 'Question Bank';
                 renderQuestionsUI();
@@ -1661,7 +1667,7 @@ function renderSlideModal(title, slide = null) {
                 
                 <div class="form-group">
                     <label>Action Redirection Link</label>
-                    <input type="text" id="slideLink" class="admin-input" value="${slide?.link || ''}" placeholder="e.g. /premium-courses.html or https://www.google.com">
+                    <input type="text" id="slideLink" class="admin-input" value="${slide?.link || ''}" placeholder="e.g. /certificates.html or https://www.google.com">
                 </div>
                 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
@@ -1962,5 +1968,62 @@ async function deleteAnnouncement(id) {
     } catch (e) {
         console.error(e);
         alert('Error deleting announcement');
+    }
+}
+
+function renderFeedbackAdmin(feedbacks) {
+    const content = document.getElementById('content-area');
+    content.innerHTML = `
+        <div class="admin-card" style="padding:24px;">
+            <div class="card-header" style="margin-bottom: 15px;">
+                <h3>Student Feedback</h3>
+            </div>
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Name</th>
+                        <th>Rating</th>
+                        <th>Message</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${feedbacks.map(fb => `
+                        <tr>
+                            <td style="white-space:nowrap;">${new Date(fb.createdAt).toLocaleDateString()}</td>
+                            <td><strong>${fb.name}</strong></td>
+                            <td><span class="stars" style="color:#fbbf24;">${'★'.repeat(fb.rating)}${'☆'.repeat(5 - fb.rating)}</span></td>
+                            <td style="max-width:300px; line-height:1.4;">${fb.message}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline danger" onclick="deleteFeedback('${fb._id}')" style="color:var(--danger)">Delete</button>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+            ${feedbacks.length === 0 ? '<div style="padding:40px; text-align:center; color:#64748b;">No feedback received yet.</div>' : ''}
+        </div>
+    `;
+}
+
+async function deleteFeedback(id) {
+    if (!confirm('Are you sure you want to delete this feedback?')) return;
+    const token = localStorage.getItem('token');
+    try {
+        const res = await fetch(\`/api/feedback/\${id}\`, {
+            method: 'DELETE',
+            headers: { 'Authorization': \`Bearer \${token}\` }
+        });
+        const data = await res.json();
+        if (data.ok) {
+            alert('Feedback deleted successfully!');
+            loadView('feedback');
+        } else {
+            alert(data.message || 'Failed to delete feedback');
+        }
+    } catch (e) {
+        console.error(e);
+        alert('Error deleting feedback');
     }
 }

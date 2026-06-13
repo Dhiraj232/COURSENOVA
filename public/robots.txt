@@ -16,7 +16,7 @@ Disallow: /daily-challenge-taker
 Disallow: /daily-challenge-history
 Disallow: /test-player
 Disallow: /testing-center
-Disallow: /premium-course-player
+
 Disallow: /quiz-engine
 Disallow: /quiz-results
 Disallow: /auth-callback

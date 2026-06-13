@@ -43,9 +43,9 @@
       "url": "https://www.coursenova.in/",
       "logo": "https://www.coursenova.in/images/coursenova-logo.png",
       "sameAs": [
-        "https://www.linkedin.com/in/dhiraj-kumar-6a0542379/?skipRedirect=true",
+        "https://www.linkedin.com/in/course-nova-26958b405/",
         "https://github.com/Dhiraj232",
-        "https://www.instagram.com/dhir_aj1504/"
+        "https://www.instagram.com/coursenova.in/"
       ],
       "founder": {
         "@type": "Person",
@@ -317,11 +317,7 @@
                     <p>Access structured, syllabus-aligned online courses designed for technology, nursing, pharmacy, and agriculture students in India. Master real-world concepts and earn verified certificates to accelerate your career preparation.</p>
                 </div>
                 
-                <div class="seo-hub-card">
-                    <div class="seo-card-icon"><i class="fas fa-terminal"></i></div>
-                    <h3>Interactive Coding Practice</h3>
-                    <p>Strengthen your software engineering fundamentals in our interactive practice hub. Solve algorithm problems, practice coding interview questions, and build technical expertise that top tech companies value.</p>
-                </div>
+
 
                 <div class="seo-hub-card">
                     <div class="seo-card-icon"><i class="fas fa-clipboard-list"></i></div>
@@ -340,7 +336,12 @@
 
     <section class="testimonials">
         <div class="testimonials-container">
-            <h2 class="section-title">What Our Students Say</h2>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h2 class="section-title" style="margin-bottom: 0;">What Our Students Say</h2>
+                <button class="btn-primary" onclick="openFeedbackModal()" style="font-size: 0.9rem; padding: 10px 20px;">
+                    <i class="fas fa-comment-alt"></i> Leave Feedback
+                </button>
+            </div>
             <div class="testimonials-grid">
                 <div class="testimonial-card">
                     <div class="stars">★★★★★</div>
@@ -395,9 +396,9 @@
                 </a>
                 <p class="footer-tagline">Empowering Indian students and professionals with premium courses, syllabus-aligned notes, mock exams, and verified certificates.</p>
                 <div class="footer-social-links">
-                    <a href="https://www.linkedin.com/in/dhiraj-kumar-6a0542379/?skipRedirect=true" target="_blank" aria-label="LinkedIn" class="social-link linkedin"><i class="fa-brands fa-linkedin-in"></i></a>
+                    <a href="https://www.linkedin.com/in/course-nova-26958b405/" target="_blank" aria-label="LinkedIn" class="social-link linkedin"><i class="fa-brands fa-linkedin-in"></i></a>
                     <a href="https://github.com/Dhiraj232" target="_blank" aria-label="GitHub" class="social-link github"><i class="fa-brands fa-github"></i></a>
-                    <a href="https://www.instagram.com/dhir_aj1504/" target="_blank" aria-label="Instagram" class="social-link instagram"><i class="fa-brands fa-instagram"></i></a>
+                    <a href="https://www.instagram.com/coursenova.in/" target="_blank" aria-label="Instagram" class="social-link instagram"><i class="fa-brands fa-instagram"></i></a>
                 </div>
             </div>
             
@@ -406,7 +407,6 @@
                 <ul>
                     <li><a href="certificates">Certificate Courses</a></li>
                     <li><a href="mock-tests">Mock Test Hub</a></li>
-                    <li><a href="practice">Practice Zone</a></li>
                     <li><a href="store">Study Notes Store</a></li>
                 </ul>
             </div>
@@ -522,7 +522,7 @@
                 // Create slide element
                 const slideEl = document.createElement('div');
                 slideEl.className = `slide ${idx === 0 ? 'active' : ''}`;
-                if (slide.link) {
+                if (slide.link && !slide.link.includes('premium')) {
                     slideEl.style.cursor = 'pointer';
                     slideEl.addEventListener('click', () => {
                         window.location.href = slide.link;
@@ -590,12 +590,6 @@
                     subtitle: 'Smart syllabus-based notes and certificates designed for Indian college students.',
                     image: 'default_slide_1.png',
                     link: '/certificates'
-                },
-                {
-                    title: 'Practice Questions & Test Hub',
-                    subtitle: 'Crack exam prep with subject-level practice questions and community leaderboard streaks.',
-                    image: 'default_slide_2.png',
-                    link: '/practice'
                 }
             ];
             slideDataArray = backupData;
@@ -689,6 +683,82 @@
                 if (activeSlide) adjustSliderHeight(activeSlide);
             });
         });
+    </script>
+    <!-- Feedback Modal -->
+    <div id="feedbackModal" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:9999; align-items:center; justify-content:center;">
+        <div style="background:white; padding:30px; border-radius:12px; width:90%; max-width:500px; box-shadow:0 10px 25px rgba(0,0,0,0.2);">
+            <h3 style="margin-top:0; font-size:1.5rem; margin-bottom:20px;">Leave Your Feedback</h3>
+            <form id="feedbackForm" onsubmit="submitFeedback(event)">
+                <div style="margin-bottom:15px;">
+                    <label style="display:block; font-weight:600; margin-bottom:5px;">Name</label>
+                    <input type="text" id="fbName" required style="width:100%; padding:10px; border:1px solid #ccc; border-radius:6px;">
+                </div>
+                <div style="margin-bottom:15px;">
+                    <label style="display:block; font-weight:600; margin-bottom:5px;">Rating</label>
+                    <select id="fbRating" required style="width:100%; padding:10px; border:1px solid #ccc; border-radius:6px;">
+                        <option value="5">★★★★★ (5/5)</option>
+                        <option value="4">★★★★☆ (4/5)</option>
+                        <option value="3">★★★☆☆ (3/5)</option>
+                        <option value="2">★★☆☆☆ (2/5)</option>
+                        <option value="1">★☆☆☆☆ (1/5)</option>
+                    </select>
+                </div>
+                <div style="margin-bottom:20px;">
+                    <label style="display:block; font-weight:600; margin-bottom:5px;">Message</label>
+                    <textarea id="fbMessage" required rows="4" style="width:100%; padding:10px; border:1px solid #ccc; border-radius:6px; resize:vertical;"></textarea>
+                </div>
+                <div style="display:flex; justify-content:flex-end; gap:10px;">
+                    <button type="button" onclick="closeFeedbackModal()" style="padding:10px 20px; background:#f1f5f9; color:#334155; border:none; border-radius:6px; cursor:pointer; font-weight:600;">Cancel</button>
+                    <button type="submit" class="btn-primary" style="padding:10px 20px;">Submit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function openFeedbackModal() {
+            const user = typeof getAuthUser === 'function' ? getAuthUser() : null;
+            if (user && user.name) {
+                document.getElementById('fbName').value = user.name;
+            }
+            const modal = document.getElementById('feedbackModal');
+            modal.style.display = 'flex';
+        }
+
+        function closeFeedbackModal() {
+            document.getElementById('feedbackModal').style.display = 'none';
+            document.getElementById('feedbackForm').reset();
+        }
+
+        async function submitFeedback(e) {
+            e.preventDefault();
+            const token = typeof getAuthToken === 'function' ? getAuthToken() : null;
+            const name = document.getElementById('fbName').value;
+            const rating = document.getElementById('fbRating').value;
+            const message = document.getElementById('fbMessage').value;
+
+            try {
+                const headers = { 'Content-Type': 'application/json' };
+                if (token) headers['Authorization'] = `Bearer ${token}`;
+
+                const res = await fetch('/api/feedback', {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({ name, rating, message })
+                });
+
+                const data = await res.json();
+                if (data.ok) {
+                    alert('Thank you for your feedback!');
+                    closeFeedbackModal();
+                } else {
+                    alert(data.message || 'Error submitting feedback');
+                }
+            } catch (err) {
+                console.error(err);
+                alert('An error occurred. Please try again.');
+            }
+        }
     </script>
 </body>
 

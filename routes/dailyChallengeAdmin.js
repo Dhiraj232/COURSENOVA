@@ -1,12 +1,16 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const { PDFParse } = require('pdf-parse');
-async function pdfParse(buffer) {
-    const parser = new PDFParse({ verbosity: 0, data: buffer });
-    const result = await parser.getText();
-    return { text: result.text || '' };
-}
+const pdfParseModule = require('pdf-parse');
+const pdfParse = typeof pdfParseModule === 'function' ? pdfParseModule : async function(buffer) {
+    const { PDFParse } = pdfParseModule;
+    if (PDFParse) {
+        const parser = new PDFParse({ verbosity: 0, data: buffer });
+        const result = await parser.getText();
+        return { text: result.text || '' };
+    }
+    throw new Error('pdf-parse module is not a function and does not export PDFParse');
+};
 const PDFDocument = require('pdfkit');
 const DailyChallenge = require('../models/DailyChallenge');
 const { requireAuth } = require('../middleware/auth');
