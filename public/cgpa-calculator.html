@@ -479,9 +479,10 @@
                     <div class="form-group">
                         <label class="form-label">Percentage Formula</label>
                         <select id="conversionFormula" class="cgpa-select" onchange="calculateCGPA()">
-                            <option value="ugc">UGC standard: CGPA × 9.5</option>
-                            <option value="aicte">AICTE: (CGPA - 0.75) × 10</option>
-                            <option value="direct">Direct: CGPA × 10</option>
+                            <option value="ugc">UGC / CU / Galgotias: CGPA × 9.5</option>
+                            <option value="aicte">AKTU / MAKAUT: (CGPA - 0.75) × 10</option>
+                            <option value="direct">LPU / Amity: CGPA × 10</option>
+                            <option value="gpa4">International GPA: GPA × 25</option>
                         </select>
                     </div>
                 </div>
@@ -633,6 +634,18 @@
                 scoreMaxLabel.textContent = 'CGPA';
             }
 
+            // Auto-select formula based on grading system
+            const formulaSelect = document.getElementById('conversionFormula');
+            if (activeScaleName === 'lpu' || activeScaleName === 'amity') {
+                formulaSelect.value = 'direct';
+            } else if (activeScaleName === 'aktu') {
+                formulaSelect.value = 'aicte';
+            } else if (activeScaleName === 'gpa4') {
+                formulaSelect.value = 'gpa4';
+            } else {
+                formulaSelect.value = 'ugc';
+            }
+
             // Reset rows with new grades
             subjectList.innerHTML = '';
             for (let i = 0; i < 4; i++) {
@@ -726,6 +739,8 @@
                     percentage = cgpa * 9.5;
                 } else if (formula === 'aicte') {
                     percentage = (cgpa - 0.75) * 10;
+                } else if (formula === 'gpa4') {
+                    percentage = cgpa * 25;
                 } else {
                     percentage = cgpa * 10;
                 }
