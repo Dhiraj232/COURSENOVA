@@ -478,12 +478,30 @@
                     </div>
                     <div class="form-group">
                         <label class="form-label">Percentage Formula</label>
-                        <select id="conversionFormula" class="cgpa-select" onchange="calculateCGPA()">
+                        <select id="conversionFormula" class="cgpa-select" onchange="onFormulaChange()">
                             <option value="ugc">UGC / CU / Galgotias: CGPA × 9.5</option>
                             <option value="aicte">AKTU / MAKAUT: (CGPA - 0.75) × 10</option>
                             <option value="direct">LPU / Amity: CGPA × 10</option>
                             <option value="gpa4">International GPA: GPA × 25</option>
+                            <option value="custom">Custom Formula...</option>
                         </select>
+                    </div>
+                </div>
+
+                <!-- Custom Formula Editor Panel -->
+                <div id="customFormulaGroup" style="display: none; background: #f8fafc; border: 1.5px dashed var(--cgpa-primary); border-radius: 12px; padding: 15px; margin-top: 15px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+                    <div style="font-size: 0.85rem; color: var(--cgpa-text-muted); margin-bottom: 10px; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+                        <i class="fas fa-calculator" style="color: var(--cgpa-primary);"></i> Custom Conversion Formula: (CGPA - Subtractor) × Multiplier
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                        <div class="form-group" style="gap: 5px;">
+                            <label class="form-label" style="font-size: 0.8rem; margin: 0;">Subtractor</label>
+                            <input type="number" id="customSubtractor" class="cgpa-input" value="0" step="0.01" style="padding: 8px 12px; font-size: 0.9rem;" oninput="calculateCGPA()">
+                        </div>
+                        <div class="form-group" style="gap: 5px;">
+                            <label class="form-label" style="font-size: 0.8rem; margin: 0;">Multiplier</label>
+                            <input type="number" id="customMultiplier" class="cgpa-input" value="10" step="0.1" style="padding: 8px 12px; font-size: 0.9rem;" oninput="calculateCGPA()">
+                        </div>
                     </div>
                 </div>
 
@@ -533,6 +551,10 @@
                     <div class="stat-item">
                         <span class="stat-name">Equivalent Percentage</span>
                         <span class="stat-val" id="percentVal">0.00%</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-name">Formula Used</span>
+                        <span class="stat-val" id="formulaDisplayVal" style="font-size: 0.85rem; color: var(--cgpa-primary); font-weight: 700;">--</span>
                     </div>
                     <div class="stat-item">
                         <span class="stat-name">Total Credit Hours</span>
@@ -614,6 +636,17 @@
             calculateCGPA();
         }
 
+        function onFormulaChange() {
+            const formulaSelect = document.getElementById('conversionFormula');
+            const customGroup = document.getElementById('customFormulaGroup');
+            if (formulaSelect.value === 'custom') {
+                customGroup.style.display = 'block';
+            } else {
+                customGroup.style.display = 'none';
+            }
+            calculateCGPA();
+        }
+
         function changeGradingSystem() {
             const select = document.getElementById('gradingSystem');
             activeScaleName = select.value;
@@ -642,9 +675,12 @@
                 formulaSelect.value = 'aicte';
             } else if (activeScaleName === 'gpa4') {
                 formulaSelect.value = 'gpa4';
+            } else if (activeScaleName === 'custom') {
+                formulaSelect.value = 'custom';
             } else {
                 formulaSelect.value = 'ugc';
             }
+            onFormulaChange();
 
             // Reset rows with new grades
             subjectList.innerHTML = '';
@@ -734,19 +770,36 @@
             // Calculate Percentage
             const formula = document.getElementById('conversionFormula').value;
             let percentage = 0;
+            let formulaText = '';
             if (cgpa > 0) {
                 if (formula === 'ugc') {
                     percentage = cgpa * 9.5;
+                    formulaText = 'CGPA × 9.5';
                 } else if (formula === 'aicte') {
                     percentage = (cgpa - 0.75) * 10;
+                    formulaText = '(CGPA - 0.75) × 10';
                 } else if (formula === 'gpa4') {
                     percentage = cgpa * 25;
+                    formulaText = 'GPA × 25';
+                } else if (formula === 'custom') {
+                    const sub = parseFloat(document.getElementById('customSubtractor').value) || 0;
+                    const mult = parseFloat(document.getElementById('customMultiplier').value) || 0;
+                    percentage = (cgpa - sub) * mult;
+                    if (sub > 0) {
+                        formulaText = `(CGPA - ${sub}) × ${mult}`;
+                    } else {
+                        formulaText = `CGPA × ${mult}`;
+                    }
                 } else {
                     percentage = cgpa * 10;
+                    formulaText = 'CGPA × 10';
                 }
+            } else {
+                formulaText = '--';
             }
             percentage = Math.max(0, Math.min(100, percentage));
             document.getElementById('percentVal').textContent = percentage.toFixed(2) + '%';
+            document.getElementById('formulaDisplayVal').textContent = formulaText;
 
             // Class Award
             const classVal = document.getElementById('classVal');
