@@ -346,19 +346,42 @@ router.get('/leaderboard', async (req, res) => {
         const topUsers = await User.find()
             .sort({ points: -1 })
             .limit(10)
-            .select('name points picture');
+            .select('name points picture')
+            .lean();
 
-        const entries = await Promise.all(topUsers.map(async (u) => {
-            const postsCount = await Post.countDocuments({ userId: u._id });
-            const answersCount = await Doubt.countDocuments({ 'answers.userId': u._id });
-            return {
-                userId: u._id,
-                username: u.name,
-                userPicture: u.picture,
-                points: u.points || 0,
-                posts: postsCount,
-                answers: answersCount
-            };
+        const userIds = topUsers.map(u => u._id);
+
+        // Batch counts for posts and answers using aggregation pipelines
+        const [postCounts, answerCounts] = await Promise.all([
+            Post.aggregate([
+                { $match: { userId: { $in: userIds } } },
+                { $group: { _id: "$userId", count: { $sum: 1 } } }
+            ]),
+            Doubt.aggregate([
+                { $match: { "answers.userId": { $in: userIds } } },
+                { $unwind: "$answers" },
+                { $match: { "answers.userId": { $in: userIds } } },
+                { $group: { _id: "$answers.userId", count: { $sum: 1 } } }
+            ])
+        ]);
+
+        const postMap = {};
+        postCounts.forEach(item => {
+            postMap[String(item._id)] = item.count;
+        });
+
+        const answerMap = {};
+        answerCounts.forEach(item => {
+            answerMap[String(item._id)] = item.count;
+        });
+
+        const entries = topUsers.map(u => ({
+            userId: u._id,
+            username: u.name,
+            userPicture: u.picture,
+            points: u.points || 0,
+            posts: postMap[String(u._id)] || 0,
+            answers: answerMap[String(u._id)] || 0
         }));
 
         res.json({ ok: true, entries });

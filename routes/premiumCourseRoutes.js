@@ -20,17 +20,66 @@ router.get('/courses', optionalAuth, async (req, res) => {
             .select('-quizQuestions.correctIndex -__v')
             .lean();
 
-        // If user is logged in, annotate each course with enrollment status
         const userId = req.userId || null;
-        const annotated = await Promise.all(courses.map(async c => {
-            const enrolled = userId ? await checkAccess(userId, String(c._id)) : false;
-            let progress = null;
-            if (enrolled) {
-                const p = await CourseProgress.findOne({ userId: String(userId), courseId: String(c._id) }).lean();
-                if (p) progress = { progressPercent: p.progressPercent, isCompleted: p.isCompleted };
-            }
-            return { ...c, enrolled, progress };
-        }));
+        let annotated;
+
+        if (userId) {
+            // Batch load user, enrollments and progress records
+            const [user, enrollments, progressList] = await Promise.all([
+                User.findById(userId).lean(),
+                Enrollment.find({ userId: String(userId) }).lean(),
+                CourseProgress.find({ userId: String(userId) }).lean()
+            ]);
+
+            const progressMap = {};
+            progressList.forEach(p => {
+                progressMap[String(p.courseId)] = p;
+            });
+
+            annotated = courses.map(c => {
+                let enrolled = false;
+
+                if (c.isFree || c.price === 0) {
+                    enrolled = true;
+                } else if (user) {
+                    const hasEnrollment = enrollments.some(e => 
+                        String(e.courseId) === String(c._id) || 
+                        String(e.courseId) === String(c.id || c._id) ||
+                        e.courseName === c.title
+                    );
+
+                    if (hasEnrollment) {
+                        enrolled = true;
+                    } else if ((user.purchasedMockTest || user.hasMockSeriesAccess) && c.category === 'State Boards') {
+                        enrolled = true;
+                    } else {
+                        const courseList = [...(user.purchasedCourses || []), ...(user.enrolledCourses || [])];
+                        enrolled = courseList.some(enrolledId => {
+                            const lowerId = String(enrolledId).toLowerCase();
+                            return (
+                                lowerId === String(c._id).toLowerCase() ||
+                                (c.id && lowerId === String(c.id).toLowerCase()) ||
+                                (c.slug && lowerId === String(c.slug).toLowerCase()) ||
+                                lowerId === String(c.title).toLowerCase()
+                            );
+                        });
+                    }
+                }
+
+                let progress = null;
+                if (enrolled) {
+                    const p = progressMap[String(c._id)];
+                    if (p) progress = { progressPercent: p.progressPercent, isCompleted: p.isCompleted };
+                }
+
+                return { ...c, enrolled, progress };
+            });
+        } else {
+            annotated = courses.map(c => {
+                const enrolled = (c.isFree || c.price === 0);
+                return { ...c, enrolled, progress: null };
+            });
+        }
 
         res.json({ ok: true, courses: annotated });
     } catch (err) {
@@ -325,24 +374,65 @@ router.get('/all-courses', optionalAuth, async (req, res) => {
             .lean();
 
         const userId = req.userId || null;
+        let annotated;
 
-        const annotated = await Promise.all(courses.map(async c => {
-            let enrolled = false;
-            let progress = null;
+        if (userId) {
+            // Batch load user, enrollments and progress records
+            const [user, enrollments, progressList] = await Promise.all([
+                User.findById(userId).lean(),
+                Enrollment.find({ userId: String(userId) }).lean(),
+                CourseProgress.find({ userId: String(userId) }).lean()
+            ]);
 
-            if (userId) {
-                enrolled = await checkAccess(userId, String(c._id));
+            const progressMap = {};
+            progressList.forEach(p => {
+                progressMap[String(p.courseId)] = p;
+            });
+
+            annotated = courses.map(c => {
+                let enrolled = false;
+
+                if (c.isFree || c.price === 0) {
+                    enrolled = true;
+                } else if (user) {
+                    const hasEnrollment = enrollments.some(e => 
+                        String(e.courseId) === String(c._id) || 
+                        String(e.courseId) === String(c.id || c._id) ||
+                        e.courseName === c.title
+                    );
+
+                    if (hasEnrollment) {
+                        enrolled = true;
+                    } else if ((user.purchasedMockTest || user.hasMockSeriesAccess) && c.category === 'State Boards') {
+                        enrolled = true;
+                    } else {
+                        const courseList = [...(user.purchasedCourses || []), ...(user.enrolledCourses || [])];
+                        enrolled = courseList.some(enrolledId => {
+                            const lowerId = String(enrolledId).toLowerCase();
+                            return (
+                                lowerId === String(c._id).toLowerCase() ||
+                                (c.id && lowerId === String(c.id).toLowerCase()) ||
+                                (c.slug && lowerId === String(c.slug).toLowerCase()) ||
+                                lowerId === String(c.title).toLowerCase()
+                            );
+                        });
+                    }
+                }
+
+                let progress = null;
                 if (enrolled) {
-                    const p = await CourseProgress.findOne({
-                        userId: String(userId),
-                        courseId: String(c._id)
-                    }).lean();
+                    const p = progressMap[String(c._id)];
                     if (p) progress = { progressPercent: p.progressPercent || 0, isCompleted: p.isCompleted || false, certId: p.certId || null };
                 }
-            }
 
-            return { ...c, enrolled, progress };
-        }));
+                return { ...c, enrolled, progress };
+            });
+        } else {
+            annotated = courses.map(c => {
+                const enrolled = (c.isFree || c.price === 0);
+                return { ...c, enrolled, progress: null };
+            });
+        }
 
         res.json({ ok: true, courses: annotated });
     } catch (err) {

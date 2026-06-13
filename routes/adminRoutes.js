@@ -219,6 +219,12 @@ router.get('/courses', requireAdmin, catchAsync(async (req, res) => {
     res.json({ ok: true, courses });
 }));
 
+router.get('/courses/:id', requireAdmin, catchAsync(async (req, res) => {
+    const course = await Course.findById(req.params.id);
+    if (!course) throw new AppError('Course not found', 404);
+    res.json({ ok: true, course });
+}));
+
 router.post('/courses', requireAdmin, catchAsync(async (req, res) => {
     const course = await Course.create(req.body);
     await logAdminAction(req, 'CREATE_COURSE', course._id, 'Course', { title: course.title });
@@ -270,17 +276,34 @@ router.post('/questions/add-hindi', requireAdmin, catchAsync(async (req, res) =>
     let updated = 0;
     const errors = [];
 
-    await Promise.all(pairs.map(async ({ _id, question_hi, options_hi }) => {
+    const ops = [];
+    pairs.forEach(({ _id, question_hi, options_hi }) => {
         if (!_id) return;
+        ops.push({
+            updateOne: {
+                filter: { _id },
+                update: { $set: { question_hi, options_hi } }
+            }
+        });
+    });
+
+    if (ops.length > 0) {
         try {
-            await PracticeQuestion.findByIdAndUpdate(_id, {
-                $set: { question_hi, options_hi }
-            });
-            updated++;
+            const result = await PracticeQuestion.bulkWrite(ops, { ordered: false });
+            updated = result.modifiedCount;
         } catch (e) {
-            errors.push(`${_id}: ${e.message}`);
+            console.error('bulkWrite error:', e.message);
+            // Fallback to individual updates to collect specific errors
+            for (const op of ops) {
+                try {
+                    await PracticeQuestion.updateOne(op.updateOne.filter, op.updateOne.update);
+                    updated++;
+                } catch (err) {
+                    errors.push(`${op.updateOne.filter._id}: ${err.message}`);
+                }
+            }
         }
-    }));
+    }
 
     res.json({ ok: true, updated, errors });
 }));
@@ -374,6 +397,12 @@ const MockTestPack = require('../models/MockTestPack');
 router.get('/mock-tests', requireAdmin, catchAsync(async (req, res) => {
     const packs = await MockTestPack.find().sort({ createdAt: -1 });
     res.json({ ok: true, packs });
+}));
+
+router.get('/mock-tests/:id', requireAdmin, catchAsync(async (req, res) => {
+    const pack = await MockTestPack.findById(req.params.id);
+    if (!pack) throw new AppError('Mock test pack not found', 404);
+    res.json({ ok: true, pack });
 }));
 
 router.post('/mock-tests', requireAdmin, catchAsync(async (req, res) => {
@@ -554,6 +583,12 @@ router.get('/slides/active', catchAsync(async (req, res) => {
 router.get('/slides', requireAdmin, catchAsync(async (req, res) => {
     const slides = await Slide.find().sort({ order: 1, createdAt: -1 });
     res.json({ ok: true, slides });
+}));
+
+router.get('/slides/:id', requireAdmin, catchAsync(async (req, res) => {
+    const slide = await Slide.findById(req.params.id);
+    if (!slide) throw new AppError('Slide banner not found', 404);
+    res.json({ ok: true, slide });
 }));
 
 // 11c. Admin-only: Create a new slide banner (supports file upload)

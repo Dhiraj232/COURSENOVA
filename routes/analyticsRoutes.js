@@ -74,19 +74,23 @@ router.get('/dashboard', requireAuth, async (req, res) => {
             $or: [{ userId: queryUserId }, { userId: uidString }] 
         });
         
-        const courseDetails = await Promise.all(enrollDocs.map(async (e) => {
-            let course = null;
-            if (e.courseId && String(e.courseId).match(/^[0-9a-fA-F]{24}$/)) {
-                course = await Course.findById(e.courseId).catch(() => null);
-            }
-            if (!course) {
-                course = await Course.findOne({ 
-                    $or: [
-                        { title: e.courseName }, 
-                        { slug: (e.courseName || '').toLowerCase().replace(/\s+/g, '-') }
-                    ] 
-                }).catch(() => null);
-            }
+        const courseIds = enrollDocs.map(e => e.courseId);
+        const courseNames = enrollDocs.map(e => e.courseName);
+        
+        const matchedCourses = await Course.find({
+            $or: [
+                { _id: { $in: courseIds.filter(id => String(id).match(/^[0-9a-fA-F]{24}$/)) } },
+                { title: { $in: courseNames } },
+                { slug: { $in: courseNames.map(name => (name || '').toLowerCase().replace(/\s+/g, '-')) } }
+            ]
+        }).lean();
+
+        const courseDetails = enrollDocs.map((e) => {
+            const course = matchedCourses.find(c => 
+                (e.courseId && String(c._id) === String(e.courseId)) ||
+                c.title === e.courseName ||
+                c.slug === (e.courseName || '').toLowerCase().replace(/\s+/g, '-')
+            );
             const p = allProgress.find(ap => String(ap.courseId) === String(e.courseId) || (course && String(ap.courseId) === String(course._id)));
             return {
                 id: course ? course._id : e.courseId,
@@ -95,7 +99,7 @@ router.get('/dashboard', requireAuth, async (req, res) => {
                 progress: p ? (p.progressPercent || 0) : 0,
                 lastWatched: p ? p.updatedAt : e.purchaseDate
             };
-        }));
+        });
 
         // 5. Performance Graph (last 10 tests)
         const perfData = testResults.slice(0, 10).reverse();

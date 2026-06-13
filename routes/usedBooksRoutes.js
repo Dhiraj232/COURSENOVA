@@ -121,30 +121,74 @@ router.get('/', async (req, res) => {
         }
 
         const skip = (Number(page) - 1) * Number(limit);
+        const limitVal = Number(limit);
         
-        // Fetch books
-        let books = await UsedBook.find(filter).lean();
+        let books = [];
+        let total = 0;
 
-        // 3. College Priority System (In-memory sorting for priority + distance)
-        // If we used $nearSphere, results are already sorted by distance.
-        // We now prioritize matching college.
-        if (userCollege) {
-            books.sort((a, b) => {
-                const aMatch = a.college === userCollege ? 0 : 1;
-                const bMatch = b.college === userCollege ? 0 : 1;
-                return aMatch - bMatch;
+        if (!userCollege) {
+            total = await UsedBook.countDocuments(filter);
+            books = await UsedBook.find(filter)
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limitVal)
+                .lean();
+        } else {
+            const pipeline = [];
+            
+            // If nearSphere is used, we must use $geoNear as the very first stage in aggregation
+            if (lat && lng) {
+                const geoFilter = { ...filter };
+                delete geoFilter.location; // handled by $geoNear
+                
+                pipeline.push({
+                    $geoNear: {
+                        near: { type: "Point", coordinates: [parseFloat(lng), parseFloat(lat)] },
+                        distanceField: "distance",
+                        maxDistance: parseInt(radius),
+                        query: geoFilter,
+                        spherical: true
+                    }
+                });
+            } else {
+                pipeline.push({ $match: filter });
+            }
+
+            // Project/Add priority weight field
+            pipeline.push({
+                $addFields: {
+                    collegePriority: {
+                        $cond: [{ $eq: ["$college", userCollege] }, 0, 1]
+                    }
+                }
             });
-        }
 
-        const total = books.length;
-        const paginatedBooks = books.slice(skip, skip + Number(limit));
+            // Sort by college priority first, then distance or date
+            const sortStage = { collegePriority: 1 };
+            if (lat && lng) {
+                sortStage.distance = 1;
+            } else {
+                sortStage.createdAt = -1;
+            }
+            pipeline.push({ $sort: sortStage });
+
+            // Count total matches in pipeline
+            const countPipeline = [...pipeline, { $count: "count" }];
+            const countRes = await UsedBook.aggregate(countPipeline);
+            total = countRes.length > 0 ? countRes[0].count : 0;
+
+            pipeline.push({ $skip: skip });
+            pipeline.push({ $limit: limitVal });
+
+            books = await UsedBook.aggregate(pipeline);
+        }
 
         res.json({ 
             ok: true, 
-            books: paginatedBooks, 
+            books, 
             total, 
             page: Number(page), 
-            pages: Math.ceil(total / limit) 
+            pages: Math.ceil(total / limitVal) 
         });
     } catch (err) {
         res.status(500).json({ ok: false, message: err.message });

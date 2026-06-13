@@ -1889,7 +1889,7 @@
                 return `
                 <div class="book-card" onclick="goToBook('${book._id}')">
                     <div class="book-img">
-                        ${imgSrc ? `<img src="${imgSrc}" alt="${book.title}" onerror="this.parentElement.innerHTML=''">` : ''}
+                        ${imgSrc ? `<img src="${imgSrc}" alt="${book.title}" loading="lazy" onerror="this.parentElement.innerHTML=''">` : ''}
                         <span class="book-condition-badge ${condClass}">${book.condition || 'Used'}</span>
                         ${isAdmin ? `
                         <button class="admin-delete-floating" onclick="event.stopPropagation(); deleteBookAdmin('${book._id}')" title="Delete Listing as Admin">
@@ -2021,7 +2021,7 @@
                     return `
                     <div class="my-book-card">
                         <div class="my-book-img">
-                            ${imgSrc ? `<img src="${imgSrc}" alt="${book.title}" onerror="this.parentElement.innerHTML=''">` : ''}
+                            ${imgSrc ? `<img src="${imgSrc}" alt="${book.title}" loading="lazy" onerror="this.parentElement.innerHTML=''">` : ''}
                         </div>
                         <div class="my-book-info">
                             <h4>${book.title}</h4>

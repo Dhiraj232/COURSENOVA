@@ -59,10 +59,21 @@ router.get('/courses', requireAuth, async (req, res) => {
         const enrollments = await Enrollment.find({ userId: String(req.userId) });
         const allProgress = await CourseProgress.find({ userId: req.userId });
 
-        const detailedCourses = await Promise.all(enrollments.map(async (e) => {
-            const course = await Course.findOne({
-                $or: [{ title: e.courseId }, { slug: e.courseId.toLowerCase().replace(/\s+/g, '-') }]
-            });
+        const courseIds = enrollments.map(e => e.courseId);
+        const matchedCourses = await Course.find({
+            $or: [
+                { _id: { $in: courseIds.filter(id => String(id).match(/^[0-9a-fA-F]{24}$/)) } },
+                { title: { $in: courseIds } },
+                { slug: { $in: courseIds.map(id => String(id).toLowerCase().replace(/\s+/g, '-')) } }
+            ]
+        }).lean();
+
+        const detailedCourses = enrollments.map((e) => {
+            const course = matchedCourses.find(c => 
+                String(c._id) === String(e.courseId) || 
+                c.title === e.courseId || 
+                c.slug === String(e.courseId).toLowerCase().replace(/\s+/g, '-')
+            );
             const p = allProgress.find(ap => ap.courseId === e.courseId);
 
             return {
@@ -74,7 +85,7 @@ router.get('/courses', requireAuth, async (req, res) => {
                 startDate: e.purchaseDate,
                 lastAccessed: p ? p.updatedAt : e.purchaseDate
             };
-        }));
+        });
 
         res.json({ ok: true, courses: detailedCourses });
     } catch (err) {

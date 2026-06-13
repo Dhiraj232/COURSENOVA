@@ -741,11 +741,14 @@ window.savePDFQuestions = async function() {
 async function showAddMockTestModal() { renderMockTestModal('Add New Mock Test Pack'); }
 async function editMockTest(id) {
     try {
-        const data = await fetchData(`${API_BASE}/mock-tests`);
-        const pack = data.packs.find(p => p._id === id);
-        if (pack) renderMockTestModal('Edit Mock Test Pack', pack);
+        const data = await fetchData(`${API_BASE}/mock-tests/${id}`);
+        if (data.ok && data.pack) {
+            renderMockTestModal('Edit Mock Test Pack', data.pack);
+        } else {
+            alert(data.message || 'Mock test pack not found');
+        }
     } catch (err) {
-        alert('Failed to load pack details');
+        alert('Failed to load pack details: ' + err.message);
     }
 }
 
@@ -1407,10 +1410,17 @@ async function deleteMarketplaceBook(id) {
 
 async function editCourse(id) {
     const token = localStorage.getItem('token');
-    const res = await fetch(`${API_BASE}/courses`, { headers: { 'Authorization': `Bearer ${token}` } });
-    const data = await res.json();
-    const course = data.courses.find(c => c._id === id);
-    if (course) renderCourseModal('Edit Course', course);
+    try {
+        const res = await fetch(`${API_BASE}/courses/${id}`, { headers: { 'Authorization': `Bearer ${token}` } });
+        const data = await res.json();
+        if (data.ok && data.course) {
+            renderCourseModal('Edit Course', data.course);
+        } else {
+            alert(data.message || 'Course not found');
+        }
+    } catch (err) {
+        alert('Error loading course details: ' + err.message);
+    }
 }
 
 async function deleteCourse(id) { if(confirm('Delete course?')) { const token = localStorage.getItem('token'); await fetch(`${API_BASE}/courses/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` } }); loadView('courses'); } }
@@ -1618,22 +1628,17 @@ function showAddSlideModal() {
 async function editSlide(id) {
     try {
         const token = localStorage.getItem('token');
-        const res = await fetch(`${API_BASE}/slides`, {
+        const res = await fetch(`${API_BASE}/slides/${id}`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await res.json();
-        if (data.ok) {
-            const slide = data.slides.find(s => s._id === id);
-            if (slide) {
-                renderSlideModal('Edit Slide Banner', slide);
-            } else {
-                alert('Slide not found');
-            }
+        if (data.ok && data.slide) {
+            renderSlideModal('Edit Slide Banner', data.slide);
         } else {
-            alert('Failed to load slides info');
+            alert(data.message || 'Slide banner not found');
         }
     } catch (err) {
-        alert('Error loading slide details');
+        alert('Error loading slide details: ' + err.message);
     }
 }
 

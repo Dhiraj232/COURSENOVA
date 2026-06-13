@@ -479,7 +479,12 @@ app.use('/api/store', storeRouter);
 
 // ─── Used Books Marketplace Routes ───────────────────────────
 app.use('/api/used-books', usedBooksRoutes);
-app.use('/uploads/books', express.static(require('path').join(__dirname, 'uploads', 'books')));
+app.use('/uploads/books', express.static(require('path').join(__dirname, 'uploads', 'books'), {
+  maxAge: '7d',
+  setHeaders: (res, filePath) => {
+    res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
+  }
+}));
 
 // Handle Multer upload errors (e.g. file too large, wrong type)
 app.use((err, req, res, next) => {
@@ -536,10 +541,16 @@ app.use('/api/analytics', analyticsRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 
 
-// Serve uploaded screenshots and generated certificates as static files
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use('/uploads/slides', express.static(path.join(__dirname, 'uploads', 'slides')));
-app.use('/certificates', express.static(path.join(__dirname, 'certificates')));
+// Serve uploaded screenshots and generated certificates as static files with caching
+const staticCacheOptions = {
+  maxAge: '7d', // 7 days cache
+  setHeaders: (res, filePath) => {
+    res.setHeader('Cache-Control', 'public, max-age=604800, immutable');
+  }
+};
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'), staticCacheOptions));
+app.use('/uploads/slides', express.static(path.join(__dirname, 'uploads', 'slides'), staticCacheOptions));
+app.use('/certificates', express.static(path.join(__dirname, 'certificates'), staticCacheOptions));
 
 // ─── Cashfree API Routes ──────────────────────────────────────────────
 app.use('/api/cashfree', require('./routes/cashfree'));
