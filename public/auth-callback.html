@@ -129,7 +129,7 @@
                 document.getElementById('statusTitle').textContent = '✅ Signed in!';
 
                 // ── Smart redirect: go back to where the user was, or dashboard ──
-                let redirectTo = '/dashboard';
+                let redirectTo = '/';
 
                 if (user.role === 'admin') {
                     redirectTo = '/admin-dashboard';
@@ -142,7 +142,7 @@
                     }
                 }
 
-                const destName = redirectTo === '/dashboard' ? 'your dashboard' : 'the page you were on';
+                const destName = redirectTo === '/' ? 'the home page' : 'the page you were on';
                 document.getElementById('statusMsg').textContent = `Welcome back, ${user.fullName || 'Learner'}! Redirecting to ${destName}…`;
                 document.getElementById('spinner').style.borderTopColor = '#10b981';
 
