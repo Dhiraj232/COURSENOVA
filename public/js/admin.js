@@ -420,6 +420,7 @@ function renderCourses(courses) {
                         <th>Title</th>
                         <th>Category</th>
                         <th>Level</th>
+                        <th>Duration</th>
                         <th>Price</th>
                         <th>Actions</th>
                     </tr>
@@ -430,6 +431,7 @@ function renderCourses(courses) {
                             <td><strong>${c.title}</strong></td>
                             <td>${c.category || 'N/A'}</td>
                             <td>${c.level}</td>
+                            <td>${c.duration ? `<span class="admin-badge" style="background:#eff6ff;color:#1d4ed8;"><i class="fas fa-clock" style="margin-right:4px;"></i>${c.duration}</span>` : '<span style="color:var(--text-muted);font-size:0.82rem;">—</span>'}</td>
                             <td>${c.price === 0 ? '<span class="admin-badge">Free</span>' : '₹' + c.price}</td>
                             <td>
                                 <button class="btn btn-sm btn-outline" onclick="editCourse('${c._id}')">Edit</button>
@@ -539,6 +541,11 @@ function renderCourseModal(title, course = null) {
                         </div>
                         <div class="form-group"><label>Category</label><input type="text" id="courseCategory" class="admin-input" value="${course?.category || ''}"></div>
                         <div class="form-group"><label>Icon (Emoji)</label><input type="text" id="courseIcon" class="admin-input" value="${course?.icon || '📚'}"></div>
+                        <div class="form-group" style="grid-column: span 2;">
+                            <label style="display:flex;align-items:center;gap:6px;"><i class="fas fa-clock" style="color:#6366f1;"></i> Course Duration <span style="color:var(--text-muted);font-size:0.78rem;font-weight:400;"\u003e(e.g. 6 Hours, 4 Weeks, 2 Months)</span></label>
+                            <input type="text" id="courseDuration" class="admin-input" value="${course?.duration || ''}" placeholder="e.g. 6 Hours, 4 Weeks, 2 Months">
+                            <p style="font-size:0.75rem;color:var(--text-muted);margin-top:4px;">This value will be displayed on course cards, my-courses page, and printed on the student's certificate.</p>
+                        </div>
                     </div>
                     <div class="form-group"><label>Description</label><textarea id="courseDescription" class="admin-input" style="height:100px;">${course?.description || ''}</textarea></div>
                 </div>
@@ -772,6 +779,7 @@ window.savePDFQuestions = async function() {
         category: document.getElementById('courseCategory').value,
         icon: document.getElementById('courseIcon').value,
         description: document.getElementById('courseDescription').value,
+        duration: (document.getElementById('courseDuration').value || '').trim(),
         isFree: Number(document.getElementById('coursePrice').value) === 0,
         isPremium: Number(document.getElementById('coursePrice').value) > 0,
         lessons: Array.from(document.querySelectorAll('.lesson-row')).map(row => ({
