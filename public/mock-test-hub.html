@@ -200,8 +200,21 @@
                 });
                 const data = await res.json();
                 if (data.ok) {
-                    const cashfree = Cashfree({ mode: "sandbox" }); 
-                    await cashfree.checkout({ paymentSessionId: data.payment_session_id });
+                    let sdkMode = 'sandbox';
+                    try {
+                        const configRes = await fetch('/api/cashfree/config');
+                        const configData = await configRes.json();
+                        sdkMode = configData.mode || 'sandbox';
+                    } catch (e) {
+                        console.warn('[buyBtn] Config fetch failed, defaulting to sandbox');
+                    }
+
+                    console.log(`[buyBtn] Handshake Complete | Mode: ${sdkMode}`);
+                    const cashfree = Cashfree({ mode: sdkMode }); 
+                    await cashfree.checkout({ 
+                        paymentSessionId: data.payment_session_id,
+                        returnUrl: window.location.origin + window.location.pathname + "?payment=verify&order_id=" + data.orderId + "&course=state-board-master"
+                    });
                 } else {
                     alert(data.message);
                 }

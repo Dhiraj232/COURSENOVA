@@ -57,6 +57,11 @@ if (!process.env.BASE_URL) console.warn('⚠️ BASE_URL is missing. Webhook not
 // ─── Cashfree Env Validation ──────────────────────────────────────
 if (!process.env.CASHFREE_APP_ID) console.error('❌ CASHFREE_APP_ID is missing! Payments will fail.');
 if (!process.env.CASHFREE_SECRET_KEY) console.error('❌ CASHFREE_SECRET_KEY is missing! Webhook verification will fail.');
+if (!process.env.CASHFREE_ENV) {
+    console.warn('⚠️ CASHFREE_ENV is missing! Defaulting to SANDBOX.');
+} else {
+    console.log(`ℹ️ Cashfree: Configured to use environment mode: ${process.env.CASHFREE_ENV}`);
+}
 if (process.env.BASE_URL && process.env.BASE_URL.includes('localhost') && process.env.NODE_ENV === 'production') {
     console.error('❌ BASE_URL is still localhost in production! Cashfree webhook notify_url will be unreachable.');
 }

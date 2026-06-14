@@ -500,8 +500,8 @@ exports.verifyPayment = async (req, res) => {
         // ── Ask Cashfree for ground truth ────────────────────────
         let cfResponse;
         try {
-            // v5.1.0 Fetch Order usage
-            cfResponse = await cashfree.PGFetchOrder(orderId);
+            // v5.1.0 Fetch Order payments
+            cfResponse = await cashfree.PGOrderFetchPayments(orderId);
         } catch (cfErr) {
             console.error('[verifyPayment] Cashfree API error:', cfErr.response?.data || cfErr.message);
             return res.status(502).json({ ok: false, message: 'Unable to verify payment with Cashfree.' });

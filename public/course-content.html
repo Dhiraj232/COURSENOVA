@@ -1094,7 +1094,7 @@
                 
                 cashfree.checkout({ 
                     paymentSessionId: orderData.payment_session_id,
-                    returnUrl: window.location.href + "&payment=verify&order_id=" + orderData.order_id
+                    returnUrl: window.location.href + "&payment=verify&order_id=" + orderData.orderId
                 });
             } catch (err) {
                 console.error(err);

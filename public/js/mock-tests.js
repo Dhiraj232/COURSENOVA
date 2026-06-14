@@ -10,8 +10,19 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 let allPacks = [];
-const TOKEN = typeof getAuthToken === 'function' ? getAuthToken() : '';
 const API   = window.COURSENOVA_API || '';
+
+// Always read the freshest token at call-time (navigation.js may not be ready at module load)
+function getToken() {
+    if (typeof getAuthToken === 'function') {
+        const t = getAuthToken();
+        if (t && t !== 'null' && t !== 'undefined') return t;
+    }
+    return localStorage.getItem('coursenova_token')
+        || localStorage.getItem('token')
+        || localStorage.getItem('coursenovaToken')
+        || '';
+}
 
 // ─── Toast ─────────────────────────────────────────────────────────────────
 function showToast(message, type = 'info') {
@@ -39,7 +50,7 @@ async function checkPaymentReturn() {
     try {
         const res = await fetch(`${API}/api/cashfree/verify`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${TOKEN}` },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
             body: JSON.stringify({ orderId: params.get('order_id'), courseId: params.get('pack_id') || 'test' })
         });
         const data = await res.json();
@@ -251,7 +262,7 @@ function setupFilters() {
 
 // ─── Start/Unlock ────────────────────────────────────────────────────────────
 async function handleStart(packId, isFree) {
-    if (!TOKEN) {
+    if (!getToken()) {
         showToast('Please login to access tests', 'error');
         setTimeout(() => window.location.href = 'signup.html', 1500);
         return;
@@ -273,7 +284,7 @@ async function handleStart(packId, isFree) {
     try {
         showToast('Checking access...', 'info');
         const res  = await fetch(`${API}/api/mocktest/packs/${packId}`, {
-            headers: { 'Authorization': `Bearer ${TOKEN}` }
+            headers: { 'Authorization': `Bearer ${getToken()}` }
         });
         const data = await res.json();
 
@@ -292,7 +303,7 @@ async function handleStart(packId, isFree) {
 
 // ─── Cashfree Payment ────────────────────────────────────────────────────────
 async function initiateMockPayment(packId) {
-    if (!TOKEN) {
+    if (!getToken()) {
         showToast('Please login first.', 'error');
         return;
     }
@@ -314,7 +325,7 @@ async function initiateMockPayment(packId) {
         // 2. Create order — reuse /api/cashfree/create-order with courseId = packId
         const orderRes = await fetch(`${API}/api/cashfree/create-order`, {
             method:  'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${TOKEN}` },
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
             body:    JSON.stringify({ courseId: packId })
         });
         const orderData = await orderRes.json();
@@ -328,7 +339,7 @@ async function initiateMockPayment(packId) {
         const returnBase = window.location.href.split('?')[0];
         cashfree.checkout({
             paymentSessionId: orderData.payment_session_id,
-            returnUrl: `${returnBase}?payment=verify&order_id=${orderData.order_id}&pack_id=${packId}`
+            returnUrl: `${returnBase}?payment=verify&order_id=${orderData.orderId}&pack_id=${packId}`
         });
 
     } catch (err) {
