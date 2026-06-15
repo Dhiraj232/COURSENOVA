@@ -130,27 +130,22 @@ self.addEventListener('fetch', (event) => {
 
     event.respondWith(
         caches.match(event.request).then((cachedResponse) => {
-            const networkFetch = fetch(event.request).then((networkResponse) => {
+            const fetchPromise = fetch(event.request).then((networkResponse) => {
                 if (networkResponse && networkResponse.status === 200) {
+                    const responseToCache = networkResponse.clone();
                     caches.open(CACHE_NAME).then((cache) => {
-                        cache.put(event.request, networkResponse);
+                        cache.put(event.request, responseToCache);
                     });
                 }
                 return networkResponse;
             }).catch(() => {
-                // Network failure
-            });
-
-            if (cachedResponse) {
-                return cachedResponse;
-            }
-
-            return fetch(event.request).catch(() => {
+                // If network fails and there is no cache, return offline fallback for navigation requests
                 if (event.request.mode === 'navigate') {
                     return caches.match(OFFLINE_URL);
                 }
-                return Promise.reject('offline');
             });
+
+            return cachedResponse || fetchPromise;
         })
     );
 });
