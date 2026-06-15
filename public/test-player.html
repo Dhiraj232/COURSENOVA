@@ -129,11 +129,14 @@
 
         function renderQuestion() {
             const q = questions[currentIndex];
-            const qText = currentLang === 'hi' ? (q.question_hi || q.question) : (q.question_en || q.question);
+            let rawQText = currentLang === 'hi' ? (q.question_hi || q.question) : (q.question_en || q.question);
+            if (rawQText) {
+                rawQText = rawQText.replace(/^(?:Question|Q)\s*\d+\s*[:.-]\s*/i, '').trim();
+            }
             const qOptions = currentLang === 'hi' ? (q.options_hi || q.options) : (q.options_en || q.options);
             
             document.getElementById('qIdx').innerText = currentIndex + 1;
-            document.getElementById('qText').innerText = qText;
+            document.getElementById('qText').innerText = rawQText;
             
             const grid = document.getElementById('optionsGrid');
             grid.innerHTML = qOptions.map((opt, i) => `

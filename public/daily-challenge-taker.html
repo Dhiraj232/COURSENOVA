@@ -346,13 +346,15 @@
         function renderQuestion() {
             const container = document.getElementById('questionCard');
             const q = currentChallenge.questions[currentIndex];
+            let cleanQ = q.question || '';
+            cleanQ = cleanQ.replace(/^(?:Question|Q)\s*\d+\s*[:.-]\s*/i, '').trim();
             
             container.innerHTML = `
                 <div class="q-meta">
                     <span>Question ${currentIndex + 1} of ${currentChallenge.questions.length}</span>
                     <span>SSC CGL Daily Set</span>
                 </div>
-                <div class="q-text">${q.question}</div>
+                <div class="q-text">${cleanQ}</div>
                 <div class="options-grid">
                     ${q.options.map((opt, i) => `
                         <button class="option-btn ${answers[currentIndex] === opt ? 'selected' : ''}" onclick="selectOption('${opt}')">

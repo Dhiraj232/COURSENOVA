@@ -482,8 +482,9 @@
                 if (Array.isArray(data) && data.length > 0) {
                     questions = data.map(q => {
                         const correctIdx = q.options.indexOf(q.correctAnswer);
+                        const cleanQ = q.question.replace(/^(?:Question|Q)\s*\d+\s*[:.-]\s*/i, '').trim();
                         return {
-                            q: q.question,
+                            q: cleanQ,
                             opts: q.options,
                             ans: correctIdx !== -1 ? correctIdx : 0
                         };

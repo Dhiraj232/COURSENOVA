@@ -944,9 +944,11 @@
                 return;
             }
 
-            document.getElementById('examQuestions').innerHTML = examQuestions.map((q, qi) => `
+            document.getElementById('examQuestions').innerHTML = examQuestions.map((q, qi) => {
+                const cleanQ = q.question.replace(/^(?:Question|Q)\s*\d+\s*[:.-]\s*/i, '').trim();
+                return `
                 <div class="question-block">
-                    <div class="q-text">${qi + 1}. ${q.question}</div>
+                    <div class="q-text">${qi + 1}. ${cleanQ}</div>
                     <div class="q-options">
                         ${(q.options || []).map((opt, oi) => `
                         <label class="q-option" id="opt-${qi}-${oi}">
@@ -954,7 +956,8 @@
                             ${opt}
                         </label>`).join('')}
                     </div>
-                </div>`).join('');
+                </div>`;
+            }).join('');
         }
 
         function selectOption(qi, oi) {

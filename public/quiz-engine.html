@@ -361,15 +361,24 @@
             currentIndex = index;
             const q = questions[index];
             
-            let qText = q.question;
+            let baseQ = q.question || '';
+            let baseQHi = q.question_hi || '';
+
+            // Strip leading Q/Question numbering prefixes
+            baseQ = baseQ.replace(/^(?:Question|Q)\s*\d+\s*[:.-]\s*/i, '').trim();
+            if (baseQHi) {
+                baseQHi = baseQHi.replace(/^(?:Question|Q)\s*\d+\s*[:.-]\s*/i, '').trim();
+            }
+
+            let qText = baseQ;
             let qOpts = q.options;
 
             if (displayLang === 'hi') {
                 if (q.question_hi) {
-                    qText = q.question_hi;
+                    qText = baseQHi;
                     qOpts = (q.options_hi && q.options_hi.length === q.options.length) ? q.options_hi : q.options;
                 } else {
-                    qText = `<span style="color:#ef4444">[Hindi translation missing]</span><br>${q.question}`;
+                    qText = `<span style="color:#ef4444">[Hindi translation missing]</span><br>${baseQ}`;
                 }
             }
 
