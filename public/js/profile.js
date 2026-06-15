@@ -133,7 +133,7 @@ async function loadUserCourses() {
                 </div>
             `).join('');
         } else {
-            container.innerHTML = `<div class="empty-state">No courses yet. <a href="courses.html">Browse here</a></div>`;
+            container.innerHTML = `<div class="empty-state">No courses yet. <a href="/certificates">Browse here</a></div>`;
         }
     } catch (err) { console.error('Courses fetch error:', err); }
 }

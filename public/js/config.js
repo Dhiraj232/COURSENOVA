@@ -13,8 +13,8 @@
     const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
     
     // ✅ DYNAMIC UNIFICATION
-    window.COURSENOVA_API = isLocal ? '' : 'https://www.coursenova.in';
-    window.FRONTEND_URL   = isLocal ? window.location.origin : 'https://www.coursenova.in';
+    window.COURSENOVA_API = '';
+    window.FRONTEND_URL   = window.location.origin;
 
     // Also expose a convenience function for building API URLs
     window.apiUrl = function (path) {

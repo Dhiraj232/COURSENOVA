@@ -208,8 +208,12 @@ app.set('trust proxy', 1);
 const allowedOrigins = [
   "https://www.coursenova.in",
   "https://coursenova.in",
-  "http://localhost:5000"
+  "http://localhost:5000",
+  "http://127.0.0.1:5000"
 ];
+if (process.env.FRONTEND_URL) allowedOrigins.push(process.env.FRONTEND_URL.replace(/\/$/, ''));
+if (process.env.BASE_URL) allowedOrigins.push(process.env.BASE_URL.replace(/\/$/, ''));
+
 
 const corsOptions = {
   origin: function (origin, callback) {
@@ -255,8 +259,8 @@ app.use((req, res, next) => {
       return next();
   }
   
-  // 1. Force Redirect from Non-WWW to WWW
-  if (!host.startsWith('www.')) {
+  // 1. Force Redirect from Non-WWW to WWW (Only for the official domain)
+  if (host.includes('coursenova.in') && !host.startsWith('www.')) {
       const targetHost = 'www.' + host;
       console.log(`[301 Redirect] WWW: Redirecting to https://${targetHost}${req.originalUrl}`);
       return res.redirect(301, `https://${targetHost}${req.originalUrl}`);
@@ -389,22 +393,29 @@ app.use(passport.session());
 
 // Note: robots.txt and sitemap.xml routes have been moved to the top of the middleware chain for optimization
 
-// 1. 301 Redirect direct .html requests to extensionless (except index.html -> /)
+// 1. Serve .html pages DIRECTLY (do NOT redirect to extensionless).
+// Rationale: a 301 redirect strips the browser cache and may not preserve query
+// params correctly under all CDN/Nginx configs, leading to ERR_FAILED loops.
+// The explicit publicPages routes above (registered after this middleware) handle
+// canonical extensionless URLs; this middleware is the last safety net.
 app.use((req, res, next) => {
     if ((req.method === 'GET' || req.method === 'HEAD') && req.path.endsWith('.html')) {
-        let cleanPath = req.path.slice(0, -5);
-        if (cleanPath.endsWith('/index')) {
-            cleanPath = cleanPath.slice(0, -6);
+        // Special case: /index.html → /
+        if (req.path === '/index.html') {
+            return res.redirect(301, '/' + req.url.slice(req.path.length));
         }
-        if (cleanPath === '') {
-            cleanPath = '/';
+        // Serve the file directly (query params are forwarded automatically via sendFile)
+        const filePath = path.join(__dirname, 'public', req.path);
+        if (fs.existsSync(filePath)) {
+            res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+            res.setHeader('Pragma', 'no-cache');
+            res.setHeader('Expires', '0');
+            return res.sendFile(filePath);
         }
-        const query = req.url.slice(req.path.length);
-        console.log(`[301 Redirect] HTML: Redirecting ${req.originalUrl} to ${cleanPath}${query}`);
-        return res.redirect(301, cleanPath + query);
     }
     next();
 });
+
 
 // 2. Serve HTML files extensionless (e.g. /about -> about.html)
 app.use((req, res, next) => {
@@ -461,19 +472,84 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Extensionless routes for key pages
-app.get('/dashboard', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
+// ─── Extensionless routes for ALL public pages ───────────────────────────────
+// Both /page and /page.html are served. This ensures direct URL access, browser
+// refresh, and query parameters (e.g. ?course=xyz) all work without 404/ERR_FAILED.
+const publicPages = [
+  'index',
+  'dashboard',
+  'signup',
+  'profile',
+  'certificates',
+  'course-content',
+  'course-test',
+  'my-courses',
+  'mock-tests',
+  'mock-test-hub',
+  'mock-test-result',
+  'testing-center',
+  'community',
+  'store',
+  'cart',
+  'checkout',
+  'payment',
+  'orders',
+  'my-certificates',
+  'verify-certificate',
+  'view-certificate',
+  'about',
+  'family',
+  'book-detail',
+  'quiz-engine',
+  'quiz-results',
+  'test-player',
+  'daily-challenge',
+  'daily-challenge-history',
+  'daily-challenge-taker',
+  'cgpa-calculator',
+  'board-selector',
+  'auth-callback',
+  'admin-dashboard',
+  'admin-login',
+  'admin-payments',
+  'admin-daily-challenge',
+  'privacy-policy',
+  'terms-and-conditions',
+  'offline',
+  '404',
+];
+
+publicPages.forEach(page => {
+  const filePath = path.join(__dirname, 'public', `${page}.html`);
+  // Only register if file exists (avoid registering routes for non-existent files)
+  if (fs.existsSync(filePath)) {
+    // /page-name (extensionless, canonical)
+    app.get(`/${page}`, (req, res) => {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      res.sendFile(filePath);
+    });
+    // /page-name.html (with extension — no redirect; serve directly to avoid ERR_FAILED loops)
+    app.get(`/${page}.html`, (req, res) => {
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      res.sendFile(filePath);
+    });
+  }
 });
-app.get('/admin-dashboard', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'admin-dashboard.html'));
+
+// ─── Backward-compatible aliases ─────────────────────────────────────────────
+// /login and /login.html → /signup (since no standalone login.html exists)
+app.get(['/login', '/login.html'], (req, res) => {
+  res.redirect(301, '/signup');
 });
-app.get('/admin-login', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'admin-login.html'));
+// /courses and /courses.html → /certificates (since no courses.html exists)
+app.get(['/courses', '/courses.html'], (req, res) => {
+  res.redirect(301, '/certificates');
 });
-app.get('/cgpa-calculator', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'cgpa-calculator.html'));
-});
+
 
 // ✅ FIXED: Removed duplicate /auth/logout — logout is handled in routes/auth.js
 
