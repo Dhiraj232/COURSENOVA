@@ -158,7 +158,7 @@
         /* Subjects list styling */
         .subject-table-header {
             display: grid;
-            grid-template-columns: 2fr 1.2fr 1fr 50px;
+            grid-template-columns: 2fr 1.2fr 1.2fr 1fr 1.2fr 50px;
             gap: 12px;
             padding: 10px 15px;
             background: #f1f5f9;
@@ -183,7 +183,7 @@
 
         .subject-row {
             display: grid;
-            grid-template-columns: 2fr 1.2fr 1fr 50px;
+            grid-template-columns: 2fr 1.2fr 1.2fr 1fr 1.2fr 50px;
             gap: 12px;
             align-items: center;
             background: white;
@@ -196,6 +196,79 @@
         .subject-row:hover {
             border-color: #cbd5e1;
             box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+        }
+
+        .grade-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.82rem;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        }
+
+        .grade-o, .grade-s {
+            background-color: rgba(16, 185, 129, 0.12);
+            color: #059669;
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        .grade-aplus, .grade-a, .grade-aminus {
+            background-color: rgba(99, 102, 241, 0.12);
+            color: #4f46e5;
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .grade-bplus, .grade-b, .grade-bminus {
+            background-color: rgba(245, 158, 11, 0.12);
+            color: #d97706;
+            border: 1px solid rgba(245, 158, 11, 0.2);
+        }
+
+        .grade-cplus, .grade-c, .grade-cminus, .grade-dplus, .grade-d {
+            background-color: rgba(100, 116, 139, 0.12);
+            color: #475569;
+            border: 1px solid rgba(100, 116, 139, 0.2);
+        }
+
+        .grade-p {
+            background-color: rgba(59, 130, 246, 0.12);
+            color: #2563eb;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+        }
+
+        .grade-e, .grade-f {
+            background-color: rgba(239, 68, 68, 0.12);
+            color: #dc2626;
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        @media (max-width: 768px) {
+            .subject-table-header {
+                display: none;
+            }
+            .subject-row {
+                grid-template-columns: 1fr 1fr;
+                gap: 12px;
+                padding: 16px;
+            }
+            .subject-row > div:nth-child(1) {
+                grid-column: span 2;
+            }
+            .subject-row > div:nth-child(5) {
+                grid-column: span 2;
+                display: flex;
+                justify-content: center;
+                border-top: 1px dashed var(--cgpa-border);
+                padding-top: 8px;
+                margin-top: 4px;
+            }
+            .subject-row > div:nth-child(6) {
+                grid-column: span 2;
+                display: flex;
+                justify-content: flex-end;
+            }
         }
 
         .btn-trash {
@@ -519,8 +592,10 @@
 
                 <div class="subject-table-header">
                     <div>Subject / Course</div>
-                    <div>Obtained Grade</div>
+                    <div>Obtained Marks</div>
+                    <div>Total Marks</div>
                     <div>Credits</div>
+                    <div style="text-align: center;">Grade (Auto)</div>
                     <div></div>
                 </div>
 
@@ -631,8 +706,6 @@
 
         function updateCustomGradePoint(grade, val) {
             currentScale[grade] = parseFloat(val) || 0;
-            // update all rows dropdowns and recalculate
-            updateGradeDropdowns();
             calculateCGPA();
         }
 
@@ -645,6 +718,86 @@
                 customGroup.style.display = 'none';
             }
             calculateCGPA();
+        }
+
+        function getGradeFromPercentage(percentage, scaleName) {
+            if (scaleName === 'ugc') {
+                if (percentage >= 90) return 'O';
+                if (percentage >= 80) return 'A+';
+                if (percentage >= 70) return 'A';
+                if (percentage >= 60) return 'B+';
+                if (percentage >= 50) return 'B';
+                if (percentage >= 45) return 'C';
+                if (percentage >= 40) return 'P';
+                return 'F';
+            } else if (scaleName === 'lpu') {
+                if (percentage >= 90) return 'O';
+                if (percentage >= 80) return 'A+';
+                if (percentage >= 70) return 'A';
+                if (percentage >= 60) return 'B+';
+                if (percentage >= 50) return 'B';
+                if (percentage >= 40) return 'C';
+                if (percentage >= 35) return 'D';
+                return 'E';
+            } else if (scaleName === 'cu') {
+                if (percentage >= 90) return 'O';
+                if (percentage >= 80) return 'A+';
+                if (percentage >= 70) return 'A';
+                if (percentage >= 60) return 'B+';
+                if (percentage >= 50) return 'B';
+                if (percentage >= 45) return 'C';
+                if (percentage >= 40) return 'D';
+                return 'F';
+            } else if (scaleName === 'amity') {
+                if (percentage >= 90) return 'A+';
+                if (percentage >= 85) return 'A';
+                if (percentage >= 80) return 'A-';
+                if (percentage >= 70) return 'B+';
+                if (percentage >= 60) return 'B';
+                if (percentage >= 50) return 'B-';
+                if (percentage >= 40) return 'C+';
+                if (percentage >= 35) return 'C';
+                return 'F';
+            } else if (scaleName === 'galgotias') {
+                if (percentage >= 90) return 'O';
+                if (percentage >= 80) return 'A+';
+                if (percentage >= 70) return 'A';
+                if (percentage >= 60) return 'B+';
+                if (percentage >= 50) return 'B';
+                if (percentage >= 45) return 'C';
+                if (percentage >= 40) return 'P';
+                return 'F';
+            } else if (scaleName === 'aktu') {
+                if (percentage >= 90) return 'S';
+                if (percentage >= 80) return 'E';
+                if (percentage >= 70) return 'A';
+                if (percentage >= 60) return 'B';
+                if (percentage >= 50) return 'C';
+                if (percentage >= 40) return 'D';
+                return 'F';
+            } else if (scaleName === 'gpa4') {
+                if (percentage >= 97) return 'A+';
+                if (percentage >= 93) return 'A';
+                if (percentage >= 90) return 'A-';
+                if (percentage >= 87) return 'B+';
+                if (percentage >= 83) return 'B';
+                if (percentage >= 80) return 'B-';
+                if (percentage >= 77) return 'C+';
+                if (percentage >= 73) return 'C';
+                if (percentage >= 70) return 'C-';
+                if (percentage >= 67) return 'D+';
+                if (percentage >= 65) return 'D';
+                return 'F';
+            } else if (scaleName === 'custom') {
+                if (percentage >= 90) return 'A+';
+                if (percentage >= 80) return 'A';
+                if (percentage >= 70) return 'B';
+                if (percentage >= 60) return 'C';
+                if (percentage >= 50) return 'D';
+                if (percentage >= 40) return 'E';
+                return 'F';
+            }
+            return 'F';
         }
 
         function changeGradingSystem() {
@@ -682,43 +835,31 @@
             }
             onFormulaChange();
 
-            // Reset rows with new grades
-            subjectList.innerHTML = '';
-            for (let i = 0; i < 4; i++) {
-                addSubjectRow();
-            }
+            // Re-calculate with new grading system scale
             calculateCGPA();
-        }
-
-        function updateGradeDropdowns() {
-            const dropdowns = document.querySelectorAll('.sub-grade-select');
-            dropdowns.forEach(dd => {
-                const currentVal = dd.value;
-                dd.innerHTML = Object.keys(currentScale).map(g => `<option value="${g}">${g} (${currentScale[g]} Pts)</option>`).join('');
-                if (Object.keys(currentScale).includes(currentVal)) {
-                    dd.value = currentVal;
-                }
-            });
         }
 
         let subjectCount = 0;
 
-        function addSubjectRow(title = '', grade = '', credits = 3) {
+        function addSubjectRow(title = '', marks = '', maxMarks = 100, credits = 3) {
             subjectCount++;
-            const gradesOptions = Object.keys(currentScale).map(g => `<option value="${g}">${g} (${currentScale[g]} Pts)</option>`).join('');
             
             const rowHtml = `
                 <div class="subject-row" id="row-${subjectCount}">
                     <div>
-                        <input type="text" class="cgpa-input sub-name" placeholder="e.g. Subject ${subjectCount}" value="${title}" onchange="calculateCGPA()">
+                        <input type="text" class="cgpa-input sub-name" placeholder="e.g. Subject ${subjectCount}" value="${title}" oninput="calculateCGPA()">
                     </div>
                     <div>
-                        <select class="cgpa-select sub-grade-select" onchange="calculateCGPA()">
-                            ${gradesOptions}
-                        </select>
+                        <input type="number" min="0" class="cgpa-input sub-marks" placeholder="Obt. Marks" value="${marks}" oninput="calculateCGPA()">
                     </div>
                     <div>
-                        <input type="number" min="1" max="10" class="cgpa-input sub-credits" value="${credits}" onchange="calculateCGPA()">
+                        <input type="number" min="1" class="cgpa-input sub-max-marks" placeholder="Max Marks" value="${maxMarks}" oninput="calculateCGPA()">
+                    </div>
+                    <div>
+                        <input type="number" min="1" max="10" class="cgpa-input sub-credits" value="${credits}" oninput="calculateCGPA()">
+                    </div>
+                    <div class="sub-grade-display" style="text-align: center; display: flex; align-items: center; justify-content: center; min-height: 40px;">
+                        --
                     </div>
                     <div style="text-align: center;">
                         <button type="button" class="btn-trash" onclick="deleteRow(${subjectCount})"><i class="fas fa-trash-alt"></i></button>
@@ -726,10 +867,6 @@
                 </div>
             `;
             subjectList.insertAdjacentHTML('beforeend', rowHtml);
-            if (grade) {
-                const row = document.getElementById(`row-${subjectCount}`);
-                row.querySelector('.sub-grade-select').value = grade;
-            }
             calculateCGPA();
         }
 
@@ -743,10 +880,11 @@
 
         function clearAll() {
             subjectList.innerHTML = '';
-            for (let i = 0; i < 4; i++) {
-                addSubjectRow();
-            }
-            calculateCGPA();
+            // Prefill with some default data to make it look great
+            addSubjectRow('Subject 1', 85, 100, 4);
+            addSubjectRow('Subject 2', 76, 100, 3);
+            addSubjectRow('Subject 3', 90, 100, 3);
+            addSubjectRow('Subject 4', 68, 100, 4);
         }
 
         function calculateCGPA() {
@@ -755,12 +893,31 @@
             let weightedSum = 0;
 
             rows.forEach(row => {
-                const grade = row.querySelector('.sub-grade-select').value;
+                const marksVal = row.querySelector('.sub-marks').value;
+                const maxVal = row.querySelector('.sub-max-marks').value;
                 const credits = parseFloat(row.querySelector('.sub-credits').value) || 0;
-                const points = currentScale[grade] || 0;
 
-                totalCredits += credits;
-                weightedSum += (points * credits);
+                if (marksVal !== '' && maxVal !== '') {
+                    const marks = parseFloat(marksVal) || 0;
+                    const maxMarks = parseFloat(maxVal) || 100;
+                    const percentage = maxMarks > 0 ? (marks / maxMarks) * 100 : 0;
+                    
+                    const grade = getGradeFromPercentage(percentage, activeScaleName);
+                    const points = currentScale[grade] || 0;
+
+                    const gradeDisplay = row.querySelector('.sub-grade-display');
+                    if (gradeDisplay) {
+                        gradeDisplay.innerHTML = `<span class="grade-badge grade-${grade.toLowerCase().replace('+', 'plus').replace('-', 'minus')}">${grade} (${points} Pts)</span>`;
+                    }
+
+                    totalCredits += credits;
+                    weightedSum += (points * credits);
+                } else {
+                    const gradeDisplay = row.querySelector('.sub-grade-display');
+                    if (gradeDisplay) {
+                        gradeDisplay.textContent = '--';
+                    }
+                }
             });
 
             const cgpa = totalCredits > 0 ? (weightedSum / totalCredits) : 0.00;
@@ -843,7 +1000,7 @@
 
         // Initialize on load
         document.addEventListener('DOMContentLoaded', () => {
-            // Default load 4 rows
+            // Default load 4 rows with mock data
             clearAll();
         });
     </script>
