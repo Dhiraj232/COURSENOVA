@@ -996,8 +996,8 @@ async function handlePdfToTest(input, index, lang = 'en') {
 
             const pairPayload = data.questions.map((q, idx) => ({
                 _id: existingIds[idx] || null,
-                question_hi: q.question_hi,
-                options_hi: q.options_hi
+                question_hi: q.question_hi || q.question,
+                options_hi: q.options_hi || q.options
             })).filter(p => p._id);
 
             const mergeRes = await fetch(`${API_BASE}/questions/add-hindi`, {
@@ -1019,10 +1019,35 @@ async function handlePdfToTest(input, index, lang = 'en') {
 
         // ── ENGLISH: Create new questions ──
         status.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving questions to DB...';
+
+        const packCategory = (document.getElementById('mtCategory').value || '').trim() || 'Mock Test';
+        const testTitleText = (row.querySelector('.mt-t-title').value || '').trim() || 'General';
+
+        let subjectName = testTitleText;
+        if (testTitleText.includes('-')) {
+            subjectName = testTitleText.split('-').pop().trim();
+        } else if (testTitleText.includes(':')) {
+            subjectName = testTitleText.split(':').pop().trim();
+        }
+
+        const mappedQuestions = data.questions.map(q => {
+            const opts = q.options || [];
+            const correctIdx = q.correctIndex !== undefined ? q.correctIndex : 0;
+            const correctAnswerText = opts[correctIdx] || '';
+            return {
+                question: q.question,
+                options: opts,
+                correctAnswer: correctAnswerText,
+                category: packCategory,
+                subject: subjectName,
+                isMockTestOnly: true
+            };
+        });
+
         const saveRes = await fetch(`${API_BASE}/questions`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify(data.questions)
+            body: JSON.stringify(mappedQuestions)
         });
         const saveData = await saveRes.json();
         if (saveData.ok) {

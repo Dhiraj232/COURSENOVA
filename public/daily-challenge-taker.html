@@ -319,24 +319,22 @@
             }
 
             try {
-                // Fetch all challenges and find the one matching the ID
-                const res = await fetch(`/api/test/daily-challenge/all`, {
+                // Fetch the single challenge directly by its ID
+                const res = await fetch(`/api/test/daily-challenge/challenge/${examId}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const data = await res.json();
                 
-                if (data.ok && data.challenges) {
-                    currentChallenge = data.challenges.find(c => c._id === examId);
-                    if (currentChallenge) {
-                        document.getElementById('examName').textContent = currentChallenge.title;
-                        timeLeft = (currentChallenge.durationMinutes || 90) * 60;
-                        renderQuestion();
-                        renderNavGrid();
-                        startTimer();
-                    } else {
-                        alert("Challenge not found.");
-                        window.location.href = 'daily-challenge.html';
-                    }
+                if (data.ok && data.challenge) {
+                    currentChallenge = data.challenge;
+                    document.getElementById('examName').textContent = currentChallenge.title;
+                    timeLeft = (currentChallenge.durationMinutes || 90) * 60;
+                    renderQuestion();
+                    renderNavGrid();
+                    startTimer();
+                } else {
+                    alert("Challenge not found.");
+                    window.location.href = 'daily-challenge.html';
                 }
             } catch (err) {
                 console.error(err);

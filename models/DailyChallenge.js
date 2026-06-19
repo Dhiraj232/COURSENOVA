@@ -22,4 +22,6 @@ const dailyChallengeSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 });
 
+dailyChallengeSchema.index({ date: 1, examType: 1 });
+
 module.exports = mongoose.model('DailyChallenge', dailyChallengeSchema);

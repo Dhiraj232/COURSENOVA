@@ -110,8 +110,7 @@ function setupNavigation() {
             { name: 'University Mock Tests', href: 'mock-tests' },
             { name: 'Syllabus & Notes', href: 'store' },
             { name: 'Campus Community', href: 'community' }
-        ] },
-        { name: 'About', href: 'about', key: 'about' }
+        ] }
     ];
 
     const currentPage = getCurrentPage();

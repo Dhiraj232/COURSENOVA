@@ -47,10 +47,24 @@ router.get('/daily-challenge/today/:examType', async (req, res) => {
     }
 });
 
+// GET /api/test/daily-challenge/challenge/:id
+router.get('/daily-challenge/challenge/:id', requireAuth, async (req, res) => {
+    try {
+        const challenge = await DailyChallenge.findById(req.params.id);
+        if (!challenge) return res.status(404).json({ ok: false, error: 'Challenge not found' });
+        res.json({ ok: true, challenge });
+    } catch (err) {
+        console.error('Fetch challenge error:', err);
+        res.status(500).json({ ok: false, error: 'Server error' });
+    }
+});
+
 // GET /api/test/daily-challenge/all
 router.get('/daily-challenge/all', async (req, res) => {
     try {
-        const challenges = await DailyChallenge.find({}).sort({ date: -1 });
+        const challenges = await DailyChallenge.find({})
+            .select('date title examType totalQuestions durationMinutes isPremium price pdfUrl solutionsPdfUrl createdAt questions._id')
+            .sort({ date: -1 });
         res.json({ ok: true, challenges });
     } catch (err) {
         res.status(500).json({ ok: false, error: 'Server error' });
@@ -293,10 +307,12 @@ router.get('/questions/:courseId', requireAuth, async (req, res) => {
     }
 });
 
-// GET /api/test/daily-challenge/all
+// GET /api/test/daily-challenge/all (Admin)
 router.get('/daily-challenge/all', requireAdmin, async (req, res) => {
     try {
-        const challenges = await DailyChallenge.find().sort({ date: -1 });
+        const challenges = await DailyChallenge.find()
+            .select('date title examType totalQuestions durationMinutes isPremium price pdfUrl solutionsPdfUrl createdAt questions._id')
+            .sort({ date: -1 });
         res.json({ ok: true, challenges });
     } catch (err) {
         res.status(500).json({ ok: false });

@@ -17,7 +17,7 @@ router.get('/courses', optionalAuth, async (req, res) => {
         const courses = await Course.find({
             isActive: true 
         })
-            .select('-quizQuestions.correctIndex -__v')
+            .select('slug title icon description price isFree isPremium examPassPercent duration level assignments highlights category isActive createdAt updatedAt lessons.lessonId quizQuestions.correctIndex')
             .lean();
 
         const userId = req.userId || null;
@@ -370,7 +370,7 @@ router.get('/certificate/:courseId', requireAuth, async (req, res) => {
 router.get('/all-courses', optionalAuth, async (req, res) => {
     try {
         const courses = await Course.find({ isActive: true })
-            .select('-quizQuestions.correctIndex -__v')
+            .select('slug title icon description price isFree isPremium examPassPercent duration level assignments highlights category isActive createdAt updatedAt lessons.lessonId quizQuestions.correctIndex')
             .lean();
 
         const userId = req.userId || null;

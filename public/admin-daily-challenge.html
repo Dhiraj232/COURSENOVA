@@ -100,13 +100,13 @@
 
         async function loadExistingChallenge() {
             try {
-                const res = await fetch(`/api/test/daily-challenge/all`, {
+                const res = await fetch(`/api/test/daily-challenge/challenge/${challengeId}`, {
                     headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
                 });
                 const data = await res.json();
-                const challenge = data.challenges.find(c => c._id === challengeId);
                 
-                if (challenge) {
+                if (data.ok && data.challenge) {
+                    const challenge = data.challenge;
                     document.getElementById('testDate').value = challenge.date;
                     document.getElementById('testTitle').value = challenge.title;
                     document.getElementById('examType').value = challenge.examType;
