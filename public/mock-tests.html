@@ -371,8 +371,6 @@
             <div class="filters-group">
                 <select class="filter-select" id="subjectFilter">
                     <option value="">📋 All Categories</option>
-                    <option value="CBSE">📚 CBSE Board</option>
-                    <option value="State Board">🏫 State Board</option>
                     <option value="Govt Exam">🏁 Govt Exam Series</option>
                     <option value="National Exam">🚀 National Entrance Exams</option>
                     <option value="Tech Free">💻 Free Tech Tests</option>
@@ -393,12 +391,14 @@
     </div>
 
     <main class="content-container">
-        <div id="freeTestsSection">
-            <div class="section-header" id="free">
-                <h2 style="border-left-color: var(--tb-blue);">State Board Test Series</h2>
-                <a href="#" class="view-all">View All</a>
+
+        <!-- GOVT EXAM SECTION -->
+        <div id="govtTestsSection" style="display: none; margin-top: 0;">
+            <div class="section-header">
+                <h2 style="border-left-color: #7c3aed;">Government Exam Practice Test Series</h2>
+                <a href="#" class="view-all">Explore All</a>
             </div>
-            <div class="packs-grid" id="freeTestsGrid"></div>
+            <div class="packs-grid" id="govtTestsGrid"></div>
         </div>
 
         <!-- COLLEGE ENTRANCE EXAM SECTION -->
@@ -408,15 +408,6 @@
                 <a href="#" class="view-all">View All</a>
             </div>
             <div class="packs-grid" id="techFreeTestsGrid"></div>
-        </div>
-
-        <!-- GOVT EXAM SECTION -->
-        <div id="govtTestsSection" style="display: none; margin-top: 50px;">
-            <div class="section-header">
-                <h2 style="border-left-color: #7c3aed;">Government Exam Practice Test Series</h2>
-                <a href="#" class="view-all">Explore All</a>
-            </div>
-            <div class="packs-grid" id="govtTestsGrid"></div>
         </div>
 
         <!-- NATIONAL ENTRANCE EXAM SECTION -->
@@ -525,6 +516,6 @@
     <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
     <script src="js/config.js"></script>
     <script src="js/navigation.js"></script>
-    <script src="js/mock-tests.js"></script>
+    <script src="js/mock-tests.js?v=1.1"></script>
 </body>
 </html>

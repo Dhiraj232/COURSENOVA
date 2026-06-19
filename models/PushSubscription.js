@@ -33,6 +33,5 @@ const pushSubscriptionSchema = new mongoose.Schema({
 
 // Auto-deactivate subscriptions with 5+ consecutive failures (expired/invalid endpoint)
 pushSubscriptionSchema.index({ userId: 1, isActive: 1 });
-pushSubscriptionSchema.index({ endpoint: 1 }, { unique: true });
 
 module.exports = mongoose.models.PushSubscription || mongoose.model('PushSubscription', pushSubscriptionSchema);

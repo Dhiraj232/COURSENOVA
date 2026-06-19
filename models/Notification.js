@@ -77,7 +77,7 @@ const notificationSchema = new mongoose.Schema({
     expiresAt: { type: Date, default: null },    // Auto-hide after this date
 
     // ── Deduplication ────────────────────────────────────────────────────────
-    dedupeKey: { type: String, default: null, index: true },
+    dedupeKey: { type: String, default: null },
     // Pattern: `{type}:{recipientId}:{YYYY-MM-DD}` prevents duplicate daily reminders
 
     createdAt: { type: Date, default: Date.now }

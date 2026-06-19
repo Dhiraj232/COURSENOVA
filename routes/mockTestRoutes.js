@@ -11,13 +11,7 @@ const { checkAccess } = require('../utils/accessControl');
 router.get('/categories', (req, res) => {
     const categories = {
         "School Classes": ["Class 9", "Class 10", "Class 11", "Class 12"],
-        "Competitive Exams": ["JEE Main", "NEET", "SSC", "CUET", "UPSC", "Banking"],
-        "State Boards": [
-            "Bihar Board", "UP Board", "CBSE", "ICSE", "Rajasthan Board",
-            "MP Board", "Maharashtra Board", "West Bengal Board", "Tamil Nadu Board",
-            "Karnataka Board", "Jharkhand Board", "Haryana Board", "Punjab Board",
-            "Gujarat Board", "Odisha Board"
-        ]
+        "Competitive Exams": ["JEE Main", "NEET", "SSC", "CUET", "UPSC", "Banking"]
     };
     const subjectMap = {
         "Class 9": ["Mathematics", "Science", "English", "Social Science"],
@@ -29,9 +23,7 @@ router.get('/categories', (req, res) => {
         "SSC": ["Quantitative Aptitude", "Reasoning", "English", "General Awareness"],
         "CUET": ["Section I (Languages)", "Section II (Domain)", "Section III (General)"],
         "UPSC": ["History", "Geography", "Polity", "Economy", "CSAT"],
-        "Banking": ["Quantitative Aptitude", "Reasoning", "English", "General Awareness"],
-        // State Boards share a standard subjects map
-        "defaultBoard": ["Mathematics", "Science", "English", "Social Science", "Hindi"]
+        "Banking": ["Quantitative Aptitude", "Reasoning", "English", "General Awareness"]
     };
     res.json({ ok: true, categories, subjects: subjectMap });
 });

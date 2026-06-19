@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const TestResultSchema = new mongoose.Schema({
-    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'StoreUser', required: true },
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: 'StoreUser', required: true, index: true },
     courseId: { type: String, required: true },
     courseName: { type: String },
     score: { type: Number, required: true },

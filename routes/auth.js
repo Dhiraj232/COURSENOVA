@@ -175,8 +175,8 @@ router.get('/me', catchAsync(async (req, res, next) => {
     });
 }));
 
-// @route   GET /auth/logout
-router.get('/logout', (req, res, next) => {
+// @route   GET & POST /auth/logout
+router.all('/logout', (req, res, next) => {
     // Extract token to blacklist it
     const auth = req.headers.authorization || '';
     const token = auth.startsWith('Bearer ') ? auth.slice(7) : (req.query.token || '');

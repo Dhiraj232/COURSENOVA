@@ -113,7 +113,6 @@ function getCatIcon(category) {
 // ─── Render Packs ────────────────────────────────────────────────────────────
 function renderPacks(packs) {
     const techFreeGrid = document.getElementById('techFreeTestsGrid');
-    const freeGrid     = document.getElementById('freeTestsGrid'); 
     const govtGrid     = document.getElementById('govtTestsGrid');
     const nationalGrid = document.getElementById('nationalTestsGrid');
     
@@ -122,11 +121,10 @@ function renderPacks(packs) {
     const nationalSection = document.getElementById('nationalTestsSection');
 
     if (techFreeGrid) techFreeGrid.innerHTML = '';
-    if (freeGrid) freeGrid.innerHTML = '';
     if (govtGrid) govtGrid.innerHTML = '';
     if (nationalGrid) nationalGrid.innerHTML = '';
 
-    let techFreeCount = 0, freeCount = 0, govtCount = 0, nationalCount = 0;
+    let techFreeCount = 0, govtCount = 0, nationalCount = 0;
 
     packs.forEach(pack => {
         const d        = getDiff(pack);
@@ -181,18 +179,6 @@ function renderPacks(packs) {
             </div>
         </div>`;
 
-        const stateBoardTitles = [
-            "CBSE Class 10",
-            "CBSE Class 12 (Science)",
-            "CBSE Class 12 (Arts)",
-            "Bihar Board Class 10",
-            "Bihar Board Class 12 (Science)",
-            "Bihar Board Class 12 (Arts)",
-            "UP Board Class 10",
-            "UP Board Class 12 (Science)",
-            "UP Board Class 12 (Arts)"
-        ];
-
         const nationalTitles = [
             "NEET",
             "JEE Main",
@@ -210,10 +196,7 @@ function renderPacks(packs) {
             "AMU Entrance"
         ];
 
-        if (stateBoardTitles.some(t => pack.title.toLowerCase().includes(t.toLowerCase()))) {
-            if (freeGrid) freeGrid.innerHTML += cardHTML;
-            freeCount++;
-        } else if (nationalTitles.some(t => pack.title.toLowerCase().includes(t.toLowerCase()))) {
+        if (nationalTitles.some(t => pack.title.toLowerCase().includes(t.toLowerCase()))) {
             if (nationalGrid) nationalGrid.innerHTML += cardHTML;
             nationalCount++;
         } else if (collegeTitles.some(t => pack.title.toLowerCase().includes(t.toLowerCase()))) {
@@ -228,8 +211,6 @@ function renderPacks(packs) {
     if (techFreeSection) techFreeSection.style.display = techFreeCount > 0 ? 'block' : 'none';
     if (govtSection) govtSection.style.display = govtCount > 0 ? 'block' : 'none';
     if (nationalSection) nationalSection.style.display = nationalCount > 0 ? 'block' : 'none';
-    
-    if (freeCount === 0 && freeGrid) freeGrid.innerHTML = '<p style="color:#6b7280;padding:20px;text-align:center;">Coming soon!</p>';
 }
 
 // ─── Filter Setup ────────────────────────────────────────────────────────────

@@ -5,7 +5,7 @@
  * ╚══════════════════════════════════════════════════════════════════════╝
  */
 
-const CACHE_NAME = 'coursenova-sw-v1';
+const CACHE_NAME = 'coursenova-sw-v2';
 const BASE_URL = self.location.origin;
 
 // ── Push Event — Fired when a push message arrives ─────────────────────────

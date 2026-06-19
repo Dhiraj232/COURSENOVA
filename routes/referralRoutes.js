@@ -67,9 +67,18 @@ router.post('/apply', requireAuth, async (req, res) => {
             return res.status(400).json({ ok: false, message: 'You have already applied a referral code.' });
         }
 
-        // 2. Find referrer by matching generated code
-        const allUsers = await StoreUser.find();
-        const referrer = allUsers.find(u => {
+        // 2. Find referrer by matching generated code (optimized to query candidates by last 4 hex characters of ID)
+        const suffix = cleanCode.slice(-4).toLowerCase();
+        const candidates = await StoreUser.find({
+            $expr: {
+                $eq: [
+                    { $substr: [ { $toString: "$_id" }, 20, 4 ] },
+                    suffix
+                ]
+            }
+        });
+
+        const referrer = candidates.find(u => {
             const cleanFN = (u.name || 'USER').split(' ')[0].replace(/[^a-zA-Z]/g, '').toUpperCase();
             const uCode = `NOVA${cleanFN}${String(u._id).slice(-4)}`;
             return uCode === cleanCode;
