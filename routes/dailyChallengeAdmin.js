@@ -306,7 +306,7 @@ function parseQuestionsFromText(text) {
         i++;
     }
 
-    const emptyCount = questions.filter(q => !q.question || q.question.startsWith('[Question') || q.options.every(o => o === '—' || o.startsWith('Option') || !o)).length;
+    const emptyCount = questions.filter(q => !q.question || q.question.startsWith('[Question') || (q.options && q.options.every(o => !o || o === '—' || o.startsWith('Option')))).length;
     questions.isEmptyPDF = questions.length > 0 && (emptyCount / questions.length) > 0.8;
 
     return questions;
