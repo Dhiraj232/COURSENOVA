@@ -104,6 +104,8 @@ function parseQuestionsFromText(text) {
         const line = lines[i];
         const qMatch = line.match(qRegex);
         if (qMatch) {
+            const qNumStr = qMatch[1];
+            const currentQNum = parseInt(qNumStr) || 0;
             const firstQuestionLine = qMatch[2].trim();
             const questionLines = [firstQuestionLine];
             const parsedOptions = ['', '', '', ''];
@@ -111,14 +113,26 @@ function parseQuestionsFromText(text) {
             let correctIndexFallback = -1;
             let correctIndexAnswerLine = -1;
             let optionsStarted = false;
+            let optionType = null; // 'numeric' or 'lettered'
             
             let j = i + 1;
             while (j < lines.length && j < i + 40) {
                 const optLine = lines[j];
                 
                 // If we hit another question, stop processing this one
-                if (optLine.match(qRegex)) {
-                    break;
+                const nextQMatch = optLine.match(qRegex);
+                if (nextQMatch) {
+                    if (useQPrefix) {
+                        break;
+                    } else {
+                        const nextQNum = parseInt(nextQMatch[1]);
+                        const isLikelyOption = !optionsStarted && (nextQNum === 1 || nextQNum === 2 || nextQNum === 3 || nextQNum === 4);
+                        const isOptionDuplicate = optionsStarted && optionType === 'numeric' && nextQNum >= 1 && nextQNum <= 4 && !parsedOptions[nextQNum - 1];
+                        
+                        if (!isLikelyOption && !isOptionDuplicate) {
+                            break;
+                        }
+                    }
                 }
 
                 // Check for Chosen Option metadata
@@ -171,6 +185,7 @@ function parseQuestionsFromText(text) {
 
                 if (isInline1to4) {
                     optionsStarted = true;
+                    optionType = 'numeric';
                     const optMatches = [...optLine.matchAll(/(?:\()?([1-4])\s*(?:\)|[.)]\s*)(.+?)(?=\s+(?:\()?([1-4])\s*(?:\)|[.)]\s*)|$)/gi)];
                     for (const match of optMatches) {
                         const idx = parseInt(match[1]) - 1;
@@ -178,13 +193,14 @@ function parseQuestionsFromText(text) {
                             parsedOptions[idx] = match[2].trim();
                             const matchIndex = match.index;
                             const prefix = optLine.substring(Math.max(0, matchIndex - 5), matchIndex);
-                            if (/[✔✓✅]/.test(prefix)) {
+                            if (/[✔✓✅☑]/.test(prefix)) {
                                 correctIndex = idx;
                             }
                         }
                     }
                 } else if (isInlineAtoD) {
                     optionsStarted = true;
+                    optionType = 'lettered';
                     const optMatches = [...optLine.matchAll(/(?:\()?([A-D])\s*(?:\)|[.)]\s*)(.+?)(?=\s+(?:\()?([A-D])\s*(?:\)|[.)]\s*)|$)/gi)];
                     for (const match of optMatches) {
                         const idx = match[1].toUpperCase().charCodeAt(0) - 65;
@@ -192,40 +208,42 @@ function parseQuestionsFromText(text) {
                             parsedOptions[idx] = match[2].trim();
                             const matchIndex = match.index;
                             const prefix = optLine.substring(Math.max(0, matchIndex - 5), matchIndex);
-                            if (/[✔✓✅]/.test(prefix)) {
+                            if (/[✔✓✅☑]/.test(prefix)) {
                                 correctIndex = idx;
                             }
                         }
                     }
                 } else {
                     // Match single option 1-4 or A-D
-                    const match1to4 = optLine.match(/^(?:Ans\s*)?(?:[✔✓✗\s]*|[Xx\s]*)\b([1-4])\s*[.)]\s*(.+)/i);
-                    const matchAtoD = optLine.match(/^(?:Ans\s*)?(?:[✔✓✗\s]*|[Xx\s]*)\b([A-D])\s*[.)]\s*(.+)/i);
+                    const match1to4 = optLine.match(/^(?:Ans\s*)?(?:[^0-9a-zA-Z]*|[Xx\s]*)\b([1-4])\s*[.)]\s*(.*)/i);
+                    const matchAtoD = optLine.match(/^(?:Ans\s*)?(?:[^0-9a-zA-Z]*|[Xx\s]*)\b([A-D])\s*[.)]\s*(.*)/i);
 
                     if (match1to4) {
                         optionsStarted = true;
+                        optionType = 'numeric';
                         const idx = parseInt(match1to4[1]) - 1;
                         if (idx >= 0 && idx < 4) {
                             parsedOptions[idx] = match1to4[2].trim();
                             const prefix = optLine.substring(0, optLine.indexOf(match1to4[1]));
-                            if (/[✔✓✅]/.test(prefix)) {
+                            if (/[✔✓✅☑]/.test(prefix)) {
                                 correctIndex = idx;
                             }
                         }
                     } else if (matchAtoD) {
                         optionsStarted = true;
+                        optionType = 'lettered';
                         const idx = matchAtoD[1].toUpperCase().charCodeAt(0) - 65;
                         if (idx >= 0 && idx < 4) {
                             parsedOptions[idx] = matchAtoD[2].trim();
                             const prefix = optLine.substring(0, optLine.indexOf(matchAtoD[1]));
-                            if (/[✔✓✅]/.test(prefix)) {
+                            if (/[✔✓✅☑]/.test(prefix)) {
                                 correctIndex = idx;
                             }
                         }
                     } else {
                         // If option parsing hasn't started, it's question text
                         if (!optionsStarted) {
-                            if (!optLine.match(/^(?:Ans\s*)?(?:[✔✓✗\s]*|[Xx\s]*)\b[1-4A-D]\s*[.)]/i)) {
+                            if (!optLine.match(/^(?:Ans\s*)?(?:[^0-9a-zA-Z]*|[Xx\s]*)\b[1-4A-D]\s*[.)]/i)) {
                                 questionLines.push(optLine);
                             }
                         }
@@ -287,6 +305,10 @@ function parseQuestionsFromText(text) {
         }
         i++;
     }
+
+    const emptyCount = questions.filter(q => !q.question || q.question.startsWith('[Question') || q.options.every(o => o === '—' || o.startsWith('Option') || !o)).length;
+    questions.isEmptyPDF = questions.length > 0 && (emptyCount / questions.length) > 0.8;
+
     return questions;
 }
 
@@ -299,6 +321,13 @@ router.post('/upload', requireAuth, upload.single('pdf'), async (req, res) => {
         
         const data = await pdfParse(pdfBuffer);
         const questions = parseQuestionsFromText(data.text);
+
+        if (questions.isEmptyPDF) {
+            return res.json({
+                ok: false,
+                error: '❌ The uploaded PDF contains scanned images or is not text-selectable. The text parser could only extract question numbers but no question text or options. Please upload a text-selectable PDF.'
+            });
+        }
 
         res.json({ ok: true, questions });
     } catch (err) {

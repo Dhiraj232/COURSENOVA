@@ -79,6 +79,7 @@ function parseMCQFromText(text) {
         const qMatch = line.match(qRegex);
         if (qMatch) {
             const qNumStr = qMatch[1];
+            const currentQNum = parseInt(qNumStr) || 0;
             const firstQuestionLine = qMatch[2].trim();
             const questionLines = firstQuestionLine ? [firstQuestionLine] : [];
             const parsedOptions = ['', '', '', ''];
@@ -86,14 +87,26 @@ function parseMCQFromText(text) {
             let correctIndexFallback = -1;
             let correctIndexAnswerLine = -1;
             let optionsStarted = false;
+            let optionType = null; // 'numeric' or 'lettered'
             
             let j = i + 1;
             while (j < lines.length && j < i + 40) {
                 const optLine = lines[j];
                 
                 // If we hit another question, stop processing this one
-                if (optLine.match(qRegex)) {
-                    break;
+                const nextQMatch = optLine.match(qRegex);
+                if (nextQMatch) {
+                    if (useQPrefix) {
+                        break;
+                    } else {
+                        const nextQNum = parseInt(nextQMatch[1]);
+                        const isLikelyOption = !optionsStarted && (nextQNum === 1 || nextQNum === 2 || nextQNum === 3 || nextQNum === 4);
+                        const isOptionDuplicate = optionsStarted && optionType === 'numeric' && nextQNum >= 1 && nextQNum <= 4 && !parsedOptions[nextQNum - 1];
+                        
+                        if (!isLikelyOption && !isOptionDuplicate) {
+                            break;
+                        }
+                    }
                 }
 
                 // Check for ignore patterns first to avoid matching them as options
@@ -116,6 +129,7 @@ function parseMCQFromText(text) {
 
                 if (isInline1to4) {
                     optionsStarted = true;
+                    optionType = 'numeric';
                     const optMatches = [...optLine.matchAll(/(?:\()?([1-4])\s*(?:\)|[.)]\s*)(.+?)(?=\s+(?:\()?([1-4])\s*(?:\)|[.)]\s*)|$)/gi)];
                     for (const match of optMatches) {
                         const idx = parseInt(match[1]) - 1;
@@ -123,7 +137,7 @@ function parseMCQFromText(text) {
                             parsedOptions[idx] = match[2].trim();
                             const matchIndex = match.index;
                             const prefix = optLine.substring(Math.max(0, matchIndex - 5), matchIndex);
-                            if (/[✔✓✅]/.test(prefix)) {
+                            if (/[✔✓✅☑]/.test(prefix)) {
                                 correctIndex = idx;
                             }
                         }
@@ -134,6 +148,7 @@ function parseMCQFromText(text) {
 
                 if (isInlineAtoD) {
                     optionsStarted = true;
+                    optionType = 'lettered';
                     const optMatches = [...optLine.matchAll(/(?:\()?([A-D])\s*(?:\)|[.)]\s*)(.+?)(?=\s+(?:\()?([A-D])\s*(?:\)|[.)]\s*)|$)/gi)];
                     for (const match of optMatches) {
                         const idx = match[1].toUpperCase().charCodeAt(0) - 65;
@@ -141,7 +156,7 @@ function parseMCQFromText(text) {
                             parsedOptions[idx] = match[2].trim();
                             const matchIndex = match.index;
                             const prefix = optLine.substring(Math.max(0, matchIndex - 5), matchIndex);
-                            if (/[✔✓✅]/.test(prefix)) {
+                            if (/[✔✓✅☑]/.test(prefix)) {
                                 correctIndex = idx;
                             }
                         }
@@ -151,16 +166,17 @@ function parseMCQFromText(text) {
                 }
 
                 // Match single option 1-4 or A-D
-                const match1to4 = optLine.match(/^(?:Ans\s*)?(?:[✔✓✗\s]*|[Xx\s]*)\b([1-4])\s*[.)]\s*(.*)/i);
-                const matchAtoD = optLine.match(/^(?:Ans\s*)?(?:[✔✓✗\s]*|[Xx\s]*)\b([A-D])\s*[.)]\s*(.*)/i);
+                const match1to4 = optLine.match(/^(?:Ans\s*)?(?:[^0-9a-zA-Z]*|[Xx\s]*)\b([1-4])\s*[.)]\s*(.*)/i);
+                const matchAtoD = optLine.match(/^(?:Ans\s*)?(?:[^0-9a-zA-Z]*|[Xx\s]*)\b([A-D])\s*[.)]\s*(.*)/i);
 
                 if (match1to4) {
                     optionsStarted = true;
+                    optionType = 'numeric';
                     const idx = parseInt(match1to4[1]) - 1;
                     if (idx >= 0 && idx < 4) {
                         parsedOptions[idx] = match1to4[2].trim();
                         const prefix = optLine.substring(0, optLine.indexOf(match1to4[1]));
-                        if (/[✔✓✅]/.test(prefix)) {
+                        if (/[✔✓✅☑]/.test(prefix)) {
                             correctIndex = idx;
                         }
                     }
@@ -170,11 +186,12 @@ function parseMCQFromText(text) {
 
                 if (matchAtoD) {
                     optionsStarted = true;
+                    optionType = 'lettered';
                     const idx = matchAtoD[1].toUpperCase().charCodeAt(0) - 65;
                     if (idx >= 0 && idx < 4) {
                         parsedOptions[idx] = matchAtoD[2].trim();
                         const prefix = optLine.substring(0, optLine.indexOf(matchAtoD[1]));
-                        if (/[✔✓✅]/.test(prefix)) {
+                        if (/[✔✓✅☑]/.test(prefix)) {
                             correctIndex = idx;
                         }
                     }
@@ -218,7 +235,7 @@ function parseMCQFromText(text) {
 
                 // If option parsing hasn't started, it's question text
                 if (!optionsStarted) {
-                    if (!optLine.match(/^(?:Ans\s*)?(?:[✔✓✗\s]*|[Xx\s]*)\b[1-4A-D]\s*[.)]/i)) {
+                    if (!optLine.match(/^(?:Ans\s*)?(?:[^0-9a-zA-Z]*|[Xx\s]*)\b[1-4A-D]\s*[.)]/i)) {
                         questionLines.push(optLine);
                     }
                 }
@@ -286,6 +303,10 @@ function parseMCQFromText(text) {
         }
         i++;
     }
+
+    const emptyCount = questions.filter(q => q.question.startsWith('[Question') && q.options.every(o => o.startsWith('Option') || o === '—')).length;
+    questions.isEmptyPDF = questions.length > 0 && (emptyCount / questions.length) > 0.8;
+
     return questions;
 }
 
@@ -307,6 +328,13 @@ router.post('/generate-questions-from-pdf', requireAdmin, upload.single('pdf'), 
         return res.json({
             ok: false,
             message: `No MCQ questions detected. Format your PDF as:\n1. Question text\nA) Option 1\nB) Option 2\nC) Option 3\nD) Option 4\nAnswer: B\n\nPreview of extracted text: "${text.substring(0, 400)}"`
+        });
+    }
+
+    if (questions.isEmptyPDF) {
+        return res.json({
+            ok: false,
+            message: `❌ The uploaded PDF contains scanned images or is not text-selectable. The text parser could only extract question numbers but no question text or options. Please upload a text-selectable PDF.`
         });
     }
 
@@ -335,6 +363,13 @@ router.post('/courses/:id/upload-questions-pdf', requireAdmin, upload.single('pd
         return res.json({
             ok: false,
             message: `No MCQ questions found in PDF. Use format:\n1. Question\nA) Option A\nB) Option B\nC) Option C\nD) Option D\nAnswer: A`
+        });
+    }
+
+    if (parsed.isEmptyPDF) {
+        return res.json({
+            ok: false,
+            message: `❌ The uploaded PDF contains scanned images or is not text-selectable. The text parser could only extract question numbers but no question text or options. Please upload a text-selectable PDF.`
         });
     }
 
