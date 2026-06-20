@@ -948,77 +948,47 @@ async function handlePdfToTest(input, index, lang = 'en') {
     if (!file) return;
 
     const row = input.closest('.mt-row');
-    const isHindi = lang === 'hi';
-    const status = row.querySelector(isHindi ? '.pdf-status-hi' : '.pdf-status-en');
-    const btn    = row.querySelector(isHindi ? '.mt-t-hi-btn'  : '.mt-t-en-btn');
+    const statusEn = row.querySelector('.pdf-status-en');
+    const statusHi = row.querySelector('.pdf-status-hi');
+    const btnEn = row.querySelector('.mt-t-en-btn');
+    const btnHi = row.querySelector('.mt-t-hi-btn');
     const countBadge = row.querySelector('.q-count-badge');
     const qIdsInput  = row.querySelector('.mt-t-qids');
 
     const formData = new FormData();
     formData.append('pdf', file);
 
-    status.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Parsing PDF...';
-    btn.disabled = true;
+    const activeStatus = lang === 'hi' ? statusHi : statusEn;
+    const activeBtn = lang === 'hi' ? btnHi : btnEn;
+
+    activeStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Parsing PDF...';
+    btnEn.disabled = true;
+    btnHi.disabled = true;
 
     try {
         const token = localStorage.getItem('token');
-        const res = await fetch(`${API_BASE}/generate-questions-from-pdf?lang=${lang}`, {
+        const res = await fetch(`${API_BASE}/generate-questions-from-pdf`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` },
             body: formData
         });
 
         if (!res.ok) {
-            status.innerHTML = `<span style="color:var(--danger)">Error: ${res.status === 404 ? 'Server needs restart' : res.statusText}</span>`;
-            btn.disabled = false;
+            activeStatus.innerHTML = `<span style="color:var(--danger)">Error: ${res.status === 404 ? 'Server needs restart' : res.statusText}</span>`;
+            btnEn.disabled = false;
+            btnHi.disabled = false;
             return;
         }
 
         const data = await res.json();
         if (!data.ok) {
-            status.innerHTML = `<span style="color:var(--danger)">${data.message}</span>`;
-            btn.disabled = false;
+            activeStatus.innerHTML = `<span style="color:var(--danger)">${data.message}</span>`;
+            btnEn.disabled = false;
+            btnHi.disabled = false;
             return;
         }
 
-        // ── HINDI: Merge into existing questions ──
-        if (isHindi) {
-            const existingIds = qIdsInput.value.split(',').map(s => s.trim()).filter(Boolean);
-            if (existingIds.length === 0) {
-                status.innerHTML = `<span style="color:var(--danger)">⚠️ Upload English PDF first, then Hindi.</span>`;
-                btn.disabled = false;
-                return;
-            }
-            if (data.questions.length !== existingIds.length) {
-                status.innerHTML = `<span style="color:#d97706;">⚠️ Mismatch: ${data.questions.length} Hindi Qs vs ${existingIds.length} English Qs. Proceeding anyway...</span>`;
-            }
-            status.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding Hindi to questions...';
-
-            const pairPayload = data.questions.map((q, idx) => ({
-                _id: existingIds[idx] || null,
-                question_hi: q.question_hi || q.question,
-                options_hi: q.options_hi || q.options
-            })).filter(p => p._id);
-
-            const mergeRes = await fetch(`${API_BASE}/questions/add-hindi`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify(pairPayload)
-            });
-            const mergeData = await mergeRes.json();
-            if (mergeData.ok) {
-                status.innerHTML = `<span style="color:#d97706; font-weight:600;">✅ Hindi added to ${mergeData.updated} questions!</span>`;
-                btn.innerHTML = '<i class="fas fa-check"></i> Hindi Updated';
-                btn.disabled = false;
-            } else {
-                status.innerHTML = `<span style="color:var(--danger)">Hindi save failed: ${mergeData.message}</span>`;
-                btn.disabled = false;
-            }
-            return;
-        }
-
-        // ── ENGLISH: Create new questions ──
-        status.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving questions to DB...';
+        activeStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving questions to DB...';
 
         const packCategory = (document.getElementById('mtCategory').value || '').trim() || 'Mock Test';
         const testTitleText = (row.querySelector('.mt-t-title').value || '').trim() || 'General';
@@ -1036,7 +1006,11 @@ async function handlePdfToTest(input, index, lang = 'en') {
             const correctAnswerText = opts[correctIdx] || '';
             return {
                 question: q.question,
+                question_en: q.question_en || q.question,
+                question_hi: q.question_hi || q.question,
                 options: opts,
+                options_en: q.options_en || opts,
+                options_hi: q.options_hi || opts,
                 correctAnswer: correctAnswerText,
                 category: packCategory,
                 subject: subjectName,
@@ -1052,20 +1026,26 @@ async function handlePdfToTest(input, index, lang = 'en') {
         const saveData = await saveRes.json();
         if (saveData.ok) {
             const newQIds = saveData.questions.map(q => q._id).join(', ');
-            // IMPORTANT: Completely replace the old IDs with new ones from the PDF
             qIdsInput.value = newQIds; 
             countBadge.textContent = saveData.questions.length;
-            status.innerHTML = `<span style="color:#6366f1; font-weight:600;">✅ ${saveData.questions.length} Questions imported! (Old ones removed)</span>`;
-            btn.innerHTML = '<i class="fas fa-check"></i> English Uploaded';
-            btn.disabled = false;
+            
+            statusEn.innerHTML = `<span style="color:#6366f1; font-weight:600;">✅ ${saveData.questions.length} English Qs imported!</span>`;
+            statusHi.innerHTML = `<span style="color:#d97706; font-weight:600;">✅ ${saveData.questions.length} Hindi translations imported!</span>`;
+            
+            btnEn.innerHTML = '<i class="fas fa-check"></i> English Uploaded';
+            btnHi.innerHTML = '<i class="fas fa-check"></i> Hindi Updated';
+            
+            btnEn.disabled = false;
+            btnHi.disabled = false;
         } else {
-            status.innerHTML = `<span style="color:var(--danger)">Save failed: ${saveData.message || 'DB error'}</span>`;
-            btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-file-pdf"></i> Retry';
+            activeStatus.innerHTML = `<span style="color:var(--danger)">Save failed: ${saveData.message || 'DB error'}</span>`;
+            btnEn.disabled = false;
+            btnHi.disabled = false;
         }
     } catch (e) {
-        status.innerHTML = `<span style="color:var(--danger)">Upload failed: ${e.message}</span>`;
-        btn.disabled = false;
+        activeStatus.innerHTML = `<span style="color:var(--danger)">Upload failed: ${e.message}</span>`;
+        btnEn.disabled = false;
+        btnHi.disabled = false;
     }
 }
 

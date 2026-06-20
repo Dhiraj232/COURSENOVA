@@ -41,35 +41,80 @@ function parseMCQFromText(text) {
         // Match lines like: "1. Question" or "1) Question" or "Q1. Question"
         const qMatch = line.match(/^(?:Q?\s*(\d+)[.)]\s*)(.+)/i);
         if (qMatch) {
-            const questionText = qMatch[2].trim();
-            const options = [];
+            const firstQuestionLine = qMatch[2].trim();
+            const questionLines = [firstQuestionLine];
+            const parsedOptions = ['', '', '', ''];
             let correctIndex = 0;
             let j = i + 1;
+            let optionsStarted = false;
 
-            while (j < lines.length && j < i + 20) {
+            while (j < lines.length && j < i + 30) {
                 const optLine = lines[j];
-                // Match: "A) text", "A. text", "A text", "(A) text"
-                const optMatch = optLine.match(/^(?:\()?([A-Da-d])(?:\)|[.)]\s*|\s+)(.+)/);
-                // Match: "Answer: B" or "Ans: b" or "Correct: C"
-                const ansMatch = optLine.match(/^(?:ans(?:wer)?|correct\s*(?:answer)?|key)\s*[:\-]\s*([A-Da-d])/i);
+                // Match: "Answer: B" or "Ans: b" or "Correct: C" (allows leading symbols like ✓)
+                const ansMatch = optLine.match(/^(?:[✓✗\s]*)(?:ans(?:wer)?|correct\s*(?:answer)?|key)\s*[:\-]\s*([A-Da-d])/i);
+                
+                // Match options on the line: e.g. "A) option A   B) option B"
+                const optRegex = /(?:\()?([A-D])(?:\)|[.)]\s*)(.+?)(?=\s+(?:\()?([A-D])(?:\)|[.)]\s*)|$)/gi;
+                const optMatches = [...optLine.matchAll(optRegex)];
 
-                if (optMatch) {
-                    options.push(optMatch[2].trim());
+                if (optMatches.length > 0) {
+                    optionsStarted = true;
+                    for (const match of optMatches) {
+                        const idx = match[1].toUpperCase().charCodeAt(0) - 65;
+                        if (idx >= 0 && idx < 4) {
+                            parsedOptions[idx] = match[2].trim();
+                        }
+                    }
                 } else if (ansMatch) {
                     correctIndex = ansMatch[1].toUpperCase().charCodeAt(0) - 65;
-                } else if (options.length > 0 && /^(?:Q?\s*\d+[.)])/.test(optLine)) {
+                } else if (optionsStarted && /^(?:Q?\s*\d+[.)])/.test(optLine)) {
                     break; // Next question started
+                } else {
+                    // If we haven't found any options yet, this line is part of the question text
+                    if (!optionsStarted) {
+                        questionLines.push(optLine);
+                    }
                 }
                 j++;
             }
 
-            if (options.length >= 2) {
-                // Pad to 4 options if needed
-                while (options.length < 4) options.push('—');
+            const validOptionsCount = parsedOptions.filter(Boolean).length;
+            if (validOptionsCount >= 2) {
+                // Pad options to 4 if needed
+                for (let k = 0; k < 4; k++) {
+                    if (!parsedOptions[k]) parsedOptions[k] = '—';
+                }
                 const safeIdx = correctIndex >= 0 && correctIndex < 4 ? correctIndex : 0;
+
+                // Separate question lines into English and Hindi
+                let englishLines = [];
+                let hindiLines = [];
+                let hasSeenHindi = false;
+
+                for (const qLine of questionLines) {
+                    const hasHindi = /[\u0900-\u097F]/.test(qLine);
+                    if (hasHindi) {
+                        hasSeenHindi = true;
+                        hindiLines.push(qLine);
+                    } else {
+                        if (hasSeenHindi) {
+                            hindiLines.push(qLine);
+                        } else {
+                            englishLines.push(qLine);
+                        }
+                    }
+                }
+
+                const questionEn = englishLines.join('\n').trim();
+                const questionHi = hindiLines.join('\n').trim();
+
                 questions.push({
-                    question: questionText,
-                    options: options.slice(0, 4),
+                    question: questionEn || questionHi, // default
+                    question_en: questionEn,
+                    question_hi: questionHi || questionEn, // fallback
+                    options: parsedOptions,
+                    options_en: parsedOptions,
+                    options_hi: parsedOptions,
                     correctIndex: safeIdx
                 });
                 i = j;
@@ -494,12 +539,26 @@ router.get('/mock-tests/:id', requireAdmin, catchAsync(async (req, res) => {
 }));
 
 router.post('/mock-tests', requireAdmin, catchAsync(async (req, res) => {
+    if (req.body && req.body.tests && Array.isArray(req.body.tests)) {
+        req.body.tests.forEach(t => {
+            if (t.questions && Array.isArray(t.questions)) {
+                t.numQuestions = t.questions.length;
+            }
+        });
+    }
     const pack = await MockTestPack.create(req.body);
     await logAdminAction(req, 'CREATE_MOCK_TEST', pack._id, 'MockTestPack', { title: pack.title });
     res.status(201).json({ ok: true, pack });
 }));
 
 router.put('/mock-tests/:id', requireAdmin, catchAsync(async (req, res) => {
+    if (req.body && req.body.tests && Array.isArray(req.body.tests)) {
+        req.body.tests.forEach(t => {
+            if (t.questions && Array.isArray(t.questions)) {
+                t.numQuestions = t.questions.length;
+            }
+        });
+    }
     const pack = await MockTestPack.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!pack) throw new AppError('Mock test pack not found', 404);
     await logAdminAction(req, 'UPDATE_MOCK_TEST', pack._id, 'MockTestPack', { title: pack.title });
