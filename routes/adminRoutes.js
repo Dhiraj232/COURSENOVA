@@ -34,7 +34,10 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 // ── Parse MCQ questions from raw PDF text ────────────────────────────
 function parseMCQFromText(text) {
-    // ── Spaced out text healer ──
+    // ── First: Reconstruct words by replacing cell separators (tabs) ──
+    text = text.replace(/\t\s\t|\t\s+|\s+\t|\t{2,}/g, ' ').replace(/\t/g, '');
+
+    // ── Second: Detect and heal spaced out text if letters are still separated by space ──
     const rawLines = text.split('\n');
     let spacedOutLines = 0;
     let validLines = 0;
@@ -52,16 +55,11 @@ function parseMCQFromText(text) {
     if (validLines > 0 && (spacedOutLines / validLines) > 0.3) {
         text = rawLines.map(line => {
             const trimmed = line.trim();
-            if (trimmed.includes('\t')) {
-                return trimmed.replace(/\t+/g, '');
-            }
             return trimmed
                 .replace(/\s{2,}/g, ' \u0000 ')
                 .replace(/(?<=[a-zA-Z0-9])\s+(?=[a-zA-Z0-9])/g, '')
                 .replace(/ \u0000 /g, ' ');
         }).join('\n');
-    } else {
-        text = text.replace(/\t+/g, ' ');
     }
 
     const questions = [];
@@ -94,39 +92,7 @@ function parseMCQFromText(text) {
                     break;
                 }
 
-                // Check for Chosen Option metadata
-                const chosenMatch = optLine.match(/Chosen\s*Option\s*:\s*([1-4A-Da-d])/i);
-                if (chosenMatch) {
-                    let val = chosenMatch[1].toUpperCase();
-                    if (val >= 'A' && val <= 'D') {
-                        correctIndexFallback = val.charCodeAt(0) - 65;
-                    } else {
-                        const num = parseInt(val);
-                        if (num >= 1 && num <= 4) {
-                            correctIndexFallback = num - 1;
-                        }
-                    }
-                    j++;
-                    continue;
-                }
-
-                // Check for explicit Answer/Correct line
-                const ansLineMatch = optLine.match(/^(?:ans(?:wer)?|correct\s*(?:answer)?|key)\s*[:\-.]?\s*([1-4A-Da-d]|\([1-4A-Da-d]\))/i);
-                if (ansLineMatch) {
-                    let val = ansLineMatch[1].replace(/[()]/g, '').toUpperCase();
-                    if (val >= 'A' && val <= 'D') {
-                        correctIndexAnswerLine = val.charCodeAt(0) - 65;
-                    } else {
-                        const num = parseInt(val);
-                        if (num >= 1 && num <= 4) {
-                            correctIndexAnswerLine = num - 1;
-                        }
-                    }
-                    j++;
-                    continue;
-                }
-
-                // Check for ignore patterns
+                // Check for ignore patterns first to avoid matching them as options
                 if (/^Question ID\s*:/i.test(optLine) ||
                     /^Option\s*\d+\s*ID\s*:/i.test(optLine) ||
                     /^Status\s*:/i.test(optLine) ||
@@ -138,7 +104,7 @@ function parseMCQFromText(text) {
                     continue;
                 }
 
-                // Match inline options 1-4 or A-D
+                // Match inline options 1-4 or A-D (checked before single options to avoid partial line match)
                 const isInline1to4 = /1\s*[.)]\s*.+2\s*[.)]\s*.+3\s*[.)]\s*.+4\s*[.)]/i.test(optLine);
                 const isInlineAtoD = /A\s*[.)]\s*.+B\s*[.)]\s*.+C\s*[.)]\s*.+D\s*[.)]/i.test(optLine);
 
@@ -156,7 +122,11 @@ function parseMCQFromText(text) {
                             }
                         }
                     }
-                } else if (isInlineAtoD) {
+                    j++;
+                    continue;
+                }
+
+                if (isInlineAtoD) {
                     optionsStarted = true;
                     const optMatches = [...optLine.matchAll(/(?:\()?([A-D])(?:\)|[.)]\s*)(.+?)(?=\s+(?:\()?([A-D])(?:\)|[.)]\s*)|$)/gi)];
                     for (const match of optMatches) {
@@ -170,40 +140,81 @@ function parseMCQFromText(text) {
                             }
                         }
                     }
-                } else {
-                    // Match single option 1-4 or A-D
-                    const match1to4 = optLine.match(/^(?:Ans\s*)?(?:[✔✓✗\s]*|[Xx\s]*)\b([1-4])\s*[.)]\s*(.+)/i);
-                    const matchAtoD = optLine.match(/^(?:Ans\s*)?(?:[✔✓✗\s]*|[Xx\s]*)\b([A-D])\s*[.)]\s*(.+)/i);
+                    j++;
+                    continue;
+                }
 
-                    if (match1to4) {
-                        optionsStarted = true;
-                        const idx = parseInt(match1to4[1]) - 1;
-                        if (idx >= 0 && idx < 4) {
-                            parsedOptions[idx] = match1to4[2].trim();
-                            const prefix = optLine.substring(0, optLine.indexOf(match1to4[1]));
-                            if (/[✔✓✅]/.test(prefix)) {
-                                correctIndex = idx;
-                            }
-                        }
-                    } else if (matchAtoD) {
-                        optionsStarted = true;
-                        const idx = matchAtoD[1].toUpperCase().charCodeAt(0) - 65;
-                        if (idx >= 0 && idx < 4) {
-                            parsedOptions[idx] = matchAtoD[2].trim();
-                            const prefix = optLine.substring(0, optLine.indexOf(matchAtoD[1]));
-                            if (/[✔✓✅]/.test(prefix)) {
-                                correctIndex = idx;
-                            }
-                        }
-                    } else {
-                        // If option parsing hasn't started, it's question text
-                        if (!optionsStarted) {
-                            if (!optLine.match(/^(?:Ans\s*)?(?:[✔✓✗\s]*|[Xx\s]*)\b[1-4A-D]\s*[.)]/i)) {
-                                questionLines.push(optLine);
-                            }
+                // Match single option 1-4 or A-D (checked before metadata lines to avoid matching "Ans 1." as an answer key line)
+                const match1to4 = optLine.match(/^(?:Ans\s*)?(?:[✔✓✗\s]*|[Xx\s]*)\b([1-4])\s*[.)]\s*(.+)/i);
+                const matchAtoD = optLine.match(/^(?:Ans\s*)?(?:[✔✓✗\s]*|[Xx\s]*)\b([A-D])\s*[.)]\s*(.+)/i);
+
+                if (match1to4) {
+                    optionsStarted = true;
+                    const idx = parseInt(match1to4[1]) - 1;
+                    if (idx >= 0 && idx < 4) {
+                        parsedOptions[idx] = match1to4[2].trim();
+                        const prefix = optLine.substring(0, optLine.indexOf(match1to4[1]));
+                        if (/[✔✓✅]/.test(prefix)) {
+                            correctIndex = idx;
                         }
                     }
+                    j++;
+                    continue;
                 }
+
+                if (matchAtoD) {
+                    optionsStarted = true;
+                    const idx = matchAtoD[1].toUpperCase().charCodeAt(0) - 65;
+                    if (idx >= 0 && idx < 4) {
+                        parsedOptions[idx] = matchAtoD[2].trim();
+                        const prefix = optLine.substring(0, optLine.indexOf(matchAtoD[1]));
+                        if (/[✔✓✅]/.test(prefix)) {
+                            correctIndex = idx;
+                        }
+                    }
+                    j++;
+                    continue;
+                }
+
+                // Check for Chosen Option metadata
+                const chosenMatch = optLine.match(/Chosen\s*Option\s*:\s*([1-4A-Da-d])/i);
+                if (chosenMatch) {
+                    let val = chosenMatch[1].toUpperCase();
+                    if (val >= 'A' && val <= 'D') {
+                        correctIndexFallback = val.charCodeAt(0) - 65;
+                    } else {
+                        const num = parseInt(val);
+                        if (num >= 1 && num <= 4) {
+                            correctIndexFallback = num - 1;
+                        }
+                    }
+                    j++;
+                    continue;
+                }
+
+                // Check for explicit Answer/Correct line (only when it's not a regular option line)
+                const ansLineMatch = optLine.match(/^(?:ans(?:wer)?|correct\s*(?:answer)?|key)\s*[:\-.]?\s*([1-4A-Da-d]|\([1-4A-Da-d]\))/i);
+                if (ansLineMatch) {
+                    let val = ansLineMatch[1].replace(/[()]/g, '').toUpperCase();
+                    if (val >= 'A' && val <= 'D') {
+                        correctIndexAnswerLine = val.charCodeAt(0) - 65;
+                    } else {
+                        const num = parseInt(val);
+                        if (num >= 1 && num <= 4) {
+                            correctIndexAnswerLine = num - 1;
+                        }
+                    }
+                    j++;
+                    continue;
+                }
+
+                // If option parsing hasn't started, it's question text
+                if (!optionsStarted) {
+                    if (!optLine.match(/^(?:Ans\s*)?(?:[✔✓✗\s]*|[Xx\s]*)\b[1-4A-D]\s*[.)]/i)) {
+                        questionLines.push(optLine);
+                    }
+                }
+                
                 j++;
             }
 
@@ -267,7 +278,7 @@ router.post('/generate-questions-from-pdf', requireAdmin, upload.single('pdf'), 
 
     let text = '';
     try {
-        const result = await pdfParse(req.file.buffer, { cellSeparator: '', cellThreshold: 100 });
+        const result = await pdfParse(req.file.buffer);
         text = result.text || '';
     } catch (pdfErr) {
         return res.json({ ok: false, message: `Failed to read PDF: ${pdfErr.message}` });
@@ -295,7 +306,7 @@ router.post('/courses/:id/upload-questions-pdf', requireAdmin, upload.single('pd
 
     let text = '';
     try {
-        const result = await pdfParse(req.file.buffer, { cellSeparator: '', cellThreshold: 100 });
+        const result = await pdfParse(req.file.buffer);
         text = result.text || '';
     } catch (pdfErr) {
         return res.json({ ok: false, message: `Failed to read PDF: ${pdfErr.message}` });
