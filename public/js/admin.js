@@ -66,6 +66,24 @@ async function fetchData(url) {
     return data;
 }
 
+async function getFetchErrorMessage(res) {
+    try {
+        const text = await res.clone().text();
+        try {
+            const data = JSON.parse(text);
+            return data.message || `Error ${res.status}: ${res.statusText || 'Server Error'}`;
+        } catch {
+            if (text.includes('<title>')) {
+                const titleMatch = text.match(/<title>([\s\S]*?)<\/title>/i);
+                if (titleMatch) return `Error ${res.status}: ${titleMatch[1].trim()}`;
+            }
+            return `Error ${res.status}: ${res.statusText || 'Server Error'}`;
+        }
+    } catch {
+        return `Error ${res.status}: ${res.statusText || 'Server Error'}`;
+    }
+}
+
 async function loadView(view) {
     const contentArea = document.getElementById('content-area');
     const title = document.getElementById('view-title');
@@ -974,7 +992,8 @@ async function handlePdfToTest(input, index, lang = 'en') {
         });
 
         if (!res.ok) {
-            activeStatus.innerHTML = `<span style="color:var(--danger)">Error: ${res.status === 404 ? 'Server needs restart' : res.statusText}</span>`;
+            const errorMsg = await getFetchErrorMessage(res);
+            activeStatus.innerHTML = `<span style="color:var(--danger)">${errorMsg}</span>`;
             btnEn.disabled = false;
             btnHi.disabled = false;
             return;
@@ -1658,7 +1677,8 @@ async function handlePdfUpload() {
         });
 
         if (!res.ok) {
-            status.innerHTML = `<span style="color:var(--danger)">Error: ${res.status === 404 ? 'Server needs restart (Route not found)' : res.statusText}</span>`;
+            const errorMsg = await getFetchErrorMessage(res);
+            status.innerHTML = `<span style="color:var(--danger)">Error: ${errorMsg}</span>`;
             btn.disabled = false;
             return;
         }
