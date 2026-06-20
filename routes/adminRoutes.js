@@ -19,19 +19,51 @@ const notificationService = require('../services/notificationService');
 // ── PDF QUESTION PARSER ──────────────────────────────────────────────
 const multer = require('multer');
 const pdfParseModule = require('pdf-parse');
-const pdfParse = typeof pdfParseModule === 'function' ? pdfParseModule : async function(buffer) {
-    const { PDFParse } = pdfParseModule;
-    if (PDFParse) {
-        const parser = new PDFParse({ verbosity: 0, data: buffer });
-        const result = await parser.getText();
-        return { text: result.text || '' };
-    }
-    throw new Error('pdf-parse module is not a function and does not export PDFParse');
-};
+const pdfParse = typeof pdfParseModule === 'function' 
+    ? (buffer, options) => pdfParseModule(buffer, options)
+    : async function(buffer, options) {
+        const { PDFParse } = pdfParseModule;
+        if (PDFParse) {
+            const parser = new PDFParse({ verbosity: 0, data: buffer });
+            const result = await parser.getText(options);
+            return { text: result.text || '' };
+        }
+        throw new Error('pdf-parse module is not a function and does not export PDFParse');
+    };
 const upload = multer({ storage: multer.memoryStorage() });
 
 // ── Parse MCQ questions from raw PDF text ────────────────────────────
 function parseMCQFromText(text) {
+    // ── Spaced out text healer ──
+    const rawLines = text.split('\n');
+    let spacedOutLines = 0;
+    let validLines = 0;
+    for (let line of rawLines) {
+        const trimmed = line.trim();
+        if (trimmed.length < 10) continue;
+        validLines++;
+        const words = trimmed.split(/\s+/);
+        const singleChars = words.filter(w => w.length === 1 && /[a-zA-Z0-9]/.test(w)).length;
+        if (singleChars / words.length > 0.5) {
+            spacedOutLines++;
+        }
+    }
+    
+    if (validLines > 0 && (spacedOutLines / validLines) > 0.3) {
+        text = rawLines.map(line => {
+            const trimmed = line.trim();
+            if (trimmed.includes('\t')) {
+                return trimmed.replace(/\t+/g, '');
+            }
+            return trimmed
+                .replace(/\s{2,}/g, ' \u0000 ')
+                .replace(/(?<=[a-zA-Z0-9])\s+(?=[a-zA-Z0-9])/g, '')
+                .replace(/ \u0000 /g, ' ');
+        }).join('\n');
+    } else {
+        text = text.replace(/\t+/g, ' ');
+    }
+
     const questions = [];
     const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
 
@@ -235,7 +267,7 @@ router.post('/generate-questions-from-pdf', requireAdmin, upload.single('pdf'), 
 
     let text = '';
     try {
-        const result = await pdfParse(req.file.buffer);
+        const result = await pdfParse(req.file.buffer, { cellSeparator: '', cellThreshold: 100 });
         text = result.text || '';
     } catch (pdfErr) {
         return res.json({ ok: false, message: `Failed to read PDF: ${pdfErr.message}` });
@@ -263,7 +295,7 @@ router.post('/courses/:id/upload-questions-pdf', requireAdmin, upload.single('pd
 
     let text = '';
     try {
-        const result = await pdfParse(req.file.buffer);
+        const result = await pdfParse(req.file.buffer, { cellSeparator: '', cellThreshold: 100 });
         text = result.text || '';
     } catch (pdfErr) {
         return res.json({ ok: false, message: `Failed to read PDF: ${pdfErr.message}` });

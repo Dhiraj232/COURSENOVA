@@ -258,6 +258,11 @@ app.use((req, res, next) => {
   if (host.includes('localhost') || host.includes('render.com') || process.env.NODE_ENV !== 'production') {
       return next();
   }
+
+  // Skip redirects for API and Auth routes to prevent changing POST requests to GET
+  if (req.path.startsWith('/api/') || req.path.startsWith('/auth/')) {
+      return next();
+  }
   
   // 1. Force Redirect from Non-WWW to WWW (Only for the official domain)
   if (host.includes('coursenova.in') && !host.startsWith('www.')) {
