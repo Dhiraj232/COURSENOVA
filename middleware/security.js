@@ -74,7 +74,7 @@ const paymentLimiter = rateLimit({
  * This is a defence-in-depth layer (mongoSanitize already strips $operators)
  */
 function preventInjection(req, res, next) {
-    const SQL_NOSQL_PATTERN = /(\$ne|\$gt|\$lt|\$gte|\$lte|\$in|\$nin|\$exists|\$where|\$regex|SELECT\s+.*\s+FROM|DROP\s+TABLE|INSERT\s+INTO|UPDATE\s+.*\s+SET|DELETE\s+FROM|UNION\s+SELECT|OR\s+1\s*=\s*1|AND\s+1\s*=\s*1|;\s*DROP|;\s*EXEC)/i;
+    const SQL_NOSQL_PATTERN = /(\$ne|\$gt|\$lt|\$gte|\$lte|\$in|\$nin|\$exists|\$where|\$regex)/i;
 
     const checkValue = (val) => {
         if (typeof val === 'string') return SQL_NOSQL_PATTERN.test(val);
