@@ -1,93 +1,41 @@
-const express = require('express');
-const router = express.Router();
-const multer = require('multer');
-const pdfParseModule = require('pdf-parse');
-const pdfParse = typeof pdfParseModule === 'function' ? pdfParseModule : async function(buffer) {
-    const { PDFParse } = pdfParseModule;
-    if (PDFParse) {
-        const parser = new PDFParse({ verbosity: 0, data: buffer });
-        const result = await parser.getText();
-        return { text: result.text || '' };
-    }
-    throw new Error('pdf-parse module is not a function and does not export PDFParse');
-};
-const PDFDocument = require('pdfkit');
-const DailyChallenge = require('../models/DailyChallenge');
-const { requireAuth } = require('../middleware/auth');
+// Scratch script to test the new parser logic
+const sampleText = `
+Q.7 Based on the English alphabetical order, three of the following four letter-clusters are
+alike in a certain way and thus form a group. Which letter-cluster DOES NOT belong to
+that group?
 
-const upload = multer({ storage: multer.memoryStorage() });
+(Note: The odd man out is not based on the number of consonants/vowels or their
+position in the letter-cluster.)
+Ans X 1. FHJ
+✔ 2. SUV
+X 3. HJL
+X 4. NPR
 
-// GET /api/admin/daily-challenge/pdf-questions/:date
-router.get('/pdf-questions/:date', async (req, res) => {
-    try {
-        const challenge = await DailyChallenge.findOne({ date: req.params.date });
-        if (!challenge) return res.status(404).send('Challenge not found');
+Question ID : 630680825544
+Option 1 ID : 6306803233634
+Option 2 ID : 6306803233635
+Option 3 ID : 6306803233636
+Option 4 ID : 6306803233633
+Status : Answered
+Chosen Option : 2
 
-        const doc = new PDFDocument();
-        res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `attachment; filename=Questions_${req.params.date}.pdf`);
-        doc.pipe(res);
+Q.8 The position(s) of how many letters will remain unchanged if each letter in the word
+GRACEFUL is arranged in the English alphabetical order?
+Ans X 1. Two
+✔ 2. None
+X 3. One
+X 4. Three
 
-        doc.fontSize(20).text(`SSC CGL Daily Challenge - ${challenge.date}`, { align: 'center' });
-        doc.moveDown();
-        doc.fontSize(16).text(challenge.title, { align: 'center' });
-        doc.moveDown();
+Question ID : 630680820069
+Option 1 ID : 6306803212206
+Option 2 ID : 6306803212204
+Option 3 ID : 6306803212205
+Option 4 ID : 6306803212207
+Status : Answered
+Chosen Option : 2
+`;
 
-        challenge.questions.forEach((q, i) => {
-            doc.fontSize(12).text(`${i + 1}. ${q.question}`, { continued: q.question_hi ? true : false });
-            if (q.question_hi) {
-                doc.fontSize(12).text(` / ${q.question_hi}`);
-            }
-            doc.moveDown(0.5);
-            q.options.forEach((opt, j) => {
-                const optLetter = String.fromCharCode(65 + j);
-                doc.fontSize(10).text(`   ${optLetter}) ${opt}`);
-            });
-            doc.moveDown();
-        });
-
-        doc.end();
-    } catch (err) {
-        console.error(err);
-        res.status(500).send('Error generating PDF');
-    }
-});
-
-// GET /api/admin/daily-challenge/pdf-solutions/:date
-router.get('/pdf-solutions/:date', async (req, res) => {
-    try {
-        const challenge = await DailyChallenge.findOne({ date: req.params.date });
-        if (!challenge) return res.status(404).send('Challenge not found');
-
-        const doc = new PDFDocument();
-        res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `attachment; filename=Solutions_${req.params.date}.pdf`);
-        doc.pipe(res);
-
-        doc.fontSize(20).text(`Answer Key & Explanations - ${challenge.date}`, { align: 'center' });
-        doc.moveDown();
-
-        challenge.questions.forEach((q, i) => {
-            doc.fontSize(12).text(`${i + 1}. Correct Answer: ${q.correctAnswer}`, { weight: 'bold' });
-            if (q.explanation) {
-                doc.fontSize(10).text(`   Explanation: ${q.explanation}`);
-            }
-            if (q.explanation_hi) {
-                doc.fontSize(10).text(`   व्याख्या: ${q.explanation_hi}`);
-            }
-            doc.moveDown();
-        });
-
-        doc.end();
-    } catch (err) {
-        console.error(err);
-        res.status(500).send('Error generating PDF');
-    }
-});
-
-
-// Helper to parse questions from raw text using regex
-function parseQuestionsFromText(text) {
+function parseMCQFromText(text) {
     const questions = [];
     const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
 
@@ -96,11 +44,14 @@ function parseQuestionsFromText(text) {
         ? /^(?:Q\s*[.]?\s*(\d+)\b[.)]?\s*)(.+)/i
         : /^(?:Q?\s*(\d+)[.)]\s*)(.+)/i;
 
+    console.log(`[Parser Debug] Detected hasQPrefix: ${hasQPrefix}`);
+
     let i = 0;
     while (i < lines.length) {
         const line = lines[i];
         const qMatch = line.match(qRegex);
         if (qMatch) {
+            const qNum = qMatch[1];
             const firstQuestionLine = qMatch[2].trim();
             const questionLines = [firstQuestionLine];
             const parsedOptions = ['', '', '', ''];
@@ -267,16 +218,13 @@ function parseQuestionsFromText(text) {
                 const questionEn = englishLines.join('\n').trim();
                 const questionHi = hindiLines.join('\n').trim();
 
-                const finalOptions = parsedOptions;
-                const finalCorrectAnswerText = finalOptions[finalCorrectIdx] || finalOptions[0] || '';
-
                 questions.push({
+                    qNum,
                     question: questionEn || questionHi,
+                    question_en: questionEn,
                     question_hi: questionHi || questionEn,
-                    options: finalOptions,
-                    options_hi: finalOptions,
-                    correctAnswer: finalCorrectAnswerText,
-                    explanation: 'Extracted from PDF'
+                    options: parsedOptions,
+                    correctIndex: finalCorrectIdx
                 });
                 i = j;
                 continue;
@@ -287,44 +235,5 @@ function parseQuestionsFromText(text) {
     return questions;
 }
 
-// POST /api/admin/daily-challenge/upload
-router.post('/upload', requireAuth, upload.single('pdf'), async (req, res) => {
-    try {
-        if (!req.file) return res.status(400).json({ ok: false, error: 'No PDF uploaded' });
-        const { date, title, examType } = req.body;
-        const pdfBuffer = req.file.buffer;
-        
-        const data = await pdfParse(pdfBuffer);
-        const questions = parseQuestionsFromText(data.text);
-
-        res.json({ ok: true, questions });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ ok: false, error: 'Failed to process PDF' });
-    }
-});
-
-// POST /api/admin/daily-challenge/save
-router.post('/save', async (req, res) => {
-    try {
-        const { date, title, questions, examType } = req.body;
-        
-        // Find if already exists for this date AND examType
-        let challenge = await DailyChallenge.findOne({ date, examType });
-        if (challenge) {
-            challenge.questions = questions;
-            challenge.title = title;
-            await challenge.save();
-        } else {
-            challenge = new DailyChallenge({ date, title, examType, questions });
-            await challenge.save();
-        }
-
-        res.json({ ok: true });
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ ok: false, error: 'Failed to save challenge' });
-    }
-});
-
-module.exports = router;
+const results = parseMCQFromText(sampleText);
+console.log(JSON.stringify(results, null, 2));

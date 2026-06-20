@@ -35,44 +35,141 @@ function parseMCQFromText(text) {
     const questions = [];
     const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
 
+    const hasQPrefix = /\bQ\s*[.]?\s*\d+\b/i.test(text);
+    const qRegex = hasQPrefix 
+        ? /^(?:Q\s*[.]?\s*(\d+)\b[.)]?\s*)(.+)/i
+        : /^(?:Q?\s*(\d+)[.)]\s*)(.+)/i;
+
     let i = 0;
     while (i < lines.length) {
         const line = lines[i];
-        // Match lines like: "1. Question" or "1) Question" or "Q1. Question"
-        const qMatch = line.match(/^(?:Q?\s*(\d+)[.)]\s*)(.+)/i);
+        const qMatch = line.match(qRegex);
         if (qMatch) {
             const firstQuestionLine = qMatch[2].trim();
             const questionLines = [firstQuestionLine];
             const parsedOptions = ['', '', '', ''];
-            let correctIndex = 0;
-            let j = i + 1;
+            let correctIndex = -1;
+            let correctIndexFallback = -1;
+            let correctIndexAnswerLine = -1;
             let optionsStarted = false;
-
-            while (j < lines.length && j < i + 30) {
+            
+            let j = i + 1;
+            while (j < lines.length && j < i + 40) {
                 const optLine = lines[j];
-                // Match: "Answer: B" or "Ans: b" or "Correct: C" (allows leading symbols like ✓)
-                const ansMatch = optLine.match(/^(?:[✓✗\s]*)(?:ans(?:wer)?|correct\s*(?:answer)?|key)\s*[:\-]\s*([A-Da-d])/i);
                 
-                // Match options on the line: e.g. "A) option A   B) option B"
-                const optRegex = /(?:\()?([A-D])(?:\)|[.)]\s*)(.+?)(?=\s+(?:\()?([A-D])(?:\)|[.)]\s*)|$)/gi;
-                const optMatches = [...optLine.matchAll(optRegex)];
+                // If we hit another question, stop processing this one
+                if (optLine.match(qRegex)) {
+                    break;
+                }
 
-                if (optMatches.length > 0) {
+                // Check for Chosen Option metadata
+                const chosenMatch = optLine.match(/Chosen\s*Option\s*:\s*([1-4A-Da-d])/i);
+                if (chosenMatch) {
+                    let val = chosenMatch[1].toUpperCase();
+                    if (val >= 'A' && val <= 'D') {
+                        correctIndexFallback = val.charCodeAt(0) - 65;
+                    } else {
+                        const num = parseInt(val);
+                        if (num >= 1 && num <= 4) {
+                            correctIndexFallback = num - 1;
+                        }
+                    }
+                    j++;
+                    continue;
+                }
+
+                // Check for explicit Answer/Correct line
+                const ansLineMatch = optLine.match(/^(?:ans(?:wer)?|correct\s*(?:answer)?|key)\s*[:\-.]?\s*([1-4A-Da-d]|\([1-4A-Da-d]\))/i);
+                if (ansLineMatch) {
+                    let val = ansLineMatch[1].replace(/[()]/g, '').toUpperCase();
+                    if (val >= 'A' && val <= 'D') {
+                        correctIndexAnswerLine = val.charCodeAt(0) - 65;
+                    } else {
+                        const num = parseInt(val);
+                        if (num >= 1 && num <= 4) {
+                            correctIndexAnswerLine = num - 1;
+                        }
+                    }
+                    j++;
+                    continue;
+                }
+
+                // Check for ignore patterns
+                if (/^Question ID\s*:/i.test(optLine) ||
+                    /^Option\s*\d+\s*ID\s*:/i.test(optLine) ||
+                    /^Status\s*:/i.test(optLine) ||
+                    /^https?:\/\/link\.testbook\.com/i.test(optLine) ||
+                    /^Page\s*\d+/i.test(optLine) ||
+                    /^testbook/i.test(optLine) ||
+                    optLine.toLowerCase() === 'testbook') {
+                    j++;
+                    continue;
+                }
+
+                // Match inline options 1-4 or A-D
+                const isInline1to4 = /1\s*[.)]\s*.+2\s*[.)]\s*.+3\s*[.)]\s*.+4\s*[.)]/i.test(optLine);
+                const isInlineAtoD = /A\s*[.)]\s*.+B\s*[.)]\s*.+C\s*[.)]\s*.+D\s*[.)]/i.test(optLine);
+
+                if (isInline1to4) {
                     optionsStarted = true;
+                    const optMatches = [...optLine.matchAll(/(?:\()?([1-4])(?:\)|[.)]\s*)(.+?)(?=\s+(?:\()?([1-4])(?:\)|[.)]\s*)|$)/gi)];
+                    for (const match of optMatches) {
+                        const idx = parseInt(match[1]) - 1;
+                        if (idx >= 0 && idx < 4) {
+                            parsedOptions[idx] = match[2].trim();
+                            const matchIndex = match.index;
+                            const prefix = optLine.substring(Math.max(0, matchIndex - 5), matchIndex);
+                            if (/[✔✓✅]/.test(prefix)) {
+                                correctIndex = idx;
+                            }
+                        }
+                    }
+                } else if (isInlineAtoD) {
+                    optionsStarted = true;
+                    const optMatches = [...optLine.matchAll(/(?:\()?([A-D])(?:\)|[.)]\s*)(.+?)(?=\s+(?:\()?([A-D])(?:\)|[.)]\s*)|$)/gi)];
                     for (const match of optMatches) {
                         const idx = match[1].toUpperCase().charCodeAt(0) - 65;
                         if (idx >= 0 && idx < 4) {
                             parsedOptions[idx] = match[2].trim();
+                            const matchIndex = match.index;
+                            const prefix = optLine.substring(Math.max(0, matchIndex - 5), matchIndex);
+                            if (/[✔✓✅]/.test(prefix)) {
+                                correctIndex = idx;
+                            }
                         }
                     }
-                } else if (ansMatch) {
-                    correctIndex = ansMatch[1].toUpperCase().charCodeAt(0) - 65;
-                } else if (optionsStarted && /^(?:Q?\s*\d+[.)])/.test(optLine)) {
-                    break; // Next question started
                 } else {
-                    // If we haven't found any options yet, this line is part of the question text
-                    if (!optionsStarted) {
-                        questionLines.push(optLine);
+                    // Match single option 1-4 or A-D
+                    const match1to4 = optLine.match(/^(?:Ans\s*)?(?:[✔✓✗\s]*|[Xx\s]*)\b([1-4])\s*[.)]\s*(.+)/i);
+                    const matchAtoD = optLine.match(/^(?:Ans\s*)?(?:[✔✓✗\s]*|[Xx\s]*)\b([A-D])\s*[.)]\s*(.+)/i);
+
+                    if (match1to4) {
+                        optionsStarted = true;
+                        const idx = parseInt(match1to4[1]) - 1;
+                        if (idx >= 0 && idx < 4) {
+                            parsedOptions[idx] = match1to4[2].trim();
+                            const prefix = optLine.substring(0, optLine.indexOf(match1to4[1]));
+                            if (/[✔✓✅]/.test(prefix)) {
+                                correctIndex = idx;
+                            }
+                        }
+                    } else if (matchAtoD) {
+                        optionsStarted = true;
+                        const idx = matchAtoD[1].toUpperCase().charCodeAt(0) - 65;
+                        if (idx >= 0 && idx < 4) {
+                            parsedOptions[idx] = matchAtoD[2].trim();
+                            const prefix = optLine.substring(0, optLine.indexOf(matchAtoD[1]));
+                            if (/[✔✓✅]/.test(prefix)) {
+                                correctIndex = idx;
+                            }
+                        }
+                    } else {
+                        // If option parsing hasn't started, it's question text
+                        if (!optionsStarted) {
+                            if (!optLine.match(/^(?:Ans\s*)?(?:[✔✓✗\s]*|[Xx\s]*)\b[1-4A-D]\s*[.)]/i)) {
+                                questionLines.push(optLine);
+                            }
+                        }
                     }
                 }
                 j++;
@@ -80,13 +177,19 @@ function parseMCQFromText(text) {
 
             const validOptionsCount = parsedOptions.filter(Boolean).length;
             if (validOptionsCount >= 2) {
-                // Pad options to 4 if needed
                 for (let k = 0; k < 4; k++) {
                     if (!parsedOptions[k]) parsedOptions[k] = '—';
                 }
-                const safeIdx = correctIndex >= 0 && correctIndex < 4 ? correctIndex : 0;
 
-                // Separate question lines into English and Hindi
+                let finalCorrectIdx = 0;
+                if (correctIndex >= 0 && correctIndex < 4) {
+                    finalCorrectIdx = correctIndex;
+                } else if (correctIndexAnswerLine >= 0 && correctIndexAnswerLine < 4) {
+                    finalCorrectIdx = correctIndexAnswerLine;
+                } else if (correctIndexFallback >= 0 && correctIndexFallback < 4) {
+                    finalCorrectIdx = correctIndexFallback;
+                }
+
                 let englishLines = [];
                 let hindiLines = [];
                 let hasSeenHindi = false;
@@ -109,13 +212,13 @@ function parseMCQFromText(text) {
                 const questionHi = hindiLines.join('\n').trim();
 
                 questions.push({
-                    question: questionEn || questionHi, // default
+                    question: questionEn || questionHi,
                     question_en: questionEn,
-                    question_hi: questionHi || questionEn, // fallback
+                    question_hi: questionHi || questionEn,
                     options: parsedOptions,
                     options_en: parsedOptions,
                     options_hi: parsedOptions,
-                    correctIndex: safeIdx
+                    correctIndex: finalCorrectIdx
                 });
                 i = j;
                 continue;
