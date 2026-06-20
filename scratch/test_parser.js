@@ -39,17 +39,13 @@ function parseMCQFromText(text) {
     const questions = [];
     const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
 
-    const hasQPrefix = /\bQ\s*[.]?\s*\d+\b/i.test(text);
-    const qRegex = hasQPrefix 
-        ? /^(?:Q\s*[.]?\s*(\d+)\b[.)]?\s*)(.+)/i
-        : /^(?:Q?\s*(\d+)[.)]\s*)(.+)/i;
-
-    console.log(`[Parser Debug] Detected hasQPrefix: ${hasQPrefix}`);
+    const qRegexWithQ = /^(?:Q\s*[.]?\s*(\d+)\s*[.)]?\s*)(.*)/i;
+    const qRegexWithoutQ = /^(?:Q?\s*(\d+)\s*[.)]\s*)(.*)/i;
 
     let i = 0;
     while (i < lines.length) {
         const line = lines[i];
-        const qMatch = line.match(qRegex);
+        const qMatch = line.match(qRegexWithQ) || line.match(qRegexWithoutQ);
         if (qMatch) {
             const qNum = qMatch[1];
             const firstQuestionLine = qMatch[2].trim();
@@ -65,7 +61,7 @@ function parseMCQFromText(text) {
                 const optLine = lines[j];
                 
                 // If we hit another question, stop processing this one
-                if (optLine.match(qRegex)) {
+                if (optLine.match(qRegexWithQ) || optLine.match(qRegexWithoutQ)) {
                     break;
                 }
 
@@ -119,7 +115,7 @@ function parseMCQFromText(text) {
 
                 if (isInline1to4) {
                     optionsStarted = true;
-                    const optMatches = [...optLine.matchAll(/(?:\()?([1-4])(?:\)|[.)]\s*)(.+?)(?=\s+(?:\()?([1-4])(?:\)|[.)]\s*)|$)/gi)];
+                    const optMatches = [...optLine.matchAll(/(?:\()?([1-4])\s*(?:\)|[.)]\s*)(.+?)(?=\s+(?:\()?([1-4])\s*(?:\)|[.)]\s*)|$)/gi)];
                     for (const match of optMatches) {
                         const idx = parseInt(match[1]) - 1;
                         if (idx >= 0 && idx < 4) {
@@ -133,7 +129,7 @@ function parseMCQFromText(text) {
                     }
                 } else if (isInlineAtoD) {
                     optionsStarted = true;
-                    const optMatches = [...optLine.matchAll(/(?:\()?([A-D])(?:\)|[.)]\s*)(.+?)(?=\s+(?:\()?([A-D])(?:\)|[.)]\s*)|$)/gi)];
+                    const optMatches = [...optLine.matchAll(/(?:\()?([A-D])\s*(?:\)|[.)]\s*)(.+?)(?=\s+(?:\()?([A-D])\s*(?:\)|[.)]\s*)|$)/gi)];
                     for (const match of optMatches) {
                         const idx = match[1].toUpperCase().charCodeAt(0) - 65;
                         if (idx >= 0 && idx < 4) {

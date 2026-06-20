@@ -65,18 +65,17 @@ function parseMCQFromText(text) {
     const questions = [];
     const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
 
-    const hasQPrefix = /\bQ\s*[.]?\s*\d+\b/i.test(text);
-    const qRegex = hasQPrefix 
-        ? /^(?:Q\s*[.]?\s*(\d+)\b[.)]?\s*)(.+)/i
-        : /^(?:Q?\s*(\d+)[.)]\s*)(.+)/i;
+    const qRegexWithQ = /^(?:Q\s*[.]?\s*(\d+)\s*[.)]?\s*)(.*)/i;
+    const qRegexWithoutQ = /^(?:Q?\s*(\d+)\s*[.)]\s*)(.*)/i;
 
     let i = 0;
     while (i < lines.length) {
         const line = lines[i];
-        const qMatch = line.match(qRegex);
+        const qMatch = line.match(qRegexWithQ) || line.match(qRegexWithoutQ);
         if (qMatch) {
+            const qNumStr = qMatch[1];
             const firstQuestionLine = qMatch[2].trim();
-            const questionLines = [firstQuestionLine];
+            const questionLines = firstQuestionLine ? [firstQuestionLine] : [];
             const parsedOptions = ['', '', '', ''];
             let correctIndex = -1;
             let correctIndexFallback = -1;
@@ -88,7 +87,7 @@ function parseMCQFromText(text) {
                 const optLine = lines[j];
                 
                 // If we hit another question, stop processing this one
-                if (optLine.match(qRegex)) {
+                if (optLine.match(qRegexWithQ) || optLine.match(qRegexWithoutQ)) {
                     break;
                 }
 
@@ -99,18 +98,20 @@ function parseMCQFromText(text) {
                     /^https?:\/\/link\.testbook\.com/i.test(optLine) ||
                     /^Page\s*\d+/i.test(optLine) ||
                     /^testbook/i.test(optLine) ||
-                    optLine.toLowerCase() === 'testbook') {
+                    optLine.toLowerCase() === 'testbook' ||
+                    /^(?:ans|ans\.|ans:)$/i.test(optLine.trim())
+                ) {
                     j++;
                     continue;
                 }
 
-                // Match inline options 1-4 or A-D (checked before single options to avoid partial line match)
+                // Match inline options 1-4 or A-D
                 const isInline1to4 = /1\s*[.)]\s*.+2\s*[.)]\s*.+3\s*[.)]\s*.+4\s*[.)]/i.test(optLine);
                 const isInlineAtoD = /A\s*[.)]\s*.+B\s*[.)]\s*.+C\s*[.)]\s*.+D\s*[.)]/i.test(optLine);
 
                 if (isInline1to4) {
                     optionsStarted = true;
-                    const optMatches = [...optLine.matchAll(/(?:\()?([1-4])(?:\)|[.)]\s*)(.+?)(?=\s+(?:\()?([1-4])(?:\)|[.)]\s*)|$)/gi)];
+                    const optMatches = [...optLine.matchAll(/(?:\()?([1-4])\s*(?:\)|[.)]\s*)(.+?)(?=\s+(?:\()?([1-4])\s*(?:\)|[.)]\s*)|$)/gi)];
                     for (const match of optMatches) {
                         const idx = parseInt(match[1]) - 1;
                         if (idx >= 0 && idx < 4) {
@@ -128,7 +129,7 @@ function parseMCQFromText(text) {
 
                 if (isInlineAtoD) {
                     optionsStarted = true;
-                    const optMatches = [...optLine.matchAll(/(?:\()?([A-D])(?:\)|[.)]\s*)(.+?)(?=\s+(?:\()?([A-D])(?:\)|[.)]\s*)|$)/gi)];
+                    const optMatches = [...optLine.matchAll(/(?:\()?([A-D])\s*(?:\)|[.)]\s*)(.+?)(?=\s+(?:\()?([A-D])\s*(?:\)|[.)]\s*)|$)/gi)];
                     for (const match of optMatches) {
                         const idx = match[1].toUpperCase().charCodeAt(0) - 65;
                         if (idx >= 0 && idx < 4) {
@@ -144,9 +145,9 @@ function parseMCQFromText(text) {
                     continue;
                 }
 
-                // Match single option 1-4 or A-D (checked before metadata lines to avoid matching "Ans 1." as an answer key line)
-                const match1to4 = optLine.match(/^(?:Ans\s*)?(?:[✔✓✗\s]*|[Xx\s]*)\b([1-4])\s*[.)]\s*(.+)/i);
-                const matchAtoD = optLine.match(/^(?:Ans\s*)?(?:[✔✓✗\s]*|[Xx\s]*)\b([A-D])\s*[.)]\s*(.+)/i);
+                // Match single option 1-4 or A-D
+                const match1to4 = optLine.match(/^(?:Ans\s*)?(?:[✔✓✗\s]*|[Xx\s]*)\b([1-4])\s*[.)]\s*(.*)/i);
+                const matchAtoD = optLine.match(/^(?:Ans\s*)?(?:[✔✓✗\s]*|[Xx\s]*)\b([A-D])\s*[.)]\s*(.*)/i);
 
                 if (match1to4) {
                     optionsStarted = true;
@@ -177,22 +178,24 @@ function parseMCQFromText(text) {
                 }
 
                 // Check for Chosen Option metadata
-                const chosenMatch = optLine.match(/Chosen\s*Option\s*:\s*([1-4A-Da-d])/i);
+                const chosenMatch = optLine.match(/Chosen\s*Option\s*:\s*([1-4A-Da-d]|\-\-)/i);
                 if (chosenMatch) {
                     let val = chosenMatch[1].toUpperCase();
-                    if (val >= 'A' && val <= 'D') {
-                        correctIndexFallback = val.charCodeAt(0) - 65;
-                    } else {
-                        const num = parseInt(val);
-                        if (num >= 1 && num <= 4) {
-                            correctIndexFallback = num - 1;
+                    if (val !== '--') {
+                        if (val >= 'A' && val <= 'D') {
+                            correctIndexFallback = val.charCodeAt(0) - 65;
+                        } else {
+                            const num = parseInt(val);
+                            if (num >= 1 && num <= 4) {
+                                correctIndexFallback = num - 1;
+                            }
                         }
                     }
                     j++;
                     continue;
                 }
 
-                // Check for explicit Answer/Correct line (only when it's not a regular option line)
+                // Check for explicit Answer/Correct line
                 const ansLineMatch = optLine.match(/^(?:ans(?:wer)?|correct\s*(?:answer)?|key)\s*[:\-.]?\s*([1-4A-Da-d]|\([1-4A-Da-d]\))/i);
                 if (ansLineMatch) {
                     let val = ansLineMatch[1].replace(/[()]/g, '').toUpperCase();
@@ -218,54 +221,63 @@ function parseMCQFromText(text) {
                 j++;
             }
 
-            const validOptionsCount = parsedOptions.filter(Boolean).length;
-            if (validOptionsCount >= 2) {
-                for (let k = 0; k < 4; k++) {
-                    if (!parsedOptions[k]) parsedOptions[k] = '—';
+            // Provide placeholder options for any missing options
+            for (let k = 0; k < 4; k++) {
+                if (!parsedOptions[k]) {
+                    parsedOptions[k] = `Option ${k + 1}`;
                 }
+            }
 
-                let finalCorrectIdx = 0;
-                if (correctIndex >= 0 && correctIndex < 4) {
-                    finalCorrectIdx = correctIndex;
-                } else if (correctIndexAnswerLine >= 0 && correctIndexAnswerLine < 4) {
-                    finalCorrectIdx = correctIndexAnswerLine;
-                } else if (correctIndexFallback >= 0 && correctIndexFallback < 4) {
-                    finalCorrectIdx = correctIndexFallback;
-                }
+            let finalCorrectIdx = 0;
+            if (correctIndex >= 0 && correctIndex < 4) {
+                finalCorrectIdx = correctIndex;
+            } else if (correctIndexAnswerLine >= 0 && correctIndexAnswerLine < 4) {
+                finalCorrectIdx = correctIndexAnswerLine;
+            } else if (correctIndexFallback >= 0 && correctIndexFallback < 4) {
+                finalCorrectIdx = correctIndexFallback;
+            }
 
-                let englishLines = [];
-                let hindiLines = [];
-                let hasSeenHindi = false;
+            let englishLines = [];
+            let hindiLines = [];
+            let hasSeenHindi = false;
 
-                for (const qLine of questionLines) {
-                    const hasHindi = /[\u0900-\u097F]/.test(qLine);
-                    if (hasHindi) {
-                        hasSeenHindi = true;
+            for (const qLine of questionLines) {
+                const hasHindi = /[\u0900-\u097F]/.test(qLine);
+                if (hasHindi) {
+                    hasSeenHindi = true;
+                    hindiLines.push(qLine);
+                } else {
+                    if (hasSeenHindi) {
                         hindiLines.push(qLine);
                     } else {
-                        if (hasSeenHindi) {
-                            hindiLines.push(qLine);
-                        } else {
-                            englishLines.push(qLine);
-                        }
+                        englishLines.push(qLine);
                     }
                 }
-
-                const questionEn = englishLines.join('\n').trim();
-                const questionHi = hindiLines.join('\n').trim();
-
-                questions.push({
-                    question: questionEn || questionHi,
-                    question_en: questionEn,
-                    question_hi: questionHi || questionEn,
-                    options: parsedOptions,
-                    options_en: parsedOptions,
-                    options_hi: parsedOptions,
-                    correctIndex: finalCorrectIdx
-                });
-                i = j;
-                continue;
             }
+
+            let questionEn = englishLines.join('\n').trim();
+            let questionHi = hindiLines.join('\n').trim();
+
+            if (!questionEn && !questionHi) {
+                questionEn = `[Question ${qNumStr}]`;
+                questionHi = `[Question ${qNumStr}]`;
+            } else if (!questionEn) {
+                questionEn = questionHi;
+            } else if (!questionHi) {
+                questionHi = questionEn;
+            }
+
+            questions.push({
+                question: questionEn || questionHi,
+                question_en: questionEn,
+                question_hi: questionHi || questionEn,
+                options: parsedOptions,
+                options_en: parsedOptions,
+                options_hi: parsedOptions,
+                correctIndex: finalCorrectIdx
+            });
+            i = j;
+            continue;
         }
         i++;
     }
