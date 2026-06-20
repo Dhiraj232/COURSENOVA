@@ -65,13 +65,18 @@ function parseMCQFromText(text) {
     const questions = [];
     const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
 
-    const qRegexWithQ = /^(?:Q\s*[.]?\s*(\d+)\s*[.)]?\s*)(.*)/i;
-    const qRegexWithoutQ = /^(?:Q?\s*(\d+)\s*[.)]\s*)(.*)/i;
+    // Count matches to see if the PDF uses Q-prefixed questions
+    const qWithQCount = lines.filter(line => line.match(/^(?:Q\s*[.]?\s*\d+\s*[.)]?\s*)/i)).length;
+    const useQPrefix = qWithQCount > 0;
+
+    const qRegex = useQPrefix 
+        ? /^(?:Q\s*[.]?\s*(\d+)\s*[.)]?\s*)(.*)/i
+        : /^(?:Q?\s*(\d+)\s*[.)]\s*)(.*)/i;
 
     let i = 0;
     while (i < lines.length) {
         const line = lines[i];
-        const qMatch = line.match(qRegexWithQ) || line.match(qRegexWithoutQ);
+        const qMatch = line.match(qRegex);
         if (qMatch) {
             const qNumStr = qMatch[1];
             const firstQuestionLine = qMatch[2].trim();
@@ -87,7 +92,7 @@ function parseMCQFromText(text) {
                 const optLine = lines[j];
                 
                 // If we hit another question, stop processing this one
-                if (optLine.match(qRegexWithQ) || optLine.match(qRegexWithoutQ)) {
+                if (optLine.match(qRegex)) {
                     break;
                 }
 
