@@ -576,6 +576,48 @@ router.post('/questions/add-hindi', requireAdmin, catchAsync(async (req, res) =>
     res.json({ ok: true, updated, errors });
 }));
 
+// ── 3c. ADD ENGLISH to existing questions (bulk) ────────────────────────────
+// Payload: [{ _id, question_en, options_en }]
+router.post('/questions/add-english', requireAdmin, catchAsync(async (req, res) => {
+    const pairs = req.body;
+    if (!Array.isArray(pairs) || pairs.length === 0) {
+        throw new AppError('Payload must be an array of {_id, question_en, options_en}', 400);
+    }
+
+    let updated = 0;
+    const errors = [];
+
+    const ops = [];
+    pairs.forEach(({ _id, question_en, options_en }) => {
+        if (!_id) return;
+        ops.push({
+            updateOne: {
+                filter: { _id },
+                update: { $set: { question_en, options_en } }
+            }
+        });
+    });
+
+    if (ops.length > 0) {
+        try {
+            const result = await PracticeQuestion.bulkWrite(ops, { ordered: false });
+            updated = result.modifiedCount;
+        } catch (e) {
+            console.error('bulkWrite error:', e.message);
+            for (const op of ops) {
+                try {
+                    await PracticeQuestion.updateOne(op.updateOne.filter, op.updateOne.update);
+                    updated++;
+                } catch (err) {
+                    errors.push(`${op.updateOne.filter._id}: ${err.message}`);
+                }
+            }
+        }
+    }
+
+    res.json({ ok: true, updated, errors });
+}));
+
 // ── 4. USER MANAGEMENT ───────────────────────────────────────────────
 router.get('/users', requireAdmin, catchAsync(async (req, res) => {
     const users = await User.find().select('-password').sort({ createdAt: -1 });

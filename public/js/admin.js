@@ -988,7 +988,56 @@ async function handlePdfToTest(input, index, lang = 'en') {
             return;
         }
 
-        activeStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving questions to DB...';
+        const existingQIds = qIdsInput.value.split(',').map(s => s.trim()).filter(Boolean);
+
+        // ── MERGE TRANSLATIONS IF QUESTIONS ALREADY EXIST ──
+        if (existingQIds.length > 0 && existingQIds.length === data.questions.length) {
+            activeStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Merging translations...';
+
+            const payload = data.questions.map((q, i) => {
+                if (lang === 'hi') {
+                    return {
+                        _id: existingQIds[i],
+                        question_hi: q.question,
+                        options_hi: q.options
+                    };
+                } else {
+                    return {
+                        _id: existingQIds[i],
+                        question_en: q.question,
+                        options_en: q.options
+                    };
+                }
+            });
+
+            const targetEndpoint = lang === 'hi' ? 'add-hindi' : 'add-english';
+            const updateRes = await fetch(`${API_BASE}/questions/${targetEndpoint}`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const updateData = await updateRes.json();
+            
+            if (updateData.ok) {
+                if (lang === 'hi') {
+                    statusHi.innerHTML = `<span style="color:#d97706; font-weight:600;">✅ ${data.questions.length} Hindi translations merged!</span>`;
+                    btnHi.innerHTML = '<i class="fas fa-check"></i> Hindi Updated';
+                } else {
+                    statusEn.innerHTML = `<span style="color:#6366f1; font-weight:600;">✅ ${data.questions.length} English translations merged!</span>`;
+                    btnEn.innerHTML = '<i class="fas fa-check"></i> English Updated';
+                }
+                btnEn.disabled = false;
+                btnHi.disabled = false;
+            } else {
+                activeStatus.innerHTML = `<span style="color:var(--danger)">Merge failed: ${updateData.message || 'DB error'}</span>`;
+                btnEn.disabled = false;
+                btnHi.disabled = false;
+            }
+            return;
+        }
+
+        // ── SAVE NEW QUESTIONS PATH ──
+        activeStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving questions...';
 
         const packCategory = (document.getElementById('mtCategory').value || '').trim() || 'Mock Test';
         const testTitleText = (row.querySelector('.mt-t-title').value || '').trim() || 'General';
@@ -1006,11 +1055,11 @@ async function handlePdfToTest(input, index, lang = 'en') {
             const correctAnswerText = opts[correctIdx] || '';
             return {
                 question: q.question,
-                question_en: q.question_en || q.question,
-                question_hi: q.question_hi || q.question,
+                question_en: lang === 'en' ? q.question : '',
+                question_hi: lang === 'hi' ? q.question : '',
                 options: opts,
-                options_en: q.options_en || opts,
-                options_hi: q.options_hi || opts,
+                options_en: lang === 'en' ? opts : [],
+                options_hi: lang === 'hi' ? opts : [],
                 correctAnswer: correctAnswerText,
                 category: packCategory,
                 subject: subjectName,
@@ -1024,16 +1073,23 @@ async function handlePdfToTest(input, index, lang = 'en') {
             body: JSON.stringify(mappedQuestions)
         });
         const saveData = await saveRes.json();
+        
         if (saveData.ok) {
             const newQIds = saveData.questions.map(q => q._id).join(', ');
             qIdsInput.value = newQIds; 
             countBadge.textContent = saveData.questions.length;
             
-            statusEn.innerHTML = `<span style="color:#6366f1; font-weight:600;">✅ ${saveData.questions.length} English Qs imported!</span>`;
-            statusHi.innerHTML = `<span style="color:#d97706; font-weight:600;">✅ ${saveData.questions.length} Hindi translations imported!</span>`;
-            
-            btnEn.innerHTML = '<i class="fas fa-check"></i> English Uploaded';
-            btnHi.innerHTML = '<i class="fas fa-check"></i> Hindi Updated';
+            if (lang === 'en') {
+                statusEn.innerHTML = `<span style="color:#6366f1; font-weight:600;">✅ ${saveData.questions.length} English Qs imported!</span>`;
+                statusHi.innerHTML = `<span style="color:#94a3b8;">Pending Hindi upload...</span>`;
+                btnEn.innerHTML = '<i class="fas fa-check"></i> English Uploaded';
+                btnHi.innerHTML = '<i class="fas fa-file-pdf"></i> Upload Hindi PDF';
+            } else {
+                statusHi.innerHTML = `<span style="color:#d97706; font-weight:600;">✅ ${saveData.questions.length} Hindi Qs imported!</span>`;
+                statusEn.innerHTML = `<span style="color:#94a3b8;">Pending English upload...</span>`;
+                btnHi.innerHTML = '<i class="fas fa-check"></i> Hindi Uploaded';
+                btnEn.innerHTML = '<i class="fas fa-file-pdf"></i> Upload English PDF';
+            }
             
             btnEn.disabled = false;
             btnHi.disabled = false;
