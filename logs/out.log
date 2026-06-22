@@ -1,0 +1,56 @@
+2026-06-22 21:33:48 +05:30: ◇ injected env (14) from .env // tip: ⌁ auth for agents [www.vestauth.com]
+2026-06-22 21:33:48 +05:30: ◇ injected env (14) from .env // tip: ⌘ enable debugging { debug: true }
+2026-06-22 21:33:49 +05:30: ◇ injected env (14) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+2026-06-22 21:33:49 +05:30: ◇ injected env (14) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+2026-06-22 21:33:49 +05:30: ◇ injected env (14) from .env // tip: ◈ encrypted .env [www.dotenvx.com]
+2026-06-22 21:33:49 +05:30: ◇ injected env (14) from .env // tip: ⌘ enable debugging { debug: true }
+2026-06-22 21:33:49 +05:30: ◇ injected env (14) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+2026-06-22 21:33:50 +05:30: ◇ injected env (14) from .env // tip: ⌁ auth for agents [www.vestauth.com]
+2026-06-22 21:33:50 +05:30: ✅ Web Push VAPID configured
+2026-06-22 21:33:50 +05:30: ℹ️ Cashfree: Configured to use environment mode: PRODUCTION
+2026-06-22 21:33:54 +05:30: 🧪 Cashfree: Running in TEST SANDBOX mode.
+2026-06-22 21:33:55 +05:30: 🚀 Cashfree: Initialized (v5.1.0 SDK)
+2026-06-22 21:33:50 +05:30: ✅ Web Push VAPID configured
+2026-06-22 21:33:50 +05:30: ℹ️ Cashfree: Configured to use environment mode: PRODUCTION
+2026-06-22 21:33:54 +05:30: 🧪 Cashfree: Running in TEST SANDBOX mode.
+2026-06-22 21:33:55 +05:30: 🚀 Cashfree: Initialized (v5.1.0 SDK)
+2026-06-22 21:33:51 +05:30: ✅ Web Push VAPID configured
+2026-06-22 21:33:51 +05:30: ℹ️ Cashfree: Configured to use environment mode: PRODUCTION
+2026-06-22 21:33:54 +05:30: 🧪 Cashfree: Running in TEST SANDBOX mode.
+2026-06-22 21:33:54 +05:30: 🚀 Cashfree: Initialized (v5.1.0 SDK)
+2026-06-22 21:33:55 +05:30: [9:33:55 pm] COURSENOVA Community API & Chat listening on port 5000
+2026-06-22 21:33:55 +05:30: [Keep-Alive] Self-ping enabled every 13 min → https://www.coursenova.in/health
+2026-06-22 21:33:55 +05:30: [9:33:55 pm] COURSENOVA Community API & Chat listening on port 5000
+2026-06-22 21:33:55 +05:30: [Keep-Alive] Self-ping enabled every 13 min → https://www.coursenova.in/health
+2026-06-22 21:33:55 +05:30: [9:33:55 pm] COURSENOVA Community API & Chat listening on port 5000
+2026-06-22 21:33:55 +05:30: [Keep-Alive] Self-ping enabled every 13 min → https://www.coursenova.in/health
+2026-06-22 21:33:51 +05:30: ✅ Web Push VAPID configured
+2026-06-22 21:33:52 +05:30: ℹ️ Cashfree: Configured to use environment mode: PRODUCTION
+2026-06-22 21:33:54 +05:30: 🧪 Cashfree: Running in TEST SANDBOX mode.
+2026-06-22 21:33:54 +05:30: 🚀 Cashfree: Initialized (v5.1.0 SDK)
+2026-06-22 21:33:55 +05:30: [9:33:55 pm] COURSENOVA Community API & Chat listening on port 5000
+2026-06-22 21:33:55 +05:30: [Keep-Alive] Self-ping enabled every 13 min → https://www.coursenova.in/health
+2026-06-22 21:33:50 +05:30: ✅ Web Push VAPID configured
+2026-06-22 21:33:51 +05:30: ℹ️ Cashfree: Configured to use environment mode: PRODUCTION
+2026-06-22 21:33:54 +05:30: 🧪 Cashfree: Running in TEST SANDBOX mode.
+2026-06-22 21:33:54 +05:30: 🚀 Cashfree: Initialized (v5.1.0 SDK)
+2026-06-22 21:33:50 +05:30: ✅ Web Push VAPID configured
+2026-06-22 21:33:50 +05:30: ℹ️ Cashfree: Configured to use environment mode: PRODUCTION
+2026-06-22 21:33:54 +05:30: 🧪 Cashfree: Running in TEST SANDBOX mode.
+2026-06-22 21:33:55 +05:30: 🚀 Cashfree: Initialized (v5.1.0 SDK)
+2026-06-22 21:33:55 +05:30: [9:33:55 pm] COURSENOVA Community API & Chat listening on port 5000
+2026-06-22 21:33:55 +05:30: [Keep-Alive] Self-ping enabled every 13 min → https://www.coursenova.in/health
+2026-06-22 21:33:50 +05:30: ✅ Web Push VAPID configured
+2026-06-22 21:33:51 +05:30: ℹ️ Cashfree: Configured to use environment mode: PRODUCTION
+2026-06-22 21:33:54 +05:30: 🧪 Cashfree: Running in TEST SANDBOX mode.
+2026-06-22 21:33:55 +05:30: 🚀 Cashfree: Initialized (v5.1.0 SDK)
+2026-06-22 21:33:55 +05:30: [9:33:55 pm] COURSENOVA Community API & Chat listening on port 5000
+2026-06-22 21:33:55 +05:30: [Keep-Alive] Self-ping enabled every 13 min → https://www.coursenova.in/health
+2026-06-22 21:33:55 +05:30: [9:33:55 pm] COURSENOVA Community API & Chat listening on port 5000
+2026-06-22 21:33:55 +05:30: [Keep-Alive] Self-ping enabled every 13 min → https://www.coursenova.in/health
+2026-06-22 21:33:50 +05:30: ✅ Web Push VAPID configured
+2026-06-22 21:33:50 +05:30: ℹ️ Cashfree: Configured to use environment mode: PRODUCTION
+2026-06-22 21:33:54 +05:30: 🧪 Cashfree: Running in TEST SANDBOX mode.
+2026-06-22 21:33:54 +05:30: 🚀 Cashfree: Initialized (v5.1.0 SDK)
+2026-06-22 21:33:55 +05:30: [9:33:55 pm] COURSENOVA Community API & Chat listening on port 5000
+2026-06-22 21:33:55 +05:30: [Keep-Alive] Self-ping enabled every 13 min → https://www.coursenova.in/health

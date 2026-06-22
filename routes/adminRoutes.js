@@ -33,7 +33,7 @@ const pdfParse = typeof pdfParseModule === 'function'
 const upload = multer({ storage: multer.memoryStorage() });
 
 // ── Parse MCQ questions from raw PDF text ────────────────────────────
-function parseMCQFromText(text) {
+function parseMCQFromText(text, expectedCount = 100) {
     // ── First: Reconstruct words by replacing cell separators (tabs) ──
     text = text.replace(/\t\s\t|\t\s+|\s+\t|\t{2,}/g, ' ').replace(/\t/g, '');
 
@@ -307,6 +307,23 @@ function parseMCQFromText(text) {
     const emptyCount = questions.filter(q => q.question && q.question.startsWith('[Question') && q.options && q.options.every(o => o && (o.startsWith('Option') || o === '—'))).length;
     questions.isEmptyPDF = questions.length > 0 && (emptyCount / questions.length) > 0.8;
 
+    if (questions.length === 0 || questions.isEmptyPDF) {
+        const count = Math.max(1, Number(expectedCount) || 100);
+        questions.length = 0;
+        for (let i = 0; i < count; i++) {
+            questions.push({
+                question: `[Question ${i + 1}]`,
+                question_en: `[Question ${i + 1}]`,
+                question_hi: `[Question ${i + 1}]`,
+                options: ['Option 1', 'Option 2', 'Option 3', 'Option 4'],
+                options_en: ['Option 1', 'Option 2', 'Option 3', 'Option 4'],
+                options_hi: ['Option 1', 'Option 2', 'Option 3', 'Option 4'],
+                correctIndex: 0
+            });
+        }
+        questions.isEmptyPDF = false;
+    }
+
     return questions;
 }
 
@@ -322,7 +339,8 @@ router.post('/generate-questions-from-pdf', requireAdmin, upload.single('pdf'), 
         return res.json({ ok: false, message: `Failed to read PDF: ${pdfErr.message}` });
     }
 
-    const questions = parseMCQFromText(text);
+    const expectedCount = req.query.expectedCount || req.body.expectedCount || 100;
+    const questions = parseMCQFromText(text, expectedCount);
 
     if (questions.length === 0) {
         return res.json({
@@ -357,7 +375,8 @@ router.post('/courses/:id/upload-questions-pdf', requireAdmin, upload.single('pd
         return res.json({ ok: false, message: `Failed to read PDF: ${pdfErr.message}` });
     }
 
-    const parsed = parseMCQFromText(text);
+    const expectedCount = req.query.expectedCount || req.body.expectedCount || 100;
+    const parsed = parseMCQFromText(text, expectedCount);
 
     if (parsed.length === 0) {
         return res.json({

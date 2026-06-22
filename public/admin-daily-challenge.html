@@ -129,8 +129,10 @@
             document.getElementById('loadingMsg').style.display = 'block';
             document.getElementById('previewArea').style.display = 'none';
 
+            const expectedCount = extractedQuestions.length;
+
             try {
-                const res = await fetch('/api/admin/daily-challenge/upload', {
+                const res = await fetch(`/api/admin/daily-challenge/upload?expectedCount=${expectedCount}`, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem('token')}`

@@ -687,12 +687,15 @@ window.previewPDFQuestions = async function(event, courseId) {
     countEl.textContent = '';
     saveBtn.disabled = true;
 
+    const quizList = document.getElementById('quiz-list');
+    const existingCount = quizList ? quizList.querySelectorAll('.quiz-row').length : 0;
+
     const fd = new FormData();
     fd.append('pdf', file);
 
     try {
         const token = localStorage.getItem('token');
-        const res = await fetch(`${API_BASE}/generate-questions-from-pdf`, {
+        const res = await fetch(`${API_BASE}/generate-questions-from-pdf?expectedCount=${existingCount}`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` },
             body: fd
@@ -983,9 +986,12 @@ async function handlePdfToTest(input, index, lang = 'en') {
     btnEn.disabled = true;
     btnHi.disabled = true;
 
+    const existingQIds = qIdsInput.value.split(',').map(s => s.trim()).filter(Boolean);
+    const expectedCount = existingQIds.length;
+
     try {
         const token = localStorage.getItem('token');
-        const res = await fetch(`${API_BASE}/generate-questions-from-pdf`, {
+        const res = await fetch(`${API_BASE}/generate-questions-from-pdf?expectedCount=${expectedCount}`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` },
             body: formData
@@ -1006,8 +1012,6 @@ async function handlePdfToTest(input, index, lang = 'en') {
             btnHi.disabled = false;
             return;
         }
-
-        const existingQIds = qIdsInput.value.split(',').map(s => s.trim()).filter(Boolean);
 
         // ── MERGE TRANSLATIONS IF QUESTIONS ALREADY EXIST ──
         if (existingQIds.length > 0 && existingQIds.length === data.questions.length) {

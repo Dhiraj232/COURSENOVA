@@ -1,0 +1,40 @@
+2026-06-22 21:33:50 +05:30: ❌ BASE_URL is still localhost in production! Cashfree webhook notify_url will be unreachable.
+2026-06-22 21:33:50 +05:30: Warning: connect.session() MemoryStore is not
+designed for a production environment, as it will leak
+memory, and will not scale past a single process.
+2026-06-22 21:33:54 +05:30: ⚠️  Test APP_ID detected but CASHFREE_ENV=PRODUCTION — enforcing SANDBOX.
+2026-06-22 21:33:50 +05:30: ❌ BASE_URL is still localhost in production! Cashfree webhook notify_url will be unreachable.
+2026-06-22 21:33:50 +05:30: Warning: connect.session() MemoryStore is not
+designed for a production environment, as it will leak
+memory, and will not scale past a single process.
+2026-06-22 21:33:54 +05:30: ⚠️  Test APP_ID detected but CASHFREE_ENV=PRODUCTION — enforcing SANDBOX.
+2026-06-22 21:33:51 +05:30: ❌ BASE_URL is still localhost in production! Cashfree webhook notify_url will be unreachable.
+2026-06-22 21:33:51 +05:30: Warning: connect.session() MemoryStore is not
+designed for a production environment, as it will leak
+memory, and will not scale past a single process.
+2026-06-22 21:33:54 +05:30: ⚠️  Test APP_ID detected but CASHFREE_ENV=PRODUCTION — enforcing SANDBOX.
+2026-06-22 21:33:52 +05:30: ❌ BASE_URL is still localhost in production! Cashfree webhook notify_url will be unreachable.
+2026-06-22 21:33:52 +05:30: Warning: connect.session() MemoryStore is not
+designed for a production environment, as it will leak
+memory, and will not scale past a single process.
+2026-06-22 21:33:54 +05:30: ⚠️  Test APP_ID detected but CASHFREE_ENV=PRODUCTION — enforcing SANDBOX.
+2026-06-22 21:33:51 +05:30: ❌ BASE_URL is still localhost in production! Cashfree webhook notify_url will be unreachable.
+2026-06-22 21:33:51 +05:30: Warning: connect.session() MemoryStore is not
+designed for a production environment, as it will leak
+memory, and will not scale past a single process.
+2026-06-22 21:33:54 +05:30: ⚠️  Test APP_ID detected but CASHFREE_ENV=PRODUCTION — enforcing SANDBOX.
+2026-06-22 21:33:51 +05:30: ❌ BASE_URL is still localhost in production! Cashfree webhook notify_url will be unreachable.
+2026-06-22 21:33:51 +05:30: Warning: connect.session() MemoryStore is not
+designed for a production environment, as it will leak
+memory, and will not scale past a single process.
+2026-06-22 21:33:54 +05:30: ⚠️  Test APP_ID detected but CASHFREE_ENV=PRODUCTION — enforcing SANDBOX.
+2026-06-22 21:33:50 +05:30: ❌ BASE_URL is still localhost in production! Cashfree webhook notify_url will be unreachable.
+2026-06-22 21:33:50 +05:30: Warning: connect.session() MemoryStore is not
+designed for a production environment, as it will leak
+memory, and will not scale past a single process.
+2026-06-22 21:33:54 +05:30: ⚠️  Test APP_ID detected but CASHFREE_ENV=PRODUCTION — enforcing SANDBOX.
+2026-06-22 21:33:50 +05:30: ❌ BASE_URL is still localhost in production! Cashfree webhook notify_url will be unreachable.
+2026-06-22 21:33:50 +05:30: Warning: connect.session() MemoryStore is not
+designed for a production environment, as it will leak
+memory, and will not scale past a single process.
+2026-06-22 21:33:54 +05:30: ⚠️  Test APP_ID detected but CASHFREE_ENV=PRODUCTION — enforcing SANDBOX.
