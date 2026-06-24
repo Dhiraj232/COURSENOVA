@@ -82,60 +82,83 @@ function parseMCQFromText(text, expectedCount = 100) {
     }
 
     function parseOptionsFromLine(line, optionsArray, correctIndexRef) {
-        // 1. Inline options A, B, C, D
-        const inlineMatchesAtoD = [...line.matchAll(/(?:\()?([A-D])(?:\)|[.)\]])\s*([^A-D\n]+?)(?=\s+(?:\()?([A-D])(?:\)|[.)\]])|$)/gi)];
-        if (inlineMatchesAtoD.length >= 2) {
-            inlineMatchesAtoD.forEach(match => {
-                const idx = match[1].toUpperCase().charCodeAt(0) - 65;
-                if (idx >= 0 && idx < 4) {
-                    optionsArray[idx] = match[2].trim();
-                    if (/[✔✓✅☑]/.test(line.substring(Math.max(0, match.index - 5), match.index))) {
-                        correctIndexRef.val = idx;
-                    }
-                }
+        // Find all potential option header indices in the line safely without backtracking.
+        // We look for headers like: A), B., [C], (D), 1), 2., [3], (4)
+        const headerRegex = /(?:^|[\s✔✓✅☑(\[{-])(?:\(|\[)?([A-D1-4])(?:\)|\]|\.)(?:\s|$)/gi;
+        const matches = [];
+        let match;
+        while ((match = headerRegex.exec(line)) !== null) {
+            matches.push({
+                key: match[1].toUpperCase(),
+                index: match.index,
+                length: match[0].length
             });
-            return true;
         }
 
-        // 2. Inline options 1, 2, 3, 4
-        const inlineMatches1to4 = [...line.matchAll(/(?:\()?([1-4])(?:\)|[.)\]])\s*([^1-4\n]+?)(?=\s+(?:\()?([1-4])(?:\)|[.)\]])|$)/gi)];
-        if (inlineMatches1to4.length >= 2) {
-            inlineMatches1to4.forEach(match => {
-                const idx = parseInt(match[1]) - 1;
-                if (idx >= 0 && idx < 4) {
-                    optionsArray[idx] = match[2].trim();
-                    if (/[✔✓✅☑]/.test(line.substring(Math.max(0, match.index - 5), match.index))) {
-                        correctIndexRef.val = idx;
-                    }
-                }
-            });
-            return true;
-        }
+        const matchesAtoD = matches.filter(m => m.key >= 'A' && m.key <= 'D');
+        const matches1to4 = matches.filter(m => m.key >= '1' && m.key <= '4');
 
-        // 3. Single option A-D
-        const singleMatchAtoD = line.match(/^(?:Ans\s*)?(?:[^0-9a-zA-Z]*|[Xx\s]*)\b([A-D])(?:\)|[.)\]])\s*(.*)/i);
-        if (singleMatchAtoD) {
-            const idx = singleMatchAtoD[1].toUpperCase().charCodeAt(0) - 65;
-            if (idx >= 0 && idx < 4) {
-                optionsArray[idx] = singleMatchAtoD[2].trim();
-                const prefix = line.substring(0, line.indexOf(singleMatchAtoD[1]));
-                if (/[✔✓✅☑]/.test(prefix)) {
-                    correctIndexRef.val = idx;
+        function parseInline(secMatches, isNumeric) {
+            if (secMatches.length < 2) return false;
+
+            // Filter out any false positive matches that don't increase key sequence index (e.g. out of order or duplicates)
+            const filteredMatches = [];
+            let lastIdx = -1;
+            for (let i = 0; i < secMatches.length; i++) {
+                const m = secMatches[i];
+                const idx = isNumeric ? parseInt(m.key) - 1 : m.key.charCodeAt(0) - 65;
+                if (idx > lastIdx) {
+                    filteredMatches.push(m);
+                    lastIdx = idx;
+                }
+            }
+
+            if (filteredMatches.length < 2) return false;
+
+            for (let i = 0; i < filteredMatches.length; i++) {
+                const currentMatch = filteredMatches[i];
+                const currentIdx = isNumeric 
+                    ? parseInt(currentMatch.key) - 1 
+                    : currentMatch.key.charCodeAt(0) - 65;
+                
+                const startTextIdx = currentMatch.index + currentMatch.length;
+                const endTextIdx = (i + 1 < filteredMatches.length) 
+                    ? filteredMatches[i + 1].index 
+                    : line.length;
+
+                const optionText = line.substring(startTextIdx, endTextIdx).trim();
+                optionsArray[currentIdx] = optionText;
+
+                // Check for correct marks (✔, ✓, ✅, ☑) in the option header area
+                const checkArea = line.substring(Math.max(0, currentMatch.index - 5), currentMatch.index + currentMatch.length);
+                if (/[✔✓✅☑]/.test(checkArea)) {
+                    correctIndexRef.val = currentIdx;
                 }
             }
             return true;
         }
 
-        // 4. Single option 1-4
-        const singleMatch1to4 = line.match(/^(?:Ans\s*)?(?:[^0-9a-zA-Z]*|[Xx\s]*)\b([1-4])(?:\)|[.)\]])\s*(.*)/i);
-        if (singleMatch1to4) {
-            const idx = parseInt(singleMatch1to4[1]) - 1;
-            if (idx >= 0 && idx < 4) {
-                optionsArray[idx] = singleMatch1to4[2].trim();
-                const prefix = line.substring(0, line.indexOf(singleMatch1to4[1]));
-                if (/[✔✓✅☑]/.test(prefix)) {
-                    correctIndexRef.val = idx;
-                }
+        if (parseInline(matchesAtoD, false)) {
+            return true;
+        }
+        if (parseInline(matches1to4, true)) {
+            return true;
+        }
+
+        // If no inline options, check for a single option at the start of the line.
+        // e.g. "A) option content" or "Ans. A) option content" or "[x] A) option content"
+        // This is safe from backtracking as it is start-anchored and has simple pattern.
+        const singleMatch = line.match(/^(?:Ans\s*)?([^a-zA-Z0-9]*[Xx]?[^a-zA-Z0-9]*)\b([A-D1-4])(?:\)|\]|\.|\s)\s*(.*)/i);
+        if (singleMatch) {
+            const prefix = singleMatch[1];
+            const key = singleMatch[2].toUpperCase();
+            const text = singleMatch[3].trim();
+            const isNumeric = key >= '1' && key <= '4';
+            const idx = isNumeric ? parseInt(key) - 1 : key.charCodeAt(0) - 65;
+
+            optionsArray[idx] = text;
+            if (/[✔✓✅☑]/.test(prefix) || /[✔✓✅☑]/.test(line.substring(0, Math.min(line.length, 10)))) {
+                correctIndexRef.val = idx;
             }
             return true;
         }
