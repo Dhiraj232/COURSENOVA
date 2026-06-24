@@ -62,269 +62,218 @@ function parseMCQFromText(text, expectedCount = 100) {
         }).join('\n');
     }
 
-    const questions = [];
     const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    const questions = [];
 
-    // Count matches to see if the PDF uses Q-prefixed questions
-    const qWithQCount = lines.filter(line => line.match(/^(?:Q\s*[.]?\s*\d+\s*[.)]?\s*)/i)).length;
-    const useQPrefix = qWithQCount > 0;
+    // Helper functions for matching question/option/answer
+    function matchQuestionStart(line) {
+        // Matches: Q1, Q 1, Q.1, Q-1, Question 1, Question. 1, Question - 1, प्र. 1, प्रश्न 1, 1., 1), [1], (1), 1-
+        let match = line.match(/^(?:(?:Q|Question|प्र[.]?|प्रश्न)\s*[-.:]?\s*(\d+)|(?:\[|\()?(\d+)(?:\]|\))|(\d+)\s*[-.:])\s*(.*)/i);
+        if (match) {
+            const qNum = match[1] || match[2] || match[3];
+            return { qNum: parseInt(qNum), rest: match[4].trim() };
+        }
+        // Also match a number at start of line followed by space (only 1-3 digits) and a letter
+        match = line.match(/^(\d{1,3})\s+([a-zA-Z\u0900-\u097F].*)/);
+        if (match) {
+            return { qNum: parseInt(match[1]), rest: match[2].trim() };
+        }
+        return null;
+    }
 
-    const qRegex = useQPrefix 
-        ? /^(?:Q\s*[.]?\s*(\d+)\s*[.)]?\s*)(.*)/i
-        : /^(?:Q?\s*(\d+)\s*[.)]\s*)(.*)/i;
-
-    let i = 0;
-    while (i < lines.length) {
-        const line = lines[i];
-        const qMatch = line.match(qRegex);
-        if (qMatch) {
-            const qNumStr = qMatch[1];
-            const currentQNum = parseInt(qNumStr) || 0;
-            const firstQuestionLine = qMatch[2].trim();
-            const questionLines = firstQuestionLine ? [firstQuestionLine] : [];
-            const parsedOptions = ['', '', '', ''];
-            let correctIndex = -1;
-            let correctIndexFallback = -1;
-            let correctIndexAnswerLine = -1;
-            let optionsStarted = false;
-            let optionType = null; // 'numeric' or 'lettered'
-            
-            let j = i + 1;
-            while (j < lines.length && j < i + 40) {
-                const optLine = lines[j];
-                
-                // If we hit another question, stop processing this one
-                const nextQMatch = optLine.match(qRegex);
-                if (nextQMatch) {
-                    if (useQPrefix) {
-                        break;
-                    } else {
-                        const nextQNum = parseInt(nextQMatch[1]);
-                        const isLikelyOption = !optionsStarted && (nextQNum === 1 || nextQNum === 2 || nextQNum === 3 || nextQNum === 4);
-                        const isOptionDuplicate = optionsStarted && optionType === 'numeric' && nextQNum >= 1 && nextQNum <= 4 && !parsedOptions[nextQNum - 1];
-                        
-                        if (!isLikelyOption && !isOptionDuplicate) {
-                            break;
-                        }
+    function parseOptionsFromLine(line, optionsArray, correctIndexRef) {
+        // 1. Inline options A, B, C, D
+        const inlineMatchesAtoD = [...line.matchAll(/(?:\()?([A-D])(?:\)|[.)\]])\s*([^A-D\n]+?)(?=\s+(?:\()?([A-D])(?:\)|[.)\]])|$)/gi)];
+        if (inlineMatchesAtoD.length >= 2) {
+            inlineMatchesAtoD.forEach(match => {
+                const idx = match[1].toUpperCase().charCodeAt(0) - 65;
+                if (idx >= 0 && idx < 4) {
+                    optionsArray[idx] = match[2].trim();
+                    if (/[✔✓✅☑]/.test(line.substring(Math.max(0, match.index - 5), match.index))) {
+                        correctIndexRef.val = idx;
                     }
                 }
-
-                // Check for ignore patterns first to avoid matching them as options
-                if (/^Question ID\s*:/i.test(optLine) ||
-                    /^Option\s*\d+\s*ID\s*:/i.test(optLine) ||
-                    /^Status\s*:/i.test(optLine) ||
-                    /^https?:\/\/link\.testbook\.com/i.test(optLine) ||
-                    /^Page\s*\d+/i.test(optLine) ||
-                    /^testbook/i.test(optLine) ||
-                    optLine.toLowerCase() === 'testbook' ||
-                    /^(?:ans|ans\.|ans:)$/i.test(optLine.trim())
-                ) {
-                    j++;
-                    continue;
-                }
-
-                // Match inline options 1-4 or A-D
-                const isInline1to4 = /1\s*[.)]\s*.+2\s*[.)]\s*.+3\s*[.)]\s*.+4\s*[.)]/i.test(optLine);
-                const isInlineAtoD = /A\s*[.)]\s*.+B\s*[.)]\s*.+C\s*[.)]\s*.+D\s*[.)]/i.test(optLine);
-
-                if (isInline1to4) {
-                    optionsStarted = true;
-                    optionType = 'numeric';
-                    const optMatches = [...optLine.matchAll(/(?:\()?([1-4])\s*(?:\)|[.)]\s*)(.+?)(?=\s+(?:\()?([1-4])\s*(?:\)|[.)]\s*)|$)/gi)];
-                    for (const match of optMatches) {
-                        const idx = parseInt(match[1]) - 1;
-                        if (idx >= 0 && idx < 4) {
-                            parsedOptions[idx] = match[2].trim();
-                            const matchIndex = match.index;
-                            const prefix = optLine.substring(Math.max(0, matchIndex - 5), matchIndex);
-                            if (/[✔✓✅☑]/.test(prefix)) {
-                                correctIndex = idx;
-                            }
-                        }
-                    }
-                    j++;
-                    continue;
-                }
-
-                if (isInlineAtoD) {
-                    optionsStarted = true;
-                    optionType = 'lettered';
-                    const optMatches = [...optLine.matchAll(/(?:\()?([A-D])\s*(?:\)|[.)]\s*)(.+?)(?=\s+(?:\()?([A-D])\s*(?:\)|[.)]\s*)|$)/gi)];
-                    for (const match of optMatches) {
-                        const idx = match[1].toUpperCase().charCodeAt(0) - 65;
-                        if (idx >= 0 && idx < 4) {
-                            parsedOptions[idx] = match[2].trim();
-                            const matchIndex = match.index;
-                            const prefix = optLine.substring(Math.max(0, matchIndex - 5), matchIndex);
-                            if (/[✔✓✅☑]/.test(prefix)) {
-                                correctIndex = idx;
-                            }
-                        }
-                    }
-                    j++;
-                    continue;
-                }
-
-                // Match single option 1-4 or A-D
-                const match1to4 = optLine.match(/^(?:Ans\s*)?(?:[^0-9a-zA-Z]*|[Xx\s]*)\b([1-4])\s*[.)]\s*(.*)/i);
-                const matchAtoD = optLine.match(/^(?:Ans\s*)?(?:[^0-9a-zA-Z]*|[Xx\s]*)\b([A-D])\s*[.)]\s*(.*)/i);
-
-                if (match1to4) {
-                    optionsStarted = true;
-                    optionType = 'numeric';
-                    const idx = parseInt(match1to4[1]) - 1;
-                    if (idx >= 0 && idx < 4) {
-                        parsedOptions[idx] = match1to4[2].trim();
-                        const prefix = optLine.substring(0, optLine.indexOf(match1to4[1]));
-                        if (/[✔✓✅☑]/.test(prefix)) {
-                            correctIndex = idx;
-                        }
-                    }
-                    j++;
-                    continue;
-                }
-
-                if (matchAtoD) {
-                    optionsStarted = true;
-                    optionType = 'lettered';
-                    const idx = matchAtoD[1].toUpperCase().charCodeAt(0) - 65;
-                    if (idx >= 0 && idx < 4) {
-                        parsedOptions[idx] = matchAtoD[2].trim();
-                        const prefix = optLine.substring(0, optLine.indexOf(matchAtoD[1]));
-                        if (/[✔✓✅☑]/.test(prefix)) {
-                            correctIndex = idx;
-                        }
-                    }
-                    j++;
-                    continue;
-                }
-
-                // Check for Chosen Option metadata
-                const chosenMatch = optLine.match(/Chosen\s*Option\s*:\s*([1-4A-Da-d]|\-\-)/i);
-                if (chosenMatch) {
-                    let val = chosenMatch[1].toUpperCase();
-                    if (val !== '--') {
-                        if (val >= 'A' && val <= 'D') {
-                            correctIndexFallback = val.charCodeAt(0) - 65;
-                        } else {
-                            const num = parseInt(val);
-                            if (num >= 1 && num <= 4) {
-                                correctIndexFallback = num - 1;
-                            }
-                        }
-                    }
-                    j++;
-                    continue;
-                }
-
-                // Check for explicit Answer/Correct line
-                const ansLineMatch = optLine.match(/^(?:ans(?:wer)?|correct\s*(?:answer)?|key)\s*[:\-.]?\s*([1-4A-Da-d]|\([1-4A-Da-d]\))/i);
-                if (ansLineMatch) {
-                    let val = ansLineMatch[1].replace(/[()]/g, '').toUpperCase();
-                    if (val >= 'A' && val <= 'D') {
-                        correctIndexAnswerLine = val.charCodeAt(0) - 65;
-                    } else {
-                        const num = parseInt(val);
-                        if (num >= 1 && num <= 4) {
-                            correctIndexAnswerLine = num - 1;
-                        }
-                    }
-                    j++;
-                    continue;
-                }
-
-                // If option parsing hasn't started, it's question text
-                if (!optionsStarted) {
-                    if (!optLine.match(/^(?:Ans\s*)?(?:[^0-9a-zA-Z]*|[Xx\s]*)\b[1-4A-D]\s*[.)]/i)) {
-                        questionLines.push(optLine);
-                    }
-                }
-                
-                j++;
-            }
-
-            // Provide placeholder options for any missing options
-            for (let k = 0; k < 4; k++) {
-                if (!parsedOptions[k]) {
-                    parsedOptions[k] = `Option ${k + 1}`;
-                }
-            }
-
-            let finalCorrectIdx = 0;
-            if (correctIndex >= 0 && correctIndex < 4) {
-                finalCorrectIdx = correctIndex;
-            } else if (correctIndexAnswerLine >= 0 && correctIndexAnswerLine < 4) {
-                finalCorrectIdx = correctIndexAnswerLine;
-            } else if (correctIndexFallback >= 0 && correctIndexFallback < 4) {
-                finalCorrectIdx = correctIndexFallback;
-            }
-
-            let englishLines = [];
-            let hindiLines = [];
-            let hasSeenHindi = false;
-
-            for (const qLine of questionLines) {
-                const hasHindi = /[\u0900-\u097F]/.test(qLine);
-                if (hasHindi) {
-                    hasSeenHindi = true;
-                    hindiLines.push(qLine);
-                } else {
-                    if (hasSeenHindi) {
-                        hindiLines.push(qLine);
-                    } else {
-                        englishLines.push(qLine);
-                    }
-                }
-            }
-
-            let questionEn = englishLines.join('\n').trim();
-            let questionHi = hindiLines.join('\n').trim();
-
-            if (!questionEn && !questionHi) {
-                questionEn = `[Question ${qNumStr}]`;
-                questionHi = `[Question ${qNumStr}]`;
-            } else if (!questionEn) {
-                questionEn = questionHi;
-            } else if (!questionHi) {
-                questionHi = questionEn;
-            }
-
-            questions.push({
-                question: questionEn || questionHi,
-                question_en: questionEn,
-                question_hi: questionHi || questionEn,
-                options: parsedOptions,
-                options_en: parsedOptions,
-                options_hi: parsedOptions,
-                correctIndex: finalCorrectIdx
             });
-            i = j;
+            return true;
+        }
+
+        // 2. Inline options 1, 2, 3, 4
+        const inlineMatches1to4 = [...line.matchAll(/(?:\()?([1-4])(?:\)|[.)\]])\s*([^1-4\n]+?)(?=\s+(?:\()?([1-4])(?:\)|[.)\]])|$)/gi)];
+        if (inlineMatches1to4.length >= 2) {
+            inlineMatches1to4.forEach(match => {
+                const idx = parseInt(match[1]) - 1;
+                if (idx >= 0 && idx < 4) {
+                    optionsArray[idx] = match[2].trim();
+                    if (/[✔✓✅☑]/.test(line.substring(Math.max(0, match.index - 5), match.index))) {
+                        correctIndexRef.val = idx;
+                    }
+                }
+            });
+            return true;
+        }
+
+        // 3. Single option A-D
+        const singleMatchAtoD = line.match(/^(?:Ans\s*)?(?:[^0-9a-zA-Z]*|[Xx\s]*)\b([A-D])(?:\)|[.)\]])\s*(.*)/i);
+        if (singleMatchAtoD) {
+            const idx = singleMatchAtoD[1].toUpperCase().charCodeAt(0) - 65;
+            if (idx >= 0 && idx < 4) {
+                optionsArray[idx] = singleMatchAtoD[2].trim();
+                const prefix = line.substring(0, line.indexOf(singleMatchAtoD[1]));
+                if (/[✔✓✅☑]/.test(prefix)) {
+                    correctIndexRef.val = idx;
+                }
+            }
+            return true;
+        }
+
+        // 4. Single option 1-4
+        const singleMatch1to4 = line.match(/^(?:Ans\s*)?(?:[^0-9a-zA-Z]*|[Xx\s]*)\b([1-4])(?:\)|[.)\]])\s*(.*)/i);
+        if (singleMatch1to4) {
+            const idx = parseInt(singleMatch1to4[1]) - 1;
+            if (idx >= 0 && idx < 4) {
+                optionsArray[idx] = singleMatch1to4[2].trim();
+                const prefix = line.substring(0, line.indexOf(singleMatch1to4[1]));
+                if (/[✔✓✅☑]/.test(prefix)) {
+                    correctIndexRef.val = idx;
+                }
+            }
+            return true;
+        }
+
+        return false;
+    }
+
+    function parseAnswerFromLine(line) {
+        const chosenMatch = line.match(/Chosen\s*Option\s*:\s*([1-4A-Da-d]|\-\-)/i);
+        if (chosenMatch && chosenMatch[1] !== '--') {
+            const val = chosenMatch[1].toUpperCase();
+            return (val >= 'A' && val <= 'D') ? (val.charCodeAt(0) - 65) : (parseInt(val) - 1);
+        }
+        const ansMatch = line.match(/^(?:ans(?:wer)?|correct\s*(?:answer)?|key|उत्तर)\s*[:\-.]?\s*(\(?[1-4A-Da-d]\)?)/i);
+        if (ansMatch) {
+            const val = ansMatch[1].replace(/[()]/g, '').toUpperCase();
+            return (val >= 'A' && val <= 'D') ? (val.charCodeAt(0) - 65) : (parseInt(val) - 1);
+        }
+        return null;
+    }
+
+    let currentQ = null;
+
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+
+        // Skip known ignorable header/footer/metadata patterns
+        if (/^Question ID\s*:/i.test(line) ||
+            /^Option\s*\d+\s*ID\s*:/i.test(line) ||
+            /^Status\s*:/i.test(line) ||
+            /^https?:\/\/link\.testbook\.com/i.test(line) ||
+            /^Page\s*\d+/i.test(line) ||
+            /^testbook/i.test(line) ||
+            line.toLowerCase() === 'testbook' ||
+            /^(?:ans|ans\.|ans:)$/i.test(line.trim())
+        ) {
             continue;
         }
-        i++;
-    }
 
-    const emptyCount = questions.filter(q => q.question && q.question.startsWith('[Question') && q.options && q.options.every(o => o && (o.startsWith('Option') || o === '—'))).length;
-    questions.isEmptyPDF = questions.length > 0 && (emptyCount / questions.length) > 0.8;
-
-    if (questions.length === 0 || questions.isEmptyPDF) {
-        const count = Math.max(1, Number(expectedCount) || 100);
-        questions.length = 0;
-        for (let i = 0; i < count; i++) {
-            questions.push({
-                question: `[Question ${i + 1}]`,
-                question_en: `[Question ${i + 1}]`,
-                question_hi: `[Question ${i + 1}]`,
-                options: ['Option 1', 'Option 2', 'Option 3', 'Option 4'],
-                options_en: ['Option 1', 'Option 2', 'Option 3', 'Option 4'],
-                options_hi: ['Option 1', 'Option 2', 'Option 3', 'Option 4'],
-                correctIndex: 0
-            });
+        const qStart = matchQuestionStart(line);
+        if (qStart) {
+            // If we have a current question, push it before starting a new one
+            if (currentQ) {
+                questions.push(currentQ);
+            }
+            currentQ = {
+                qNum: qStart.qNum,
+                questionLines: qStart.rest ? [qStart.rest] : [],
+                options: ['', '', '', ''],
+                correctIndexRef: { val: -1 },
+                optionsStarted: false
+            };
+            continue;
         }
-        questions.isEmptyPDF = false;
+
+        // If we are currently parsing a question
+        if (currentQ) {
+            // Check if it's an answer line
+            const ansIdx = parseAnswerFromLine(line);
+            if (ansIdx !== null) {
+                currentQ.correctIndexRef.val = ansIdx;
+                continue;
+            }
+
+            // Check if it's an option line
+            const isOpt = parseOptionsFromLine(line, currentQ.options, currentQ.correctIndexRef);
+            if (isOpt) {
+                currentQ.optionsStarted = true;
+                continue;
+            }
+
+            // If options haven't started yet, it is question text
+            if (!currentQ.optionsStarted) {
+                currentQ.questionLines.push(line);
+            }
+        }
     }
 
-    return questions;
+    // Push the final question
+    if (currentQ) {
+        questions.push(currentQ);
+    }
+
+    // Map the raw questions into the database-friendly schema
+    const parsedQuestions = questions.map(q => {
+        // Fill in default options if any are missing
+        const finalOptions = q.options.map((opt, idx) => opt || `Option ${idx + 1}`);
+
+        // Construct Question Text
+        const fullQText = q.questionLines.join('\n').trim();
+        
+        // Detect if question has Hindi content
+        let englishLines = [];
+        let hindiLines = [];
+        let hasSeenHindi = false;
+
+        q.questionLines.forEach(line => {
+            const hasHindi = /[\u0900-\u097F]/.test(line);
+            if (hasHindi) {
+                hasSeenHindi = true;
+                hindiLines.push(line);
+            } else {
+                if (hasSeenHindi) {
+                    hindiLines.push(line);
+                } else {
+                    englishLines.push(line);
+                }
+            }
+        });
+
+        let questionEn = englishLines.join('\n').trim();
+        let questionHi = hindiLines.join('\n').trim();
+
+        if (!questionEn && !questionHi) {
+            questionEn = `[Question ${q.qNum}]`;
+            questionHi = `[Question ${q.qNum}]`;
+        } else if (!questionEn) {
+            questionEn = questionHi;
+        } else if (!questionHi) {
+            questionHi = questionEn;
+        }
+
+        return {
+            question: questionEn || questionHi,
+            question_en: questionEn,
+            question_hi: questionHi || questionEn,
+            options: finalOptions,
+            options_en: finalOptions,
+            options_hi: finalOptions,
+            correctIndex: q.correctIndexRef.val >= 0 && q.correctIndexRef.val < 4 ? q.correctIndexRef.val : 0
+        };
+    });
+
+    // Check if the parsed questions are mostly placeholders
+    const emptyCount = parsedQuestions.filter(q => q.question && q.question.startsWith('[Question') && q.options && q.options.every(o => o && (o.startsWith('Option') || o === '—'))).length;
+    parsedQuestions.isEmptyPDF = parsedQuestions.length > 0 && (emptyCount / parsedQuestions.length) > 0.8;
+
+    return parsedQuestions;
 }
 
 // ── POST /api/admin/generate-questions-from-pdf (generic preview) ─────

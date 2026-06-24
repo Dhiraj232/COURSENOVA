@@ -118,6 +118,24 @@
             }
         }
 
+        async function getFetchErrorMessage(res) {
+            try {
+                const text = await res.clone().text();
+                try {
+                    const data = JSON.parse(text);
+                    return data.error || data.message || `Error ${res.status}: ${res.statusText || 'Server Error'}`;
+                } catch {
+                    if (text.includes('<title>')) {
+                        const titleMatch = text.match(/<title>([\s\S]*?)<\/title>/i);
+                        if (titleMatch) return `Error ${res.status}: ${titleMatch[1].trim()}`;
+                    }
+                    return `Error ${res.status}: ${res.statusText || 'Server Error'}`;
+                }
+            } catch {
+                return `Error ${res.status}: ${res.statusText || 'Server Error'}`;
+            }
+        }
+
         document.getElementById('uploadForm').onsubmit = async (e) => {
             e.preventDefault();
             const formData = new FormData();
@@ -139,17 +157,24 @@
                     },
                     body: formData
                 });
+
+                if (!res.ok) {
+                    const errorMsg = await getFetchErrorMessage(res);
+                    alert('Upload failed: ' + errorMsg);
+                    return;
+                }
+
                 const data = await res.json();
                 
                 if (data.ok) {
                     extractedQuestions = data.questions;
                     renderPreview();
                 } else {
-                    alert('Error: ' + data.error);
+                    alert('Error: ' + (data.error || data.message || 'Unknown error'));
                 }
             } catch (err) {
                 console.error(err);
-                alert('Upload failed.');
+                alert('Upload failed: ' + err.message);
             } finally {
                 document.getElementById('loadingMsg').style.display = 'none';
             }

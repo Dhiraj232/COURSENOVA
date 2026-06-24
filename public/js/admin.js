@@ -700,6 +700,14 @@ window.previewPDFQuestions = async function(event, courseId) {
             headers: { 'Authorization': `Bearer ${token}` },
             body: fd
         });
+
+        if (!res.ok) {
+            const errorMsg = await getFetchErrorMessage(res);
+            previewList.innerHTML = `<div style="color:#ef4444;font-size:0.88rem;white-space:pre-wrap;background:#fef2f2;padding:14px;border-radius:8px;">❌ ${errorMsg}</div>`;
+            countEl.textContent = '0 questions';
+            return;
+        }
+
         const data = await res.json();
 
         if (!data.ok || !data.questions || data.questions.length === 0) {
@@ -758,6 +766,10 @@ window.savePDFQuestions = async function() {
         let finalQuestions = questions;
         if (!replaceMode) {
             const currentRes = await fetch(`${API_BASE}/courses`, { headers: { 'Authorization': `Bearer ${token}` } });
+            if (!currentRes.ok) {
+                const errorMsg = await getFetchErrorMessage(currentRes);
+                throw new Error(errorMsg);
+            }
             const currentData = await currentRes.json();
             const currentCourse = (currentData.courses || []).find(c => c._id === courseId);
             const existing = (currentCourse?.quizQuestions || []);
@@ -770,6 +782,10 @@ window.savePDFQuestions = async function() {
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ quizQuestions: finalQuestions })
         });
+        if (!res.ok) {
+            const errorMsg = await getFetchErrorMessage(res);
+            throw new Error(errorMsg);
+        }
         const data = await res.json();
 
         if (!data.ok) throw new Error(data.message || 'Save failed');
@@ -1039,6 +1055,13 @@ async function handlePdfToTest(input, index, lang = 'en') {
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
+            if (!updateRes.ok) {
+                const errorMsg = await getFetchErrorMessage(updateRes);
+                activeStatus.innerHTML = `<span style="color:var(--danger)">Merge failed: ${errorMsg}</span>`;
+                btnEn.disabled = false;
+                btnHi.disabled = false;
+                return;
+            }
             const updateData = await updateRes.json();
             
             if (updateData.ok) {
@@ -1095,6 +1118,13 @@ async function handlePdfToTest(input, index, lang = 'en') {
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
             body: JSON.stringify(mappedQuestions)
         });
+        if (!saveRes.ok) {
+            const errorMsg = await getFetchErrorMessage(saveRes);
+            activeStatus.innerHTML = `<span style="color:var(--danger)">Save failed: ${errorMsg}</span>`;
+            btnEn.disabled = false;
+            btnHi.disabled = false;
+            return;
+        }
         const saveData = await saveRes.json();
         
         if (saveData.ok) {
