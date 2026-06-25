@@ -200,7 +200,7 @@ function parseQuestionsFromText(text, expectedCount = 100) {
         // If no inline options, check for a single option at the start of the line.
         // e.g. "A) option content" or "Ans. A) option content" or "[x] A) option content"
         // This is safe from backtracking as it is start-anchored and has simple pattern.
-        const singleMatch = line.match(/^(?:Ans\s*)?([^a-zA-Z0-9]*[Xx]?[^a-zA-Z0-9]*)\b([A-D1-4])(?:\)|[.)\]])\s*(.*)/i);
+        const singleMatch = line.match(/^(?:Ans\s*)?([^a-zA-Z0-9]*(?:[xX][^a-zA-Z0-9]*)?)\b([A-D1-4])(?:\)|[.)\]])\s*(.*)/i);
         if (singleMatch) {
             const prefix = singleMatch[1];
             const key = singleMatch[2].toUpperCase();
@@ -244,7 +244,8 @@ function parseQuestionsFromText(text, expectedCount = 100) {
             /^Page\s*\d+/i.test(line) ||
             /^testbook/i.test(line) ||
             line.toLowerCase() === 'testbook' ||
-            /^(?:ans|ans\.|ans:)$/i.test(line.trim())
+            /^(?:ans|ans\.|ans:)$/i.test(line.trim()) ||
+            /^(?:--\s*)?\d+\s*(?:of|\/)\s*\d+(?:\s*--)?$/i.test(line.trim())
         ) {
             continue;
         }
