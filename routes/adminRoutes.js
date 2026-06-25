@@ -581,7 +581,13 @@ router.get('/questions', requireAdmin, catchAsync(async (req, res) => {
 
 router.post('/questions', requireAdmin, catchAsync(async (req, res) => {
     if (Array.isArray(req.body)) {
-        const questions = await PracticeQuestion.insertMany(req.body);
+        const batchSize = 20;
+        const questions = [];
+        for (let i = 0; i < req.body.length; i += batchSize) {
+            const batch = req.body.slice(i, i + batchSize);
+            const inserted = await PracticeQuestion.insertMany(batch);
+            questions.push(...inserted);
+        }
         return res.status(201).json({ ok: true, count: questions.length, questions });
     }
     const question = await PracticeQuestion.create(req.body);
