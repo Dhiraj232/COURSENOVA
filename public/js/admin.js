@@ -220,7 +220,7 @@ async function renderQuestionsUI() {
                     <h3>Smart Import</h3>
                     <div style="display:flex; flex-direction:column; gap:10px;">
                         <button class="btn btn-outline" style="width:100%;" onclick="showBulkUploadModal()">Upload JSON</button>
-                        <button class="btn btn-primary" style="width:100%;" onclick="showPdfUploadModal()">Import from PDF</button>
+                        <button class="btn btn-primary" style="width:100%;" onclick="showPdfUploadModal()">Import Questions from PDF</button>
                     </div>
                 </div>
             </div>
@@ -1674,14 +1674,22 @@ function showPdfUploadModal() {
             <div class="form-group">
                 <label>Select PDF File</label>
                 <input type="file" id="pdfFile" class="admin-input" accept=".pdf" style="padding:10px;">
-                <p style="font-size:0.8rem; color:var(--text-muted); margin-top:10px;">
-                    Make sure the PDF has questions in a standard format (e.g., 1. Question... A) Option...).
+                <p style="font-size:0.8rem; color:var(--text-muted); margin-top:5px;">
+                    Supports scanned PDFs (OCR), Hindi, English, and bilingual contents.
                 </p>
             </div>
+            <div class="form-group" style="margin-top: 15px;">
+                <label>Default Category (Fallback)</label>
+                <input type="text" id="pdfCategory" class="admin-input" placeholder="e.g. SSC, NEET, JEE, Banking, UPSC (Optional)">
+            </div>
+            <div class="form-group" style="margin-top: 15px;">
+                <label>Default Subject (Fallback)</label>
+                <input type="text" id="pdfSubject" class="admin-input" placeholder="e.g. Mathematics, Physics, English, History (Optional)">
+            </div>
             <div id="pdf-status" style="margin-top:15px; font-size:0.9rem;"></div>
-            <div style="display: flex; gap: 15px; justify-content: flex-end; margin-top: 20px;">
+            <div style="display: flex; gap: 15px; justify-content: flex-end; margin-top: 25px;">
                 <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
-                <button class="btn btn-primary" id="pdfUploadBtn" onclick="handlePdfUpload()">Extract & Preview</button>
+                <button class="btn btn-primary" id="pdfUploadBtn" onclick="handlePdfUpload()">Import Questions</button>
             </div>
         </div>
     `;
@@ -1690,21 +1698,25 @@ function showPdfUploadModal() {
 
 async function handlePdfUpload() {
     const fileInp = document.getElementById('pdfFile');
+    const categoryInp = document.getElementById('pdfCategory');
+    const subjectInp = document.getElementById('pdfSubject');
     const status = document.getElementById('pdf-status');
     const btn = document.getElementById('pdfUploadBtn');
 
-    if (!fileInp.files[0]) return alert('Please select a file');
+    if (!fileInp.files[0]) return alert('Please select a PDF file');
 
     const formData = new FormData();
     formData.append('pdf', fileInp.files[0]);
+    formData.append('category', categoryInp.value.trim());
+    formData.append('subject', subjectInp.value.trim());
 
     btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
-    status.innerHTML = 'Extracting text and parsing questions...';
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing with Gemini AI...';
+    status.innerHTML = '<div style="color:var(--primary); font-weight:500;"><i class="fas fa-magic fa-spin"></i> Gemini is reading, running OCR, and extracting MCQ questions (Hindi & English)...</div>';
 
     try {
         const token = localStorage.getItem('token');
-        const res = await fetch(`${API_BASE}/generate-questions-from-pdf`, {
+        const res = await fetch(`${API_BASE}/import-pdf-questions`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` },
             body: formData
@@ -1714,21 +1726,50 @@ async function handlePdfUpload() {
             const errorMsg = await getFetchErrorMessage(res);
             status.innerHTML = `<span style="color:var(--danger)">Error: ${errorMsg}</span>`;
             btn.disabled = false;
+            btn.textContent = 'Try Again';
             return;
         }
 
         const data = await res.json();
         
-        if (data.ok) {
-            status.innerHTML = `<span style="color:var(--success)">Successfully parsed ${data.count} questions!</span>`;
-            // Show preview of parsed questions in the bulk upload area
-            setTimeout(() => {
-                showBulkUploadModal();
-                document.getElementById('bulkJson').value = JSON.stringify(data.questions, null, 2);
-                alert(`Found ${data.count} questions. Please review them in the JSON box before final upload.`);
-            }, 1000);
+        if (data.ok && data.report) {
+            const report = data.report;
+            const modalContainer = document.getElementById('modal-container');
+            modalContainer.innerHTML = `
+                <div class="modal-content admin-card" style="max-width: 600px; width: 90%; padding: 30px;">
+                    <div class="card-header" style="margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px;">
+                        <h3 style="color: var(--success); display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-check-circle"></i> Import Completed Successfully!
+                        </h3>
+                    </div>
+                    <div class="stats-grid" style="grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 25px;">
+                        <div class="stat-card" style="padding: 15px; text-align: center; background: rgba(0,0,0,0.02); border: 1px solid var(--border-color); border-radius: 8px;">
+                            <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">Total Questions Found</span>
+                            <h2 style="margin: 5px 0 0 0; font-size: 1.8rem; font-weight: 700; color: var(--text-main);">${report.totalQuestions}</h2>
+                        </div>
+                        <div class="stat-card" style="padding: 15px; text-align: center; background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.1); border-radius: 8px;">
+                            <span style="font-size: 0.85rem; color: #10b981; font-weight: 500;">Successfully Imported</span>
+                            <h2 style="margin: 5px 0 0 0; font-size: 1.8rem; font-weight: 700; color: #10b981;">${report.importedCount}</h2>
+                        </div>
+                        <div class="stat-card" style="padding: 15px; text-align: center; background: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.1); border-radius: 8px;">
+                            <span style="font-size: 0.85rem; color: #f59e0b; font-weight: 500;">Duplicate (Skipped)</span>
+                            <h2 style="margin: 5px 0 0 0; font-size: 1.8rem; font-weight: 700; color: #f59e0b;">${report.duplicateCount}</h2>
+                        </div>
+                        <div class="stat-card" style="padding: 15px; text-align: center; background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.1); border-radius: 8px;">
+                            <span style="font-size: 0.85rem; color: #ef4444; font-weight: 500;">Failed Questions</span>
+                            <h2 style="margin: 5px 0 0 0; font-size: 1.8rem; font-weight: 700; color: #ef4444;">${report.failedCount}</h2>
+                        </div>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 20px;">
+                        <span style="font-size: 0.85rem; color: var(--text-muted);">
+                            <i class="far fa-clock"></i> Import Time: <strong>${report.importTimeSec} seconds</strong>
+                        </span>
+                        <button class="btn btn-primary" onclick="closeModal(); loadView('questions');">Done</button>
+                    </div>
+                </div>
+            `;
         } else {
-            status.innerHTML = `<span style="color:var(--danger)">Error: ${data.message}</span>`;
+            status.innerHTML = `<span style="color:var(--danger)">Error: ${data.message || 'Failed to import'}</span>`;
             btn.disabled = false;
             btn.textContent = 'Try Again';
         }

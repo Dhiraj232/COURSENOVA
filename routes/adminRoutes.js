@@ -332,6 +332,157 @@ router.post('/generate-questions-from-pdf', requireAdmin, upload.single('pdf'), 
     res.json({ ok: true, questions, count: questions.length });
 }));
 
+// ── POST /api/admin/import-pdf-questions ──────────────────────────────
+const { extractQuestionsFromPdf } = require('../services/aiService');
+
+router.post('/import-pdf-questions', requireAdmin, upload.single('pdf'), catchAsync(async (req, res) => {
+    if (!req.file) throw new AppError('No PDF file uploaded', 400);
+
+    const startTime = Date.now();
+    const defaultCategory = req.body.category || req.query.category || '';
+    const defaultSubject = req.body.subject || req.query.subject || '';
+
+    // Step 1: Call Gemini AI Service to parse/extract questions
+    let parsedQuestions = [];
+    try {
+        parsedQuestions = await extractQuestionsFromPdf(req.file.buffer, {
+            category: defaultCategory,
+            subject: defaultSubject
+        });
+    } catch (err) {
+        return res.status(500).json({
+            ok: false,
+            message: `AI Extraction failed: ${err.message}`
+        });
+    }
+
+    if (!parsedQuestions || parsedQuestions.length === 0) {
+        return res.json({
+            ok: true,
+            report: {
+                totalQuestions: 0,
+                importedCount: 0,
+                duplicateCount: 0,
+                failedCount: 0,
+                importTimeSec: ((Date.now() - startTime) / 1000).toFixed(2)
+            },
+            message: 'No questions found in the PDF.'
+        });
+    }
+
+    // Step 2: Extract all question texts to fetch duplicates in one go
+    const questionTexts = parsedQuestions.map(q => q.question).filter(Boolean);
+    const questionEnTexts = parsedQuestions.map(q => q.question_en).filter(Boolean);
+
+    // Fetch existing questions that might match
+    const existingQuestions = await PracticeQuestion.find({
+        $or: [
+            { question: { $in: questionTexts } },
+            { question_en: { $in: questionEnTexts } }
+        ]
+    });
+
+    // Clean text helper for reliable matching
+    function cleanText(text) {
+        if (!text) return '';
+        return text.trim().toLowerCase().replace(/[^a-z0-9\u0900-\u097F]/g, '');
+    }
+
+    // Populate a set of existing question hash representations
+    const existingSet = new Set();
+    existingQuestions.forEach(q => {
+        if (q.question) existingSet.add(cleanText(q.question));
+        if (q.question_en) existingSet.add(cleanText(q.question_en));
+    });
+
+    // Step 3: Filter out duplicates and validate
+    const uniqueQuestions = [];
+    let duplicateCount = 0;
+    let failedCount = 0;
+
+    for (const q of parsedQuestions) {
+        // Enforce basic schema requirements (question, options, correctAnswer)
+        if (!q.question || !q.options || !Array.isArray(q.options) || q.options.length < 4 || !q.correctAnswer) {
+            failedCount++;
+            continue;
+        }
+
+        // If category or subject are missing in AI response, fall back to defaults
+        const categoryVal = (q.category || defaultCategory || 'General').trim();
+        const subjectVal = (q.subject || defaultSubject || 'General').trim();
+
+        const formattedQ = {
+            question: q.question,
+            question_en: q.question_en || q.question,
+            question_hi: q.question_hi || q.question,
+            options: q.options,
+            options_en: q.options_en || q.options,
+            options_hi: q.options_hi || q.options,
+            correctAnswer: q.correctAnswer,
+            explanation: q.explanation || '',
+            explanation_hi: q.explanation_hi || '',
+            category: categoryVal,
+            subject: subjectVal,
+            topic: q.topic || '',
+            difficulty: ['Easy', 'Medium', 'Hard'].includes(q.difficulty) ? q.difficulty : 'Medium',
+            isMockTestOnly: !!q.isMockTestOnly
+        };
+
+        const cleanQ = cleanText(formattedQ.question);
+        const cleanQEn = cleanText(formattedQ.question_en);
+
+        if (existingSet.has(cleanQ) || (cleanQEn && existingSet.has(cleanQEn))) {
+            duplicateCount++;
+        } else {
+            uniqueQuestions.push(formattedQ);
+        }
+    }
+
+    // Step 4: Bulk insert unique questions in memory-safe batches of 20
+    let importedCount = 0;
+    const batchSize = 20;
+    for (let i = 0; i < uniqueQuestions.length; i += batchSize) {
+        const batch = uniqueQuestions.slice(i, i + batchSize);
+        try {
+            await PracticeQuestion.insertMany(batch, { ordered: false });
+            importedCount += batch.length;
+        } catch (insertErr) {
+            console.error('Batch insert error in PDF question import:', insertErr);
+            // If bulk insert has issues, fallback to individual saves to capture success/failure individually
+            for (const singleQ of batch) {
+                try {
+                    await PracticeQuestion.create(singleQ);
+                    importedCount++;
+                } catch (singleErr) {
+                    failedCount++;
+                }
+            }
+        }
+    }
+
+    const elapsedSec = ((Date.now() - startTime) / 1000).toFixed(2);
+
+    // Audit log
+    await logAdminAction(req, 'PDF_QUESTIONS_IMPORTED', null, 'PracticeQuestion', {
+        totalFound: parsedQuestions.length,
+        imported: importedCount,
+        duplicates: duplicateCount,
+        failed: failedCount,
+        timeSec: elapsedSec
+    });
+
+    res.json({
+        ok: true,
+        report: {
+            totalQuestions: parsedQuestions.length,
+            importedCount,
+            duplicateCount,
+            failedCount,
+            importTimeSec: elapsedSec
+        }
+    });
+}));
+
 // ── POST /api/admin/courses/:id/upload-questions-pdf ──────────────────
 // Parses a PDF and SAVES questions directly into the course in MongoDB
 router.post('/courses/:id/upload-questions-pdf', requireAdmin, upload.single('pdf'), catchAsync(async (req, res) => {

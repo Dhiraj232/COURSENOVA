@@ -1,0 +1,81 @@
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+
+/**
+ * Extracts practice questions from a PDF buffer using Gemini.
+ * @param {Buffer} pdfBuffer - The raw PDF buffer.
+ * @param {Object} defaults - Default category and subject fallback values.
+ * @returns {Promise<Array>} - Resolves to an array of parsed question objects.
+ */
+async function extractQuestionsFromPdf(pdfBuffer, defaults = {}) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+        throw new Error('GEMINI_API_KEY environment variable is not defined.');
+    }
+
+    const genAI = new GoogleGenerativeAI(apiKey);
+    // Use gemini-1.5-flash for PDF analysis and structured output
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+
+    // Prepare PDF inline data
+    const pdfPart = {
+        inlineData: {
+            data: pdfBuffer.toString('base64'),
+            mimeType: 'application/pdf'
+        }
+    };
+
+    const prompt = `You are a professional MCQ exam question parser. Analyze the uploaded PDF and extract ALL MCQ questions from it.
+Support normal and scanned (OCR) PDFs, English, Hindi, and mixed English/Hindi.
+Preserve all mathematical formulas in standard LaTeX format (e.g. $x^2 + y^2 = z^2$ or \\frac{a}{b}).
+Preserve tables and diagrams as Markdown or HTML representations inside the question text.
+
+For each MCQ, construct a JSON object containing the exact fields:
+- question: The main question text in English. If the PDF has bilingual questions (English and Hindi), this should be the English version. If only Hindi is available, this should be in Hindi.
+- question_en: The English version of the question text. If the PDF only has Hindi, translate the question to English here.
+- question_hi: The Hindi version of the question text. If the PDF only has English, translate the question to Hindi here.
+- options: An array of exactly 4 option strings, matching the English version (or default version if only one language).
+- options_en: An array of exactly 4 option strings in English.
+- options_hi: An array of exactly 4 option strings in Hindi.
+- correctAnswer: The exact string text of the correct option (MUST match one of the items in the options array exactly).
+- explanation: A detailed explanation in English of the solution or reasoning.
+- explanation_hi: A detailed explanation in Hindi of the solution or reasoning.
+- category: The exam category/class (e.g. SSC, Banking, JEE, NEET, CUET, UPSC, Class 9, Class 10, etc.). Attempt to detect this from the PDF contents. If not found, use "${defaults.category || 'General'}".
+- subject: The subject name (e.g. Mathematics, Physics, Chemistry, Biology, History, Geography, English, Reasoning, General Knowledge, etc.). Attempt to detect this from the PDF. If not found, use "${defaults.subject || 'General'}".
+- topic: The specific topic/chapter of the question if detectable (otherwise empty or General).
+- difficulty: One of "Easy", "Medium", "Hard" (estimate based on complexity).
+- isMockTestOnly: false
+
+Return the output ONLY as a valid JSON array of these objects. Do not include markdown code block syntax like \`\`\`json. Return only the raw JSON.`;
+
+    const response = await model.generateContent({
+        contents: [{ role: 'user', parts: [pdfPart, { text: prompt }] }],
+        generationConfig: {
+            responseMimeType: 'application/json'
+        }
+    });
+
+    const text = response.response.text();
+    let cleanText = text.trim();
+    if (cleanText.startsWith('```')) {
+        // strip starting fence
+        cleanText = cleanText.replace(/^```(?:json)?\n?/, '');
+        // strip ending fence
+        cleanText = cleanText.replace(/\n?```$/, '');
+        cleanText = cleanText.trim();
+    }
+
+    try {
+        const parsed = JSON.parse(cleanText);
+        if (!Array.isArray(parsed)) {
+            throw new Error('Gemini response is not a JSON array.');
+        }
+        return parsed;
+    } catch (e) {
+        console.error('Failed to parse Gemini JSON response. Text was:', text);
+        throw new Error('Failed to parse questions JSON from Gemini response: ' + e.message);
+    }
+}
+
+module.exports = {
+    extractQuestionsFromPdf
+};
