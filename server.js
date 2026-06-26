@@ -897,6 +897,9 @@ app.set('socketMap', socketMap);
 server.listen(PORT, () => {
     console.log(`[${new Date().toLocaleTimeString()}] COURSENOVA Community API & Chat listening on port ${PORT}`);
 
+    // Set server timeout to 5 minutes to accommodate large PDF uploads and background saves
+    server.timeout = 300000;
+
     // ─── Initialize Notification Schedulers after DB connection settles ────────
     setTimeout(() => {
         try {

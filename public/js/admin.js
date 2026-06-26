@@ -671,6 +671,37 @@ function renderQuizRow(q = {}, i) {
     window._pdfParsedQ = [];     // temp store for parsed questions
     window._pdfCourseId = null;  // current course _id being edited
 
+function pollJob(jobId, onProgress, onSuccess, onError) {
+    const token = localStorage.getItem('token');
+    const interval = setInterval(async () => {
+        try {
+            const res = await fetch(`${API_BASE}/pdf-jobs/${jobId}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) {
+                const msg = await getFetchErrorMessage(res);
+                throw new Error(msg);
+            }
+            const data = await res.json();
+            if (!data.ok) {
+                throw new Error(data.message || 'Failed to poll job');
+            }
+            if (data.status === 'completed') {
+                clearInterval(interval);
+                onSuccess(data.result);
+            } else if (data.status === 'failed') {
+                clearInterval(interval);
+                onError(new Error(data.error || 'Job failed'));
+            } else {
+                onProgress(data.progress, data.stage, data.logs);
+            }
+        } catch (err) {
+            clearInterval(interval);
+            onError(err);
+        }
+    }, 1000);
+}
+
 window.previewPDFQuestions = async function(event, courseId) {
     const file = event.target.files[0];
     if (!file) return;
@@ -683,8 +714,8 @@ window.previewPDFQuestions = async function(event, courseId) {
     const saveBtn = document.getElementById('pdfSaveBtn');
 
     panel.style.display = 'block';
-    previewList.innerHTML = '<div style="text-align:center;padding:20px;color:#64748b;"><i class="fas fa-spinner fa-spin"></i> Parsing PDF...</div>';
-    countEl.textContent = 'Parsing...';
+    previewList.innerHTML = '<div style="text-align:center;padding:20px;color:#64748b;"><i class="fas fa-spinner fa-spin"></i> Uploading PDF...</div>';
+    countEl.textContent = 'Uploading...';
     saveBtn.disabled = true;
 
     const quizList = document.getElementById('quiz-list');
@@ -694,7 +725,7 @@ window.previewPDFQuestions = async function(event, courseId) {
     fd.append('pdf', file);
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 20000);
+    const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minute upload limit
 
     try {
         const token = localStorage.getItem('token');
@@ -708,41 +739,68 @@ window.previewPDFQuestions = async function(event, courseId) {
 
         if (!res.ok) {
             const errorMsg = await getFetchErrorMessage(res);
-            previewList.innerHTML = `<div style="color:#ef4444;font-size:0.88rem;white-space:pre-wrap;background:#fef2f2;padding:14px;border-radius:8px;">❌ Import Failed with an error message: ${errorMsg}</div>`;
+            previewList.innerHTML = `<div style="color:#ef4444;font-size:0.88rem;white-space:pre-wrap;background:#fef2f2;padding:14px;border-radius:8px;">❌ Import Failed: ${errorMsg}</div>`;
             countEl.textContent = 'Import Failed';
             saveBtn.disabled = true;
             return;
         }
 
         const data = await res.json();
-
-        if (!data.ok || !data.questions || data.questions.length === 0) {
-            previewList.innerHTML = `<div style="color:#ef4444;font-size:0.88rem;white-space:pre-wrap;background:#fef2f2;padding:14px;border-radius:8px;">❌ Import Failed with an error message: ${data.message || 'No questions found.'}</div>`;
-            countEl.textContent = 'Import Failed';
-            saveBtn.disabled = true;
-            return;
+        if (!data.ok || !data.jobId) {
+            throw new Error(data.message || 'No Job ID returned.');
         }
 
-        window._pdfParsedQ = data.questions;
-        countEl.textContent = `Import Successful: ${data.questions.length} questions found`;
-        saveBtn.disabled = false;
+        previewList.innerHTML = '<div class="pdf-progress-container" style="text-align:center;padding:20px;color:#64748b;">' +
+            '<i class="fas fa-spinner fa-spin"></i> Starting background parser...<br>' +
+            '<div style="font-size:0.8rem;color:var(--text-muted);margin-top:10px;" class="pdf-job-stage">Queueing...</div>' +
+            '<div style="font-weight:bold;margin-top:5px;font-size:1.1rem;" class="pdf-job-pct">0%</div>' +
+            '</div>';
+        countEl.textContent = 'Parsing...';
 
-        previewList.innerHTML = `<div style="color:#10b981;font-weight:700;margin-bottom:12px;">✅ Import Successful!</div>` + data.questions.map((q, i) => `
-            <div style="background:white;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:8px;">
-                <div style="font-weight:700;font-size:0.88rem;color:#1e293b;margin-bottom:8px;">Q${i+1}. ${q.question}</div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
-                    ${q.options.map((opt, j) => `
-                        <div style="font-size:0.8rem;padding:4px 8px;border-radius:5px;background:${j === q.correctIndex ? '#dcfce7' : '#f8fafc'};color:${j === q.correctIndex ? '#166534' : '#475569'};">
-                            ${['A','B','C','D'][j]}) ${opt} ${j === q.correctIndex ? '✓' : ''}
+        pollJob(data.jobId,
+            (progress, stage, logs) => {
+                const stageEl = previewList.querySelector('.pdf-job-stage');
+                const pctEl = previewList.querySelector('.pdf-job-pct');
+                if (stageEl) stageEl.textContent = stage;
+                if (pctEl) pctEl.textContent = `${progress}%`;
+                countEl.textContent = `Parsing: ${progress}%`;
+            },
+            (result) => {
+                const questions = result.questions || [];
+                if (questions.length === 0) {
+                    previewList.innerHTML = `<div style="color:#ef4444;font-size:0.88rem;white-space:pre-wrap;background:#fef2f2;padding:14px;border-radius:8px;">❌ Import Failed: No questions found.</div>`;
+                    countEl.textContent = 'Import Failed';
+                    saveBtn.disabled = true;
+                    return;
+                }
+
+                window._pdfParsedQ = questions;
+                countEl.textContent = `Import Successful: ${questions.length} questions found`;
+                saveBtn.disabled = false;
+
+                previewList.innerHTML = `<div style="color:#10b981;font-weight:700;margin-bottom:12px;">✅ Import Successful!</div>` + questions.map((q, i) => `
+                    <div style="background:white;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:8px;">
+                        <div style="font-weight:700;font-size:0.88rem;color:#1e293b;margin-bottom:8px;">Q${i+1}. ${q.question}</div>
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
+                            ${q.options.map((opt, j) => `
+                                <div style="font-size:0.8rem;padding:4px 8px;border-radius:5px;background:${j === q.correctIndex ? '#dcfce7' : '#f8fafc'};color:${j === q.correctIndex ? '#166534' : '#475569'};">
+                                    ${['A','B','C','D'][j]}) ${opt} ${j === q.correctIndex ? '✓' : ''}
+                                </div>
+                            `).join('')}
                         </div>
-                    `).join('')}
-                </div>
-            </div>
-        `).join('');
+                    </div>
+                `).join('');
+            },
+            (err) => {
+                previewList.innerHTML = `<div style="color:#ef4444;font-size:0.88rem;white-space:pre-wrap;background:#fef2f2;padding:14px;border-radius:8px;">❌ Import Failed: ${err.message}</div>`;
+                countEl.textContent = 'Import Failed';
+                saveBtn.disabled = true;
+            }
+        );
     } catch (err) {
         clearTimeout(timeoutId);
         const errMsg = err.name === 'AbortError' ? 'Request timed out.' : err.message;
-        previewList.innerHTML = `<div style="color:#ef4444;font-size:0.88rem;white-space:pre-wrap;background:#fef2f2;padding:14px;border-radius:8px;">❌ Import Failed with an error message: ${errMsg}</div>`;
+        previewList.innerHTML = `<div style="color:#ef4444;font-size:0.88rem;white-space:pre-wrap;background:#fef2f2;padding:14px;border-radius:8px;">❌ Import Failed: ${errMsg}</div>`;
         countEl.textContent = 'Import Failed';
         saveBtn.disabled = true;
     }
@@ -757,7 +815,6 @@ window.savePDFQuestions = async function() {
     const replaceMode = document.getElementById('pdfReplaceMode').checked;
 
     if (!courseId) {
-        // New course not saved yet — just inject into the quiz form rows
         if (replaceMode) quizList.innerHTML = '';
         questions.forEach(q => quizList.insertAdjacentHTML('beforeend', renderQuizRow(q, quizList.querySelectorAll('.quiz-row').length)));
         document.getElementById('pdfPreviewPanel').style.display = 'none';
@@ -778,10 +835,9 @@ window.savePDFQuestions = async function() {
     try {
         const token = localStorage.getItem('token');
 
-        // Get current questions from the course (to append if needed)
         let finalQuestions = questions;
         if (!replaceMode) {
-            coursesTimeout = setTimeout(() => coursesController.abort(), 20000);
+            coursesTimeout = setTimeout(() => coursesController.abort(), 300000); // 5 min timeout
             const currentRes = await fetch(`${API_BASE}/courses`, { 
                 headers: { 'Authorization': `Bearer ${token}` },
                 signal: coursesController.signal
@@ -797,8 +853,7 @@ window.savePDFQuestions = async function() {
             finalQuestions = [...existing, ...questions];
         }
 
-        // Save directly to course
-        saveTimeout = setTimeout(() => saveController.abort(), 20000);
+        saveTimeout = setTimeout(() => saveController.abort(), 300000); // 5 min timeout
         const res = await fetch(`${API_BASE}/courses/${courseId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
@@ -814,7 +869,6 @@ window.savePDFQuestions = async function() {
 
         if (!data.ok) throw new Error(data.message || 'Save failed');
 
-        // Also update the quiz form rows visually
         if (replaceMode) quizList.innerHTML = '';
         questions.forEach(q => quizList.insertAdjacentHTML('beforeend', renderQuizRow(q, quizList.querySelectorAll('.quiz-row').length)));
 
@@ -1025,7 +1079,7 @@ async function handlePdfToTest(input, index, lang = 'en') {
     const activeStatus = lang === 'hi' ? statusHi : statusEn;
     const activeBtn = lang === 'hi' ? btnHi : btnEn;
 
-    activeStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Parsing PDF...';
+    activeStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading PDF...';
     btnEn.disabled = true;
     btnHi.disabled = true;
 
@@ -1033,7 +1087,7 @@ async function handlePdfToTest(input, index, lang = 'en') {
     const expectedCount = existingQIds.length;
 
     const parseController = new AbortController();
-    let parseTimeout = setTimeout(() => parseController.abort(), 20000);
+    let parseTimeout = setTimeout(() => parseController.abort(), 120000); // 2 min upload limit
 
     try {
         const token = localStorage.getItem('token');
@@ -1047,158 +1101,188 @@ async function handlePdfToTest(input, index, lang = 'en') {
 
         if (!res.ok) {
             const errorMsg = await getFetchErrorMessage(res);
-            activeStatus.innerHTML = `<span style="color:var(--danger)">❌ Import Failed with an error message: ${errorMsg}</span>`;
+            activeStatus.innerHTML = `<span style="color:var(--danger)">❌ Import Failed: ${errorMsg}</span>`;
             btnEn.disabled = false;
             btnHi.disabled = false;
             return;
         }
 
-        const data = await res.json();
-        if (!data.ok) {
-            activeStatus.innerHTML = `<span style="color:var(--danger)">❌ Import Failed with an error message: ${data.message}</span>`;
-            btnEn.disabled = false;
-            btnHi.disabled = false;
-            return;
+        const initialData = await res.json();
+        if (!initialData.ok || !initialData.jobId) {
+            throw new Error(initialData.message || 'No job ID received.');
         }
 
-        // ── MERGE TRANSLATIONS IF QUESTIONS ALREADY EXIST ──
-        if (existingQIds.length > 0 && existingQIds.length === data.questions.length) {
-            activeStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Merging translations...';
+        activeStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Parsing... <span class="pdf-job-pct">0%</span>';
 
-            const payload = data.questions.map((q, i) => {
-                if (lang === 'hi') {
-                    return {
-                        _id: existingQIds[i],
-                        question_hi: q.question,
-                        options_hi: q.options
-                    };
+        pollJob(initialData.jobId,
+            (progress, stage, logs) => {
+                const pctEl = activeStatus.querySelector('.pdf-job-pct');
+                if (pctEl) {
+                    pctEl.textContent = `${progress}% (${stage})`;
                 } else {
-                    return {
-                        _id: existingQIds[i],
-                        question_en: q.question,
-                        options_en: q.options
-                    };
+                    activeStatus.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Parsing... <span class="pdf-job-pct">${progress}% (${stage})</span>`;
                 }
-            });
+            },
+            async (result) => {
+                try {
+                    const data = result;
+                    if (!data.questions || data.questions.length === 0) {
+                        activeStatus.innerHTML = `<span style="color:var(--danger)">❌ Import Failed: No questions found.</span>`;
+                        btnEn.disabled = false;
+                        btnHi.disabled = false;
+                        return;
+                    }
 
-            const targetEndpoint = lang === 'hi' ? 'add-hindi' : 'add-english';
-            const mergeController = new AbortController();
-            let mergeTimeout = setTimeout(() => mergeController.abort(), 20000);
+                    // ── MERGE TRANSLATIONS IF QUESTIONS ALREADY EXIST ──
+                    if (existingQIds.length > 0 && existingQIds.length === data.questions.length) {
+                        activeStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Merging translations...';
 
-            const updateRes = await fetch(`${API_BASE}/questions/${targetEndpoint}`, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
-                signal: mergeController.signal
-            });
-            clearTimeout(mergeTimeout);
+                        const payload = data.questions.map((q, i) => {
+                            if (lang === 'hi') {
+                                return {
+                                    _id: existingQIds[i],
+                                    question_hi: q.question,
+                                    options_hi: q.options
+                                };
+                            } else {
+                                return {
+                                    _id: existingQIds[i],
+                                    question_en: q.question,
+                                    options_en: q.options
+                                };
+                            }
+                        });
 
-            if (!updateRes.ok) {
-                const errorMsg = await getFetchErrorMessage(updateRes);
-                activeStatus.innerHTML = `<span style="color:var(--danger)">❌ Import Failed with an error message: Merge failed: ${errorMsg}</span>`;
-                btnEn.disabled = false;
-                btnHi.disabled = false;
-                return;
-            }
-            const updateData = await updateRes.json();
-            
-            if (updateData.ok) {
-                if (lang === 'hi') {
-                    statusHi.innerHTML = `<span style="color:#d97706; font-weight:600;">✅ Import Successful: ${data.questions.length} Hindi translations merged!</span>`;
-                    btnHi.innerHTML = '<i class="fas fa-check"></i> Hindi Updated';
-                } else {
-                    statusEn.innerHTML = `<span style="color:#6366f1; font-weight:600;">✅ Import Successful: ${data.questions.length} English translations merged!</span>`;
-                    btnEn.innerHTML = '<i class="fas fa-check"></i> English Updated';
+                        const targetEndpoint = lang === 'hi' ? 'add-hindi' : 'add-english';
+                        const mergeController = new AbortController();
+                        let mergeTimeout = setTimeout(() => mergeController.abort(), 300000); // 5 min timeout
+
+                        const updateRes = await fetch(`${API_BASE}/questions/${targetEndpoint}`, {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload),
+                            signal: mergeController.signal
+                        });
+                        clearTimeout(mergeTimeout);
+
+                        if (!updateRes.ok) {
+                            const errorMsg = await getFetchErrorMessage(updateRes);
+                            activeStatus.innerHTML = `<span style="color:var(--danger)">❌ Import Failed: Merge failed: ${errorMsg}</span>`;
+                            btnEn.disabled = false;
+                            btnHi.disabled = false;
+                            return;
+                        }
+                        const updateData = await updateRes.json();
+                        
+                        if (updateData.ok) {
+                            if (lang === 'hi') {
+                                statusHi.innerHTML = `<span style="color:#d97706; font-weight:600;">✅ Import Successful: ${data.questions.length} Hindi translations merged!</span>`;
+                                btnHi.innerHTML = '<i class="fas fa-check"></i> Hindi Updated';
+                            } else {
+                                statusEn.innerHTML = `<span style="color:#6366f1; font-weight:600;">✅ Import Successful: ${data.questions.length} English translations merged!</span>`;
+                                btnEn.innerHTML = '<i class="fas fa-check"></i> English Updated';
+                            }
+                            btnEn.disabled = false;
+                            btnHi.disabled = false;
+                        } else {
+                            activeStatus.innerHTML = `<span style="color:var(--danger)">❌ Import Failed: Merge failed: ${updateData.message || 'DB error'}</span>`;
+                            btnEn.disabled = false;
+                            btnHi.disabled = false;
+                        }
+                        return;
+                    }
+
+                    // ── SAVE NEW QUESTIONS PATH ──
+                    activeStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving questions...';
+
+                    const packCategory = (document.getElementById('mtCategory').value || '').trim() || 'Mock Test';
+                    const testTitleText = (row.querySelector('.mt-t-title').value || '').trim() || 'General';
+
+                    let subjectName = testTitleText;
+                    if (testTitleText.includes('-')) {
+                        subjectName = testTitleText.split('-').pop().trim();
+                    } else if (testTitleText.includes(':')) {
+                        subjectName = testTitleText.split(':').pop().trim();
+                    }
+
+                    const mappedQuestions = data.questions.map(q => {
+                        const opts = q.options || [];
+                        const correctIdx = q.correctIndex !== undefined ? q.correctIndex : 0;
+                        const correctAnswerText = opts[correctIdx] || '';
+                        return {
+                            question: q.question,
+                            question_en: lang === 'en' ? q.question : '',
+                            question_hi: lang === 'hi' ? q.question : '',
+                            options: opts,
+                            options_en: lang === 'en' ? opts : [],
+                            options_hi: lang === 'hi' ? opts : [],
+                            correctAnswer: correctAnswerText,
+                            category: packCategory,
+                            subject: subjectName,
+                            isMockTestOnly: true
+                        };
+                    });
+
+                    const saveController = new AbortController();
+                    let saveTimeout = setTimeout(() => saveController.abort(), 300000); // 5 min timeout
+
+                    const saveRes = await fetch(`${API_BASE}/questions`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify(mappedQuestions),
+                        signal: saveController.signal
+                    });
+                    clearTimeout(saveTimeout);
+
+                    if (!saveRes.ok) {
+                        const errorMsg = await getFetchErrorMessage(saveRes);
+                        activeStatus.innerHTML = `<span style="color:var(--danger)">❌ Import Failed: Save failed: ${errorMsg}</span>`;
+                        btnEn.disabled = false;
+                        btnHi.disabled = false;
+                        return;
+                    }
+                    const saveData = await saveRes.json();
+                    
+                    if (saveData.ok) {
+                        const newQIds = saveData.questions.map(q => q._id).join(', ');
+                        qIdsInput.value = newQIds; 
+                        countBadge.textContent = saveData.questions.length;
+                        
+                        if (lang === 'en') {
+                            statusEn.innerHTML = `<span style="color:#6366f1; font-weight:600;">✅ Import Successful: ${saveData.questions.length} English Qs imported!</span>`;
+                            statusHi.innerHTML = `<span style="color:#94a3b8;">Pending Hindi upload...</span>`;
+                            btnEn.innerHTML = '<i class="fas fa-check"></i> English Uploaded';
+                            btnHi.innerHTML = '<i class="fas fa-file-pdf"></i> Upload Hindi PDF';
+                        } else {
+                            statusHi.innerHTML = `<span style="color:#d97706; font-weight:600;">✅ Import Successful: ${saveData.questions.length} Hindi Qs imported!</span>`;
+                            statusEn.innerHTML = `<span style="color:#94a3b8;">Pending English upload...</span>`;
+                            btnHi.innerHTML = '<i class="fas fa-check"></i> Hindi Uploaded';
+                            btnEn.innerHTML = '<i class="fas fa-file-pdf"></i> Upload English PDF';
+                        }
+                        
+                        btnEn.disabled = false;
+                        btnHi.disabled = false;
+                    } else {
+                        activeStatus.innerHTML = `<span style="color:var(--danger)">❌ Import Failed: Save failed: ${saveData.message || 'DB error'}</span>`;
+                        btnEn.disabled = false;
+                        btnHi.disabled = false;
+                    }
+                } catch (innerErr) {
+                    activeStatus.innerHTML = `<span style="color:var(--danger)">❌ Save/Merge Error: ${innerErr.message}</span>`;
+                    btnEn.disabled = false;
+                    btnHi.disabled = false;
                 }
-                btnEn.disabled = false;
-                btnHi.disabled = false;
-            } else {
-                activeStatus.innerHTML = `<span style="color:var(--danger)">❌ Import Failed with an error message: Merge failed: ${updateData.message || 'DB error'}</span>`;
+            },
+            (err) => {
+                activeStatus.innerHTML = `<span style="color:var(--danger)">❌ Import Failed: ${err.message}</span>`;
                 btnEn.disabled = false;
                 btnHi.disabled = false;
             }
-            return;
-        }
-
-        // ── SAVE NEW QUESTIONS PATH ──
-        activeStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving questions...';
-
-        const packCategory = (document.getElementById('mtCategory').value || '').trim() || 'Mock Test';
-        const testTitleText = (row.querySelector('.mt-t-title').value || '').trim() || 'General';
-
-        let subjectName = testTitleText;
-        if (testTitleText.includes('-')) {
-            subjectName = testTitleText.split('-').pop().trim();
-        } else if (testTitleText.includes(':')) {
-            subjectName = testTitleText.split(':').pop().trim();
-        }
-
-        const mappedQuestions = data.questions.map(q => {
-            const opts = q.options || [];
-            const correctIdx = q.correctIndex !== undefined ? q.correctIndex : 0;
-            const correctAnswerText = opts[correctIdx] || '';
-            return {
-                question: q.question,
-                question_en: lang === 'en' ? q.question : '',
-                question_hi: lang === 'hi' ? q.question : '',
-                options: opts,
-                options_en: lang === 'en' ? opts : [],
-                options_hi: lang === 'hi' ? opts : [],
-                correctAnswer: correctAnswerText,
-                category: packCategory,
-                subject: subjectName,
-                isMockTestOnly: true
-            };
-        });
-
-        const saveController = new AbortController();
-        let saveTimeout = setTimeout(() => saveController.abort(), 20000);
-
-        const saveRes = await fetch(`${API_BASE}/questions`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify(mappedQuestions),
-            signal: saveController.signal
-        });
-        clearTimeout(saveTimeout);
-
-        if (!saveRes.ok) {
-            const errorMsg = await getFetchErrorMessage(saveRes);
-            activeStatus.innerHTML = `<span style="color:var(--danger)">❌ Import Failed with an error message: Save failed: ${errorMsg}</span>`;
-            btnEn.disabled = false;
-            btnHi.disabled = false;
-            return;
-        }
-        const saveData = await saveRes.json();
-        
-        if (saveData.ok) {
-            const newQIds = saveData.questions.map(q => q._id).join(', ');
-            qIdsInput.value = newQIds; 
-            countBadge.textContent = saveData.questions.length;
-            
-            if (lang === 'en') {
-                statusEn.innerHTML = `<span style="color:#6366f1; font-weight:600;">✅ Import Successful: ${saveData.questions.length} English Qs imported!</span>`;
-                statusHi.innerHTML = `<span style="color:#94a3b8;">Pending Hindi upload...</span>`;
-                btnEn.innerHTML = '<i class="fas fa-check"></i> English Uploaded';
-                btnHi.innerHTML = '<i class="fas fa-file-pdf"></i> Upload Hindi PDF';
-            } else {
-                statusHi.innerHTML = `<span style="color:#d97706; font-weight:600;">✅ Import Successful: ${saveData.questions.length} Hindi Qs imported!</span>`;
-                statusEn.innerHTML = `<span style="color:#94a3b8;">Pending English upload...</span>`;
-                btnHi.innerHTML = '<i class="fas fa-check"></i> Hindi Uploaded';
-                btnEn.innerHTML = '<i class="fas fa-file-pdf"></i> Upload English PDF';
-            }
-            
-            btnEn.disabled = false;
-            btnHi.disabled = false;
-        } else {
-            activeStatus.innerHTML = `<span style="color:var(--danger)">❌ Import Failed with an error message: Save failed: ${saveData.message || 'DB error'}</span>`;
-            btnEn.disabled = false;
-            btnHi.disabled = false;
-        }
+        );
     } catch (e) {
         clearTimeout(parseTimeout);
         const errMsg = e.name === 'AbortError' ? 'Request timed out.' : e.message;
-        activeStatus.innerHTML = `<span style="color:var(--danger)">❌ Import Failed with an error message: ${errMsg}</span>`;
+        activeStatus.innerHTML = `<span style="color:var(--danger)">❌ Import Failed: ${errMsg}</span>`;
         btnEn.disabled = false;
         btnHi.disabled = false;
     }
@@ -1833,8 +1917,8 @@ async function handlePdfUpload() {
     formData.append('testId', testSelect.value);
 
     btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing and Extracting PDF...';
-    status.innerHTML = '<div style="color:var(--primary); font-weight:500;"><i class="fas fa-magic fa-spin"></i> Extracting questions, mapping subjects, and verifying database...</div>';
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading PDF...';
+    status.innerHTML = '<div style="color:var(--primary); font-weight:500;"><i class="fas fa-spinner fa-spin"></i> Uploading PDF and queueing import...</div>';
 
     try {
         const token = localStorage.getItem('token');
@@ -1853,48 +1937,67 @@ async function handlePdfUpload() {
         }
 
         const data = await res.json();
-        
-        if (data.ok && data.report) {
-            const report = data.report;
-            const modalContainer = document.getElementById('modal-container');
-            modalContainer.innerHTML = `
-                <div class="modal-content admin-card" style="max-width: 600px; width: 90%; padding: 30px;">
-                    <div class="card-header" style="margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px;">
-                        <h3 style="color: var(--success); display: flex; align-items: center; gap: 10px;">
-                            <i class="fas fa-check-circle"></i> Import Completed Successfully!
-                        </h3>
-                    </div>
-                    <div class="stats-grid" style="grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 25px;">
-                        <div class="stat-card" style="padding: 15px; text-align: center; background: rgba(0,0,0,0.02); border: 1px solid var(--border-color); border-radius: 8px;">
-                            <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">Total Questions Found</span>
-                            <h2 style="margin: 5px 0 0 0; font-size: 1.8rem; font-weight: 700; color: var(--text-main);">${report.totalQuestions}</h2>
-                        </div>
-                        <div class="stat-card" style="padding: 15px; text-align: center; background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.1); border-radius: 8px;">
-                            <span style="font-size: 0.85rem; color: #10b981; font-weight: 500;">Successfully Imported</span>
-                            <h2 style="margin: 5px 0 0 0; font-size: 1.8rem; font-weight: 700; color: #10b981;">${report.importedCount}</h2>
-                        </div>
-                        <div class="stat-card" style="padding: 15px; text-align: center; background: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.1); border-radius: 8px;">
-                            <span style="font-size: 0.85rem; color: #f59e0b; font-weight: 500;">Duplicate (Skipped)</span>
-                            <h2 style="margin: 5px 0 0 0; font-size: 1.8rem; font-weight: 700; color: #f59e0b;">${report.duplicateCount}</h2>
-                        </div>
-                        <div class="stat-card" style="padding: 15px; text-align: center; background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.1); border-radius: 8px;">
-                            <span style="font-size: 0.85rem; color: #ef4444; font-weight: 500;">Failed Questions</span>
-                            <h2 style="margin: 5px 0 0 0; font-size: 1.8rem; font-weight: 700; color: #ef4444;">${report.failedCount}</h2>
-                        </div>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 20px;">
-                        <span style="font-size: 0.85rem; color: var(--text-muted);">
-                            <i class="far fa-clock"></i> Import Time: <strong>${report.importTimeSec} seconds</strong>
-                        </span>
-                        <button class="btn btn-primary" onclick="closeModal(); loadView('questions');">Done</button>
-                    </div>
-                </div>
-            `;
-        } else {
-            status.innerHTML = `<span style="color:var(--danger)">Error: ${data.message || 'Failed to import'}</span>`;
-            btn.disabled = false;
-            btn.textContent = 'Try Again';
+        if (!data.ok || !data.jobId) {
+            throw new Error(data.message || 'No job ID received.');
         }
+
+        status.innerHTML = '<div style="color:var(--primary); font-weight:500;"><i class="fas fa-spinner fa-spin"></i> Processing job: <span class="pdf-job-stage">Queueing...</span> (<span class="pdf-job-pct">0%</span>)</div>';
+
+        pollJob(data.jobId,
+            (progress, stage, logs) => {
+                const stageEl = status.querySelector('.pdf-job-stage');
+                const pctEl = status.querySelector('.pdf-job-pct');
+                if (stageEl) stageEl.textContent = stage;
+                if (pctEl) pctEl.textContent = `${progress}%`;
+                btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Parsing... ${progress}%`;
+            },
+            (result) => {
+                const report = result;
+                status.innerHTML = `<span style="color:var(--success)">✅ Import completed!</span>`;
+                btn.disabled = false;
+                btn.textContent = 'Import PDF';
+
+                const modalContainer = document.getElementById('modal-container');
+                modalContainer.innerHTML = `
+                    <div class="modal-content admin-card" style="max-width: 600px; width: 90%; padding: 30px;">
+                        <div class="card-header" style="margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px;">
+                            <h3 style="color: var(--success); display: flex; align-items: center; gap: 10px;">
+                                <i class="fas fa-check-circle"></i> Import Completed Successfully!
+                            </h3>
+                        </div>
+                        <div class="stats-grid" style="grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 25px;">
+                            <div class="stat-card" style="padding: 15px; text-align: center; background: rgba(0,0,0,0.02); border: 1px solid var(--border-color); border-radius: 8px;">
+                                <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">Total Questions Found</span>
+                                <h2 style="margin: 5px 0 0 0; font-size: 1.8rem; font-weight: 700; color: var(--text-main);">${report.totalQuestions}</h2>
+                            </div>
+                            <div class="stat-card" style="padding: 15px; text-align: center; background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.1); border-radius: 8px;">
+                                <span style="font-size: 0.85rem; color: #10b981; font-weight: 500;">Successfully Imported</span>
+                                <h2 style="margin: 5px 0 0 0; font-size: 1.8rem; font-weight: 700; color: #10b981;">${report.importedCount}</h2>
+                            </div>
+                            <div class="stat-card" style="padding: 15px; text-align: center; background: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.1); border-radius: 8px;">
+                                <span style="font-size: 0.85rem; color: #f59e0b; font-weight: 500;">Duplicate (Skipped)</span>
+                                <h2 style="margin: 5px 0 0 0; font-size: 1.8rem; font-weight: 700; color: #f59e0b;">${report.duplicateCount}</h2>
+                            </div>
+                            <div class="stat-card" style="padding: 15px; text-align: center; background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.1); border-radius: 8px;">
+                                <span style="font-size: 0.85rem; color: #ef4444; font-weight: 500;">Failed Questions</span>
+                                <h2 style="margin: 5px 0 0 0; font-size: 1.8rem; font-weight: 700; color: #ef4444;">${report.failedCount}</h2>
+                            </div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 20px;">
+                            <span style="font-size: 0.85rem; color: var(--text-muted);">
+                                <i class="far fa-clock"></i> Import Time: <strong>${report.importTimeSec} seconds</strong>
+                            </span>
+                            <button class="btn btn-primary" onclick="closeModal(); loadView('questions');">Done</button>
+                        </div>
+                    </div>
+                `;
+            },
+            (err) => {
+                status.innerHTML = `<span style="color:var(--danger)">Error: ${err.message}</span>`;
+                btn.disabled = false;
+                btn.textContent = 'Try Again';
+            }
+        );
     } catch (e) {
         status.innerHTML = `<span style="color:var(--danger)">Failed to process PDF: ${e.message}</span>`;
         btn.disabled = false;
