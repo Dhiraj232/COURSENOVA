@@ -32,6 +32,28 @@ const pdfParse = typeof pdfParseModule === 'function'
     };
 const upload = multer({ storage: multer.memoryStorage() });
 
+// Map subject names to align with existing CourseNova SSC/Test subjects
+function mapSubject(subjectName) {
+    if (!subjectName) return 'General';
+    const lower = subjectName.toLowerCase();
+    if (lower.includes('reasoning') || lower.includes('intelligence')) {
+        return 'Reasoning';
+    }
+    if (lower.includes('math') || lower.includes('quantitative') || lower.includes('aptitude') || lower.includes('numerical')) {
+        return 'Quantitative Aptitude';
+    }
+    if (lower.includes('general awareness') || lower.includes('knowledge') || lower.includes('science') || lower.includes('awareness') || lower.includes('gk')) {
+        return 'General Awareness';
+    }
+    if (lower.includes('english')) {
+        return 'English';
+    }
+    if (lower.includes('hindi')) {
+        return 'Hindi';
+    }
+    return subjectName.replace(/\b\w/g, c => c.toUpperCase());
+}
+
 // ── Parse MCQ questions from raw PDF text ────────────────────────────
 function parseMCQFromText(text, expectedCount = 100) {
     // ── First: Reconstruct words by replacing cell separators (tabs) ──
@@ -146,8 +168,6 @@ function parseMCQFromText(text, expectedCount = 100) {
         }
 
         // If no inline options, check for a single option at the start of the line.
-        // e.g. "A) option content" or "Ans. A) option content" or "[x] A) option content"
-        // This is safe from backtracking as it is start-anchored and has simple pattern.
         const singleMatch = line.match(/^(?:Ans\s*)?([^a-zA-Z0-9]*(?:[xX][^a-zA-Z0-9]*)?)\b([A-D1-4])(?:\)|\]|\.|\s)\s*(.*)/i);
         if (singleMatch) {
             const prefix = singleMatch[1];
@@ -181,6 +201,8 @@ function parseMCQFromText(text, expectedCount = 100) {
     }
 
     let currentQ = null;
+    let currentSection = 'General';
+    let currentSubject = 'General';
 
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
@@ -199,18 +221,33 @@ function parseMCQFromText(text, expectedCount = 100) {
             continue;
         }
 
+        // Detect section / subject in Testbook PDF
+        const secMatch = line.match(/^(?:Section|Subject)\s*[:\-]\s*(.*)/i);
+        if (secMatch) {
+            const rawSec = secMatch[1].trim();
+            currentSection = rawSec;
+            currentSubject = mapSubject(rawSec);
+            console.log(`[PDF Upload] Detected Section/Subject: "${line}" -> Mapped to: "${currentSubject}"`);
+            continue;
+        }
+
         const qStart = matchQuestionStart(line);
         if (qStart) {
             // If we have a current question, push it before starting a new one
             if (currentQ) {
-                questions.push(currentQ);
+                const validOptionsCount = currentQ.options.filter(Boolean).length;
+                if (validOptionsCount >= 2) {
+                    questions.push(currentQ);
+                }
             }
             currentQ = {
                 qNum: qStart.qNum,
                 questionLines: qStart.rest ? [qStart.rest] : [],
                 options: ['', '', '', ''],
                 correctIndexRef: { val: -1 },
-                optionsStarted: false
+                optionsStarted: false,
+                section: currentSection,
+                subject: currentSubject
             };
             continue;
         }
@@ -240,7 +277,10 @@ function parseMCQFromText(text, expectedCount = 100) {
 
     // Push the final question
     if (currentQ) {
-        questions.push(currentQ);
+        const validOptionsCount = currentQ.options.filter(Boolean).length;
+        if (validOptionsCount >= 2) {
+            questions.push(currentQ);
+        }
     }
 
     // Map the raw questions into the database-friendly schema
@@ -282,6 +322,8 @@ function parseMCQFromText(text, expectedCount = 100) {
             questionHi = questionEn;
         }
 
+        const correctIdx = q.correctIndexRef.val >= 0 && q.correctIndexRef.val < 4 ? q.correctIndexRef.val : 0;
+
         return {
             question: questionEn || questionHi,
             question_en: questionEn,
@@ -289,13 +331,17 @@ function parseMCQFromText(text, expectedCount = 100) {
             options: finalOptions,
             options_en: finalOptions,
             options_hi: finalOptions,
-            correctIndex: q.correctIndexRef.val >= 0 && q.correctIndexRef.val < 4 ? q.correctIndexRef.val : 0
+            correctAnswer: finalOptions[correctIdx] || '',
+            correctIndex: correctIdx,
+            section: q.section,
+            subject: q.subject
         };
     });
 
     // Check if the parsed questions are mostly placeholders
+    const isSufficientText = text && text.trim().length >= 100;
     const emptyCount = parsedQuestions.filter(q => q.question && q.question.startsWith('[Question') && q.options && q.options.every(o => o && (o.startsWith('Option') || o === '—'))).length;
-    parsedQuestions.isEmptyPDF = parsedQuestions.length > 0 && (emptyCount / parsedQuestions.length) > 0.8;
+    parsedQuestions.isEmptyPDF = !isSufficientText && parsedQuestions.length > 0 && (emptyCount / parsedQuestions.length) > 0.8;
 
     return parsedQuestions;
 }
@@ -303,17 +349,24 @@ function parseMCQFromText(text, expectedCount = 100) {
 // ── POST /api/admin/generate-questions-from-pdf (generic preview) ─────
 router.post('/generate-questions-from-pdf', requireAdmin, upload.single('pdf'), catchAsync(async (req, res) => {
     if (!req.file) throw new AppError('No PDF file uploaded', 400);
+    console.log(`[PDF Upload] File uploaded: name=${req.file.originalname}, size=${req.file.size} bytes, mimetype=${req.file.mimetype}`);
 
     let text = '';
     try {
-        const result = await pdfParse(req.file.buffer);
+        const result = await Promise.race([
+            pdfParse(req.file.buffer),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('PDF parsing timed out (limit of 15 seconds exceeded)')), 15000))
+        ]);
         text = result.text || '';
+        console.log(`[PDF Upload] Text extracted successfully: length=${text.length} characters`);
     } catch (pdfErr) {
+        console.error(`[PDF Upload] Error extracting text: ${pdfErr.message}`);
         return res.json({ ok: false, message: `Failed to read PDF: ${pdfErr.message}` });
     }
 
     const expectedCount = req.query.expectedCount || req.body.expectedCount || 100;
     const questions = parseMCQFromText(text, expectedCount);
+    console.log(`[PDF Upload] Questions detected: count=${questions.length}`);
 
     if (questions.length === 0) {
         return res.json({
@@ -337,26 +390,88 @@ const { extractQuestionsFromPdf } = require('../services/aiService');
 
 router.post('/import-pdf-questions', requireAdmin, upload.single('pdf'), catchAsync(async (req, res) => {
     if (!req.file) throw new AppError('No PDF file uploaded', 400);
+    console.log(`[PDF Upload] File uploaded for import: name=${req.file.originalname}, size=${req.file.size} bytes, mimetype=${req.file.mimetype}`);
 
     const startTime = Date.now();
     const defaultCategory = req.body.category || req.query.category || '';
     const defaultSubject = req.body.subject || req.query.subject || '';
 
-    // Step 1: Call Gemini AI Service to parse/extract questions
-    let parsedQuestions = [];
+    // Step 1: Extract text using local pdf-parse first
+    let text = '';
+    let isScanned = false;
     try {
-        parsedQuestions = await extractQuestionsFromPdf(req.file.buffer, {
-            category: defaultCategory,
-            subject: defaultSubject
+        const result = await Promise.race([
+            pdfParse(req.file.buffer),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('PDF parsing timed out (limit of 15 seconds exceeded)')), 15000))
+        ]);
+        text = result.text || '';
+        console.log(`[PDF Upload] Text extracted successfully: length=${text.length} characters`);
+    } catch (pdfErr) {
+        console.error(`[PDF Upload] Error extracting text: ${pdfErr.message}`);
+        // Treat as scanned/unreadable and fall back to OCR
+        isScanned = true;
+    }
+
+    // Check if the extracted text length is below the minimum threshold (e.g. 100 characters)
+    if (text.trim().length < 100) {
+        isScanned = true;
+        console.log('[PDF Upload] Extracted text length is below threshold (scanned or empty PDF). Falling back to OCR...');
+    }
+
+    let parsedQuestions = [];
+
+    if (!isScanned) {
+        // Option A: Primary Parser (local regex parsing)
+        console.log('[PDF Upload] Using primary text parser...');
+        const localQuestions = parseMCQFromText(text, 100);
+        console.log(`[PDF Upload] Questions parsed via primary parser: count=${localQuestions.length}`);
+
+        // Normalize to database/OCR compatible schema
+        parsedQuestions = localQuestions.map(q => {
+            const opts = q.options || [];
+            const correctIdx = q.correctIndex !== undefined ? q.correctIndex : 0;
+            const correctAnswerText = opts[correctIdx] || '';
+
+            return {
+                question: q.question,
+                question_en: q.question_en || q.question,
+                question_hi: q.question_hi || q.question,
+                options: opts,
+                options_en: q.options_en || opts,
+                options_hi: q.options_hi || opts,
+                correctAnswer: correctAnswerText,
+                explanation: q.explanation || '',
+                explanation_hi: q.explanation_hi || '',
+                category: defaultCategory || q.category || 'General',
+                subject: q.subject || defaultSubject || 'General',
+                topic: q.topic || '',
+                difficulty: q.difficulty || 'Medium',
+                isMockTestOnly: !!q.isMockTestOnly
+            };
         });
-    } catch (err) {
-        return res.status(500).json({
-            ok: false,
-            message: `AI Extraction failed: ${err.message}`
-        });
+    } else {
+        // Option B: OCR Fallback (Gemini AI service)
+        console.log('[PDF Upload] Extracted text is empty or insufficient. Running OCR/AI fallback...');
+        try {
+            parsedQuestions = await Promise.race([
+                extractQuestionsFromPdf(req.file.buffer, {
+                    category: defaultCategory,
+                    subject: defaultSubject
+                }),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('AI PDF extraction timed out (limit of 30 seconds exceeded)')), 30000))
+            ]);
+            console.log('[PDF Upload] Text and questions extracted via OCR/AI successfully.');
+        } catch (err) {
+            console.error(`[PDF Upload] OCR/AI Extraction failed: ${err.message}`);
+            return res.status(500).json({
+                ok: false,
+                message: `OCR/AI Extraction failed: ${err.message}`
+            });
+        }
     }
 
     if (!parsedQuestions || parsedQuestions.length === 0) {
+        console.log('[PDF Upload] Import completed. Total questions found: 0.');
         return res.json({
             ok: true,
             report: {
@@ -369,6 +484,8 @@ router.post('/import-pdf-questions', requireAdmin, upload.single('pdf'), catchAs
             message: 'No questions found in the PDF.'
         });
     }
+
+    console.log(`[PDF Upload] Questions detected: count=${parsedQuestions.length}`);
 
     // Step 2: Extract all question texts to fetch duplicates in one go
     const questionTexts = parsedQuestions.map(q => q.question).filter(Boolean);
@@ -409,7 +526,7 @@ router.post('/import-pdf-questions', requireAdmin, upload.single('pdf'), catchAs
 
         // If category or subject are missing in AI response, fall back to defaults
         const categoryVal = (q.category || defaultCategory || 'General').trim();
-        const subjectVal = (q.subject || defaultSubject || 'General').trim();
+        const subjectVal = mapSubject(q.subject || defaultSubject || 'General').trim();
 
         const formattedQ = {
             question: q.question,
@@ -441,14 +558,15 @@ router.post('/import-pdf-questions', requireAdmin, upload.single('pdf'), catchAs
     // Step 4: Bulk insert unique questions in memory-safe batches of 20
     let importedCount = 0;
     const batchSize = 20;
+    console.log(`[PDF Upload] Database save started for ${uniqueQuestions.length} unique questions.`);
     for (let i = 0; i < uniqueQuestions.length; i += batchSize) {
         const batch = uniqueQuestions.slice(i, i + batchSize);
         try {
             await PracticeQuestion.insertMany(batch, { ordered: false });
             importedCount += batch.length;
         } catch (insertErr) {
-            console.error('Batch insert error in PDF question import:', insertErr);
-            // If bulk insert has issues, fallback to individual saves to capture success/failure individually
+            console.error('[PDF Upload] Batch insert warning/error in PDF question import:', insertErr.message);
+            // Fallback to individual creates to capture as many as possible
             for (const singleQ of batch) {
                 try {
                     await PracticeQuestion.create(singleQ);
@@ -459,8 +577,10 @@ router.post('/import-pdf-questions', requireAdmin, upload.single('pdf'), catchAs
             }
         }
     }
+    console.log(`[PDF Upload] Database save completed. Successfully imported: ${importedCount}`);
 
     const elapsedSec = ((Date.now() - startTime) / 1000).toFixed(2);
+    console.log(`[PDF Upload] Import completed. Total found: ${parsedQuestions.length}, saved: ${importedCount}, skipped: ${duplicateCount}, failed: ${failedCount}`);
 
     // Audit log
     await logAdminAction(req, 'PDF_QUESTIONS_IMPORTED', null, 'PracticeQuestion', {
@@ -487,20 +607,27 @@ router.post('/import-pdf-questions', requireAdmin, upload.single('pdf'), catchAs
 // Parses a PDF and SAVES questions directly into the course in MongoDB
 router.post('/courses/:id/upload-questions-pdf', requireAdmin, upload.single('pdf'), catchAsync(async (req, res) => {
     if (!req.file) throw new AppError('No PDF file uploaded', 400);
+    console.log(`[PDF Upload] File uploaded for course ${req.params.id}: name=${req.file.originalname}, size=${req.file.size} bytes`);
 
     const course = await Course.findById(req.params.id);
     if (!course) throw new AppError('Course not found', 404);
 
     let text = '';
     try {
-        const result = await pdfParse(req.file.buffer);
+        const result = await Promise.race([
+            pdfParse(req.file.buffer),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('PDF parsing timed out (limit of 15 seconds exceeded)')), 15000))
+        ]);
         text = result.text || '';
+        console.log(`[PDF Upload] Text extracted successfully: length=${text.length} characters`);
     } catch (pdfErr) {
+        console.error(`[PDF Upload] Error extracting text: ${pdfErr.message}`);
         return res.json({ ok: false, message: `Failed to read PDF: ${pdfErr.message}` });
     }
 
     const expectedCount = req.query.expectedCount || req.body.expectedCount || 100;
     const parsed = parseMCQFromText(text, expectedCount);
+    console.log(`[PDF Upload] Questions detected: count=${parsed.length}`);
 
     if (parsed.length === 0) {
         return res.json({
@@ -524,7 +651,9 @@ router.post('/courses/:id/upload-questions-pdf', requireAdmin, upload.single('pd
         course.quizQuestions.push(...parsed);
     }
 
+    console.log(`[PDF Upload] Database save started for Course ${course._id}`);
     await course.save();
+    console.log(`[PDF Upload] Database save completed for Course ${course._id}`);
 
     await logAdminAction(req, 'PDF_QUESTIONS_UPLOADED', course._id, 'Course', {
         title: course.title,
@@ -734,14 +863,32 @@ router.post('/questions', requireAdmin, catchAsync(async (req, res) => {
     if (Array.isArray(req.body)) {
         const batchSize = 20;
         const questions = [];
+        let failedCount = 0;
+        console.log(`[PDF Upload] Database save started for ${req.body.length} questions.`);
         for (let i = 0; i < req.body.length; i += batchSize) {
             const batch = req.body.slice(i, i + batchSize);
-            const inserted = await PracticeQuestion.insertMany(batch);
-            questions.push(...inserted);
+            try {
+                const inserted = await PracticeQuestion.insertMany(batch, { ordered: false });
+                questions.push(...inserted);
+            } catch (insertErr) {
+                console.error('[PDF Upload] Batch insert warning/error in questions import:', insertErr.message);
+                // Fallback to individual creates to capture as many as possible
+                for (const singleQ of batch) {
+                    try {
+                        const q = await PracticeQuestion.create(singleQ);
+                        questions.push(q);
+                    } catch (singleErr) {
+                        failedCount++;
+                    }
+                }
+            }
         }
-        return res.status(201).json({ ok: true, count: questions.length, questions });
+        console.log(`[PDF Upload] Database save completed. Inserted count=${questions.length}, failed count=${failedCount}`);
+        return res.status(201).json({ ok: true, count: questions.length, questions, failedCount });
     }
+    console.log(`[PDF Upload] Database save started for a single question.`);
     const question = await PracticeQuestion.create(req.body);
+    console.log(`[PDF Upload] Database save completed for single question: ${question._id}`);
     res.status(201).json({ ok: true, question });
 }));
 
@@ -767,6 +914,7 @@ router.post('/questions/add-hindi', requireAdmin, catchAsync(async (req, res) =>
         });
     });
 
+    console.log(`[PDF Upload] Database save started (merge Hindi) for ${pairs.length} questions.`);
     if (ops.length > 0) {
         try {
             const result = await PracticeQuestion.bulkWrite(ops, { ordered: false });
@@ -784,6 +932,7 @@ router.post('/questions/add-hindi', requireAdmin, catchAsync(async (req, res) =>
             }
         }
     }
+    console.log(`[PDF Upload] Database save completed (merge Hindi). Updated count=${updated}, errors=${errors.length}`);
 
     res.json({ ok: true, updated, errors });
 }));
@@ -810,6 +959,7 @@ router.post('/questions/add-english', requireAdmin, catchAsync(async (req, res) 
         });
     });
 
+    console.log(`[PDF Upload] Database save started (merge English) for ${pairs.length} questions.`);
     if (ops.length > 0) {
         try {
             const result = await PracticeQuestion.bulkWrite(ops, { ordered: false });
@@ -826,6 +976,7 @@ router.post('/questions/add-english', requireAdmin, catchAsync(async (req, res) 
             }
         }
     }
+    console.log(`[PDF Upload] Database save completed (merge English). Updated count=${updated}, errors=${errors.length}`);
 
     res.json({ ok: true, updated, errors });
 }));

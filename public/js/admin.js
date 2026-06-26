@@ -684,7 +684,7 @@ window.previewPDFQuestions = async function(event, courseId) {
 
     panel.style.display = 'block';
     previewList.innerHTML = '<div style="text-align:center;padding:20px;color:#64748b;"><i class="fas fa-spinner fa-spin"></i> Parsing PDF...</div>';
-    countEl.textContent = '';
+    countEl.textContent = 'Parsing...';
     saveBtn.disabled = true;
 
     const quizList = document.getElementById('quiz-list');
@@ -693,35 +693,42 @@ window.previewPDFQuestions = async function(event, courseId) {
     const fd = new FormData();
     fd.append('pdf', file);
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
+
     try {
         const token = localStorage.getItem('token');
         const res = await fetch(`${API_BASE}/generate-questions-from-pdf?expectedCount=${existingCount}`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` },
-            body: fd
+            body: fd,
+            signal: controller.signal
         });
+        clearTimeout(timeoutId);
 
         if (!res.ok) {
             const errorMsg = await getFetchErrorMessage(res);
-            previewList.innerHTML = `<div style="color:#ef4444;font-size:0.88rem;white-space:pre-wrap;background:#fef2f2;padding:14px;border-radius:8px;">❌ ${errorMsg}</div>`;
-            countEl.textContent = '0 questions';
+            previewList.innerHTML = `<div style="color:#ef4444;font-size:0.88rem;white-space:pre-wrap;background:#fef2f2;padding:14px;border-radius:8px;">❌ Import Failed with an error message: ${errorMsg}</div>`;
+            countEl.textContent = 'Import Failed';
+            saveBtn.disabled = true;
             return;
         }
 
         const data = await res.json();
 
         if (!data.ok || !data.questions || data.questions.length === 0) {
-            previewList.innerHTML = `<div style="color:#ef4444;font-size:0.88rem;white-space:pre-wrap;background:#fef2f2;padding:14px;border-radius:8px;">❌ ${data.message || 'No questions found.'}</div>`;
-            countEl.textContent = '0 questions';
+            previewList.innerHTML = `<div style="color:#ef4444;font-size:0.88rem;white-space:pre-wrap;background:#fef2f2;padding:14px;border-radius:8px;">❌ Import Failed with an error message: ${data.message || 'No questions found.'}</div>`;
+            countEl.textContent = 'Import Failed';
+            saveBtn.disabled = true;
             return;
         }
 
         window._pdfParsedQ = data.questions;
-        countEl.textContent = `${data.questions.length} questions found`;
+        countEl.textContent = `Import Successful: ${data.questions.length} questions found`;
         saveBtn.disabled = false;
 
-        previewList.innerHTML = data.questions.map((q, i) => `
-            <div style="background:white;border:1px solid #e2e8f0;border-radius:8px;padding:12px;">
+        previewList.innerHTML = `<div style="color:#10b981;font-weight:700;margin-bottom:12px;">✅ Import Successful!</div>` + data.questions.map((q, i) => `
+            <div style="background:white;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:8px;">
                 <div style="font-weight:700;font-size:0.88rem;color:#1e293b;margin-bottom:8px;">Q${i+1}. ${q.question}</div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
                     ${q.options.map((opt, j) => `
@@ -733,7 +740,11 @@ window.previewPDFQuestions = async function(event, courseId) {
             </div>
         `).join('');
     } catch (err) {
-        previewList.innerHTML = `<div style="color:#ef4444;">❌ Error: ${err.message}</div>`;
+        clearTimeout(timeoutId);
+        const errMsg = err.name === 'AbortError' ? 'Request timed out.' : err.message;
+        previewList.innerHTML = `<div style="color:#ef4444;font-size:0.88rem;white-space:pre-wrap;background:#fef2f2;padding:14px;border-radius:8px;">❌ Import Failed with an error message: ${errMsg}</div>`;
+        countEl.textContent = 'Import Failed';
+        saveBtn.disabled = true;
     }
 };
 
@@ -759,13 +770,23 @@ window.savePDFQuestions = async function() {
     saveBtn.disabled = true;
     saveBtn.textContent = 'Saving...';
 
+    const coursesController = new AbortController();
+    const saveController = new AbortController();
+    let coursesTimeout = null;
+    let saveTimeout = null;
+
     try {
         const token = localStorage.getItem('token');
 
         // Get current questions from the course (to append if needed)
         let finalQuestions = questions;
         if (!replaceMode) {
-            const currentRes = await fetch(`${API_BASE}/courses`, { headers: { 'Authorization': `Bearer ${token}` } });
+            coursesTimeout = setTimeout(() => coursesController.abort(), 20000);
+            const currentRes = await fetch(`${API_BASE}/courses`, { 
+                headers: { 'Authorization': `Bearer ${token}` },
+                signal: coursesController.signal
+            });
+            clearTimeout(coursesTimeout);
             if (!currentRes.ok) {
                 const errorMsg = await getFetchErrorMessage(currentRes);
                 throw new Error(errorMsg);
@@ -777,11 +798,14 @@ window.savePDFQuestions = async function() {
         }
 
         // Save directly to course
+        saveTimeout = setTimeout(() => saveController.abort(), 20000);
         const res = await fetch(`${API_BASE}/courses/${courseId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ quizQuestions: finalQuestions })
+            body: JSON.stringify({ quizQuestions: finalQuestions }),
+            signal: saveController.signal
         });
+        clearTimeout(saveTimeout);
         if (!res.ok) {
             const errorMsg = await getFetchErrorMessage(res);
             throw new Error(errorMsg);
@@ -800,9 +824,12 @@ window.savePDFQuestions = async function() {
         saveBtn.disabled = false;
         alert(`✅ ${questions.length} questions saved to course successfully!`);
     } catch (err) {
+        if (coursesTimeout) clearTimeout(coursesTimeout);
+        if (saveTimeout) clearTimeout(saveTimeout);
         saveBtn.textContent = '✅ Save to Course';
         saveBtn.disabled = false;
-        alert('Error saving questions: ' + err.message);
+        const errMsg = err.name === 'AbortError' ? 'Request timed out.' : err.message;
+        alert('Error saving questions: ' + errMsg);
     }
 };
 
@@ -1005,17 +1032,22 @@ async function handlePdfToTest(input, index, lang = 'en') {
     const existingQIds = qIdsInput.value.split(',').map(s => s.trim()).filter(Boolean);
     const expectedCount = existingQIds.length;
 
+    const parseController = new AbortController();
+    let parseTimeout = setTimeout(() => parseController.abort(), 20000);
+
     try {
         const token = localStorage.getItem('token');
         const res = await fetch(`${API_BASE}/generate-questions-from-pdf?expectedCount=${expectedCount}`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` },
-            body: formData
+            body: formData,
+            signal: parseController.signal
         });
+        clearTimeout(parseTimeout);
 
         if (!res.ok) {
             const errorMsg = await getFetchErrorMessage(res);
-            activeStatus.innerHTML = `<span style="color:var(--danger)">${errorMsg}</span>`;
+            activeStatus.innerHTML = `<span style="color:var(--danger)">❌ Import Failed with an error message: ${errorMsg}</span>`;
             btnEn.disabled = false;
             btnHi.disabled = false;
             return;
@@ -1023,7 +1055,7 @@ async function handlePdfToTest(input, index, lang = 'en') {
 
         const data = await res.json();
         if (!data.ok) {
-            activeStatus.innerHTML = `<span style="color:var(--danger)">${data.message}</span>`;
+            activeStatus.innerHTML = `<span style="color:var(--danger)">❌ Import Failed with an error message: ${data.message}</span>`;
             btnEn.disabled = false;
             btnHi.disabled = false;
             return;
@@ -1050,14 +1082,20 @@ async function handlePdfToTest(input, index, lang = 'en') {
             });
 
             const targetEndpoint = lang === 'hi' ? 'add-hindi' : 'add-english';
+            const mergeController = new AbortController();
+            let mergeTimeout = setTimeout(() => mergeController.abort(), 20000);
+
             const updateRes = await fetch(`${API_BASE}/questions/${targetEndpoint}`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
+                body: JSON.stringify(payload),
+                signal: mergeController.signal
             });
+            clearTimeout(mergeTimeout);
+
             if (!updateRes.ok) {
                 const errorMsg = await getFetchErrorMessage(updateRes);
-                activeStatus.innerHTML = `<span style="color:var(--danger)">Merge failed: ${errorMsg}</span>`;
+                activeStatus.innerHTML = `<span style="color:var(--danger)">❌ Import Failed with an error message: Merge failed: ${errorMsg}</span>`;
                 btnEn.disabled = false;
                 btnHi.disabled = false;
                 return;
@@ -1066,16 +1104,16 @@ async function handlePdfToTest(input, index, lang = 'en') {
             
             if (updateData.ok) {
                 if (lang === 'hi') {
-                    statusHi.innerHTML = `<span style="color:#d97706; font-weight:600;">✅ ${data.questions.length} Hindi translations merged!</span>`;
+                    statusHi.innerHTML = `<span style="color:#d97706; font-weight:600;">✅ Import Successful: ${data.questions.length} Hindi translations merged!</span>`;
                     btnHi.innerHTML = '<i class="fas fa-check"></i> Hindi Updated';
                 } else {
-                    statusEn.innerHTML = `<span style="color:#6366f1; font-weight:600;">✅ ${data.questions.length} English translations merged!</span>`;
+                    statusEn.innerHTML = `<span style="color:#6366f1; font-weight:600;">✅ Import Successful: ${data.questions.length} English translations merged!</span>`;
                     btnEn.innerHTML = '<i class="fas fa-check"></i> English Updated';
                 }
                 btnEn.disabled = false;
                 btnHi.disabled = false;
             } else {
-                activeStatus.innerHTML = `<span style="color:var(--danger)">Merge failed: ${updateData.message || 'DB error'}</span>`;
+                activeStatus.innerHTML = `<span style="color:var(--danger)">❌ Import Failed with an error message: Merge failed: ${updateData.message || 'DB error'}</span>`;
                 btnEn.disabled = false;
                 btnHi.disabled = false;
             }
@@ -1113,14 +1151,20 @@ async function handlePdfToTest(input, index, lang = 'en') {
             };
         });
 
+        const saveController = new AbortController();
+        let saveTimeout = setTimeout(() => saveController.abort(), 20000);
+
         const saveRes = await fetch(`${API_BASE}/questions`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-            body: JSON.stringify(mappedQuestions)
+            body: JSON.stringify(mappedQuestions),
+            signal: saveController.signal
         });
+        clearTimeout(saveTimeout);
+
         if (!saveRes.ok) {
             const errorMsg = await getFetchErrorMessage(saveRes);
-            activeStatus.innerHTML = `<span style="color:var(--danger)">Save failed: ${errorMsg}</span>`;
+            activeStatus.innerHTML = `<span style="color:var(--danger)">❌ Import Failed with an error message: Save failed: ${errorMsg}</span>`;
             btnEn.disabled = false;
             btnHi.disabled = false;
             return;
@@ -1133,12 +1177,12 @@ async function handlePdfToTest(input, index, lang = 'en') {
             countBadge.textContent = saveData.questions.length;
             
             if (lang === 'en') {
-                statusEn.innerHTML = `<span style="color:#6366f1; font-weight:600;">✅ ${saveData.questions.length} English Qs imported!</span>`;
+                statusEn.innerHTML = `<span style="color:#6366f1; font-weight:600;">✅ Import Successful: ${saveData.questions.length} English Qs imported!</span>`;
                 statusHi.innerHTML = `<span style="color:#94a3b8;">Pending Hindi upload...</span>`;
                 btnEn.innerHTML = '<i class="fas fa-check"></i> English Uploaded';
                 btnHi.innerHTML = '<i class="fas fa-file-pdf"></i> Upload Hindi PDF';
             } else {
-                statusHi.innerHTML = `<span style="color:#d97706; font-weight:600;">✅ ${saveData.questions.length} Hindi Qs imported!</span>`;
+                statusHi.innerHTML = `<span style="color:#d97706; font-weight:600;">✅ Import Successful: ${saveData.questions.length} Hindi Qs imported!</span>`;
                 statusEn.innerHTML = `<span style="color:#94a3b8;">Pending English upload...</span>`;
                 btnHi.innerHTML = '<i class="fas fa-check"></i> Hindi Uploaded';
                 btnEn.innerHTML = '<i class="fas fa-file-pdf"></i> Upload English PDF';
@@ -1147,12 +1191,14 @@ async function handlePdfToTest(input, index, lang = 'en') {
             btnEn.disabled = false;
             btnHi.disabled = false;
         } else {
-            activeStatus.innerHTML = `<span style="color:var(--danger)">Save failed: ${saveData.message || 'DB error'}</span>`;
+            activeStatus.innerHTML = `<span style="color:var(--danger)">❌ Import Failed with an error message: Save failed: ${saveData.message || 'DB error'}</span>`;
             btnEn.disabled = false;
             btnHi.disabled = false;
         }
     } catch (e) {
-        activeStatus.innerHTML = `<span style="color:var(--danger)">Upload failed: ${e.message}</span>`;
+        clearTimeout(parseTimeout);
+        const errMsg = e.name === 'AbortError' ? 'Request timed out.' : e.message;
+        activeStatus.innerHTML = `<span style="color:var(--danger)">❌ Import Failed with an error message: ${errMsg}</span>`;
         btnEn.disabled = false;
         btnHi.disabled = false;
     }
