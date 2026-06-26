@@ -3,14 +3,46 @@ const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
+const mongoose = require('mongoose');
+const MockTestPack = require('../models/MockTestPack');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'Dhiraj@2026_secure_key!';
-console.log('JWT_SECRET in use:', JWT_SECRET);
 
 // Generate admin token
-const token = jwt.sign({ userId: '507f1f0873e7900000000001', role: 'admin', email: 'admin@coursenova.in' }, JWT_SECRET, { expiresIn: '1h' });
+const token = jwt.sign(
+    { userId: '507f1f0873e7900000000001', role: 'admin', email: 'admin@coursenova.in' },
+    JWT_SECRET,
+    { expiresIn: '1h' }
+);
 
 async function verify() {
+    console.log('Connecting to MongoDB to find a mock test pack...');
+    await mongoose.connect(process.env.MONGO_URI);
+    let pack = await MockTestPack.findOne();
+    if (!pack) {
+        console.log('No MockTestPack found. Creating a temporary test pack...');
+        pack = await MockTestPack.create({
+            title: 'SSC GD Mock Test Series',
+            id: 'ssc-gd-series',
+            category: 'SSC GD',
+            price: 0,
+            isActive: true,
+            description: 'Temporary Test Pack',
+            tests: [
+                {
+                    testTitle: 'Set 1 Full Test',
+                    testId: 'set-1-full-test',
+                    durationMinutes: 60,
+                    questions: []
+                }
+            ]
+        });
+    }
+    const packId = pack.id;
+    const testId = pack.tests[0].testId;
+    console.log(`Using Pack ID: ${packId}, Test ID: ${testId}`);
+    await mongoose.disconnect();
+
     console.log('Starting Express server...');
     const serverProcess = spawn('node', ['server.js'], {
         cwd: path.join(__dirname, '..'),
@@ -29,7 +61,7 @@ async function verify() {
     await new Promise((resolve) => setTimeout(resolve, 8000));
 
     try {
-        console.log('Sending PDF generate questions (preview) background request...');
+        console.log('Sending PDF import questions background request...');
         const pdfPath = 'C:\\Users\\dhira\\Downloads\\SSC GD Constable Shift 1 English.pdf';
         const fileBuffer = fs.readFileSync(pdfPath);
         
@@ -37,14 +69,16 @@ async function verify() {
         const formData = new FormData();
         const blob = new Blob([fileBuffer], { type: 'application/pdf' });
         formData.append('pdf', blob, 'SSC GD Constable Shift 1 English.pdf');
-        formData.append('category', 'Temp_SSC_GD_Pipeline_Test');
+        formData.append('category', 'SSC GD');
         formData.append('subject', 'Reasoning');
+        formData.append('packId', packId);
+        formData.append('testId', testId);
 
-        let previewRes = null;
+        let importRes = null;
         let retries = 5;
         while (retries > 0) {
             try {
-                previewRes = await fetch('http://localhost:5000/api/admin/generate-questions-from-pdf', {
+                importRes = await fetch('http://localhost:5000/api/admin/import-pdf-questions', {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${token}`
@@ -60,19 +94,19 @@ async function verify() {
             }
         }
 
-        if (!previewRes.ok) {
-            const errText = await previewRes.text();
-            throw new Error(`Upload failed: ${previewRes.status} ${errText}`);
+        if (!importRes.ok) {
+            const errText = await importRes.text();
+            throw new Error(`Upload failed: ${importRes.status} ${errText}`);
         }
 
-        const previewData = await previewRes.json();
-        console.log('Preview Response:', previewData);
+        const importData = await importRes.json();
+        console.log('Import Response:', importData);
 
-        if (!previewData.ok || !previewData.jobId) {
-            throw new Error('Preview request did not return a jobId!');
+        if (!importData.ok || !importData.jobId) {
+            throw new Error('Import request did not return a jobId!');
         }
 
-        const jobId = previewData.jobId;
+        const jobId = importData.jobId;
         console.log(`Polling status for Job ID: ${jobId}`);
 
         let jobCompleted = false;
@@ -98,10 +132,7 @@ async function verify() {
 
             if (job.status === 'completed') {
                 jobCompleted = true;
-                console.log('Job completed successfully! Result summary:', {
-                    count: job.result.count,
-                    firstQuestion: job.result.questions ? job.result.questions[0].question : null
-                });
+                console.log('Job completed successfully! Result summary:', job.result);
                 break;
             } else if (job.status === 'failed') {
                 throw new Error(`Job failed: ${job.error}`);

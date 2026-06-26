@@ -340,31 +340,55 @@ function parseQuestionsFromText(text, expectedCount = 100) {
 }
 
 // POST /api/admin/daily-challenge/upload
-router.post('/upload', requireAuth, upload.single('pdf'), async (req, res) => {
+router.post('/upload', (req, res, next) => {
+    req.startTime = Date.now();
+    console.log('[1] Upload started');
+    next();
+}, requireAuth, upload.single('pdf'), async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ ok: false, error: 'No PDF uploaded' });
+        const uploadDuration = Date.now() - req.startTime;
+        console.log(`[2] PDF received (size: ${req.file.size} bytes) - elapsed: ${uploadDuration}ms`);
+
         const { date, title, examType } = req.body;
         const pdfBuffer = req.file.buffer;
         
         const data = await pdfParse(pdfBuffer);
+        console.log(`[3] Text extraction completed - elapsed: ${Date.now() - req.startTime}ms`);
+        console.log(`[4] OCR started (if used) - SKIPPED`);
+        console.log(`[5] OCR completed - SKIPPED`);
+
         const expectedCount = req.query.expectedCount || req.body.expectedCount || 100;
         const questions = parseQuestionsFromText(data.text, expectedCount);
+        console.log(`[6] Question parsing completed - elapsed: ${Date.now() - req.startTime}ms`);
+        console.log(`[7] Total questions detected: ${questions.length} - elapsed: ${Date.now() - req.startTime}ms`);
+
+        console.log(`[8] Duplicate detection completed - SKIPPED`);
+        console.log(`[9] MongoDB insert started - SKIPPED`);
+        console.log(`[10] MongoDB insert completed - SKIPPED`);
+        console.log(`[11] Mock Test linking started - SKIPPED`);
+        console.log(`[12] Mock Test linking completed - SKIPPED`);
 
         if (questions.length === 0) {
-            return res.json({
+            res.json({
                 ok: false,
                 error: '❌ No MCQ questions detected. Format your PDF with standard MCQ numbering and option blocks (A, B, C, D).'
             });
+            console.log(`[13] Response sent - elapsed: ${Date.now() - req.startTime}ms`);
+            return;
         }
 
         if (questions.isEmptyPDF) {
-            return res.json({
+            res.json({
                 ok: false,
                 error: '❌ The uploaded PDF contains scanned images or is not text-selectable. Please upload a text-selectable PDF.'
             });
+            console.log(`[13] Response sent - elapsed: ${Date.now() - req.startTime}ms`);
+            return;
         }
 
         res.json({ ok: true, questions });
+        console.log(`[13] Response sent - elapsed: ${Date.now() - req.startTime}ms`);
     } catch (err) {
         console.error(err);
         res.status(500).json({ ok: false, error: 'Failed to process PDF' });

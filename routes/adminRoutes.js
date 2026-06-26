@@ -56,12 +56,12 @@ function mapSubject(subjectName) {
 }
 
 // ── BACKGROUND PDF JOBS MANAGER ──────────────────────────────────────
-const pdfJobs = new Map();
+const PdfJob = require('../models/PdfJob');
 
-function createJob(type, params) {
+async function createJob(type, params) {
     const jobId = `job_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
-    pdfJobs.set(jobId, {
-        id: jobId,
+    await PdfJob.create({
+        jobId,
         type,
         status: 'processing',
         progress: 0,
@@ -69,58 +69,87 @@ function createJob(type, params) {
         logs: [`[Job Started] ID: ${jobId}, Type: ${type}`],
         result: null,
         error: null,
-        params,
-        createdAt: new Date()
+        totalQuestions: 0,
+        imported: 0,
+        duplicates: 0,
+        failed: 0
     });
     return jobId;
 }
 
-function updateJob(jobId, progress, stage, logMessage) {
-    const job = pdfJobs.get(jobId);
-    if (!job) return;
-    if (progress !== undefined) job.progress = progress;
-    if (stage !== undefined) job.stage = stage;
-    if (logMessage) {
-        const timestamp = new Date().toISOString();
-        job.logs.push(`[${timestamp}] ${logMessage}`);
-        console.log(`[PDF Job ${jobId}] ${logMessage}`);
-    }
-}
-
-function completeJob(jobId, result, logMessage = 'Job completed successfully.') {
-    const job = pdfJobs.get(jobId);
-    if (!job) return;
-    job.status = 'completed';
-    job.progress = 100;
-    job.stage = 'Completed';
-    job.result = result;
-    job.logs.push(`[${new Date().toISOString()}] ${logMessage}`);
-    console.log(`[PDF Job ${jobId}] ${logMessage}`);
-}
-
-function failJob(jobId, errorMsg) {
-    const job = pdfJobs.get(jobId);
-    if (!job) return;
-    job.status = 'failed';
-    job.stage = 'Failed';
-    job.error = errorMsg;
-    job.logs.push(`[${new Date().toISOString()}] Job failed: ${errorMsg}`);
-    console.error(`[PDF Job ${jobId}] Failed: ${errorMsg}`);
-}
-
-// Cleanup old jobs older than 1 hour, runs every 10 minutes
-setInterval(() => {
-    const oneHourAgo = Date.now() - 3600000;
-    for (const [id, job] of pdfJobs.entries()) {
-        if (job.createdAt && job.createdAt.getTime() < oneHourAgo) {
-            pdfJobs.delete(id);
+async function updateJob(jobId, progress, stage, logMessage) {
+    try {
+        const update = {};
+        if (progress !== undefined) update.progress = progress;
+        if (stage !== undefined) update.stage = stage;
+        
+        const push = {};
+        if (logMessage) {
+            const timestamp = new Date().toISOString();
+            push.logs = `[${timestamp}] ${logMessage}`;
+            console.log(`[PDF Job ${jobId}] ${logMessage}`);
         }
+        
+        const updateObj = {};
+        if (Object.keys(update).length > 0) updateObj.$set = update;
+        if (Object.keys(push).length > 0) updateObj.$push = push;
+        
+        await PdfJob.updateOne({ jobId }, updateObj);
+    } catch (err) {
+        console.error(`Failed to update job ${jobId}:`, err.message);
     }
-}, 600000);
+}
+
+async function completeJob(jobId, result, logMessage = 'Job completed successfully.') {
+    try {
+        const timestamp = new Date().toISOString();
+        const updateObj = {
+            status: 'completed',
+            progress: 100,
+            stage: 'Completed',
+            result,
+            totalQuestions: result.totalQuestions || result.count || 0,
+            imported: result.importedCount || 0,
+            duplicates: result.duplicateCount || 0,
+            failed: result.failedCount || 0
+        };
+        await PdfJob.updateOne(
+            { jobId },
+            {
+                $set: updateObj,
+                $push: { logs: `[${timestamp}] ${logMessage}` }
+            }
+        );
+        console.log(`[PDF Job ${jobId}] ${logMessage}`);
+    } catch (err) {
+        console.error(`Failed to complete job ${jobId}:`, err.message);
+    }
+}
+
+async function failJob(jobId, errorMsg) {
+    try {
+        const timestamp = new Date().toISOString();
+        await PdfJob.updateOne(
+            { jobId },
+            {
+                $set: {
+                    status: 'failed',
+                    stage: 'Failed',
+                    error: errorMsg,
+                    progress: 100
+                },
+                $push: { logs: `[${timestamp}] Job failed: ${errorMsg}` }
+            }
+        );
+        console.error(`[PDF Job ${jobId}] Failed: ${errorMsg}`);
+    } catch (err) {
+        console.error(`Failed to fail job ${jobId}:`, err.message);
+    }
+}
 
 // GET /api/admin/pdf-jobs/:jobId 
-router.get('/pdf-jobs/:jobId', requireAdmin, (req, res) => {
-    const job = pdfJobs.get(req.params.jobId);
+router.get('/pdf-jobs/:jobId', requireAdmin, catchAsync(async (req, res) => {
+    const job = await PdfJob.findOne({ jobId: req.params.jobId });
     if (!job) {
         return res.status(404).json({ ok: false, message: 'Job not found' });
     }
@@ -131,9 +160,13 @@ router.get('/pdf-jobs/:jobId', requireAdmin, (req, res) => {
         stage: job.stage,
         result: job.result,
         error: job.error,
-        logs: job.logs
+        logs: job.logs,
+        totalQuestions: job.totalQuestions || 0,
+        imported: job.imported || 0,
+        duplicates: job.duplicates || 0,
+        failed: job.failed || 0
     });
-});
+}));
 
 // ── Parse MCQ questions from raw PDF text ────────────────────────────
 async function parseMCQFromText(text, expectedCount = 100, onProgress = null) {
@@ -459,7 +492,7 @@ async function parseMCQFromText(text, expectedCount = 100, onProgress = null) {
 // ── Unified parse function with fallback OCR logic ───────────────────
 const { extractQuestionsFromPdf } = require('../services/aiService');
 
-async function parseQuestionsFromPDFBuffer(buffer, defaultCategory = '', defaultSubject = '', expectedCount = 100, updateJobCallback = null) {
+async function parseQuestionsFromPDFBuffer(buffer, defaultCategory = '', defaultSubject = '', expectedCount = 100, updateJobCallback = null, startTime = Date.now()) {
     let text = '';
     let isScanned = false;
     
@@ -504,9 +537,11 @@ async function parseQuestionsFromPDFBuffer(buffer, defaultCategory = '', default
             updateJobCallback(35, 'Extracting text', `Local text extraction completed in ${extDuration}ms. Length: ${text.length} characters.`);
         }
         console.log(`[PDF Upload] Text extracted successfully: length=${text.length} characters, time=${extDuration}ms`);
+        console.log(`[3] Text extraction completed - elapsed: ${Date.now() - startTime}ms`);
     } catch (pdfErr) {
         const extDuration = Date.now() - extStartTime;
         console.error(`[PDF Upload] Error extracting text (after ${extDuration}ms): ${pdfErr.message}`);
+        console.log(`[3] Text extraction completed - elapsed: ${Date.now() - startTime}ms`);
         isScanned = true;
     }
 
@@ -567,11 +602,17 @@ async function parseQuestionsFromPDFBuffer(buffer, defaultCategory = '', default
         }
     }
 
+    if (!isScanned) {
+        console.log(`[4] OCR started (if used) - SKIPPED`);
+        console.log(`[5] OCR completed - SKIPPED`);
+    }
+
     if (isScanned) {
         if (updateJobCallback) {
             updateJobCallback(45, 'Running OCR Fallback', 'Running Gemini OCR fallback (this may take up to 2 minutes)...');
         }
         console.log('[PDF Upload] Running OCR/AI fallback...');
+        console.log(`[4] OCR started (if used) - elapsed: ${Date.now() - startTime}ms`);
         const ocrStartTime = Date.now();
         const ocrQuestions = await Promise.race([
             extractQuestionsFromPdf(buffer, {
@@ -585,6 +626,7 @@ async function parseQuestionsFromPDFBuffer(buffer, defaultCategory = '', default
             updateJobCallback(60, 'Running OCR Fallback', `Gemini OCR fallback completed in ${ocrDuration}ms. Found ${ocrQuestions.length} questions.`);
         }
         console.log(`[PDF Upload] Questions extracted via OCR/AI successfully: count=${ocrQuestions.length}, time=${ocrDuration}ms`);
+        console.log(`[5] OCR completed - elapsed: ${Date.now() - startTime}ms`);
 
         parsedQuestions = ocrQuestions.map(q => {
             const opts = q.options || [];
@@ -611,31 +653,36 @@ async function parseQuestionsFromPDFBuffer(buffer, defaultCategory = '', default
         });
     }
 
+    console.log(`[6] Question parsing completed - elapsed: ${Date.now() - startTime}ms`);
+    console.log(`[7] Total questions detected: ${parsedQuestions.length} - elapsed: ${Date.now() - startTime}ms`);
+
+
     return parsedQuestions;
 }
 
 // ── BACKGROUND WORKERS ───────────────────────────────────────────────
-async function runPreviewPDFJob(jobId, buffer, defaultCategory, defaultSubject, expectedCount) {
-    const startTime = Date.now();
+// ── BACKGROUND WORKERS ───────────────────────────────────────────────
+async function runPreviewPDFJob(jobId, buffer, defaultCategory, defaultSubject, expectedCount, startTime = Date.now()) {
     try {
-        updateJob(jobId, 5, 'Extracting text', 'Received PDF buffer. Starting text extraction...');
+        await updateJob(jobId, 5, 'Extracting text', 'Received PDF buffer. Starting text extraction...');
         const questions = await parseQuestionsFromPDFBuffer(
             buffer,
             defaultCategory,
             defaultSubject,
             expectedCount,
-            (progress, stage, log) => updateJob(jobId, progress, stage, log)
+            (progress, stage, log) => { updateJob(jobId, progress, stage, log); },
+            startTime
         );
         const elapsedSec = ((Date.now() - startTime) / 1000).toFixed(2);
-        completeJob(jobId, { questions, count: questions.length }, `Preview questions extracted successfully in ${elapsedSec}s. Count: ${questions.length}`);
+        await completeJob(jobId, { questions, count: questions.length }, `Preview questions extracted successfully in ${elapsedSec}s. Count: ${questions.length}`);
     } catch (err) {
-        failJob(jobId, err.message);
+        await failJob(jobId, err.message);
     }
 }
 
-async function runImportPDFJob(jobId, buffer, defaultCategory, defaultSubject, packId, testId, reqUser) {
-    const startTime = Date.now();
-    updateJob(jobId, 5, 'Extracting text', 'Received PDF buffer. Starting text extraction...');
+async function runImportPDFJob(jobId, buffer, defaultCategory, defaultSubject, packId, testId, reqUser, startTime = Date.now()) {
+    const elapsedSecStart = ((Date.now() - startTime) / 1000).toFixed(2);
+    await updateJob(jobId, 5, 'Extracting text', 'Received PDF buffer. Starting text extraction...');
     
     try {
         const parsedQuestions = await parseQuestionsFromPDFBuffer(
@@ -643,12 +690,13 @@ async function runImportPDFJob(jobId, buffer, defaultCategory, defaultSubject, p
             defaultCategory,
             defaultSubject,
             100,
-            (progress, stage, log) => updateJob(jobId, progress, stage, log)
+            (progress, stage, log) => { updateJob(jobId, progress, stage, log); },
+            startTime
         );
 
         if (!parsedQuestions || parsedQuestions.length === 0) {
             const elapsedSec = ((Date.now() - startTime) / 1000).toFixed(2);
-            completeJob(jobId, {
+            await completeJob(jobId, {
                 totalQuestions: 0,
                 importedCount: 0,
                 duplicateCount: 0,
@@ -658,7 +706,7 @@ async function runImportPDFJob(jobId, buffer, defaultCategory, defaultSubject, p
             return;
         }
 
-        updateJob(jobId, 65, 'Checking duplicates', `Checking duplicates in database for ${parsedQuestions.length} parsed questions...`);
+        await updateJob(jobId, 65, 'Checking duplicates', `Checking duplicates in database for ${parsedQuestions.length} parsed questions...`);
         const dupStartTime = Date.now();
         
         const questionTexts = parsedQuestions.map(q => q.question).filter(Boolean);
@@ -669,7 +717,7 @@ async function runImportPDFJob(jobId, buffer, defaultCategory, defaultSubject, p
                 { question: { $in: questionTexts } },
                 { question_en: { $in: questionEnTexts } }
             ]
-        });
+        }).select('_id question question_en');
 
         function cleanText(text) {
             if (!text) return '';
@@ -726,8 +774,10 @@ async function runImportPDFJob(jobId, buffer, defaultCategory, defaultSubject, p
         });
 
         const dupElapsedMs = Date.now() - dupStartTime;
-        updateJob(jobId, 75, 'Database insertion', `Duplicate check completed in ${dupElapsedMs}ms. Found ${uniqueQuestions.length} unique questions and ${duplicateCount} duplicates.`);
+        await updateJob(jobId, 75, 'Database insertion', `Duplicate check completed in ${dupElapsedMs}ms. Found ${uniqueQuestions.length} unique questions and ${duplicateCount} duplicates.`);
+        console.log(`[8] Duplicate detection completed - elapsed: ${Date.now() - startTime}ms`);
 
+        console.log(`[9] MongoDB insert started - elapsed: ${Date.now() - startTime}ms`);
         const dbStartTime = Date.now();
         let importedCount = 0;
         const batchSize = 200;
@@ -757,8 +807,10 @@ async function runImportPDFJob(jobId, buffer, defaultCategory, defaultSubject, p
         }
 
         const dbElapsedMs = Date.now() - dbStartTime;
-        updateJob(jobId, 90, 'Linking to mock test', `Database save completed in ${dbElapsedMs}ms. Saved ${importedCount} unique questions. Starting mock test linking...`);
+        await updateJob(jobId, 90, 'Linking to mock test', `Database save completed in ${dbElapsedMs}ms. Saved ${importedCount} unique questions. Starting mock test linking...`);
+        console.log(`[10] MongoDB insert completed - elapsed: ${Date.now() - startTime}ms`);
 
+        console.log(`[11] Mock Test linking started - elapsed: ${Date.now() - startTime}ms`);
         questionIdMapping.sort((a, b) => a.index - b.index);
         const finalQuestionIds = questionIdMapping.map(m => m.id);
 
@@ -772,14 +824,15 @@ async function runImportPDFJob(jobId, buffer, defaultCategory, defaultSubject, p
                     subtest.numQuestions = finalQuestionIds.length;
                     await pack.save();
                     const linkElapsedMs = Date.now() - linkStartTime;
-                    updateJob(jobId, 95, 'Mock test linked', `Mock test linked successfully in ${linkElapsedMs}ms.`);
+                    await updateJob(jobId, 95, 'Mock test linked', `Mock test linked successfully in ${linkElapsedMs}ms.`);
                 } else {
-                    updateJob(jobId, 95, 'Mock test linking skipped', `Warning: Test ${testId} not found in pack ${packId}.`);
+                    await updateJob(jobId, 95, 'Mock test linking skipped', `Warning: Test ${testId} not found in pack ${packId}.`);
                 }
             } else {
-                updateJob(jobId, 95, 'Mock test linking skipped', `Warning: Pack ${packId} not found.`);
+                await updateJob(jobId, 95, 'Mock test linking skipped', `Warning: Pack ${packId} not found.`);
             }
         }
+        console.log(`[12] Mock Test linking completed - elapsed: ${Date.now() - startTime}ms`);
 
         const elapsedSec = ((Date.now() - startTime) / 1000).toFixed(2);
         
@@ -801,7 +854,7 @@ async function runImportPDFJob(jobId, buffer, defaultCategory, defaultSubject, p
             }
         });
 
-        completeJob(jobId, {
+        await completeJob(jobId, {
             totalQuestions: parsedQuestions.length,
             importedCount,
             duplicateCount,
@@ -810,20 +863,25 @@ async function runImportPDFJob(jobId, buffer, defaultCategory, defaultSubject, p
         }, `PDF Import job completed successfully in ${elapsedSec}s.`);
 
     } catch (err) {
-        failJob(jobId, err.message);
+        await failJob(jobId, err.message);
     }
 }
 
 // ── POST /api/admin/generate-questions-from-pdf (generic preview) ─────
-router.post('/generate-questions-from-pdf', requireAdmin, upload.single('pdf'), catchAsync(async (req, res) => {
+router.post('/generate-questions-from-pdf', (req, res, next) => {
+    req.startTime = Date.now();
+    console.log('[1] Upload started');
+    next();
+}, requireAdmin, upload.single('pdf'), catchAsync(async (req, res) => {
     if (!req.file) throw new AppError('No PDF file uploaded', 400);
-    console.log(`[PDF Upload] File uploaded for preview (async job): name=${req.file.originalname}, size=${req.file.size} bytes`);
+    const uploadDuration = Date.now() - req.startTime;
+    console.log(`[2] PDF received (size: ${req.file.size} bytes) - elapsed: ${uploadDuration}ms`);
 
     const expectedCount = req.query.expectedCount || req.body.expectedCount || 100;
     const defaultCategory = req.body.category || req.query.category || '';
     const defaultSubject = req.body.subject || req.query.subject || '';
 
-    const jobId = createJob('preview-pdf', {
+    const jobId = await createJob('preview-pdf', {
         name: req.file.originalname,
         size: req.file.size,
         expectedCount,
@@ -831,23 +889,29 @@ router.post('/generate-questions-from-pdf', requireAdmin, upload.single('pdf'), 
         subject: defaultSubject
     });
 
-    runPreviewPDFJob(jobId, req.file.buffer, defaultCategory, defaultSubject, expectedCount)
+    runPreviewPDFJob(jobId, req.file.buffer, defaultCategory, defaultSubject, expectedCount, req.startTime)
         .catch(err => console.error(`[PDF Job ${jobId}] error:`, err));
 
     res.json({ ok: true, jobId });
+    console.log(`[13] Response sent - elapsed: ${Date.now() - req.startTime}ms`);
 }));
 
 // ── POST /api/admin/import-pdf-questions ──────────────────────────────
-router.post('/import-pdf-questions', requireAdmin, upload.single('pdf'), catchAsync(async (req, res) => {
+router.post('/import-pdf-questions', (req, res, next) => {
+    req.startTime = Date.now();
+    console.log('[1] Upload started');
+    next();
+}, requireAdmin, upload.single('pdf'), catchAsync(async (req, res) => {
     if (!req.file) throw new AppError('No PDF file uploaded', 400);
-    console.log(`[PDF Upload] File uploaded for import (async job): name=${req.file.originalname}, size=${req.file.size} bytes`);
+    const uploadDuration = Date.now() - req.startTime;
+    console.log(`[2] PDF received (size: ${req.file.size} bytes) - elapsed: ${uploadDuration}ms`);
 
     const defaultCategory = req.body.category || req.query.category || '';
     const defaultSubject = req.body.subject || req.query.subject || '';
     const packId = req.body.packId || req.query.packId || '';
     const testId = req.body.testId || req.query.testId || '';
 
-    const jobId = createJob('import-pdf', {
+    const jobId = await createJob('import-pdf', {
         name: req.file.originalname,
         size: req.file.size,
         category: defaultCategory,
@@ -861,17 +925,23 @@ router.post('/import-pdf-questions', requireAdmin, upload.single('pdf'), catchAs
         user: req.user
     };
 
-    runImportPDFJob(jobId, req.file.buffer, defaultCategory, defaultSubject, packId, testId, reqUser)
+    runImportPDFJob(jobId, req.file.buffer, defaultCategory, defaultSubject, packId, testId, reqUser, req.startTime)
         .catch(err => console.error(`[PDF Job ${jobId}] error:`, err));
 
     res.json({ ok: true, jobId });
+    console.log(`[13] Response sent - elapsed: ${Date.now() - req.startTime}ms`);
 }));
 
 // ── POST /api/admin/courses/:id/upload-questions-pdf ──────────────────
 // Parses a PDF and SAVES questions directly into the course in MongoDB
-router.post('/courses/:id/upload-questions-pdf', requireAdmin, upload.single('pdf'), catchAsync(async (req, res) => {
+router.post('/courses/:id/upload-questions-pdf', (req, res, next) => {
+    req.startTime = Date.now();
+    console.log('[1] Upload started');
+    next();
+}, requireAdmin, upload.single('pdf'), catchAsync(async (req, res) => {
     if (!req.file) throw new AppError('No PDF file uploaded', 400);
-    console.log(`[PDF Upload] File uploaded for course ${req.params.id}: name=${req.file.originalname}, size=${req.file.size} bytes`);
+    const uploadDuration = Date.now() - req.startTime;
+    console.log(`[2] PDF received (size: ${req.file.size} bytes) - elapsed: ${uploadDuration}ms`);
 
     const course = await Course.findById(req.params.id);
     if (!course) throw new AppError('Course not found', 404);
@@ -880,7 +950,7 @@ router.post('/courses/:id/upload-questions-pdf', requireAdmin, upload.single('pd
     
     let parsed = [];
     try {
-        parsed = await parseQuestionsFromPDFBuffer(req.file.buffer, course.category || '', course.subject || '', expectedCount);
+        parsed = await parseQuestionsFromPDFBuffer(req.file.buffer, course.category || '', course.subject || '', expectedCount, null, req.startTime);
     } catch (err) {
         console.error(`[PDF Upload] PDF course upload failed: ${err.message}`);
         return res.status(500).json({ ok: false, message: `Failed to parse PDF: ${err.message}` });
@@ -901,9 +971,15 @@ router.post('/courses/:id/upload-questions-pdf', requireAdmin, upload.single('pd
         course.quizQuestions.push(...parsed);
     }
 
+    console.log(`[8] Duplicate detection completed - SKIPPED`);
+    console.log(`[9] MongoDB insert started - elapsed: ${Date.now() - req.startTime}ms`);
     console.log(`[PDF Upload] Database save started for Course ${course._id}`);
     await course.save();
     console.log(`[PDF Upload] Database save completed for Course ${course._id}`);
+    console.log(`[10] MongoDB insert completed - elapsed: ${Date.now() - req.startTime}ms`);
+
+    console.log(`[11] Mock Test linking started - SKIPPED`);
+    console.log(`[12] Mock Test linking completed - SKIPPED`);
 
     await logAdminAction(req, 'PDF_QUESTIONS_UPLOADED', course._id, 'Course', {
         title: course.title,
@@ -918,6 +994,7 @@ router.post('/courses/:id/upload-questions-pdf', requireAdmin, upload.single('pd
         totalQuestions: course.quizQuestions.length,
         questions: parsed
     });
+    console.log(`[13] Response sent - elapsed: ${Date.now() - req.startTime}ms`);
 }));
 
 
@@ -1122,7 +1199,7 @@ router.post('/questions', requireAdmin, catchAsync(async (req, res) => {
                 { question: { $in: questionTexts } },
                 { question_en: { $in: questionEnTexts } }
             ]
-        });
+        }).select('_id question question_en');
 
         function cleanText(text) {
             if (!text) return '';

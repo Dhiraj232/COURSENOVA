@@ -24,4 +24,9 @@ const practiceQuestionSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 });
 
+// Indexes for duplicate checking and fast queries
+practiceQuestionSchema.index({ question: 1 });
+practiceQuestionSchema.index({ question_en: 1 });
+
 module.exports = mongoose.model('PracticeQuestion', practiceQuestionSchema);
+
