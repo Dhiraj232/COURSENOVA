@@ -1725,6 +1725,18 @@ function showPdfUploadModal() {
                 </p>
             </div>
             <div class="form-group" style="margin-top: 15px;">
+                <label>Target Mock Test Pack (Optional)</label>
+                <select id="pdfMockPack" class="admin-input" onchange="handleMockPackChange()">
+                    <option value="">-- Do not link to a mock test (Upload to Question Bank only) --</option>
+                </select>
+            </div>
+            <div class="form-group" style="margin-top: 15px; display: none;" id="pdfMockTestRow">
+                <label>Target Specific Test (Required if Pack is selected)</label>
+                <select id="pdfMockTest" class="admin-input">
+                    <option value="">-- Select Test --</option>
+                </select>
+            </div>
+            <div class="form-group" style="margin-top: 15px;">
                 <label>Default Category (Fallback)</label>
                 <input type="text" id="pdfCategory" class="admin-input" placeholder="e.g. SSC, NEET, JEE, Banking, UPSC (Optional)">
             </div>
@@ -1740,25 +1752,89 @@ function showPdfUploadModal() {
         </div>
     `;
     modalContainer.classList.add('active');
+
+    // Fetch and populate Mock Test Packs
+    (async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const res = await fetch(`${API_BASE}/mock-tests`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = await res.json();
+            if (data.ok && data.packs) {
+                window.allMockTestPacks = data.packs;
+                const packSelect = document.getElementById('pdfMockPack');
+                data.packs.forEach(pack => {
+                    const opt = document.createElement('option');
+                    opt.value = pack.id;
+                    opt.textContent = `${pack.title} (${pack.category})`;
+                    packSelect.appendChild(opt);
+                });
+            }
+        } catch (err) {
+            console.error('Failed to load mock tests in modal:', err);
+        }
+    })();
+}
+
+function handleMockPackChange() {
+    const packSelect = document.getElementById('pdfMockPack');
+    const testRow = document.getElementById('pdfMockTestRow');
+    const testSelect = document.getElementById('pdfMockTest');
+    const categoryInp = document.getElementById('pdfCategory');
+
+    const selectedPackId = packSelect.value;
+    testSelect.innerHTML = '<option value="">-- Select Test --</option>';
+
+    if (!selectedPackId) {
+        testRow.style.display = 'none';
+        return;
+    }
+
+    const pack = (window.allMockTestPacks || []).find(p => p.id === selectedPackId);
+    if (pack) {
+        testRow.style.display = 'block';
+        if (pack.category) {
+            categoryInp.value = pack.category;
+        }
+        if (pack.tests && pack.tests.length > 0) {
+            pack.tests.forEach(test => {
+                const opt = document.createElement('option');
+                opt.value = test.testId;
+                opt.textContent = `${test.testTitle} (${test.numQuestions || 0} questions)`;
+                testSelect.appendChild(opt);
+            });
+        }
+    } else {
+        testRow.style.display = 'none';
+    }
 }
 
 async function handlePdfUpload() {
     const fileInp = document.getElementById('pdfFile');
     const categoryInp = document.getElementById('pdfCategory');
     const subjectInp = document.getElementById('pdfSubject');
+    const packSelect = document.getElementById('pdfMockPack');
+    const testSelect = document.getElementById('pdfMockTest');
     const status = document.getElementById('pdf-status');
     const btn = document.getElementById('pdfUploadBtn');
 
     if (!fileInp.files[0]) return alert('Please select a PDF file');
 
+    if (packSelect.value && !testSelect.value) {
+        return alert('Please select the specific test to import questions into');
+    }
+
     const formData = new FormData();
     formData.append('pdf', fileInp.files[0]);
     formData.append('category', categoryInp.value.trim());
     formData.append('subject', subjectInp.value.trim());
+    formData.append('packId', packSelect.value);
+    formData.append('testId', testSelect.value);
 
     btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing with Gemini AI...';
-    status.innerHTML = '<div style="color:var(--primary); font-weight:500;"><i class="fas fa-magic fa-spin"></i> Gemini is reading, running OCR, and extracting MCQ questions (Hindi & English)...</div>';
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing and Extracting PDF...';
+    status.innerHTML = '<div style="color:var(--primary); font-weight:500;"><i class="fas fa-magic fa-spin"></i> Extracting questions, mapping subjects, and verifying database...</div>';
 
     try {
         const token = localStorage.getItem('token');
@@ -1820,7 +1896,7 @@ async function handlePdfUpload() {
             btn.textContent = 'Try Again';
         }
     } catch (e) {
-        status.innerHTML = `<span style="color:var(--danger)">Failed to process PDF</span>`;
+        status.innerHTML = `<span style="color:var(--danger)">Failed to process PDF: ${e.message}</span>`;
         btn.disabled = false;
         btn.textContent = 'Try Again';
     }
