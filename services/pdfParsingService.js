@@ -105,10 +105,35 @@ function extractJpegsFromPDFBuffer(pdfBuffer) {
  * Cleans extracted text by stripping page numbers, headers, footers, watermarks
  */
 function cleanExtractedText(text) {
-    if (!text) return '';
+    if (!text) return { text: '', promoCount: 0 };
     
     let lines = text.split('\n');
     const cleanedLines = [];
+    let promoCount = 0;
+    
+    const blacklistPatterns = [
+        /downloaded\s+from/i,
+        /cracku/i,
+        /ssc\s+gd\s+free\s+app/i,
+        /ssc\s+gd\s+previous\s+papers/i,
+        /download\s+pdf/i,
+        /latest\s+pattern/i,
+        /study\s+material/i,
+        /youtube/i,
+        /support@/i,
+        /whatsapp/i,
+        /all\s+rights\s+reserved/i,
+        /take\s+this\s+mock/i,
+        /for\s+mba\/cat\s+courses/i,
+        /ssc\s+mts\s+previous\s+papers/i,
+        /ssc\s+cpo\s+previous\s+papers/i,
+        /ssc\s+chsl\s+previous\s+papers/i,
+        /ssc\s+stenographer\s+previous\s+papers/i,
+        /important\s+questions/i,
+        /syllabus/i,
+        /free\s+study\s+material/i,
+        /^(?:Reasoning|General\s+Knowledge|GK|English|Quantitative\s+Aptitude|Mathematics|Maths?|Hindi|Section\s+[A-Z]|Part\s+[A-Z]|General\s+Awareness|Logical\s+Reasoning|Mental\s+Ability)\b/i
+    ];
     
     for (let line of lines) {
         let trimmed = line.trim();
@@ -131,10 +156,23 @@ function cleanExtractedText(text) {
             continue;
         }
         
+        let isBlacklisted = false;
+        for (let pattern of blacklistPatterns) {
+            if (pattern.test(trimmed)) {
+                isBlacklisted = true;
+                break;
+            }
+        }
+        
+        if (isBlacklisted) {
+            promoCount++;
+            continue;
+        }
+        
         cleanedLines.push(trimmed);
     }
     
-    return cleanedLines.join('\n');
+    return { text: cleanedLines.join('\n'), promoCount };
 }
 
 /**
@@ -147,7 +185,7 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
     
     // Heuristic prefix checks
     // Standard Question start regex matching 1., Q1., Question 1, प्र. 1, etc.
-    const qPrefixRegex = /^(?:(?:Q|Question|प्र[.]?|प्रश्न|Que|S)\s*[-.:]?\s*([0-9१२३४५६७८९०]+)|(?:\[|\()?([0-9१२३४५६७८९०]+)(?:\]|\))|([0-9१२३४५६७८९०]+)\s*[-.:])\s*(.*)/i;
+    const qPrefixRegex = /^(?:(?:Q|Question|प्र[.]?|प्रश्न|Que|S)\s*[-.:]?\s*([0-9०-९]+)|(?:\[|\()?([0-9०-९]+)(?:\]|\))|([0-9०-९]+)\s*[-.:])\s*(.*)/i;
     // Fallback Roman question numbering (restricted to avoid matching C. / D. options)
     const romanPrefixRegex = /^(?:(?:Q|Question)?\s*[-.:]?\s*\b(i{1,3}|iv|v|vi{0,3}|ix|x|xi{1,3}|xiv|xv)\b)\s*[-.:)]\s*(.*)/i;
 
@@ -155,8 +193,8 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
         let match = line.match(qPrefixRegex);
         if (match) {
             const rawNum = match[1] || match[2] || match[3];
-            // Normalize Hindi/Devanagari numerals to standard digits
-            const num = rawNum.replace(/[१२३४५६७८९०]/g, d => '0123456789'['१२३४५६७८९०'.indexOf(d)]);
+            // Normalize Hindi/Devanagari numerals to standard digits (prevent off-by-one mapping)
+            const num = rawNum.replace(/[०१२३४५६७८९]/g, d => '0123456789'['०१२३४५६७८९'.indexOf(d)]);
             return { qNum: parseInt(num, 10), rest: match[4].trim() };
         }
         match = line.match(romanPrefixRegex);
@@ -263,27 +301,68 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
 
     // Matches explanation formats: Explanation, Solution, Sol., व्याख्या, हल
     const explanationRegex = /^(?:explanation|solution|sol[.]?|व्याख्या|हल)\s*[:\-.]?\s*(.*)/i;
+    const stopHeaders = [
+        /^(?:Answer\s*Keys?|Detailed\s*Solutions|Detailed\s*Explanations|Correct\s*Answers|Correct\s*Options|उत्तर\s*तालिका|उत्तरमाला|कुंजी|हल\s*माला)\b/i,
+        /^Solutions\b/i,
+        /^Explanations\b/i,
+        /^Answers\b/i
+    ];
+
+    let ignoreNewQuestions = false;
+    let expectedNextNum = 1;
 
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
 
-        const qStart = detectQuestionStart(line);
-        if (qStart) {
-            if (currentQ) {
-                questions.push(currentQ);
+        // Check if we hit a stop header section
+        if (!ignoreNewQuestions) {
+            for (let header of stopHeaders) {
+                if (header.test(line) && line.length < 30) {
+                    ignoreNewQuestions = true;
+                    console.log(`[pdfParsingService] Stop header matched: "${line}". Ignoring subsequent new questions.`);
+                    break;
+                }
             }
-            currentQ = {
-                questionNumber: qStart.qNum,
-                questionLines: qStart.rest ? [qStart.rest] : [],
-                options: ['', '', '', '', ''], // Supports up to 5 options (E)
-                correctIndexRef: { val: -1 },
-                optionsStarted: false,
-                explanationLines: [],
-                explanationStarted: false,
-                category: defaultCategory,
-                subject: defaultSubject
-            };
-            continue;
+        }
+
+        const qStart = detectQuestionStart(line);
+        if (qStart && !ignoreNewQuestions) {
+            // Check sequence
+            let isSequential = false;
+            if (questions.length === 0) {
+                // First question detected, establish starting sequence
+                isSequential = true;
+                expectedNextNum = qStart.qNum + 1;
+            } else {
+                if (qStart.qNum === expectedNextNum) {
+                    isSequential = true;
+                    expectedNextNum++;
+                } else if (qStart.qNum === 1) {
+                    // Section restart
+                    isSequential = true;
+                    expectedNextNum = 2;
+                }
+            }
+
+            if (isSequential) {
+                if (currentQ) {
+                    questions.push(currentQ);
+                }
+                currentQ = {
+                    questionNumber: qStart.qNum,
+                    questionLines: qStart.rest ? [qStart.rest] : [],
+                    options: ['', '', '', '', ''], // Supports up to 5 options (E)
+                    correctIndexRef: { val: -1 },
+                    optionsStarted: false,
+                    explanationLines: [],
+                    explanationStarted: false,
+                    category: defaultCategory,
+                    subject: defaultSubject
+                };
+                continue;
+            } else {
+                console.log(`[pdfParsingService] Non-sequential question number detected (Expected: ${expectedNextNum}, Got: ${qStart.qNum}). Merging as regular line: "${line}"`);
+            }
         }
 
         if (currentQ) {
@@ -316,7 +395,6 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
 
             // Accumulate wrapped text
             if (currentQ.optionsStarted) {
-                // If it's not a new question or answer or option, it must be the text of the last option wrapping to the next line
                 const lastFilledIdx = currentQ.options.reduce((acc, val, idx) => val ? idx : acc, -1);
                 if (lastFilledIdx !== -1) {
                     currentQ.options[lastFilledIdx] += ' ' + line;
@@ -335,10 +413,6 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
     return questions.map(q => {
         // Clean options and filter out empty trailing option (e.g. Option E if unused)
         const rawOptions = q.options.map(o => o.trim()).filter(Boolean);
-        // Ensure at least 4 options are populated if regex didn't extract them, or default placeholders
-        while (rawOptions.length < 4) {
-            rawOptions.push(`Option ${rawOptions.length + 1}`);
-        }
 
         // Split question lines into English / Hindi if bilingual
         let englishLines = [];
@@ -359,8 +433,9 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
             }
         });
 
-        let questionEn = englishLines.join('\n').trim();
-        let questionHi = hindiLines.join('\n').trim();
+        // Heuristically join wrapped lines with space to heal breaks (Requirement 6)
+        let questionEn = englishLines.join(' ').replace(/\s+/g, ' ').trim();
+        let questionHi = hindiLines.join(' ').replace(/\s+/g, ' ').trim();
 
         if (!questionEn && !questionHi) {
             questionEn = `[Question ${q.questionNumber}]`;
@@ -390,8 +465,8 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
             }
         });
 
-        const explanationEn = expEnLines.join('\n').trim();
-        const explanationHi = expHiLines.join('\n').trim();
+        const explanationEn = expEnLines.join(' ').replace(/\s+/g, ' ').trim();
+        const explanationHi = expHiLines.join(' ').replace(/\s+/g, ' ').trim();
 
         const correctIdx = q.correctIndexRef.val >= 0 && q.correctIndexRef.val < rawOptions.length ? q.correctIndexRef.val : 0;
         const alphabet = ['A', 'B', 'C', 'D', 'E'];
@@ -434,6 +509,12 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
     let isScanned = false;
     let questions = [];
     let imagesSaved = [];
+    let ocrUsed = false;
+    let promoLinesRemoved = 0;
+    let initialDetectedCount = 0;
+    let rejectedCount = 0;
+    let duplicateQuestions = 0;
+    const rejectedReasons = [];
 
     const defaultCategory = defaults.category || 'General';
     const defaultSubject = defaults.subject || 'General';
@@ -476,6 +557,7 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
 
     // 3. Fallback to Gemini AI OCR if scanned, OR if regex parser fails to extract questions
     if (isScanned && process.env.GEMINI_API_KEY) {
+        ocrUsed = true;
         if (onProgress) onProgress(30, 'Running AI OCR', 'Scanned PDF detected. Running Gemini Multimodal OCR...');
         try {
             const aiQuestions = await extractQuestionsFromPdf(pdfBuffer, {
@@ -483,6 +565,7 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
                 subject: defaultSubject
             });
             questions = normalizeAIQuestions(aiQuestions, defaultCategory, defaultSubject);
+            initialDetectedCount = questions.length;
         } catch (aiErr) {
             console.error('[pdfParsingService] Gemini AI OCR fallback failed:', aiErr.message);
             throw new Error(`Scanned PDF OCR failed: ${aiErr.message}`);
@@ -490,12 +573,15 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
     } else {
         // Parse selectable text using regex heuristics (Step 3-9, 12-15)
         if (onProgress) onProgress(30, 'Regex Heuristics', 'Running clean regex heuristic parser...');
-        const cleanedText = cleanExtractedText(text);
-        questions = parseQuestionsHeuristically(cleanedText, defaultCategory, defaultSubject);
+        const cleanResult = cleanExtractedText(text);
+        promoLinesRemoved = cleanResult.promoCount;
+        questions = parseQuestionsHeuristically(cleanResult.text, defaultCategory, defaultSubject);
+        initialDetectedCount = questions.length;
 
         // AI Recovery: If regex extracted nothing or way fewer questions than expected, trigger AI recovery (Step 19)
         const tooFew = questions.length < (expectedCount * 0.4);
         if ((questions.length === 0 || tooFew) && process.env.GEMINI_API_KEY) {
+            ocrUsed = true;
             if (onProgress) {
                 onProgress(50, 'Running AI Recovery', `Regex extracted only ${questions.length} questions. Running Gemini AI layout recovery...`);
             }
@@ -507,6 +593,7 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
                 const normalized = normalizeAIQuestions(aiQuestions, defaultCategory, defaultSubject);
                 if (normalized.length > 0) {
                     questions = normalized;
+                    initialDetectedCount = questions.length;
                     console.log(`[pdfParsingService] AI Recovery succeeded. Extracted ${questions.length} questions.`);
                 }
             } catch (recoveryErr) {
@@ -528,7 +615,8 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
         if (!q.question || q.question.trim().startsWith('[Question')) {
             errors.push('Question text is missing or invalid.');
         }
-        const validOpts = q.options.filter(o => o && o.trim() !== '' && !o.startsWith('Option'));
+        
+        const validOpts = q.options.filter(o => o && o.trim() !== '');
         if (validOpts.length < 2) {
             errors.push(`Missing valid options (found only ${validOpts.length}, minimum 2 required).`);
         }
@@ -541,9 +629,104 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
         };
     });
 
+    // Enforce strict question filter rules (Requirement 2, 4, 7, 9)
+    questions = questions.filter(q => {
+        const reasons = [];
+        if (!q.question || q.question.trim().length <= 15) {
+            reasons.push('Question text missing or too short (length <= 15)');
+        }
+        // Count non-empty options
+        const validOptionCount = q.options.filter(o => o && o.trim() !== '').length;
+        if (validOptionCount < 4) {
+            reasons.push(`Fewer than 4 valid options (found ${validOptionCount})`);
+        }
+        if (!q.questionNumber) {
+            reasons.push('Question number missing');
+        }
+
+        if (reasons.length > 0) {
+            rejectedCount++;
+            rejectedReasons.push(`Q#${q.questionNumber || 'unknown'}: ${reasons.join(', ')}`);
+            console.log(`[pdfParsingService] Strictly rejecting question candidate: ${reasons.join(' | ')}`);
+            return false;
+        }
+        return true;
+    });
+
+    // 6. Sequential verification and false-positive filter (Requirement 13)
+    const cleanupResult = verifyAndFilterFalsePositives(questions);
+    questions = cleanupResult.questions;
+    duplicateQuestions = cleanupResult.duplicateCount;
+
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
-    console.log(`[pdfParsingService] Universal PDF parser finished in ${elapsed}s. Found ${questions.length} questions.`);
+    
+    // Log detailed statistics (Requirement 12)
+    console.log(`
+==================================================
+        UNIVERSAL PDF PARSER REPORT
+==================================================
+Total Pages: ${totalPages}
+Questions Detected: ${initialDetectedCount}
+Questions Rejected: ${rejectedCount}
+Rejected Reasons: 
+  ${rejectedReasons.length > 0 ? rejectedReasons.join('\n  ') : 'None'}
+Promotional Lines Removed: ${promoLinesRemoved}
+OCR Used: ${ocrUsed ? 'YES' : 'NO'}
+Images Extracted: ${imagesSaved.length}
+Duplicate Questions Merged/Skipped: ${duplicateQuestions}
+Final Questions Saved: ${questions.length}
+Import Time: ${elapsed} seconds
+==================================================
+`);
+
     return questions;
+}
+
+/**
+ * Cleanup false positive questions by aligning with the highest detected question number (Requirement 13)
+ */
+function verifyAndFilterFalsePositives(questions) {
+    if (questions.length === 0) return { questions: [], duplicateCount: 0 };
+
+    const highestQNum = Math.max(...questions.map(q => q.questionNumber));
+    let duplicateCount = 0;
+    
+    if (questions.length > highestQNum) {
+        console.log(`[pdfParsingService] Invalid count detected: Questions count (${questions.length}) > Highest Question Number (${highestQNum}). Running automated false-positive cleanup.`);
+        
+        const bestQuestionsMap = new Map();
+        
+        questions.forEach(q => {
+            const num = q.questionNumber;
+            if (num > highestQNum || num < 1) {
+                console.log(`[pdfParsingService] Discarding out-of-bounds Q#${num}: "${q.question.substring(0, 30)}..."`);
+                return;
+            }
+            
+            if (!bestQuestionsMap.has(num)) {
+                bestQuestionsMap.set(num, q);
+            } else {
+                duplicateCount++;
+                const existing = bestQuestionsMap.get(num);
+                const currentScore = (q.isValid ? 1000 : 0) + q.question.length;
+                const existingScore = (existing.isValid ? 1000 : 0) + existing.question.length;
+                if (currentScore > existingScore) {
+                    bestQuestionsMap.set(num, q);
+                    console.log(`[pdfParsingService] Replacing duplicate Q#${num} with a better match`);
+                } else {
+                    console.log(`[pdfParsingService] Skipping duplicate Q#${num}`);
+                }
+            }
+        });
+        
+        let filtered = Array.from(bestQuestionsMap.values());
+        filtered.sort((a, b) => a.questionNumber - b.questionNumber);
+        
+        console.log(`[pdfParsingService] Cleanup complete. New questions count: ${filtered.length}`);
+        return { questions: filtered, duplicateCount };
+    }
+    
+    return { questions, duplicateCount };
 }
 
 /**
@@ -598,5 +781,6 @@ function normalizeAIQuestions(aiQuestions, defaultCategory, defaultSubject) {
 module.exports = {
     parsePDF,
     cleanExtractedText,
-    parseQuestionsHeuristically
+    parseQuestionsHeuristically,
+    verifyAndFilterFalsePositives
 };
