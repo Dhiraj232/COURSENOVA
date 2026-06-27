@@ -1195,8 +1195,8 @@ async function handlePdfToTest(input, index, lang = 'en') {
                         // ── SAVE NEW QUESTIONS PATH ──
                         activeStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving questions...';
 
-                        const packCategory = (document.getElementById('mtCategory').value || '').trim() || 'Mock Test';
-                        const testTitleText = (row.querySelector('.mt-t-title').value || '').trim() || 'General';
+                        const packCategory = (document.getElementById('mtCategory')?.value || '').trim() || 'Mock Test';
+                        const testTitleText = (row.querySelector('.mt-t-title')?.value || '').trim() || 'General';
 
                         let subjectName = testTitleText;
                         if (testTitleText.includes('-')) {
@@ -2732,7 +2732,7 @@ window.showQuestionsPreviewModal = function(questions, onConfirm) {
             <div class="card-header" style="padding: 20px 24px; border-bottom: 1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; background:#fafafa;">
                 <div>
                     <h3 style="margin:0;"><i class="fas fa-eye" style="color:var(--primary);"></i> Preview Extracted Questions</h3>
-                    <p style="font-size:0.8rem; color:var(--text-muted); margin: 4px 0 0 0;">Review, edit, and validate questions before final import.</p>
+                    <p style="font-size:0.8rem; color:var(--text-muted); margin: 4px 0 0 0;">Review and edit questions. Edits are auto-saved. Click "Save & Import Questions" to write to database.</p>
                 </div>
                 <button class="btn btn-icon" onclick="closeModal()">×</button>
             </div>
@@ -2752,7 +2752,7 @@ window.showQuestionsPreviewModal = function(questions, onConfirm) {
                 </div>
                 <div style="display:flex; gap:10px;">
                     <button class="btn btn-outline btn-sm" onclick="addBlankQuestionToPreview()"><i class="fas fa-plus"></i> Add Question</button>
-                    <button class="btn btn-primary btn-sm" id="preview-import-btn" onclick="confirmPreviewImport()"><i class="fas fa-cloud-upload-alt"></i> Import Questions</button>
+                    <button class="btn btn-primary btn-sm" id="preview-import-btn" onclick="confirmPreviewImport()"><i class="fas fa-save"></i> Save & Import Questions</button>
                 </div>
             </div>
             
@@ -2894,6 +2894,89 @@ window.createPreviewCardNode = function(q, idx) {
     return card;
 };
 
+window.updatePreviewQuestionField = function(idx, field, value) {
+    const q = window.currentPreviewQuestions[idx];
+    if (!q) return;
+
+    if (field.startsWith('option')) {
+        const optionLetter = field.replace('option', ''); // A, B, C, D, E
+        q[field] = value;
+        const alphabet = ['A', 'B', 'C', 'D', 'E'];
+        const optIdx = alphabet.indexOf(optionLetter);
+        if (optIdx !== -1) {
+            if (!q.options) q.options = ['', '', '', '', ''];
+            if (!q.options_en) q.options_en = ['', '', '', '', ''];
+            if (!q.options_hi) q.options_hi = ['', '', '', '', ''];
+            q.options[optIdx] = value;
+            q.options_en[optIdx] = value;
+            q.options_hi[optIdx] = value;
+        }
+    } else {
+        q[field] = value;
+        if (field === 'question') {
+            q.question_en = value;
+        }
+        if (field === 'question_hi') {
+            q.question_hi = value;
+        }
+    }
+
+    // Run validation checks dynamically to update isValid and warning badge
+    const errors = [];
+    if (!q.question || q.question.trim().length <= 15) {
+        errors.push('Question text is missing, invalid, or too short (length <= 15).');
+    }
+    const validOpts = q.options.filter(o => o && o.trim() !== '');
+    if (validOpts.length < 4) {
+        errors.push(`Missing valid options (found only ${validOpts.length}, minimum 4 required).`);
+    }
+    
+    q.isValid = errors.length === 0;
+    q.validationErrors = errors;
+
+    window.updateCardValidationUI(idx);
+};
+
+window.addBlankQuestionToPreview = function() {
+    const nextNum = window.currentPreviewQuestions.length > 0 
+        ? Math.max(...window.currentPreviewQuestions.map(pq => pq.questionNumber)) + 1 
+        : 1;
+        
+    window.currentPreviewQuestions.push({
+        questionNumber: nextNum,
+        question: '',
+        question_en: '',
+        question_hi: '',
+        optionA: '',
+        optionB: '',
+        optionC: '',
+        optionD: '',
+        optionE: '',
+        options: ['', '', '', '', ''],
+        options_en: ['', '', '', '', ''],
+        options_hi: ['', '', '', '', ''],
+        answer: 'A',
+        correctAnswer: '',
+        correctIndex: 0,
+        explanation: '',
+        explanation_hi: '',
+        language: 'English',
+        isValid: false,
+        validationErrors: [
+            'Question text is missing, invalid, or too short (length <= 15).',
+            'Missing valid options (found only 0, minimum 4 required).'
+        ]
+    });
+    window.renderPreviewList();
+};
+
+window.deleteQuestionFromPreview = function(idx) {
+    if (confirm('Are you sure you want to remove this question from preview?')) {
+        window.currentPreviewQuestions.splice(idx, 1);
+        window.renderPreviewList();
+    }
+};
+
 window.updatePreviewQuestionCorrectIndex = function(idx, value) {
     const q = window.currentPreviewQuestions[idx];
     q.answer = value;
@@ -2960,7 +3043,7 @@ window.confirmPreviewImport = async function() {
     } finally {
         if (btn) {
             btn.disabled = false;
-            btn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Import Questions';
+            btn.innerHTML = '<i class="fas fa-save"></i> Save & Import Questions';
         }
     }
 };
