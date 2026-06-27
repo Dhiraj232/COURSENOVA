@@ -495,6 +495,7 @@ const { extractQuestionsFromPdf } = require('../services/aiService');
 async function parseQuestionsFromPDFBuffer(buffer, defaultCategory = '', defaultSubject = '', expectedCount = 100, updateJobCallback = null, startTime = Date.now()) {
     let text = '';
     let isScanned = false;
+    let totalPages = 1;
     
     // Page rendering tracker
     let pageCount = 0;
@@ -532,11 +533,12 @@ async function parseQuestionsFromPDFBuffer(buffer, defaultCategory = '', default
             new Promise((_, reject) => setTimeout(() => reject(new Error('PDF parsing timed out (limit of 120 seconds exceeded)')), 120000))
         ]);
         text = result.text || '';
+        totalPages = result.numpages || pageCount || 1;
         const extDuration = Date.now() - extStartTime;
         if (updateJobCallback) {
             updateJobCallback(35, 'Extracting text', `Local text extraction completed in ${extDuration}ms. Length: ${text.length} characters.`);
         }
-        console.log(`[PDF Upload] Text extracted successfully: length=${text.length} characters, time=${extDuration}ms`);
+        console.log(`[PDF Upload] Text extracted successfully: length=${text.length} characters, time=${extDuration}ms, pages=${totalPages}`);
         console.log(`[3] Text extraction completed - elapsed: ${Date.now() - startTime}ms`);
     } catch (pdfErr) {
         const extDuration = Date.now() - extStartTime;
@@ -545,38 +547,199 @@ async function parseQuestionsFromPDFBuffer(buffer, defaultCategory = '', default
         isScanned = true;
     }
 
-    if (!isScanned && text.trim().length < 100) {
-        isScanned = true;
-        if (updateJobCallback) {
-            updateJobCallback(40, 'Running OCR Fallback', 'Extracted text length is below threshold. Falling back to OCR...');
+    let parsedQuestions = [];
+    let aiSucceeded = false;
+
+    // ── Primary Parser: Chunk-based Gemini AI parsing ───────────────────
+    if (process.env.GEMINI_API_KEY) {
+        try {
+            if (updateJobCallback) {
+                updateJobCallback(15, 'AI Parsing', `Initializing Gemini AI parser for ${totalPages} pages...`);
+            }
+            console.log(`[PDF Upload] Initializing Gemini AI parser. Total pages: ${totalPages}`);
+
+            const chunkSize = 4;
+            const overlap = 1;
+            let chunks = [];
+            let startPage = 1;
+            while (startPage <= totalPages) {
+                let endPage = Math.min(startPage + chunkSize - 1, totalPages);
+                chunks.push({ startPage, endPage });
+                if (endPage === totalPages) break;
+                startPage = endPage + 1 - overlap;
+            }
+
+            console.log(`[PDF Upload] PDF chunked into ${chunks.length} segments:`, chunks);
+
+            let aiQuestions = [];
+            for (let i = 0; i < chunks.length; i++) {
+                const chunk = chunks[i];
+                if (updateJobCallback) {
+                    const progress = 15 + Math.round((i / chunks.length) * 65); // 15% to 80%
+                    updateJobCallback(progress, 'AI Parsing', `Gemini parsing chunk ${i + 1}/${chunks.length} (pages ${chunk.startPage}-${chunk.endPage})...`);
+                }
+
+                const chunkQuestions = await extractQuestionsFromPdf(buffer, {
+                    category: defaultCategory,
+                    subject: defaultSubject
+                }, chunk.startPage, chunk.endPage);
+
+                if (chunkQuestions && Array.isArray(chunkQuestions)) {
+                    console.log(`[PDF Upload] Chunk ${i + 1}/${chunks.length} parsed successfully. Found ${chunkQuestions.length} questions.`);
+                    aiQuestions = aiQuestions.concat(chunkQuestions);
+                }
+            }
+
+            if (aiQuestions.length > 0) {
+                // Deduplicate combined list based on normalized English/Hindi question text
+                const seen = new Set();
+                const uniqueAiQuestions = [];
+                for (const q of aiQuestions) {
+                    const normalized = (q.question_en || q.question || '').trim().toLowerCase().replace(/\s+/g, ' ');
+                    if (!normalized) continue;
+                    if (!seen.has(normalized)) {
+                        seen.add(normalized);
+                        uniqueAiQuestions.push(q);
+                    }
+                }
+
+                console.log(`[PDF Upload] Total AI questions extracted: ${aiQuestions.length}. Unique: ${uniqueAiQuestions.length}`);
+
+                parsedQuestions = uniqueAiQuestions.map(q => {
+                    const opts = q.options || [];
+                    
+                    // Resolve correct index precisely
+                    let correctIdx = q.correctIndex;
+                    if (correctIdx === undefined || correctIdx < 0 || correctIdx > 3) {
+                        if (q.correctAnswer) {
+                            correctIdx = opts.findIndex(o => o && o.toString().trim() === q.correctAnswer.toString().trim());
+                        }
+                    }
+                    if (correctIdx === undefined || correctIdx === -1) {
+                        correctIdx = 0;
+                    }
+                    
+                    const correctAnswerText = opts[correctIdx] || q.correctAnswer || '';
+
+                    return {
+                        question: q.question,
+                        question_en: q.question_en || q.question,
+                        question_hi: q.question_hi || q.question,
+                        options: opts,
+                        options_en: q.options_en || opts,
+                        options_hi: q.options_hi || opts,
+                        correctAnswer: correctAnswerText,
+                        correctIndex: correctIdx,
+                        explanation: q.explanation || '',
+                        explanation_hi: q.explanation_hi || '',
+                        category: defaultCategory || q.category || 'General',
+                        subject: q.subject || defaultSubject || 'General',
+                        topic: q.topic || '',
+                        difficulty: q.difficulty || 'Medium',
+                        isMockTestOnly: !!q.isMockTestOnly
+                    };
+                });
+
+                if (parsedQuestions.length > 0) {
+                    aiSucceeded = true;
+                    if (updateJobCallback) {
+                        updateJobCallback(80, 'AI Parsing Completed', `Successfully extracted ${parsedQuestions.length} unique questions via Gemini.`);
+                    }
+                }
+            }
+        } catch (aiErr) {
+            console.error('[PDF Upload] Gemini AI parser failed, falling back to local/regex parser:', aiErr);
+            if (updateJobCallback) {
+                updateJobCallback(40, 'AI Parsing Error', `Gemini AI parser error: ${aiErr.message}. Falling back to regex parser...`);
+            }
         }
-        console.log('[PDF Upload] Extracted text length is below threshold (scanned or empty PDF). Falling back to OCR...');
     }
 
-    let parsedQuestions = [];
-    if (!isScanned) {
-        if (updateJobCallback) {
-            updateJobCallback(40, 'Parsing questions', 'Using primary text parser...');
-        }
-        console.log('[PDF Upload] Using primary text parser...');
-        
-        const parseStartTime = Date.now();
-        const localQuestions = await parseMCQFromText(text, expectedCount, updateJobCallback);
-        const parseDuration = Date.now() - parseStartTime;
-        
-        if (updateJobCallback) {
-            updateJobCallback(60, 'Parsing questions', `Primary regex parser found ${localQuestions.length} questions in ${parseDuration}ms.`);
-        }
-        console.log(`[PDF Upload] Questions parsed via primary parser: count=${localQuestions.length}, time=${parseDuration}ms`);
-        
-        if (localQuestions.length === 0 || localQuestions.isEmptyPDF) {
-            if (updateJobCallback) {
-                updateJobCallback(45, 'Running OCR Fallback', 'Local parser found no questions or mostly placeholders. Falling back to OCR...');
-            }
-            console.log('[PDF Upload] Local parser found no questions or mostly placeholders. Falling back to OCR...');
+    // ── Fallback Parser: Local regex parser & legacy OCR fallback ───────────
+    if (!aiSucceeded) {
+        if (!isScanned && text.trim().length < 100) {
             isScanned = true;
-        } else {
-            parsedQuestions = localQuestions.map(q => {
+            if (updateJobCallback) {
+                updateJobCallback(40, 'Running OCR Fallback', 'Extracted text length is below threshold. Falling back to OCR...');
+            }
+            console.log('[PDF Upload] Extracted text length is below threshold (scanned or empty PDF). Falling back to OCR...');
+        }
+
+        if (!isScanned) {
+            if (updateJobCallback) {
+                updateJobCallback(40, 'Parsing questions', 'Using primary text parser...');
+            }
+            console.log('[PDF Upload] Using primary text parser...');
+            
+            const parseStartTime = Date.now();
+            const localQuestions = await parseMCQFromText(text, expectedCount, updateJobCallback);
+            const parseDuration = Date.now() - parseStartTime;
+            
+            if (updateJobCallback) {
+                updateJobCallback(60, 'Parsing questions', `Primary regex parser found ${localQuestions.length} questions in ${parseDuration}ms.`);
+            }
+            console.log(`[PDF Upload] Questions parsed via primary parser: count=${localQuestions.length}, time=${parseDuration}ms`);
+            
+            if (localQuestions.length === 0 || localQuestions.isEmptyPDF) {
+                if (updateJobCallback) {
+                    updateJobCallback(45, 'Running OCR Fallback', 'Local parser found no questions or mostly placeholders. Falling back to OCR...');
+                }
+                console.log('[PDF Upload] Local parser found no questions or mostly placeholders. Falling back to OCR...');
+                isScanned = true;
+            } else {
+                parsedQuestions = localQuestions.map(q => {
+                    const opts = q.options || [];
+                    const correctIdx = q.correctIndex !== undefined ? q.correctIndex : 0;
+                    const correctAnswerText = opts[correctIdx] || q.correctAnswer || '';
+
+                    return {
+                        question: q.question,
+                        question_en: q.question_en || q.question,
+                        question_hi: q.question_hi || q.question,
+                        options: opts,
+                        options_en: q.options_en || opts,
+                        options_hi: q.options_hi || opts,
+                        correctAnswer: correctAnswerText,
+                        correctIndex: correctIdx,
+                        explanation: q.explanation || '',
+                        explanation_hi: q.explanation_hi || '',
+                        category: defaultCategory || q.category || 'General',
+                        subject: q.subject || defaultSubject || 'General',
+                        topic: q.topic || '',
+                        difficulty: q.difficulty || 'Medium',
+                        isMockTestOnly: !!q.isMockTestOnly
+                    };
+                });
+            }
+        }
+
+        if (!isScanned) {
+            console.log(`[4] OCR started (if used) - SKIPPED`);
+            console.log(`[5] OCR completed - SKIPPED`);
+        }
+
+        if (isScanned) {
+            if (updateJobCallback) {
+                updateJobCallback(45, 'Running OCR Fallback', 'Running Gemini OCR fallback (this may take up to 2 minutes)...');
+            }
+            console.log('[PDF Upload] Running OCR/AI fallback...');
+            console.log(`[4] OCR started (if used) - elapsed: ${Date.now() - startTime}ms`);
+            const ocrStartTime = Date.now();
+            const ocrQuestions = await Promise.race([
+                extractQuestionsFromPdf(buffer, {
+                    category: defaultCategory,
+                    subject: defaultSubject
+                }),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('AI PDF extraction timed out (limit of 180 seconds exceeded)')), 180000))
+            ]);
+            const ocrDuration = Date.now() - ocrStartTime;
+            if (updateJobCallback) {
+                updateJobCallback(60, 'Running OCR Fallback', `Gemini OCR fallback completed in ${ocrDuration}ms. Found ${ocrQuestions.length} questions.`);
+            }
+            console.log(`[PDF Upload] Questions extracted via OCR/AI successfully: count=${ocrQuestions.length}, time=${ocrDuration}ms`);
+            console.log(`[5] OCR completed - elapsed: ${Date.now() - startTime}ms`);
+
+            parsedQuestions = ocrQuestions.map(q => {
                 const opts = q.options || [];
                 const correctIdx = q.correctIndex !== undefined ? q.correctIndex : 0;
                 const correctAnswerText = opts[correctIdx] || q.correctAnswer || '';
@@ -602,60 +765,8 @@ async function parseQuestionsFromPDFBuffer(buffer, defaultCategory = '', default
         }
     }
 
-    if (!isScanned) {
-        console.log(`[4] OCR started (if used) - SKIPPED`);
-        console.log(`[5] OCR completed - SKIPPED`);
-    }
-
-    if (isScanned) {
-        if (updateJobCallback) {
-            updateJobCallback(45, 'Running OCR Fallback', 'Running Gemini OCR fallback (this may take up to 2 minutes)...');
-        }
-        console.log('[PDF Upload] Running OCR/AI fallback...');
-        console.log(`[4] OCR started (if used) - elapsed: ${Date.now() - startTime}ms`);
-        const ocrStartTime = Date.now();
-        const ocrQuestions = await Promise.race([
-            extractQuestionsFromPdf(buffer, {
-                category: defaultCategory,
-                subject: defaultSubject
-            }),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('AI PDF extraction timed out (limit of 180 seconds exceeded)')), 180000))
-        ]);
-        const ocrDuration = Date.now() - ocrStartTime;
-        if (updateJobCallback) {
-            updateJobCallback(60, 'Running OCR Fallback', `Gemini OCR fallback completed in ${ocrDuration}ms. Found ${ocrQuestions.length} questions.`);
-        }
-        console.log(`[PDF Upload] Questions extracted via OCR/AI successfully: count=${ocrQuestions.length}, time=${ocrDuration}ms`);
-        console.log(`[5] OCR completed - elapsed: ${Date.now() - startTime}ms`);
-
-        parsedQuestions = ocrQuestions.map(q => {
-            const opts = q.options || [];
-            const correctIdx = q.correctIndex !== undefined ? q.correctIndex : 0;
-            const correctAnswerText = opts[correctIdx] || q.correctAnswer || '';
-
-            return {
-                question: q.question,
-                question_en: q.question_en || q.question,
-                question_hi: q.question_hi || q.question,
-                options: opts,
-                options_en: q.options_en || opts,
-                options_hi: q.options_hi || opts,
-                correctAnswer: correctAnswerText,
-                correctIndex: correctIdx,
-                explanation: q.explanation || '',
-                explanation_hi: q.explanation_hi || '',
-                category: defaultCategory || q.category || 'General',
-                subject: q.subject || defaultSubject || 'General',
-                topic: q.topic || '',
-                difficulty: q.difficulty || 'Medium',
-                isMockTestOnly: !!q.isMockTestOnly
-            };
-        });
-    }
-
     console.log(`[6] Question parsing completed - elapsed: ${Date.now() - startTime}ms`);
     console.log(`[7] Total questions detected: ${parsedQuestions.length} - elapsed: ${Date.now() - startTime}ms`);
-
 
     return parsedQuestions;
 }
@@ -1882,5 +1993,8 @@ router.delete('/notifications/:id', requireAdmin, catchAsync(async (req, res) =>
     await logAdminAction(req, 'DELETE_NOTIFICATION', req.params.id, 'Notification');
     res.json({ ok: true, message: 'Notification deleted successfully' });
 }));
+
+router.parseQuestionsFromPDFBuffer = parseQuestionsFromPDFBuffer;
+router.parseMCQFromText = parseMCQFromText;
 
 module.exports = router;

@@ -6,7 +6,7 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
  * @param {Object} defaults - Default category and subject fallback values.
  * @returns {Promise<Array>} - Resolves to an array of parsed question objects.
  */
-async function extractQuestionsFromPdf(pdfBuffer, defaults = {}) {
+async function extractQuestionsFromPdf(pdfBuffer, defaults = {}, startPage = null, endPage = null) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
         throw new Error('GEMINI_API_KEY environment variable is not defined.');
@@ -24,7 +24,12 @@ async function extractQuestionsFromPdf(pdfBuffer, defaults = {}) {
         }
     };
 
-    const prompt = `You are a professional MCQ exam question parser. Analyze the uploaded PDF and extract ALL MCQ questions from it.
+    let pageRangeText = 'extract ALL MCQ questions from it.';
+    if (startPage !== null && endPage !== null) {
+        pageRangeText = `extract ALL MCQ questions found on pages ${startPage} to ${endPage} (inclusive). Do NOT extract questions from any other pages.`;
+    }
+
+    const prompt = `You are a professional MCQ exam question parser. Analyze the uploaded PDF and ${pageRangeText}
 Support normal and scanned (OCR) PDFs, English, Hindi, and mixed English/Hindi.
 Preserve all mathematical formulas in standard LaTeX format (e.g. $x^2 + y^2 = z^2$ or \\frac{a}{b}).
 Preserve tables and diagrams as Markdown or HTML representations inside the question text.
@@ -37,6 +42,7 @@ For each MCQ, construct a JSON object containing the exact fields:
 - options_en: An array of exactly 4 option strings in English.
 - options_hi: An array of exactly 4 option strings in Hindi.
 - correctAnswer: The exact string text of the correct option (MUST match one of the items in the options array exactly).
+- correctIndex: The 0-based index of the correct option in the options array (0 for the first option, 1 for the second, 2 for the third, 3 for the fourth).
 - explanation: A detailed explanation in English of the solution or reasoning.
 - explanation_hi: A detailed explanation in Hindi of the solution or reasoning.
 - category: The exam category/class (e.g. SSC, Banking, JEE, NEET, CUET, UPSC, Class 9, Class 10, etc.). Attempt to detect this from the PDF contents. If not found, use "${defaults.category || 'General'}".
