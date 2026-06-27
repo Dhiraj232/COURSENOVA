@@ -725,7 +725,7 @@ window.previewPDFQuestions = async function(event, courseId) {
     fd.append('pdf', file);
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 120000); // 2 minute upload limit
+    const timeoutId = setTimeout(() => controller.abort(), 600000); // 10 minute upload limit
 
     try {
         const token = localStorage.getItem('token');
@@ -1087,7 +1087,7 @@ async function handlePdfToTest(input, index, lang = 'en') {
     const expectedCount = existingQIds.length;
 
     const parseController = new AbortController();
-    let parseTimeout = setTimeout(() => parseController.abort(), 120000); // 2 min upload limit
+    let parseTimeout = setTimeout(() => parseController.abort(), 600000); // 10 min upload limit
 
     try {
         const token = localStorage.getItem('token');

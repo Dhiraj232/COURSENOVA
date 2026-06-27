@@ -507,6 +507,24 @@ function getPdfPageCount(buffer) {
     return 1;
 }
 
+// Concurrency helper for parallel processing of chunks
+async function mapLimit(array, limit, fn) {
+    const results = [];
+    const executing = [];
+    for (const item of array) {
+        const p = Promise.resolve().then(() => fn(item, array.indexOf(item)));
+        results.push(p);
+        if (limit <= array.length) {
+            const e = p.then(() => executing.splice(executing.indexOf(e), 1));
+            executing.push(e);
+            if (executing.length >= limit) {
+                await Promise.race(executing);
+            }
+        }
+    }
+    return Promise.all(results);
+}
+
 // ── Unified parse function with fallback OCR logic ───────────────────
 const { extractQuestionsFromPdf } = require('../services/aiService');
 
@@ -539,21 +557,28 @@ async function parseQuestionsFromPDFBuffer(buffer, defaultCategory = '', default
 
             console.log(`[PDF Upload] PDF chunked into ${chunks.length} segments:`, chunks);
 
-            let aiQuestions = [];
-            for (let i = 0; i < chunks.length; i++) {
-                const chunk = chunks[i];
-                if (updateJobCallback) {
-                    const progress = 15 + Math.round((i / chunks.length) * 65); // 15% to 80%
-                    updateJobCallback(progress, 'AI Parsing', `Gemini parsing chunk ${i + 1}/${chunks.length} (pages ${chunk.startPage}-${chunk.endPage})...`);
-                }
-
+            let completedChunks = 0;
+            const results = await mapLimit(chunks, 3, async (chunk) => {
                 const chunkQuestions = await extractQuestionsFromPdf(buffer, {
                     category: defaultCategory,
                     subject: defaultSubject
                 }, chunk.startPage, chunk.endPage);
 
+                completedChunks++;
+                if (updateJobCallback) {
+                    const progress = 15 + Math.round((completedChunks / chunks.length) * 65); // 15% to 80%
+                    updateJobCallback(progress, 'AI Parsing', `Gemini parsing chunk ${completedChunks}/${chunks.length} (pages ${chunk.startPage}-${chunk.endPage})...`);
+                }
+
                 if (chunkQuestions && Array.isArray(chunkQuestions)) {
-                    console.log(`[PDF Upload] Chunk ${i + 1}/${chunks.length} parsed successfully. Found ${chunkQuestions.length} questions.`);
+                    console.log(`[PDF Upload] Chunk page ${chunk.startPage}-${chunk.endPage} parsed successfully. Found ${chunkQuestions.length} questions.`);
+                }
+                return chunkQuestions;
+            });
+
+            let aiQuestions = [];
+            for (const chunkQuestions of results) {
+                if (chunkQuestions && Array.isArray(chunkQuestions)) {
                     aiQuestions = aiQuestions.concat(chunkQuestions);
                 }
             }
@@ -658,7 +683,7 @@ async function parseQuestionsFromPDFBuffer(buffer, defaultCategory = '', default
             
             const result = await Promise.race([
                 pdfParse(buffer, { pagerender }),
-                new Promise((_, reject) => setTimeout(() => reject(new Error('PDF parsing timed out (limit of 120 seconds exceeded)')), 120000))
+                new Promise((_, reject) => setTimeout(() => reject(new Error('PDF parsing timed out (limit of 300 seconds exceeded)')), 300000))
             ]);
             text = result.text || '';
             totalPages = result.numpages || pageCount || totalPages;
@@ -748,7 +773,7 @@ async function parseQuestionsFromPDFBuffer(buffer, defaultCategory = '', default
                     category: defaultCategory,
                     subject: defaultSubject
                 }),
-                new Promise((_, reject) => setTimeout(() => reject(new Error('AI PDF extraction timed out (limit of 180 seconds exceeded)')), 180000))
+                new Promise((_, reject) => setTimeout(() => reject(new Error('AI PDF extraction timed out (limit of 300 seconds exceeded)')), 300000))
             ]);
             const ocrDuration = Date.now() - ocrStartTime;
             if (updateJobCallback) {
@@ -1018,8 +1043,10 @@ router.post('/generate-questions-from-pdf', (req, res, next) => {
         subject: defaultSubject
     });
 
-    runPreviewPDFJob(jobId, req.file.buffer, defaultCategory, defaultSubject, expectedCount, req.startTime)
-        .catch(err => console.error(`[PDF Job ${jobId}] error:`, err));
+    setImmediate(() => {
+        runPreviewPDFJob(jobId, req.file.buffer, defaultCategory, defaultSubject, expectedCount, req.startTime)
+            .catch(err => console.error(`[PDF Job ${jobId}] error:`, err));
+    });
 
     res.json({ ok: true, jobId });
     console.log(`[13] Response sent - elapsed: ${Date.now() - req.startTime}ms`);
@@ -1056,8 +1083,10 @@ router.post('/import-pdf-questions', (req, res, next) => {
         user: req.user
     };
 
-    runImportPDFJob(jobId, req.file.buffer, defaultCategory, defaultSubject, packId, testId, reqUser, expectedCount, req.startTime)
-        .catch(err => console.error(`[PDF Job ${jobId}] error:`, err));
+    setImmediate(() => {
+        runImportPDFJob(jobId, req.file.buffer, defaultCategory, defaultSubject, packId, testId, reqUser, expectedCount, req.startTime)
+            .catch(err => console.error(`[PDF Job ${jobId}] error:`, err));
+    });
 
     res.json({ ok: true, jobId });
     console.log(`[13] Response sent - elapsed: ${Date.now() - req.startTime}ms`);

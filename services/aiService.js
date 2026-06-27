@@ -53,32 +53,41 @@ For each MCQ, construct a JSON object containing the exact fields:
 
 Return the output ONLY as a valid JSON array of these objects. Do not include markdown code block syntax like \`\`\`json. Return only the raw JSON.`;
 
-    const response = await model.generateContent({
-        contents: [{ role: 'user', parts: [pdfPart, { text: prompt }] }],
-        generationConfig: {
-            responseMimeType: 'application/json'
-        }
-    });
+    let retries = 3;
+    let delay = 2000;
+    while (retries > 0) {
+        try {
+            const response = await model.generateContent({
+                contents: [{ role: 'user', parts: [pdfPart, { text: prompt }] }],
+                generationConfig: {
+                    responseMimeType: 'application/json'
+                }
+            });
 
-    const text = response.response.text();
-    let cleanText = text.trim();
-    if (cleanText.startsWith('```')) {
-        // strip starting fence
-        cleanText = cleanText.replace(/^```(?:json)?\n?/, '');
-        // strip ending fence
-        cleanText = cleanText.replace(/\n?```$/, '');
-        cleanText = cleanText.trim();
-    }
+            const text = response.response.text();
+            let cleanText = text.trim();
+            if (cleanText.startsWith('```')) {
+                // strip starting fence
+                cleanText = cleanText.replace(/^```(?:json)?\n?/, '');
+                // strip ending fence
+                cleanText = cleanText.replace(/\n?```$/, '');
+                cleanText = cleanText.trim();
+            }
 
-    try {
-        const parsed = JSON.parse(cleanText);
-        if (!Array.isArray(parsed)) {
-            throw new Error('Gemini response is not a JSON array.');
+            const parsed = JSON.parse(cleanText);
+            if (!Array.isArray(parsed)) {
+                throw new Error('Gemini response is not a JSON array.');
+            }
+            return parsed;
+        } catch (e) {
+            retries--;
+            console.error(`[Gemini API] Error during question extraction (retries remaining: ${retries}):`, e.message);
+            if (retries === 0) {
+                throw new Error('Failed to parse questions JSON from Gemini response after 3 attempts: ' + e.message);
+            }
+            await new Promise(resolve => setTimeout(resolve, delay));
+            delay *= 2;
         }
-        return parsed;
-    } catch (e) {
-        console.error('Failed to parse Gemini JSON response. Text was:', text);
-        throw new Error('Failed to parse questions JSON from Gemini response: ' + e.message);
     }
 }
 

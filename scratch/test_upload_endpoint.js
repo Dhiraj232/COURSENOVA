@@ -49,7 +49,7 @@ async function run() {
     
     const pdfBuffer = await new Promise((resolve) => {
         doc.on('end', () => resolve(Buffer.concat(buffers)));
-        doc.text("Q1. What is 2 + 2?\nA) 3\nB) 4\nC) 5\nD) 6\nAnswer: B", 100, 100);
+        doc.text("Q1. What is the capital of France?\nA) Berlin\nB) Madrid\nC) Paris\nD) Rome\nAnswer: C\n\nQ2. Which planet is known as the Red Planet?\nA) Earth\nB) Mars\nC) Jupiter\nD) Saturn\nAnswer: B", 100, 100);
         doc.end();
     });
 
