@@ -526,292 +526,10 @@ async function mapLimit(array, limit, fn) {
 }
 
 // ── Unified parse function with fallback OCR logic ───────────────────
-const { extractQuestionsFromPdf } = require('../services/aiService');
+const { parsePDF } = require('../services/pdfParsingService');
 
 async function parseQuestionsFromPDFBuffer(buffer, defaultCategory = '', defaultSubject = '', expectedCount = 100, updateJobCallback = null, startTime = Date.now()) {
-    let text = '';
-    let isScanned = false;
-    let totalPages = getPdfPageCount(buffer);
-    
-    let parsedQuestions = [];
-    let aiSucceeded = false;
-
-    // ── Primary Parser: Chunk-based Gemini AI parsing ───────────────────
-    if (process.env.GEMINI_API_KEY) {
-        try {
-            if (updateJobCallback) {
-                updateJobCallback(15, 'AI Parsing', `Initializing Gemini AI parser for ${totalPages} pages...`);
-            }
-            console.log(`[PDF Upload] Initializing Gemini AI parser. Total pages: ${totalPages}`);
-
-            const chunkSize = 4;
-            const overlap = 1;
-            let chunks = [];
-            let startPage = 1;
-            while (startPage <= totalPages) {
-                let endPage = Math.min(startPage + chunkSize - 1, totalPages);
-                chunks.push({ startPage, endPage });
-                if (endPage === totalPages) break;
-                startPage = endPage + 1 - overlap;
-            }
-
-            console.log(`[PDF Upload] PDF chunked into ${chunks.length} segments:`, chunks);
-
-            let completedChunks = 0;
-            const results = await mapLimit(chunks, 3, async (chunk) => {
-                const chunkQuestions = await extractQuestionsFromPdf(buffer, {
-                    category: defaultCategory,
-                    subject: defaultSubject
-                }, chunk.startPage, chunk.endPage);
-
-                completedChunks++;
-                if (updateJobCallback) {
-                    const progress = 15 + Math.round((completedChunks / chunks.length) * 65); // 15% to 80%
-                    updateJobCallback(progress, 'AI Parsing', `Gemini parsing chunk ${completedChunks}/${chunks.length} (pages ${chunk.startPage}-${chunk.endPage})...`);
-                }
-
-                if (chunkQuestions && Array.isArray(chunkQuestions)) {
-                    console.log(`[PDF Upload] Chunk page ${chunk.startPage}-${chunk.endPage} parsed successfully. Found ${chunkQuestions.length} questions.`);
-                }
-                return chunkQuestions;
-            });
-
-            let aiQuestions = [];
-            for (const chunkQuestions of results) {
-                if (chunkQuestions && Array.isArray(chunkQuestions)) {
-                    aiQuestions = aiQuestions.concat(chunkQuestions);
-                }
-            }
-
-            if (aiQuestions.length > 0) {
-                // Deduplicate combined list based on normalized English/Hindi question text
-                const seen = new Set();
-                const uniqueAiQuestions = [];
-                for (const q of aiQuestions) {
-                    const normalized = (q.question_en || q.question || '').trim().toLowerCase().replace(/\s+/g, ' ');
-                    if (!normalized) continue;
-                    if (!seen.has(normalized)) {
-                        seen.add(normalized);
-                        uniqueAiQuestions.push(q);
-                    }
-                }
-
-                console.log(`[PDF Upload] Total AI questions extracted: ${aiQuestions.length}. Unique: ${uniqueAiQuestions.length}`);
-
-                parsedQuestions = uniqueAiQuestions.map(q => {
-                    const opts = q.options || [];
-                    
-                    // Resolve correct index precisely
-                    let correctIdx = q.correctIndex;
-                    if (correctIdx === undefined || correctIdx < 0 || correctIdx > 3) {
-                        if (q.correctAnswer) {
-                            correctIdx = opts.findIndex(o => o && o.toString().trim() === q.correctAnswer.toString().trim());
-                        }
-                    }
-                    if (correctIdx === undefined || correctIdx === -1) {
-                        correctIdx = 0;
-                    }
-                    
-                    const correctAnswerText = opts[correctIdx] || q.correctAnswer || '';
-
-                    return {
-                        question: q.question,
-                        question_en: q.question_en || q.question,
-                        question_hi: q.question_hi || q.question,
-                        options: opts,
-                        options_en: q.options_en || opts,
-                        options_hi: q.options_hi || opts,
-                        correctAnswer: correctAnswerText,
-                        correctIndex: correctIdx,
-                        explanation: q.explanation || '',
-                        explanation_hi: q.explanation_hi || '',
-                        category: defaultCategory || q.category || 'General',
-                        subject: q.subject || defaultSubject || 'General',
-                        topic: q.topic || '',
-                        difficulty: q.difficulty || 'Medium',
-                        isMockTestOnly: !!q.isMockTestOnly
-                    };
-                });
-
-                if (parsedQuestions.length > 0) {
-                    aiSucceeded = true;
-                    if (updateJobCallback) {
-                        updateJobCallback(80, 'AI Parsing Completed', `Successfully extracted ${parsedQuestions.length} unique questions via Gemini.`);
-                    }
-                }
-            }
-        } catch (aiErr) {
-            console.error('[PDF Upload] Gemini AI parser failed, falling back to local/regex parser:', aiErr);
-            if (updateJobCallback) {
-                updateJobCallback(40, 'AI Parsing Error', `Gemini AI parser error: ${aiErr.message}. Falling back to regex parser...`);
-            }
-        }
-    }
-
-    // ── Fallback Parser: Local regex parser & legacy OCR fallback ───────────
-    if (!aiSucceeded) {
-        // Run pdfParse synchronously ONLY here on the fallback path
-        let pageCount = 0;
-        const pagerender = async (pageData) => {
-            pageCount++;
-            if (updateJobCallback) {
-                const pagePct = Math.min(10 + Math.round(pageCount * 1.5), 35);
-                updateJobCallback(pagePct, 'Extracting text', `Extracting text from page ${pageCount}...`);
-            }
-            
-            return pageData.getTextContent()
-                .then(function(textContent) {
-                    let lastY, text = '';
-                    for (let item of textContent.items) {
-                        if (lastY == item.transform[5] || !lastY){
-                            text += item.str;
-                        }  
-                        else{
-                            text += '\n' + item.str;
-                        }    
-                        lastY = item.transform[5];
-                    }
-                    return text;
-                });
-        };
-
-        const extStartTime = Date.now();
-        try {
-            if (updateJobCallback) {
-                updateJobCallback(10, 'Extracting text', 'Starting local text extraction with pdf-parse...');
-            }
-            
-            const result = await Promise.race([
-                pdfParse(buffer, { pagerender }),
-                new Promise((_, reject) => setTimeout(() => reject(new Error('PDF parsing timed out (limit of 300 seconds exceeded)')), 300000))
-            ]);
-            text = result.text || '';
-            totalPages = result.numpages || pageCount || totalPages;
-            const extDuration = Date.now() - extStartTime;
-            if (updateJobCallback) {
-                updateJobCallback(35, 'Extracting text', `Local text extraction completed in ${extDuration}ms. Length: ${text.length} characters.`);
-            }
-            console.log(`[PDF Upload] Text extracted successfully: length=${text.length} characters, time=${extDuration}ms, pages=${totalPages}`);
-            console.log(`[3] Text extraction completed - elapsed: ${Date.now() - startTime}ms`);
-        } catch (pdfErr) {
-            const extDuration = Date.now() - extStartTime;
-            console.error(`[PDF Upload] Error extracting text (after ${extDuration}ms): ${pdfErr.message}`);
-            console.log(`[3] Text extraction completed - elapsed: ${Date.now() - startTime}ms`);
-            isScanned = true;
-        }
-
-        if (!isScanned && text.trim().length < 100) {
-            isScanned = true;
-            if (updateJobCallback) {
-                updateJobCallback(40, 'Running OCR Fallback', 'Extracted text length is below threshold. Falling back to OCR...');
-            }
-            console.log('[PDF Upload] Extracted text length is below threshold (scanned or empty PDF). Falling back to OCR...');
-        }
-
-        if (!isScanned) {
-            if (updateJobCallback) {
-                updateJobCallback(40, 'Parsing questions', 'Using primary text parser...');
-            }
-            console.log('[PDF Upload] Using primary text parser...');
-            
-            const parseStartTime = Date.now();
-            const localQuestions = await parseMCQFromText(text, expectedCount, updateJobCallback);
-            const parseDuration = Date.now() - parseStartTime;
-            
-            if (updateJobCallback) {
-                updateJobCallback(60, 'Parsing questions', `Primary regex parser found ${localQuestions.length} questions in ${parseDuration}ms.`);
-            }
-            console.log(`[PDF Upload] Questions parsed via primary parser: count=${localQuestions.length}, time=${parseDuration}ms`);
-            
-            if (localQuestions.length === 0 || localQuestions.isEmptyPDF) {
-                if (updateJobCallback) {
-                    updateJobCallback(45, 'Running OCR Fallback', 'Local parser found no questions or mostly placeholders. Falling back to OCR...');
-                }
-                console.log('[PDF Upload] Local parser found no questions or mostly placeholders. Falling back to OCR...');
-                isScanned = true;
-            } else {
-                parsedQuestions = localQuestions.map(q => {
-                    const opts = q.options || [];
-                    const correctIdx = q.correctIndex !== undefined ? q.correctIndex : 0;
-                    const correctAnswerText = opts[correctIdx] || q.correctAnswer || '';
-
-                    return {
-                        question: q.question,
-                        question_en: q.question_en || q.question,
-                        question_hi: q.question_hi || q.question,
-                        options: opts,
-                        options_en: q.options_en || opts,
-                        options_hi: q.options_hi || opts,
-                        correctAnswer: correctAnswerText,
-                        correctIndex: correctIdx,
-                        explanation: q.explanation || '',
-                        explanation_hi: q.explanation_hi || '',
-                        category: defaultCategory || q.category || 'General',
-                        subject: q.subject || defaultSubject || 'General',
-                        topic: q.topic || '',
-                        difficulty: q.difficulty || 'Medium',
-                        isMockTestOnly: !!q.isMockTestOnly
-                    };
-                });
-            }
-        }
-
-        if (!isScanned) {
-            console.log(`[4] OCR started (if used) - SKIPPED`);
-            console.log(`[5] OCR completed - SKIPPED`);
-        }
-
-        if (isScanned) {
-            if (updateJobCallback) {
-                updateJobCallback(45, 'Running OCR Fallback', 'Running Gemini OCR fallback (this may take up to 2 minutes)...');
-            }
-            console.log('[PDF Upload] Running OCR/AI fallback...');
-            console.log(`[4] OCR started (if used) - elapsed: ${Date.now() - startTime}ms`);
-            const ocrStartTime = Date.now();
-            const ocrQuestions = await Promise.race([
-                extractQuestionsFromPdf(buffer, {
-                    category: defaultCategory,
-                    subject: defaultSubject
-                }),
-                new Promise((_, reject) => setTimeout(() => reject(new Error('AI PDF extraction timed out (limit of 300 seconds exceeded)')), 300000))
-            ]);
-            const ocrDuration = Date.now() - ocrStartTime;
-            if (updateJobCallback) {
-                updateJobCallback(60, 'Running OCR Fallback', `Gemini OCR fallback completed in ${ocrDuration}ms. Found ${ocrQuestions.length} questions.`);
-            }
-            console.log(`[PDF Upload] Questions extracted via OCR/AI successfully: count=${ocrQuestions.length}, time=${ocrDuration}ms`);
-            console.log(`[5] OCR completed - elapsed: ${Date.now() - startTime}ms`);
-
-            parsedQuestions = ocrQuestions.map(q => {
-                const opts = q.options || [];
-                const correctIdx = q.correctIndex !== undefined ? q.correctIndex : 0;
-                const correctAnswerText = opts[correctIdx] || q.correctAnswer || '';
-
-                return {
-                    question: q.question,
-                    question_en: q.question_en || q.question,
-                    question_hi: q.question_hi || q.question,
-                    options: opts,
-                    options_en: q.options_en || opts,
-                    options_hi: q.options_hi || opts,
-                    correctAnswer: correctAnswerText,
-                    correctIndex: correctIdx,
-                    explanation: q.explanation || '',
-                    explanation_hi: q.explanation_hi || '',
-                    category: defaultCategory || q.category || 'General',
-                    subject: q.subject || defaultSubject || 'General',
-                    topic: q.topic || '',
-                    difficulty: q.difficulty || 'Medium',
-                    isMockTestOnly: !!q.isMockTestOnly
-                };
-            });
-        }
-    }
-
-    console.log(`[6] Question parsing completed - elapsed: ${Date.now() - startTime}ms`);
-    console.log(`[7] Total questions detected: ${parsedQuestions.length} - elapsed: ${Date.now() - startTime}ms`);
-
-    return parsedQuestions;
+    return await parsePDF(buffer, { category: defaultCategory, subject: defaultSubject }, expectedCount, updateJobCallback);
 }
 
 // ── BACKGROUND WORKERS ───────────────────────────────────────────────
@@ -827,8 +545,47 @@ async function runPreviewPDFJob(jobId, buffer, defaultCategory, defaultSubject, 
             (progress, stage, log) => { updateJob(jobId, progress, stage, log); },
             startTime
         );
+
+        // Perform duplicate check
+        await updateJob(jobId, 85, 'Checking duplicates', `Checking database duplicates for ${questions.length} questions...`);
+        
+        const questionTexts = questions.map(q => q.question).filter(Boolean);
+        const questionEnTexts = questions.map(q => q.question_en).filter(Boolean);
+
+        const existingQuestions = await PracticeQuestion.find({
+            $or: [
+                { question: { $in: questionTexts } },
+                { question_en: { $in: questionEnTexts } }
+            ]
+        }).select('_id question question_en');
+
+        function cleanText(text) {
+            if (!text) return '';
+            return text.trim().toLowerCase().replace(/[^a-z0-9\u0900-\u097F]/g, '');
+        }
+
+        const existingMap = new Map();
+        existingQuestions.forEach(eq => {
+            if (eq.question) existingMap.set(cleanText(eq.question), eq);
+            if (eq.question_en) existingMap.set(cleanText(eq.question_en), eq);
+        });
+
+        const markedQuestions = questions.map(q => {
+            const cleanQ = cleanText(q.question);
+            const cleanQEn = cleanText(q.question_en);
+            const existing = existingMap.get(cleanQ) || (cleanQEn ? existingMap.get(cleanQEn) : null);
+            if (existing) {
+                return {
+                    ...q,
+                    isDuplicate: true,
+                    duplicateId: existing._id
+                };
+            }
+            return q;
+        });
+
         const elapsedSec = ((Date.now() - startTime) / 1000).toFixed(2);
-        await completeJob(jobId, { questions, count: questions.length }, `Preview questions extracted successfully in ${elapsedSec}s. Count: ${questions.length}`);
+        await completeJob(jobId, { questions: markedQuestions, count: markedQuestions.length }, `Preview questions extracted successfully in ${elapsedSec}s. Count: ${markedQuestions.length}`);
     } catch (err) {
         await failJob(jobId, err.message);
     }
@@ -1347,12 +1104,16 @@ router.get('/questions', requireAdmin, catchAsync(async (req, res) => {
 }));
 
 router.post('/questions', requireAdmin, catchAsync(async (req, res) => {
-    if (Array.isArray(req.body)) {
-        const startTime = Date.now();
-        console.log(`[POST /questions] Received bulk save for ${req.body.length} questions.`);
+    const isArrayBody = Array.isArray(req.body);
+    const questionsArray = isArrayBody ? req.body : (req.body.questions || []);
+    const replaceDuplicates = req.query.replaceDuplicates === 'true' || req.body.replaceDuplicates === true;
 
-        const questionTexts = req.body.map(q => q.question).filter(Boolean);
-        const questionEnTexts = req.body.map(q => q.question_en).filter(Boolean);
+    if (isArrayBody || req.body.questions) {
+        const startTime = Date.now();
+        console.log(`[POST /questions] Received bulk save for ${questionsArray.length} questions. replaceDuplicates: ${replaceDuplicates}`);
+
+        const questionTexts = questionsArray.map(q => q.question).filter(Boolean);
+        const questionEnTexts = questionsArray.map(q => q.question_en).filter(Boolean);
 
         const existingQuestions = await PracticeQuestion.find({
             $or: [
@@ -1372,23 +1133,56 @@ router.post('/questions', requireAdmin, catchAsync(async (req, res) => {
             if (q.question_en) existingMap.set(cleanText(q.question_en), q);
         });
 
-        const questionsOrdered = new Array(req.body.length);
+        const questionsOrdered = new Array(questionsArray.length);
         const uniqueToInsert = []; // elements will be { q, idx }
         let duplicateCount = 0;
         let failedCount = 0;
+        const updatePromises = [];
 
-        req.body.forEach((q, idx) => {
+        for (let idx = 0; idx < questionsArray.length; idx++) {
+            const q = questionsArray[idx];
             const cleanQ = cleanText(q.question);
             const cleanQEn = cleanText(q.question_en);
             const existing = existingMap.get(cleanQ) || (cleanQEn ? existingMap.get(cleanQEn) : null);
             
             if (existing) {
-                questionsOrdered[idx] = existing;
-                duplicateCount++;
+                if (replaceDuplicates) {
+                    // Update duplicate question in database with new details
+                    const updatePromise = PracticeQuestion.findByIdAndUpdate(existing._id, {
+                        question: q.question,
+                        question_en: q.question_en || q.question,
+                        question_hi: q.question_hi || q.question,
+                        options: q.options || [q.optionA || '', q.optionB || '', q.optionC || '', q.optionD || ''],
+                        options_en: q.options_en || q.options,
+                        options_hi: q.options_hi || q.options,
+                        correctAnswer: q.correctAnswer || q.optionA,
+                        explanation: q.explanation || '',
+                        explanation_hi: q.explanation_hi || '',
+                        category: q.category || existing.category,
+                        subject: q.subject || existing.subject,
+                        topic: q.topic || existing.topic,
+                        difficulty: q.difficulty || existing.difficulty,
+                        image: q.image || existing.image
+                    }, { new: true }).then(updatedQ => {
+                        questionsOrdered[idx] = updatedQ;
+                    }).catch(err => {
+                        console.error(`[POST /questions] Failed to replace duplicate:`, err.message);
+                        questionsOrdered[idx] = existing;
+                        failedCount++;
+                    });
+                    updatePromises.push(updatePromise);
+                } else {
+                    questionsOrdered[idx] = existing;
+                    duplicateCount++;
+                }
             } else {
                 uniqueToInsert.push({ q, idx });
             }
-        });
+        }
+
+        if (updatePromises.length > 0) {
+            await Promise.all(updatePromises);
+        }
 
         const batchSize = 200;
         console.log(`[POST /questions] Found ${duplicateCount} duplicates. Inserting ${uniqueToInsert.length} unique questions.`);
@@ -1418,6 +1212,24 @@ router.post('/questions', requireAdmin, catchAsync(async (req, res) => {
 
         // Filter out any undefined/failed entries from returned array to keep MongoDB valid docs
         const finalQuestions = questionsOrdered.filter(Boolean);
+
+        // Link to mock test pack if requested (bulk-import flow)
+        const packId = req.body.packId || req.query.packId;
+        const testId = req.body.testId || req.query.testId;
+        if (packId && testId && finalQuestions.length > 0) {
+            const pack = await MockTestPack.findOne({ id: packId });
+            if (pack) {
+                const subtest = pack.tests.find(t => t.testId === testId);
+                if (subtest) {
+                    const finalIds = finalQuestions.map(q => q._id);
+                    subtest.questions = finalIds;
+                    subtest.numQuestions = finalIds.length;
+                    await pack.save();
+                    console.log(`[POST /questions] Successfully linked ${finalIds.length} questions to Mock Test Pack ${packId}, Test ${testId}`);
+                }
+            }
+        }
+
         const elapsed = Date.now() - startTime;
         console.log(`[POST /questions] Completed bulk save in ${elapsed}ms. Saved unique: ${finalQuestions.length - duplicateCount}, duplicates: ${duplicateCount}, failed: ${failedCount}`);
 

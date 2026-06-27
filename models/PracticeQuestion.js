@@ -12,6 +12,7 @@ const practiceQuestionSchema = new mongoose.Schema({
     correctAnswer: { type: String, required: true },
     explanation: { type: String },
     explanation_hi: { type: String },            // Hindi explanation
+    image: { type: String },                      // Extracted image file path
     category: {
         type: String,
         required: true,

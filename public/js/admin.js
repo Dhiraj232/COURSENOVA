@@ -1133,140 +1133,136 @@ async function handlePdfToTest(input, index, lang = 'en') {
                         return;
                     }
 
-                    // ── MERGE TRANSLATIONS IF QUESTIONS ALREADY EXIST ──
-                    if (existingQIds.length > 0 && existingQIds.length === data.questions.length) {
-                        activeStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Merging translations...';
+                    activeStatus.innerHTML = `<span style="color:var(--success)">✅ Processing completed! Loading preview...</span>`;
+                    btnEn.disabled = false;
+                    btnHi.disabled = false;
 
-                        const payload = data.questions.map((q, i) => {
-                            if (lang === 'hi') {
-                                return {
-                                    _id: existingQIds[i],
-                                    question_hi: q.question,
-                                    options_hi: q.options
-                                };
-                            } else {
-                                return {
-                                    _id: existingQIds[i],
-                                    question_en: q.question,
-                                    options_en: q.options
-                                };
+                    showQuestionsPreviewModal(data.questions, async (editedQuestions, replaceDuplicates) => {
+                        // ── MERGE TRANSLATIONS IF QUESTIONS ALREADY EXIST ──
+                        if (existingQIds.length > 0 && existingQIds.length === editedQuestions.length) {
+                            activeStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Merging translations...';
+
+                            const payload = editedQuestions.map((q, i) => {
+                                const opts = q.options || [q.optionA, q.optionB, q.optionC, q.optionD, q.optionE].filter(Boolean);
+                                if (lang === 'hi') {
+                                    return {
+                                        _id: existingQIds[i],
+                                        question_hi: q.question_hi || q.question,
+                                        options_hi: opts
+                                    };
+                                } else {
+                                    return {
+                                        _id: existingQIds[i],
+                                        question_en: q.question_en || q.question,
+                                        options_en: opts
+                                    };
+                                }
+                            });
+
+                            const targetEndpoint = lang === 'hi' ? 'add-hindi' : 'add-english';
+                            const mergeController = new AbortController();
+                            let mergeTimeout = setTimeout(() => mergeController.abort(), 300000); // 5 min timeout
+
+                            const updateRes = await fetch(`${API_BASE}/questions/${targetEndpoint}`, {
+                                method: 'POST',
+                                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                                body: JSON.stringify(payload),
+                                signal: mergeController.signal
+                            });
+                            clearTimeout(mergeTimeout);
+
+                            if (!updateRes.ok) {
+                                const errorMsg = await getFetchErrorMessage(updateRes);
+                                activeStatus.innerHTML = `<span style="color:var(--danger)">❌ Import Failed: Merge failed: ${errorMsg}</span>`;
+                                return;
                             }
-                        });
-
-                        const targetEndpoint = lang === 'hi' ? 'add-hindi' : 'add-english';
-                        const mergeController = new AbortController();
-                        let mergeTimeout = setTimeout(() => mergeController.abort(), 300000); // 5 min timeout
-
-                        const updateRes = await fetch(`${API_BASE}/questions/${targetEndpoint}`, {
-                            method: 'POST',
-                            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                            body: JSON.stringify(payload),
-                            signal: mergeController.signal
-                        });
-                        clearTimeout(mergeTimeout);
-
-                        if (!updateRes.ok) {
-                            const errorMsg = await getFetchErrorMessage(updateRes);
-                            activeStatus.innerHTML = `<span style="color:var(--danger)">❌ Import Failed: Merge failed: ${errorMsg}</span>`;
-                            btnEn.disabled = false;
-                            btnHi.disabled = false;
+                            const updateData = await updateRes.json();
+                            
+                            if (updateData.ok) {
+                                if (lang === 'hi') {
+                                    statusHi.innerHTML = `<span style="color:#d97706; font-weight:600;">✅ Import Successful: ${editedQuestions.length} Hindi translations merged!</span>`;
+                                    btnHi.innerHTML = '<i class="fas fa-check"></i> Hindi Updated';
+                                } else {
+                                    statusEn.innerHTML = `<span style="color:#6366f1; font-weight:600;">✅ Import Successful: ${editedQuestions.length} English translations merged!</span>`;
+                                    btnEn.innerHTML = '<i class="fas fa-check"></i> English Updated';
+                                }
+                            } else {
+                                activeStatus.innerHTML = `<span style="color:var(--danger)">❌ Import Failed: Merge failed: ${updateData.message || 'DB error'}</span>`;
+                            }
                             return;
                         }
-                        const updateData = await updateRes.json();
+
+                        // ── SAVE NEW QUESTIONS PATH ──
+                        activeStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving questions...';
+
+                        const packCategory = (document.getElementById('mtCategory').value || '').trim() || 'Mock Test';
+                        const testTitleText = (row.querySelector('.mt-t-title').value || '').trim() || 'General';
+
+                        let subjectName = testTitleText;
+                        if (testTitleText.includes('-')) {
+                            subjectName = testTitleText.split('-').pop().trim();
+                        } else if (testTitleText.includes(':')) {
+                            subjectName = testTitleText.split(':').pop().trim();
+                        }
+
+                        const mappedQuestions = editedQuestions.map(q => {
+                            const opts = q.options || [q.optionA, q.optionB, q.optionC, q.optionD, q.optionE].filter(Boolean);
+                            const correctIdx = q.correctIndex !== undefined ? q.correctIndex : 0;
+                            const correctAnswerText = opts[correctIdx] || '';
+                            return {
+                                question: q.question,
+                                question_en: lang === 'en' ? q.question : q.question_en || '',
+                                question_hi: lang === 'hi' ? q.question : q.question_hi || '',
+                                options: opts,
+                                options_en: lang === 'en' ? opts : q.options_en || opts,
+                                options_hi: lang === 'hi' ? opts : q.options_hi || opts,
+                                correctAnswer: correctAnswerText,
+                                category: q.category || packCategory,
+                                subject: q.subject || subjectName,
+                                difficulty: q.difficulty || 'Medium',
+                                image: q.image || '',
+                                isMockTestOnly: true
+                            };
+                        });
+
+                        const saveController = new AbortController();
+                        let saveTimeout = setTimeout(() => saveController.abort(), 300000); // 5 min timeout
+
+                        const saveRes = await fetch(`${API_BASE}/questions?replaceDuplicates=${replaceDuplicates}`, {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                            body: JSON.stringify(mappedQuestions),
+                            signal: saveController.signal
+                        });
+                        clearTimeout(saveTimeout);
+
+                        if (!saveRes.ok) {
+                            const errorMsg = await getFetchErrorMessage(saveRes);
+                            activeStatus.innerHTML = `<span style="color:var(--danger)">❌ Import Failed: Save failed: ${errorMsg}</span>`;
+                            return;
+                        }
+                        const saveData = await saveRes.json();
                         
-                        if (updateData.ok) {
-                            if (lang === 'hi') {
-                                statusHi.innerHTML = `<span style="color:#d97706; font-weight:600;">✅ Import Successful: ${data.questions.length} Hindi translations merged!</span>`;
-                                btnHi.innerHTML = '<i class="fas fa-check"></i> Hindi Updated';
+                        if (saveData.ok) {
+                            const newQIds = saveData.questions.map(q => q._id).join(', ');
+                            qIdsInput.value = newQIds; 
+                            countBadge.textContent = saveData.questions.length;
+                            
+                            if (lang === 'en') {
+                                statusEn.innerHTML = `<span style="color:#6366f1; font-weight:600;">✅ Import Successful: ${saveData.questions.length} English Qs imported!</span>`;
+                                statusHi.innerHTML = `<span style="color:#94a3b8;">Pending Hindi upload...</span>`;
+                                btnEn.innerHTML = '<i class="fas fa-check"></i> English Uploaded';
+                                btnHi.innerHTML = '<i class="fas fa-file-pdf"></i> Upload Hindi PDF';
                             } else {
-                                statusEn.innerHTML = `<span style="color:#6366f1; font-weight:600;">✅ Import Successful: ${data.questions.length} English translations merged!</span>`;
-                                btnEn.innerHTML = '<i class="fas fa-check"></i> English Updated';
+                                statusHi.innerHTML = `<span style="color:#d97706; font-weight:600;">✅ Import Successful: ${saveData.questions.length} Hindi Qs imported!</span>`;
+                                statusEn.innerHTML = `<span style="color:#94a3b8;">Pending English upload...</span>`;
+                                btnHi.innerHTML = '<i class="fas fa-check"></i> Hindi Uploaded';
+                                btnEn.innerHTML = '<i class="fas fa-file-pdf"></i> Upload English PDF';
                             }
-                            btnEn.disabled = false;
-                            btnHi.disabled = false;
                         } else {
-                            activeStatus.innerHTML = `<span style="color:var(--danger)">❌ Import Failed: Merge failed: ${updateData.message || 'DB error'}</span>`;
-                            btnEn.disabled = false;
-                            btnHi.disabled = false;
+                            activeStatus.innerHTML = `<span style="color:var(--danger)">❌ Import Failed: Save failed: ${saveData.message || 'DB error'}</span>`;
                         }
-                        return;
-                    }
-
-                    // ── SAVE NEW QUESTIONS PATH ──
-                    activeStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving questions...';
-
-                    const packCategory = (document.getElementById('mtCategory').value || '').trim() || 'Mock Test';
-                    const testTitleText = (row.querySelector('.mt-t-title').value || '').trim() || 'General';
-
-                    let subjectName = testTitleText;
-                    if (testTitleText.includes('-')) {
-                        subjectName = testTitleText.split('-').pop().trim();
-                    } else if (testTitleText.includes(':')) {
-                        subjectName = testTitleText.split(':').pop().trim();
-                    }
-
-                    const mappedQuestions = data.questions.map(q => {
-                        const opts = q.options || [];
-                        const correctIdx = q.correctIndex !== undefined ? q.correctIndex : 0;
-                        const correctAnswerText = opts[correctIdx] || '';
-                        return {
-                            question: q.question,
-                            question_en: lang === 'en' ? q.question : '',
-                            question_hi: lang === 'hi' ? q.question : '',
-                            options: opts,
-                            options_en: lang === 'en' ? opts : [],
-                            options_hi: lang === 'hi' ? opts : [],
-                            correctAnswer: correctAnswerText,
-                            category: packCategory,
-                            subject: subjectName,
-                            isMockTestOnly: true
-                        };
                     });
-
-                    const saveController = new AbortController();
-                    let saveTimeout = setTimeout(() => saveController.abort(), 300000); // 5 min timeout
-
-                    const saveRes = await fetch(`${API_BASE}/questions`, {
-                        method: 'POST',
-                        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                        body: JSON.stringify(mappedQuestions),
-                        signal: saveController.signal
-                    });
-                    clearTimeout(saveTimeout);
-
-                    if (!saveRes.ok) {
-                        const errorMsg = await getFetchErrorMessage(saveRes);
-                        activeStatus.innerHTML = `<span style="color:var(--danger)">❌ Import Failed: Save failed: ${errorMsg}</span>`;
-                        btnEn.disabled = false;
-                        btnHi.disabled = false;
-                        return;
-                    }
-                    const saveData = await saveRes.json();
-                    
-                    if (saveData.ok) {
-                        const newQIds = saveData.questions.map(q => q._id).join(', ');
-                        qIdsInput.value = newQIds; 
-                        countBadge.textContent = saveData.questions.length;
-                        
-                        if (lang === 'en') {
-                            statusEn.innerHTML = `<span style="color:#6366f1; font-weight:600;">✅ Import Successful: ${saveData.questions.length} English Qs imported!</span>`;
-                            statusHi.innerHTML = `<span style="color:#94a3b8;">Pending Hindi upload...</span>`;
-                            btnEn.innerHTML = '<i class="fas fa-check"></i> English Uploaded';
-                            btnHi.innerHTML = '<i class="fas fa-file-pdf"></i> Upload Hindi PDF';
-                        } else {
-                            statusHi.innerHTML = `<span style="color:#d97706; font-weight:600;">✅ Import Successful: ${saveData.questions.length} Hindi Qs imported!</span>`;
-                            statusEn.innerHTML = `<span style="color:#94a3b8;">Pending English upload...</span>`;
-                            btnHi.innerHTML = '<i class="fas fa-check"></i> Hindi Uploaded';
-                            btnEn.innerHTML = '<i class="fas fa-file-pdf"></i> Upload English PDF';
-                        }
-                        
-                        btnEn.disabled = false;
-                        btnHi.disabled = false;
-                    } else {
-                        activeStatus.innerHTML = `<span style="color:var(--danger)">❌ Import Failed: Save failed: ${saveData.message || 'DB error'}</span>`;
-                        btnEn.disabled = false;
-                        btnHi.disabled = false;
-                    }
                 } catch (innerErr) {
                     activeStatus.innerHTML = `<span style="color:var(--danger)">❌ Save/Merge Error: ${innerErr.message}</span>`;
                     btnEn.disabled = false;
@@ -1922,7 +1918,7 @@ async function handlePdfUpload() {
 
     try {
         const token = localStorage.getItem('token');
-        const res = await fetch(`${API_BASE}/import-pdf-questions`, {
+        const res = await fetch(`${API_BASE}/generate-questions-from-pdf`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` },
             body: formData
@@ -1952,45 +1948,67 @@ async function handlePdfUpload() {
                 btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Parsing... ${progress}%`;
             },
             (result) => {
-                const report = result;
-                status.innerHTML = `<span style="color:var(--success)">✅ Import completed!</span>`;
+                status.innerHTML = `<span style="color:var(--success)">✅ Processing completed! Loading preview...</span>`;
                 btn.disabled = false;
                 btn.textContent = 'Import PDF';
 
-                const modalContainer = document.getElementById('modal-container');
-                modalContainer.innerHTML = `
-                    <div class="modal-content admin-card" style="max-width: 600px; width: 90%; padding: 30px;">
-                        <div class="card-header" style="margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px;">
-                            <h3 style="color: var(--success); display: flex; align-items: center; gap: 10px;">
-                                <i class="fas fa-check-circle"></i> Import Completed Successfully!
-                            </h3>
+                showQuestionsPreviewModal(result.questions, async (editedQuestions, replaceDuplicates) => {
+                    const saveRes = await fetch(`${API_BASE}/questions?replaceDuplicates=${replaceDuplicates}`, {
+                        method: 'POST',
+                        headers: { 
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            questions: editedQuestions,
+                            packId: packSelect.value,
+                            testId: testSelect.value
+                        })
+                    });
+
+                    if (!saveRes.ok) {
+                        const errText = await getFetchErrorMessage(saveRes);
+                        throw new Error(errText);
+                    }
+
+                    const saveData = await saveRes.json();
+                    if (!saveData.ok) {
+                        throw new Error(saveData.message || 'DB save failed');
+                    }
+
+                    // Show success stats modal
+                    const modalContainer = document.getElementById('modal-container');
+                    modalContainer.innerHTML = `
+                        <div class="modal-content admin-card" style="max-width: 600px; width: 90%; padding: 30px;">
+                            <div class="card-header" style="margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px;">
+                                <h3 style="color: var(--success); display: flex; align-items: center; gap: 10px;">
+                                    <i class="fas fa-check-circle"></i> Import Completed Successfully!
+                                </h3>
+                            </div>
+                            <div class="stats-grid" style="grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 25px;">
+                                <div class="stat-card" style="padding: 15px; text-align: center; background: rgba(0,0,0,0.02); border: 1px solid var(--border-color); border-radius: 8px;">
+                                    <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">Total Questions Found</span>
+                                    <h2 style="margin: 5px 0 0 0; font-size: 1.8rem; font-weight: 700; color: var(--text-main);">${saveData.count || 0}</h2>
+                                </div>
+                                <div class="stat-card" style="padding: 15px; text-align: center; background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.1); border-radius: 8px;">
+                                    <span style="font-size: 0.85rem; color: #10b981; font-weight: 500;">Successfully Imported</span>
+                                    <h2 style="margin: 5px 0 0 0; font-size: 1.8rem; font-weight: 700; color: #10b981;">${(saveData.count || 0) - (saveData.duplicateCount || 0)}</h2>
+                                </div>
+                                <div class="stat-card" style="padding: 15px; text-align: center; background: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.1); border-radius: 8px;">
+                                    <span style="font-size: 0.85rem; color: #f59e0b; font-weight: 500;">Duplicate (Updated/Skipped)</span>
+                                    <h2 style="margin: 5px 0 0 0; font-size: 1.8rem; font-weight: 700; color: #f59e0b;">${saveData.duplicateCount || 0}</h2>
+                                </div>
+                                <div class="stat-card" style="padding: 15px; text-align: center; background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.1); border-radius: 8px;">
+                                    <span style="font-size: 0.85rem; color: #ef4444; font-weight: 500;">Failed Questions</span>
+                                    <h2 style="margin: 5px 0 0 0; font-size: 1.8rem; font-weight: 700; color: #ef4444;">${saveData.failedCount || 0}</h2>
+                                </div>
+                            </div>
+                            <div style="display: flex; justify-content: flex-end; border-top: 1px solid var(--border-color); padding-top: 20px;">
+                                <button class="btn btn-primary" onclick="closeModal(); loadView('questions');">Done</button>
+                            </div>
                         </div>
-                        <div class="stats-grid" style="grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 25px;">
-                            <div class="stat-card" style="padding: 15px; text-align: center; background: rgba(0,0,0,0.02); border: 1px solid var(--border-color); border-radius: 8px;">
-                                <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">Total Questions Found</span>
-                                <h2 style="margin: 5px 0 0 0; font-size: 1.8rem; font-weight: 700; color: var(--text-main);">${report.totalQuestions}</h2>
-                            </div>
-                            <div class="stat-card" style="padding: 15px; text-align: center; background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.1); border-radius: 8px;">
-                                <span style="font-size: 0.85rem; color: #10b981; font-weight: 500;">Successfully Imported</span>
-                                <h2 style="margin: 5px 0 0 0; font-size: 1.8rem; font-weight: 700; color: #10b981;">${report.importedCount}</h2>
-                            </div>
-                            <div class="stat-card" style="padding: 15px; text-align: center; background: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.1); border-radius: 8px;">
-                                <span style="font-size: 0.85rem; color: #f59e0b; font-weight: 500;">Duplicate (Skipped)</span>
-                                <h2 style="margin: 5px 0 0 0; font-size: 1.8rem; font-weight: 700; color: #f59e0b;">${report.duplicateCount}</h2>
-                            </div>
-                            <div class="stat-card" style="padding: 15px; text-align: center; background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.1); border-radius: 8px;">
-                                <span style="font-size: 0.85rem; color: #ef4444; font-weight: 500;">Failed Questions</span>
-                                <h2 style="margin: 5px 0 0 0; font-size: 1.8rem; font-weight: 700; color: #ef4444;">${report.failedCount}</h2>
-                            </div>
-                        </div>
-                        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 20px;">
-                            <span style="font-size: 0.85rem; color: var(--text-muted);">
-                                <i class="far fa-clock"></i> Import Time: <strong>${report.importTimeSec} seconds</strong>
-                            </span>
-                            <button class="btn btn-primary" onclick="closeModal(); loadView('questions');">Done</button>
-                        </div>
-                    </div>
-                `;
+                    `;
+                });
             },
             (err) => {
                 status.innerHTML = `<span style="color:var(--danger)">Error: ${err.message}</span>`;
@@ -2701,4 +2719,258 @@ async function deleteAdminNotification(id) {
     } catch (e) {
         alert('Failed to delete notification');
     }
+}
+
+// ── Universal PDF Preview Modal and Edit System ─────────────────────────
+window.showQuestionsPreviewModal = function(questions, onConfirm) {
+    window.currentPreviewQuestions = JSON.parse(JSON.stringify(questions));
+    window.confirmPreviewImportCallback = onConfirm;
+
+    const modalContainer = document.getElementById('modal-container');
+    modalContainer.innerHTML = `
+        <div class="modal-content admin-card" style="max-width: 1000px; width: 95%; max-height: 90vh; display: flex; flex-direction: column; padding: 0;">
+            <div class="card-header" style="padding: 20px 24px; border-bottom: 1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; background:#fafafa;">
+                <div>
+                    <h3 style="margin:0;"><i class="fas fa-eye" style="color:var(--primary);"></i> Preview Extracted Questions</h3>
+                    <p style="font-size:0.8rem; color:var(--text-muted); margin: 4px 0 0 0;">Review, edit, and validate questions before final import.</p>
+                </div>
+                <button class="btn btn-icon" onclick="closeModal()">×</button>
+            </div>
+            
+            <div class="preview-actions" style="padding: 15px 24px; background: #f8fafc; border-bottom: 1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; gap: 15px; flex-wrap: wrap;">
+                <div style="display:flex; gap:15px; align-items:center;">
+                    <span class="badge badge-info" style="background:#e0e7ff; color:#4f46e5; padding:6px 12px; border-radius:20px; font-weight:600; font-size:0.8rem;">
+                        Total: <span id="preview-total-count">0</span>
+                    </span>
+                    <span class="badge badge-danger" id="preview-warning-badge" style="background:#fee2e2; color:#ef4444; padding:6px 12px; border-radius:20px; font-weight:600; font-size:0.8rem; display:none;">
+                        Warnings: <span id="preview-warning-count">0</span>
+                    </span>
+                    <label style="display:flex; align-items:center; gap:6px; font-size:0.85rem; font-weight:500; cursor:pointer; margin:0;">
+                        <input type="checkbox" id="preview-replace-duplicates" style="width:16px; height:16px;">
+                        Replace duplicates in database
+                    </label>
+                </div>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn btn-outline btn-sm" onclick="addBlankQuestionToPreview()"><i class="fas fa-plus"></i> Add Question</button>
+                    <button class="btn btn-primary btn-sm" id="preview-import-btn" onclick="confirmPreviewImport()"><i class="fas fa-cloud-upload-alt"></i> Import Questions</button>
+                </div>
+            </div>
+            
+            <div id="preview-questions-list" style="flex: 1; overflow-y: auto; padding: 24px; display:flex; flex-direction:column; gap:20px; background:#f1f5f9;">
+                <!-- Cards injected by renderPreviewList -->
+            </div>
+        </div>
+    `;
+    modalContainer.classList.add('active');
+    renderPreviewList();
+};
+
+window.renderPreviewList = function() {
+    const listContainer = document.getElementById('preview-questions-list');
+    const totalCountEl = document.getElementById('preview-total-count');
+    const warningBadge = document.getElementById('preview-warning-badge');
+    const warningCountEl = document.getElementById('preview-warning-count');
+
+    if (!listContainer) return;
+
+    totalCountEl.textContent = window.currentPreviewQuestions.length;
+    
+    let warningCount = 0;
+    listContainer.innerHTML = '';
+
+    window.currentPreviewQuestions.forEach((q, idx) => {
+        if (!q.isValid) warningCount++;
+        listContainer.appendChild(createPreviewCardNode(q, idx));
+    });
+
+    if (warningCount > 0) {
+        warningBadge.style.display = 'inline-block';
+        warningCountEl.textContent = warningCount;
+    } else {
+        warningBadge.style.display = 'none';
+    }
+};
+
+window.createPreviewCardNode = function(q, idx) {
+    const card = document.createElement('div');
+    card.className = 'preview-q-card';
+    card.id = `q-card-${idx}`;
+    card.style = `background:white; border-radius:12px; border: ${q.isValid ? '1px solid var(--border-color)' : '2px solid #ef4444'}; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); padding:20px; position:relative; display:flex; flex-direction:column; gap:12px;`;
+
+    // Render option input blocks
+    const optionsHtml = ['A', 'B', 'C', 'D', 'E'].map((letter, i) => {
+        const value = q[`option${letter}`] || '';
+        return `
+            <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-weight:600; font-size:0.85rem; width:20px;">${letter})</span>
+                <input type="text" class="admin-input" style="padding:6px; font-size:0.85rem; flex:1;" value="${escapeHtml(value)}" placeholder="Option ${letter}" oninput="updatePreviewQuestionField(${idx}, 'option${letter}', this.value)">
+            </div>
+        `;
+    }).join('');
+
+    card.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #f1f5f9; padding-bottom:10px;">
+            <div style="display:flex; gap:10px; align-items:center;">
+                <span style="font-weight:700; font-size:0.95rem; color:var(--text-main);">Question #${q.questionNumber}</span>
+                ${q.isDuplicate ? `<span style="background:#fee2e2; color:#ef4444; font-size:0.7rem; font-weight:700; padding:2px 8px; border-radius:4px; display:inline-flex; align-items:center; gap:4px;"><i class="fas fa-exclamation-triangle"></i> Duplicate in DB</span>` : ''}
+                <span style="background:#e2e8f0; color:#475569; font-size:0.7rem; font-weight:700; padding:2px 8px; border-radius:4px;">${q.language}</span>
+            </div>
+            <button class="btn btn-sm btn-icon danger" onclick="deleteQuestionFromPreview(${idx})" style="color:#ef4444;"><i class="fas fa-trash"></i></button>
+        </div>
+        
+        <div class="card-warnings" id="card-warnings-${idx}" style="background:#fee2e2; color:#ef4444; border-radius:6px; padding:10px; font-size:0.8rem; font-weight:500; display: ${q.isValid ? 'none' : 'block'};">
+            ${(q.validationErrors || []).map(err => `<div>⚠️ ${err}</div>`).join('')}
+        </div>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-top:5px;">
+            <div>
+                <label style="font-weight:600; font-size:0.8rem; display:block; margin-bottom:4px;">Question Text (English)</label>
+                <textarea class="admin-input" style="height:80px; font-size:0.85rem; padding:8px;" oninput="updatePreviewQuestionField(${idx}, 'question', this.value)">${escapeHtml(q.question || '')}</textarea>
+            </div>
+            <div>
+                <label style="font-weight:600; font-size:0.8rem; display:block; margin-bottom:4px;">Question Text (Hindi - Optional)</label>
+                <textarea class="admin-input" style="height:80px; font-size:0.85rem; padding:8px;" oninput="updatePreviewQuestionField(${idx}, 'question_hi', this.value)">${escapeHtml(q.question_hi || '')}</textarea>
+            </div>
+        </div>
+
+        <div>
+            <label style="font-weight:600; font-size:0.8rem; display:block; margin-bottom:4px;">Options</label>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                ${optionsHtml}
+            </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-top:5px;">
+            <div>
+                <label style="font-weight:600; font-size:0.8rem; display:block; margin-bottom:4px;">Correct Answer</label>
+                <select class="admin-input" style="padding:6px; font-size:0.85rem;" onchange="updatePreviewQuestionCorrectIndex(${idx}, this.value)">
+                    <option value="A" ${q.answer === 'A' ? 'selected' : ''}>Option A</option>
+                    <option value="B" ${q.answer === 'B' ? 'selected' : ''}>Option B</option>
+                    <option value="C" ${q.answer === 'C' ? 'selected' : ''}>Option C</option>
+                    <option value="D" ${q.answer === 'D' ? 'selected' : ''}>Option D</option>
+                    <option value="E" ${q.answer === 'E' ? 'selected' : ''}>Option E</option>
+                </select>
+            </div>
+            <div>
+                <label style="font-weight:600; font-size:0.8rem; display:block; margin-bottom:4px;">Difficulty Level</label>
+                <select class="admin-input" style="padding:6px; font-size:0.85rem;" onchange="updatePreviewQuestionField(${idx}, 'difficulty', this.value)">
+                    <option value="Easy" ${q.difficulty === 'Easy' ? 'selected' : ''}>Easy</option>
+                    <option value="Medium" ${q.difficulty === 'Medium' || !q.difficulty ? 'selected' : ''}>Medium</option>
+                    <option value="Hard" ${q.difficulty === 'Hard' ? 'selected' : ''}>Hard</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-top:5px;">
+            <div>
+                <label style="font-weight:600; font-size:0.8rem; display:block; margin-bottom:4px;">Explanation (English)</label>
+                <textarea class="admin-input" style="height:60px; font-size:0.85rem; padding:6px;" oninput="updatePreviewQuestionField(${idx}, 'explanation', this.value)">${escapeHtml(q.explanation || '')}</textarea>
+            </div>
+            <div>
+                <label style="font-weight:600; font-size:0.8rem; display:block; margin-bottom:4px;">Explanation (Hindi)</label>
+                <textarea class="admin-input" style="height:60px; font-size:0.85rem; padding:6px;" oninput="updatePreviewQuestionField(${idx}, 'explanation_hi', this.value)">${escapeHtml(q.explanation_hi || '')}</textarea>
+            </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-top:5px;">
+            <div>
+                <label style="font-weight:600; font-size:0.8rem; display:block; margin-bottom:4px;">Subject</label>
+                <input type="text" class="admin-input" style="padding:6px; font-size:0.85rem;" value="${escapeHtml(q.subject || 'General')}" oninput="updatePreviewQuestionField(${idx}, 'subject', this.value)">
+            </div>
+            <div>
+                <label style="font-weight:600; font-size:0.8rem; display:block; margin-bottom:4px;">Category</label>
+                <input type="text" class="admin-input" style="padding:6px; font-size:0.85rem;" value="${escapeHtml(q.category || 'General')}" oninput="updatePreviewQuestionField(${idx}, 'category', this.value)">
+            </div>
+        </div>
+
+        ${q.image ? `
+            <div style="margin-top:5px;">
+                <label style="font-weight:600; font-size:0.8rem; display:block; margin-bottom:4px;">Extracted Image</label>
+                <img src="${q.image}" style="max-height:120px; border-radius:6px; border:1px solid #e2e8f0;">
+            </div>
+        ` : ''}
+    `;
+
+    return card;
+};
+
+window.updatePreviewQuestionCorrectIndex = function(idx, value) {
+    const q = window.currentPreviewQuestions[idx];
+    q.answer = value;
+    const alphabet = ['A', 'B', 'C', 'D', 'E'];
+    q.correctIndex = alphabet.indexOf(value);
+    q.correctAnswer = q.options[q.correctIndex] || '';
+};
+
+window.updateCardValidationUI = function(idx) {
+    const q = window.currentPreviewQuestions[idx];
+    const card = document.getElementById(`q-card-${idx}`);
+    const warningsEl = document.getElementById(`card-warnings-${idx}`);
+    const warningBadge = document.getElementById('preview-warning-badge');
+    const warningCountEl = document.getElementById('preview-warning-count');
+
+    if (!card) return;
+
+    if (q.isValid) {
+        card.style.border = '1px solid var(--border-color)';
+        if (warningsEl) warningsEl.style.display = 'none';
+    } else {
+        card.style.border = '2px solid #ef4444';
+        if (warningsEl) {
+            warningsEl.style.display = 'block';
+            warningsEl.innerHTML = (q.validationErrors || []).map(err => `<div>⚠️ ${err}</div>`).join('');
+        }
+    }
+
+    // Update global warning count badge
+    let warningCount = 0;
+    window.currentPreviewQuestions.forEach(pq => {
+        if (!pq.isValid) warningCount++;
+    });
+
+    if (warningCount > 0) {
+        warningBadge.style.display = 'inline-block';
+        warningCountEl.textContent = warningCount;
+    } else {
+        warningBadge.style.display = 'none';
+    }
+};
+
+window.confirmPreviewImport = async function() {
+    const invalidCount = window.currentPreviewQuestions.filter(q => !q.isValid).length;
+    if (invalidCount > 0) {
+        if (!confirm(`⚠️ You have ${invalidCount} questions with validation warnings (missing text or too few options). Are you sure you want to proceed?`)) {
+            return;
+        }
+    }
+
+    const btn = document.getElementById('preview-import-btn');
+    const replaceDuplicates = document.getElementById('preview-replace-duplicates')?.checked || false;
+
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+    }
+
+    try {
+        await window.confirmPreviewImportCallback(window.currentPreviewQuestions, replaceDuplicates);
+        closeModal();
+    } catch (err) {
+        alert('Import failed: ' + err.message);
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-cloud-upload-alt"></i> Import Questions';
+        }
+    }
+};
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 }
