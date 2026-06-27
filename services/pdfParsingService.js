@@ -327,24 +327,27 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
 
         const qStart = detectQuestionStart(line);
         if (qStart && !ignoreNewQuestions) {
-            // Check sequence
-            let isSequential = false;
+            let isNewQ = false;
+            
             if (questions.length === 0) {
-                // First question detected, establish starting sequence
-                isSequential = true;
+                isNewQ = true;
                 expectedNextNum = qStart.qNum + 1;
             } else {
-                if (qStart.qNum === expectedNextNum) {
-                    isSequential = true;
-                    expectedNextNum++;
-                } else if (qStart.qNum === 1) {
-                    // Section restart
-                    isSequential = true;
-                    expectedNextNum = 2;
+                // If options have started, numbers 1-5 are treated as option values, not new questions (unless they match expected sequence)
+                const isOptionNumber = qStart.qNum !== expectedNextNum && currentQ && currentQ.optionsStarted && qStart.qNum <= 5;
+                // Standalone list/diagram numbers (1-5 with empty rest) that break sequence are ignored
+                const isStandaloneNumber = qStart.qNum !== expectedNextNum && qStart.qNum <= 5 && !qStart.rest;
+                
+                if (!isOptionNumber && !isStandaloneNumber) {
+                    // Accept sequential, restart, or any number > 5 to capture all valid questions
+                    if (qStart.qNum === expectedNextNum || qStart.qNum === expectedNextNum + 1 || qStart.qNum === 1 || qStart.qNum > 5) {
+                        isNewQ = true;
+                        expectedNextNum = qStart.qNum + 1;
+                    }
                 }
             }
 
-            if (isSequential) {
+            if (isNewQ) {
                 if (currentQ) {
                     questions.push(currentQ);
                 }
@@ -361,7 +364,7 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
                 };
                 continue;
             } else {
-                console.log(`[pdfParsingService] Non-sequential question number detected (Expected: ${expectedNextNum}, Got: ${qStart.qNum}). Merging as regular line: "${line}"`);
+                console.log(`[pdfParsingService] Ignored Q#${qStart.qNum} as standalone or option number. Merging: "${line}"`);
             }
         }
 
@@ -610,63 +613,53 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
     });
 
     // 5. Final validation checks (Step 18)
+    let questionsWithWarning = 0;
     questions = questions.map((q, idx) => {
         const errors = [];
-        if (!q.question || q.question.trim().startsWith('[Question')) {
-            errors.push('Question text is missing or invalid.');
+        if (!q.question || q.question.trim().length <= 15) {
+            errors.push('Question text is missing, invalid, or too short (length <= 15).');
         }
         
         const validOpts = q.options.filter(o => o && o.trim() !== '');
-        if (validOpts.length < 2) {
-            errors.push(`Missing valid options (found only ${validOpts.length}, minimum 2 required).`);
+        if (validOpts.length < 4) {
+            errors.push(`Missing valid options (found only ${validOpts.length}, minimum 4 required).`);
+        }
+        
+        if (errors.length > 0) {
+            questionsWithWarning++;
         }
         
         return {
             ...q,
             questionNumber: q.questionNumber || (idx + 1),
             isValid: errors.length === 0,
+            validationWarning: errors.length > 0,
             validationErrors: errors
         };
     });
 
-    // Enforce strict question filter rules (Requirement 2, 4, 7, 9)
+    // Discard ONLY completely empty question candidates (Requirement 10)
     questions = questions.filter(q => {
-        const reasons = [];
-        if (!q.question || q.question.trim().length <= 15) {
-            reasons.push('Question text missing or too short (length <= 15)');
-        }
-        // Count non-empty options
-        const validOptionCount = q.options.filter(o => o && o.trim() !== '').length;
-        if (validOptionCount < 4) {
-            reasons.push(`Fewer than 4 valid options (found ${validOptionCount})`);
-        }
-        if (!q.questionNumber) {
-            reasons.push('Question number missing');
-        }
-
-        if (reasons.length > 0) {
+        const isEmpty = (!q.question || q.question.trim() === '') && q.options.every(o => !o || o.trim() === '');
+        if (isEmpty) {
             rejectedCount++;
-            rejectedReasons.push(`Q#${q.questionNumber || 'unknown'}: ${reasons.join(', ')}`);
-            console.log(`[pdfParsingService] Strictly rejecting question candidate: ${reasons.join(' | ')}`);
+            rejectedReasons.push(`Q#${q.questionNumber || 'unknown'}: Completely empty card`);
             return false;
         }
         return true;
     });
 
-    // 6. Sequential verification and false-positive filter (Requirement 13)
-    const cleanupResult = verifyAndFilterFalsePositives(questions);
-    questions = cleanupResult.questions;
-    duplicateQuestions = cleanupResult.duplicateCount;
-
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
     
-    // Log detailed statistics (Requirement 12)
+    // Log detailed statistics (Requirement 9 / 12)
     console.log(`
 ==================================================
         UNIVERSAL PDF PARSER REPORT
 ==================================================
 Total Pages: ${totalPages}
-Questions Detected: ${initialDetectedCount}
+Questions Found: ${initialDetectedCount}
+Questions Imported: ${questions.length}
+Questions With Warning: ${questionsWithWarning}
 Questions Rejected: ${rejectedCount}
 Rejected Reasons: 
   ${rejectedReasons.length > 0 ? rejectedReasons.join('\n  ') : 'None'}
