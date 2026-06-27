@@ -133,7 +133,9 @@
             if (rawQText) {
                 rawQText = rawQText.replace(/^(?:Question|Q)\s*\d+\s*[:.-]\s*/i, '').trim();
             }
-            const qOptions = currentLang === 'hi' ? (q.options_hi || q.options) : (q.options_en || q.options);
+            const qOptions = currentLang === 'hi'
+                ? ((q.options_hi && q.options_hi.length === q.options.length) ? q.options_hi : q.options)
+                : ((q.options_en && q.options_en.length === q.options.length) ? q.options_en : q.options);
             
             document.getElementById('qIdx').innerText = currentIndex + 1;
             document.getElementById('qText').innerText = rawQText;

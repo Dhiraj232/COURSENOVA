@@ -482,11 +482,29 @@ async function parseMCQFromText(text, expectedCount = 100, onProgress = null) {
         });
     }
 
-    const isSufficientText = text && text.trim().length >= 100;
     const emptyCount = parsedQuestions.filter(q => q.question && q.question.startsWith('[Question') && q.options && q.options.every(o => o && (o.startsWith('Option') || o === '—'))).length;
-    parsedQuestions.isEmptyPDF = !isSufficientText && parsedQuestions.length > 0 && (emptyCount / parsedQuestions.length) > 0.8;
+    parsedQuestions.isEmptyPDF = parsedQuestions.length === 0 || (parsedQuestions.length > 0 && (emptyCount / parsedQuestions.length) > 0.7);
 
     return parsedQuestions;
+}
+
+// ── Fast PDF Page Count Detection Helper (Zero CPU-blocking) ──────────
+function getPdfPageCount(buffer) {
+    try {
+        const str = buffer.toString('binary');
+        const countMatches = str.match(/\/Count\s+(\d+)/g);
+        if (countMatches) {
+            for (let i = countMatches.length - 1; i >= 0; i--) {
+                const num = parseInt(countMatches[i].match(/\d+/)[0], 10);
+                if (num > 0 && num < 10000) {
+                    return num;
+                }
+            }
+        }
+    } catch (e) {
+        console.error('Lightweight page count detection failed:', e.message);
+    }
+    return 1;
 }
 
 // ── Unified parse function with fallback OCR logic ───────────────────
@@ -495,58 +513,8 @@ const { extractQuestionsFromPdf } = require('../services/aiService');
 async function parseQuestionsFromPDFBuffer(buffer, defaultCategory = '', defaultSubject = '', expectedCount = 100, updateJobCallback = null, startTime = Date.now()) {
     let text = '';
     let isScanned = false;
-    let totalPages = 1;
+    let totalPages = getPdfPageCount(buffer);
     
-    // Page rendering tracker
-    let pageCount = 0;
-    const pagerender = async (pageData) => {
-        pageCount++;
-        if (updateJobCallback) {
-            const pagePct = Math.min(10 + Math.round(pageCount * 1.5), 35);
-            updateJobCallback(pagePct, 'Extracting text', `Extracting text from page ${pageCount}...`);
-        }
-        
-        return pageData.getTextContent()
-            .then(function(textContent) {
-                let lastY, text = '';
-                for (let item of textContent.items) {
-                    if (lastY == item.transform[5] || !lastY){
-                        text += item.str;
-                    }  
-                    else{
-                        text += '\n' + item.str;
-                    }    
-                    lastY = item.transform[5];
-                }
-                return text;
-            });
-    };
-
-    const extStartTime = Date.now();
-    try {
-        if (updateJobCallback) {
-            updateJobCallback(10, 'Extracting text', 'Starting local text extraction with pdf-parse...');
-        }
-        
-        const result = await Promise.race([
-            pdfParse(buffer, { pagerender }),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('PDF parsing timed out (limit of 120 seconds exceeded)')), 120000))
-        ]);
-        text = result.text || '';
-        totalPages = result.numpages || pageCount || 1;
-        const extDuration = Date.now() - extStartTime;
-        if (updateJobCallback) {
-            updateJobCallback(35, 'Extracting text', `Local text extraction completed in ${extDuration}ms. Length: ${text.length} characters.`);
-        }
-        console.log(`[PDF Upload] Text extracted successfully: length=${text.length} characters, time=${extDuration}ms, pages=${totalPages}`);
-        console.log(`[3] Text extraction completed - elapsed: ${Date.now() - startTime}ms`);
-    } catch (pdfErr) {
-        const extDuration = Date.now() - extStartTime;
-        console.error(`[PDF Upload] Error extracting text (after ${extDuration}ms): ${pdfErr.message}`);
-        console.log(`[3] Text extraction completed - elapsed: ${Date.now() - startTime}ms`);
-        isScanned = true;
-    }
-
     let parsedQuestions = [];
     let aiSucceeded = false;
 
@@ -657,6 +625,56 @@ async function parseQuestionsFromPDFBuffer(buffer, defaultCategory = '', default
 
     // ── Fallback Parser: Local regex parser & legacy OCR fallback ───────────
     if (!aiSucceeded) {
+        // Run pdfParse synchronously ONLY here on the fallback path
+        let pageCount = 0;
+        const pagerender = async (pageData) => {
+            pageCount++;
+            if (updateJobCallback) {
+                const pagePct = Math.min(10 + Math.round(pageCount * 1.5), 35);
+                updateJobCallback(pagePct, 'Extracting text', `Extracting text from page ${pageCount}...`);
+            }
+            
+            return pageData.getTextContent()
+                .then(function(textContent) {
+                    let lastY, text = '';
+                    for (let item of textContent.items) {
+                        if (lastY == item.transform[5] || !lastY){
+                            text += item.str;
+                        }  
+                        else{
+                            text += '\n' + item.str;
+                        }    
+                        lastY = item.transform[5];
+                    }
+                    return text;
+                });
+        };
+
+        const extStartTime = Date.now();
+        try {
+            if (updateJobCallback) {
+                updateJobCallback(10, 'Extracting text', 'Starting local text extraction with pdf-parse...');
+            }
+            
+            const result = await Promise.race([
+                pdfParse(buffer, { pagerender }),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('PDF parsing timed out (limit of 120 seconds exceeded)')), 120000))
+            ]);
+            text = result.text || '';
+            totalPages = result.numpages || pageCount || totalPages;
+            const extDuration = Date.now() - extStartTime;
+            if (updateJobCallback) {
+                updateJobCallback(35, 'Extracting text', `Local text extraction completed in ${extDuration}ms. Length: ${text.length} characters.`);
+            }
+            console.log(`[PDF Upload] Text extracted successfully: length=${text.length} characters, time=${extDuration}ms, pages=${totalPages}`);
+            console.log(`[3] Text extraction completed - elapsed: ${Date.now() - startTime}ms`);
+        } catch (pdfErr) {
+            const extDuration = Date.now() - extStartTime;
+            console.error(`[PDF Upload] Error extracting text (after ${extDuration}ms): ${pdfErr.message}`);
+            console.log(`[3] Text extraction completed - elapsed: ${Date.now() - startTime}ms`);
+            isScanned = true;
+        }
+
         if (!isScanned && text.trim().length < 100) {
             isScanned = true;
             if (updateJobCallback) {
@@ -791,7 +809,7 @@ async function runPreviewPDFJob(jobId, buffer, defaultCategory, defaultSubject, 
     }
 }
 
-async function runImportPDFJob(jobId, buffer, defaultCategory, defaultSubject, packId, testId, reqUser, startTime = Date.now()) {
+async function runImportPDFJob(jobId, buffer, defaultCategory, defaultSubject, packId, testId, reqUser, expectedCount = 100, startTime = Date.now()) {
     const elapsedSecStart = ((Date.now() - startTime) / 1000).toFixed(2);
     await updateJob(jobId, 5, 'Extracting text', 'Received PDF buffer. Starting text extraction...');
     
@@ -800,7 +818,7 @@ async function runImportPDFJob(jobId, buffer, defaultCategory, defaultSubject, p
             buffer,
             defaultCategory,
             defaultSubject,
-            100,
+            expectedCount,
             (progress, stage, log) => { updateJob(jobId, progress, stage, log); },
             startTime
         );
@@ -1021,6 +1039,7 @@ router.post('/import-pdf-questions', (req, res, next) => {
     const defaultSubject = req.body.subject || req.query.subject || '';
     const packId = req.body.packId || req.query.packId || '';
     const testId = req.body.testId || req.query.testId || '';
+    const expectedCount = parseInt(req.body.expectedCount || req.query.expectedCount || 100, 10);
 
     const jobId = await createJob('import-pdf', {
         name: req.file.originalname,
@@ -1028,7 +1047,8 @@ router.post('/import-pdf-questions', (req, res, next) => {
         category: defaultCategory,
         subject: defaultSubject,
         packId,
-        testId
+        testId,
+        expectedCount
     });
 
     const reqUser = {
@@ -1036,7 +1056,7 @@ router.post('/import-pdf-questions', (req, res, next) => {
         user: req.user
     };
 
-    runImportPDFJob(jobId, req.file.buffer, defaultCategory, defaultSubject, packId, testId, reqUser, req.startTime)
+    runImportPDFJob(jobId, req.file.buffer, defaultCategory, defaultSubject, packId, testId, reqUser, expectedCount, req.startTime)
         .catch(err => console.error(`[PDF Job ${jobId}] error:`, err));
 
     res.json({ ok: true, jobId });
