@@ -74,7 +74,7 @@ function normalizeText(text) {
         .replace(/—/g, '-') // em-dash
         .replace(/•/g, ' * ') // bullet points
         .replace(/[□™©]/g, '') // remove special symbols
-        .replace(/\uFFFD/g, '') // remove unresolvable symbols
+        .replace(/[\uE000-\uF8FF\uFFFD]/g, '') // remove PUA and unresolvable symbols
         .replace(/\u0000/g, '') // remove null byte characters
         .replace(/[\u200B-\u200D\uFEFF]/g, ''); // remove invisible control characters
         
