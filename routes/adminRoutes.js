@@ -585,224 +585,241 @@ function getSimilarity(s1, s2) {
     return (maxLen - distance) / maxLen;
 }
 
-// Question validator
-function validateQuestion(q) {
-    if (!q) return false;
-    
-    // 1. Question text exists
-    const questionText = q.question || q.question_en || '';
-    if (!questionText.trim()) return false;
-    
-    // 2. Minimum 2 options
-    const opts = q.options || [];
-    const validOpts = opts.filter(o => o && o.trim() !== '');
-    if (validOpts.length < 2) return false;
-    
-    // 3. Correct answer valid (if present)
-    if (q.correctAnswer && q.correctAnswer.trim()) {
-        const correctIdx = q.correctIndex !== undefined ? q.correctIndex : -1;
-        const hasMatchingOption = opts.some(o => o && o.trim() === q.correctAnswer.trim());
-        if (correctIdx >= 0 && correctIdx < opts.length && !opts[correctIdx]) {
-            return false;
-        }
-        if (correctIdx === -1 && !hasMatchingOption) {
-            return false;
-        }
-    }
-    
-    // 4. No corrupted encoding (no  character)
-    if (questionText.includes('')) return false;
-    if (opts.some(o => o && o.includes(''))) return false;
-    
-    return true;
+const crypto = require('crypto');
+
+function getNormalizedHash(text) {
+    if (!text) return '';
+    const normalized = text.normalize('NFKC')
+                           .toLowerCase()
+                           .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"'’]/gi, "")
+                           .replace(/\s+/g, " ")
+                           .trim();
+    return crypto.createHash('md5').update(normalized).digest('hex');
 }
 
-// Bulk save questions with transaction + fallback
-async function saveQuestionsTransactional(questionsArray, replaceDuplicates, defaultCategory, defaultSubject, packId, testId) {
-    const session = await mongoose.startSession();
-    let transactionStarted = false;
+// Question validator
+function validateQuestion(q) {
+    if (!q) return { valid: false, reason: 'Empty question object' };
     
-    function cleanText(text) {
-        if (!text) return '';
-        return text.trim().toLowerCase().replace(/[^a-z0-9\u0900-\u097F]/g, '');
+    // 1. Question text exists and length > 15 characters
+    const questionText = q.question || q.question_en || '';
+    if (!questionText.trim()) {
+        return { valid: false, reason: 'Empty question text' };
+    }
+    if (questionText.trim().length <= 15) {
+        return { valid: false, reason: 'Question text too short (<= 15 chars)' };
+    }
+    
+    // 2. Minimum 4 options
+    const opts = q.options || [];
+    const validOpts = opts.filter(o => o && o.trim() !== '');
+    if (validOpts.length < 4) {
+        return { valid: false, reason: `Insufficient options (found ${validOpts.length}, minimum 4 required)` };
+    }
+    
+    // 3. Correct answer exists
+    if (!q.correctAnswer || !q.correctAnswer.trim()) {
+        return { valid: false, reason: 'Missing correct answer' };
+    }
+    
+    // 4. Correct answer matches one of the options
+    const correctIdx = q.correctIndex !== undefined ? q.correctIndex : -1;
+    const hasMatchingOption = opts.some(o => o && o.trim() === q.correctAnswer.trim());
+    if (correctIdx >= 0 && correctIdx < opts.length && !opts[correctIdx]) {
+        return { valid: false, reason: 'Correct index points to empty option' };
+    }
+    if (correctIdx === -1 && !hasMatchingOption) {
+        return { valid: false, reason: 'Correct answer text not found in options' };
+    }
+    
+    // 5. Question number exists
+    if (q.questionNumber === undefined || q.questionNumber === null) {
+        return { valid: false, reason: 'Missing question number' };
     }
 
-    async function executeOperations(optsSession = null) {
-        const validQuestions = [];
-        let failedCount = 0;
-        
-        for (let q of questionsArray) {
-            if (validateQuestion(q)) {
-                validQuestions.push(q);
-            } else {
-                failedCount++;
-            }
+    // 6. No corrupted encoding (no \uFFFD replacement character)
+    if (questionText.includes('\uFFFD')) {
+        return { valid: false, reason: 'Corrupted encoding detected (\uFFFD)' };
+    }
+    if (opts.some(o => o && o.includes('\uFFFD'))) {
+        return { valid: false, reason: 'Option contains corrupted encoding (\uFFFD)' };
+    }
+    
+    return { valid: true };
+}
+
+// Bulk save questions with bulkWrite + ordered: false fallback
+async function saveQuestionsBulk(questionsArray, replaceDuplicates, defaultCategory, defaultSubject, packId, testId) {
+    const validQuestions = [];
+    const skippedQuestions = []; // Array of { q, reason }
+    let failedCount = 0;
+    let duplicateCount = 0;
+
+    // Filter valid questions
+    for (let q of questionsArray) {
+        const valRes = validateQuestion(q);
+        if (valRes.valid) {
+            validQuestions.push(q);
+        } else {
+            skippedQuestions.push({ q, reason: valRes.reason });
+            failedCount++;
         }
+    }
 
-        const questionTexts = validQuestions.map(q => q.question).filter(Boolean);
-        const questionEnTexts = validQuestions.map(q => q.question_en).filter(Boolean);
+    if (validQuestions.length === 0) {
+        return { finalQuestions: [], duplicateCount, failedCount, skippedQuestions };
+    }
 
-        const existingQuestions = await PracticeQuestion.find({
-            $or: [
-                { question: { $in: questionTexts } },
-                { question_en: { $in: questionEnTexts } }
-            ]
-        }, null, optsSession ? { session: optsSession } : {}).select('_id question question_en category subject topic difficulty image');
+    // Pre-calculate hashes for valid questions
+    validQuestions.forEach(q => {
+        const qText = q.question || q.question_en || '';
+        q.questionHash = getNormalizedHash(qText);
+    });
 
-        const existingMap = new Map();
-        existingQuestions.forEach(eq => {
-            if (eq.question) existingMap.set(cleanText(eq.question), eq);
-            if (eq.question_en) existingMap.set(cleanText(eq.question_en), eq);
-        });
+    const questionHashes = validQuestions.map(q => q.questionHash).filter(Boolean);
+    const questionTexts = validQuestions.map(q => q.question).filter(Boolean);
+    const questionEnTexts = validQuestions.map(q => q.question_en).filter(Boolean);
 
-        // Similarity check (90% threshold for duplicates)
-        function findDuplicateBySimilarity(qText) {
-            const cleanQ = cleanText(qText);
-            if (existingMap.has(cleanQ)) return existingMap.get(cleanQ);
-            
-            for (let [existingClean, eq] of existingMap.entries()) {
-                if (getSimilarity(cleanQ, existingClean) > 0.90) {
-                    return eq;
-                }
-            }
-            return null;
-        }
+    // Find existing questions by Hash or Text
+    const existingQuestions = await PracticeQuestion.find({
+        $or: [
+            { questionHash: { $in: questionHashes } },
+            { question: { $in: questionTexts } },
+            { question_en: { $in: questionEnTexts } }
+        ]
+    }).select('_id question question_en questionHash category subject topic difficulty image');
 
-        const questionsOrdered = new Array(validQuestions.length);
-        const uniqueToInsert = [];
-        let duplicateCount = 0;
-        const updatePromises = [];
+    const existingMap = new Map();
+    existingQuestions.forEach(eq => {
+        if (eq.questionHash) existingMap.set(eq.questionHash, eq);
+        if (eq.question) existingMap.set(getNormalizedHash(eq.question), eq);
+        if (eq.question_en) existingMap.set(getNormalizedHash(eq.question_en), eq);
+    });
 
-        for (let idx = 0; idx < validQuestions.length; idx++) {
-            const q = validQuestions[idx];
-            const existing = findDuplicateBySimilarity(q.question) || (q.question_en ? findDuplicateBySimilarity(q.question_en) : null);
-            
-            if (existing) {
-                if (replaceDuplicates) {
-                    const updatePayload = {
-                        question: q.question,
-                        question_en: q.question_en || q.question,
-                        question_hi: q.question_hi || '',
-                        options: q.options || [q.optionA || '', q.optionB || '', q.optionC || '', q.optionD || ''],
-                        options_en: q.options_en || q.options,
-                        options_hi: q.options_hi || [],
-                        correctAnswer: q.correctAnswer || q.optionA,
-                        explanation: q.explanation || '',
-                        explanation_hi: q.explanation_hi || '',
-                        category: q.category || existing.category,
-                        subject: q.subject || existing.subject,
-                        topic: q.topic || existing.topic,
-                        difficulty: q.difficulty || existing.difficulty,
-                        image: q.image || existing.image
-                    };
+    const bulkOps = [];
+    const finalQuestionIds = new Array(validQuestions.length);
+    const finalQuestions = new Array(validQuestions.length);
 
-                    const updatePromise = PracticeQuestion.findByIdAndUpdate(existing._id, updatePayload, { 
-                        new: true,
-                        session: optsSession
-                    }).then(updatedQ => {
-                        questionsOrdered[idx] = updatedQ;
-                    }).catch(err => {
-                        console.error(`Failed to replace duplicate:`, err.message);
-                        questionsOrdered[idx] = existing;
-                        failedCount++;
-                    });
-                    updatePromises.push(updatePromise);
-                } else {
-                    questionsOrdered[idx] = existing;
-                    duplicateCount++;
-                }
-            } else {
-                uniqueToInsert.push({ q, idx });
-            }
-        }
+    for (let idx = 0; idx < validQuestions.length; idx++) {
+        const q = validQuestions[idx];
+        const hash = q.questionHash;
+        const existing = existingMap.get(hash);
 
-        if (updatePromises.length > 0) {
-            await Promise.all(updatePromises);
-        }
-
-        const batchSize = 200;
-        for (let i = 0; i < uniqueToInsert.length; i += batchSize) {
-            const batch = uniqueToInsert.slice(i, i + batchSize);
-            const batchToInsert = batch.map(b => {
-                const q = b.q;
-                return {
+        if (existing) {
+            if (replaceDuplicates) {
+                const updatePayload = {
                     question: q.question,
                     question_en: q.question_en || q.question,
                     question_hi: q.question_hi || '',
+                    questionHash: hash,
                     options: q.options || [q.optionA || '', q.optionB || '', q.optionC || '', q.optionD || ''],
                     options_en: q.options_en || q.options,
                     options_hi: q.options_hi || [],
                     correctAnswer: q.correctAnswer || q.optionA,
                     explanation: q.explanation || '',
                     explanation_hi: q.explanation_hi || '',
-                    category: q.category || defaultCategory || 'General',
-                    subject: q.subject || defaultSubject || 'General',
-                    topic: q.topic || '',
-                    difficulty: q.difficulty || 'Medium',
-                    isMockTestOnly: !!q.isMockTestOnly,
-                    image: q.image || ''
+                    category: q.category || existing.category,
+                    subject: q.subject || existing.subject,
+                    topic: q.topic || existing.topic,
+                    difficulty: q.difficulty || existing.difficulty,
+                    image: q.image || existing.image
                 };
+
+                bulkOps.push({
+                    updateOne: {
+                        filter: { _id: existing._id },
+                        update: { $set: updatePayload }
+                    }
+                });
+
+                finalQuestionIds[idx] = existing._id;
+                finalQuestions[idx] = { _id: existing._id, ...updatePayload };
+            } else {
+                duplicateCount++;
+                skippedQuestions.push({ q, reason: 'Duplicate question found' });
+                finalQuestionIds[idx] = existing._id;
+                finalQuestions[idx] = existing;
+            }
+        } else {
+            const newId = new mongoose.Types.ObjectId();
+            const insertPayload = {
+                _id: newId,
+                question: q.question,
+                question_en: q.question_en || q.question,
+                question_hi: q.question_hi || '',
+                questionHash: hash,
+                options: q.options || [q.optionA || '', q.optionB || '', q.optionC || '', q.optionD || ''],
+                options_en: q.options_en || q.options,
+                options_hi: q.options_hi || [],
+                correctAnswer: q.correctAnswer || q.optionA,
+                explanation: q.explanation || '',
+                explanation_hi: q.explanation_hi || '',
+                category: q.category || defaultCategory || 'General',
+                subject: q.subject || defaultSubject || 'General',
+                topic: q.topic || '',
+                difficulty: q.difficulty || 'Medium',
+                isMockTestOnly: !!q.isMockTestOnly,
+                image: q.image || ''
+            };
+
+            bulkOps.push({
+                insertOne: {
+                    document: insertPayload
+                }
             });
 
-            try {
-                const inserted = await PracticeQuestion.insertMany(batchToInsert, { 
-                    ordered: false,
-                    session: optsSession
-                });
-                inserted.forEach((insertedQ, bIdx) => {
-                    const originalIndex = batch[bIdx].idx;
-                    questionsOrdered[originalIndex] = insertedQ;
-                });
-            } catch (insertErr) {
-                for (let bIdx = 0; bIdx < batch.length; bIdx++) {
-                    const item = batch[bIdx];
-                    try {
-                        const singleQ = await PracticeQuestion.create([item.q], { session: optsSession });
-                        questionsOrdered[item.idx] = singleQ[0];
-                    } catch (singleErr) {
-                        failedCount++;
+            finalQuestionIds[idx] = newId;
+            finalQuestions[idx] = insertPayload;
+        }
+    }
+
+    if (bulkOps.length > 0) {
+        try {
+            await PracticeQuestion.bulkWrite(bulkOps, { ordered: false });
+        } catch (bulkErr) {
+            console.error('Some bulkWrite operations failed:', bulkErr.message);
+            const writeErrorsCount = bulkErr.writeErrors ? bulkErr.writeErrors.length : 0;
+            failedCount += writeErrorsCount;
+            
+            if (bulkErr.writeErrors) {
+                bulkErr.writeErrors.forEach(err => {
+                    const failedIndex = err.index;
+                    const op = bulkOps[failedIndex];
+                    if (op && op.insertOne) {
+                        const failedId = op.insertOne.document._id;
+                        const fIdx = finalQuestionIds.indexOf(failedId);
+                        if (fIdx !== -1) {
+                            finalQuestionIds.splice(fIdx, 1);
+                            finalQuestions.splice(fIdx, 1);
+                        }
                     }
-                }
+                });
             }
         }
+    }
 
-        const finalQuestions = questionsOrdered.filter(Boolean);
+    const linkedIds = finalQuestionIds.filter(Boolean);
+    const validSavedQuestions = finalQuestions.filter(Boolean);
 
-        if (packId && testId && finalQuestions.length > 0) {
-            const pack = await MockTestPack.findOne({ id: packId }, null, optsSession ? { session: optsSession } : {});
-            if (pack) {
-                const subtest = pack.tests.find(t => t.testId === testId);
-                if (subtest) {
-                    const finalIds = finalQuestions.map(q => q._id);
-                    subtest.questions = finalIds;
-                    subtest.numQuestions = finalIds.length;
-                    await pack.save({ session: optsSession });
-                }
+    // Link to mock test pack
+    if (packId && testId && linkedIds.length > 0) {
+        const pack = await MockTestPack.findOne({ id: packId });
+        if (pack) {
+            const subtest = pack.tests.find(t => t.testId === testId);
+            if (subtest) {
+                subtest.questions = linkedIds;
+                subtest.numQuestions = linkedIds.length;
+                await pack.save();
             }
         }
-
-        return { finalQuestions, duplicateCount, failedCount };
     }
 
-    try {
-        session.startTransaction();
-        transactionStarted = true;
-        const res = await executeOperations(session);
-        await session.commitTransaction();
-        return res;
-    } catch (err) {
-        if (transactionStarted) {
-            await session.abortTransaction();
-        }
-        if (err.message.includes('replica set') || err.message.includes('transaction') || err.message.includes('session')) {
-            console.log('[Database] Mongoose transactions not supported. Running non-transactional fallback...');
-            return await executeOperations(null);
-        } else {
-            throw err;
-        }
-    } finally {
-        session.endSession();
-    }
+    return { 
+        finalQuestions: validSavedQuestions, 
+        duplicateCount, 
+        failedCount,
+        skippedQuestions
+    };
 }
 
 // ── BACKGROUND WORKERS ───────────────────────────────────────────────
@@ -821,33 +838,37 @@ async function runPreviewPDFJob(jobId, buffer, defaultCategory, defaultSubject, 
 
         await updateJob(jobId, 85, 'Checking duplicates', `Checking database duplicates for ${questions.length} questions...`);
         
+        // Pre-calculate hashes for preview questions
+        questions.forEach(q => {
+            const qText = q.question || q.question_en || '';
+            q.questionHash = getNormalizedHash(qText);
+        });
+
+        const questionHashes = questions.map(q => q.questionHash).filter(Boolean);
         const questionTexts = questions.map(q => q.question).filter(Boolean);
         const questionEnTexts = questions.map(q => q.question_en).filter(Boolean);
 
         const existingQuestions = await PracticeQuestion.find({
             $or: [
+                { questionHash: { $in: questionHashes } },
                 { question: { $in: questionTexts } },
                 { question_en: { $in: questionEnTexts } }
             ]
-        }).select('_id question question_en');
-
-        function cleanText(text) {
-            if (!text) return '';
-            return text.trim().toLowerCase().replace(/[^a-z0-9\u0900-\u097F]/g, '');
-        }
+        }).select('_id question question_en questionHash');
 
         const existingMap = new Map();
         existingQuestions.forEach(eq => {
-            if (eq.question) existingMap.set(cleanText(eq.question), eq);
-            if (eq.question_en) existingMap.set(cleanText(eq.question_en), eq);
+            if (eq.questionHash) existingMap.set(eq.questionHash, eq);
+            if (eq.question) existingMap.set(getNormalizedHash(eq.question), eq);
+            if (eq.question_en) existingMap.set(getNormalizedHash(eq.question_en), eq);
         });
 
         function findDuplicateBySimilarity(qText) {
-            const cleanQ = cleanText(qText);
-            if (existingMap.has(cleanQ)) return existingMap.get(cleanQ);
+            const hash = getNormalizedHash(qText);
+            if (existingMap.has(hash)) return existingMap.get(hash);
             
             for (let [existingClean, eq] of existingMap.entries()) {
-                if (getSimilarity(cleanQ, existingClean) > 0.90) {
+                if (getSimilarity(hash, existingClean) > 0.90) {
                     return eq;
                 }
             }
@@ -887,9 +908,13 @@ async function runPreviewPDFJob(jobId, buffer, defaultCategory, defaultSubject, 
                 errors.push('Question text is missing, invalid, or too short (length <= 15).');
             }
             
+            if (q.questionNumber === undefined || q.questionNumber === null) {
+                errors.push('Question number is missing.');
+            }
+
             const validOpts = q.options.filter(o => o && o.trim() !== '');
-            if (validOpts.length < 2) {
-                errors.push(`Missing valid options (found only ${validOpts.length}, minimum 2 required).`);
+            if (validOpts.length < 4) {
+                errors.push(`Missing valid options (found only ${validOpts.length}, minimum 4 required).`);
                 missingOptionsCount++;
             }
             
@@ -898,8 +923,8 @@ async function runPreviewPDFJob(jobId, buffer, defaultCategory, defaultSubject, 
                 missingAnswersCount++;
             }
 
-            if (q.question && q.question.includes('')) {
-                errors.push('Question has corrupted encoding characters ().');
+            if ((q.question && q.question.includes('\uFFFD')) || (q.options && q.options.some(o => o && o.includes('\uFFFD')))) {
+                errors.push('Question has corrupted encoding characters (\uFFFD).');
                 encodingErrorsCount++;
             }
 
@@ -975,7 +1000,7 @@ async function runImportPDFJob(jobId, buffer, defaultCategory, defaultSubject, p
 
         await updateJob(jobId, 65, 'Saving questions', `Importing and validating ${parsedQuestions.length} parsed questions...`);
 
-        const saveRes = await saveQuestionsTransactional(
+        const saveRes = await saveQuestionsBulk(
             parsedQuestions,
             replaceDuplicates,
             defaultCategory,
@@ -985,6 +1010,7 @@ async function runImportPDFJob(jobId, buffer, defaultCategory, defaultSubject, p
         );
 
         const elapsedSec = ((Date.now() - startTime) / 1000).toFixed(2);
+        const importedCount = saveRes.finalQuestions.length - (replaceDuplicates ? 0 : saveRes.duplicateCount);
         
         await AuditLog.create({
             adminId: reqUser.userId,
@@ -994,7 +1020,7 @@ async function runImportPDFJob(jobId, buffer, defaultCategory, defaultSubject, p
             targetModel: 'PracticeQuestion',
             details: {
                 totalFound: parsedQuestions.length,
-                imported: saveRes.finalQuestions.length - saveRes.duplicateCount,
+                imported: importedCount,
                 duplicates: saveRes.duplicateCount,
                 failed: saveRes.failedCount,
                 timeSec: elapsedSec,
@@ -1006,9 +1032,17 @@ async function runImportPDFJob(jobId, buffer, defaultCategory, defaultSubject, p
 
         await completeJob(jobId, {
             totalQuestions: parsedQuestions.length,
-            importedCount: saveRes.finalQuestions.length - saveRes.duplicateCount,
+            detectedQuestions: parsedQuestions.length,
+            importedCount: importedCount,
             duplicateCount: saveRes.duplicateCount,
             failedCount: saveRes.failedCount,
+            skippedCount: saveRes.skippedQuestions.length,
+            skippedReasons: saveRes.skippedQuestions.map(s => ({
+                qNum: s.q.questionNumber,
+                text: (s.q.question || s.q.question_en || '').substring(0, 40) + '...',
+                reason: s.reason
+            })),
+            ocrUsedCount: parsedQuestions.ocrQuestionsCount || 0,
             importTimeSec: elapsedSec
         }, `PDF Import job completed successfully in ${elapsedSec}s.`);
 
@@ -1357,140 +1391,64 @@ router.post('/questions', requireAdmin, catchAsync(async (req, res) => {
         const startTime = Date.now();
         console.log(`[POST /questions] Received bulk save for ${questionsArray.length} questions. replaceDuplicates: ${replaceDuplicates}`);
 
-        const questionTexts = questionsArray.map(q => q.question).filter(Boolean);
-        const questionEnTexts = questionsArray.map(q => q.question_en).filter(Boolean);
-
-        const existingQuestions = await PracticeQuestion.find({
-            $or: [
-                { question: { $in: questionTexts } },
-                { question_en: { $in: questionEnTexts } }
-            ]
-        }).select('_id question question_en');
-
-        function cleanText(text) {
-            if (!text) return '';
-            return text.trim().toLowerCase().replace(/[^a-z0-9\u0900-\u097F]/g, '');
-        }
-
-        const existingMap = new Map();
-        existingQuestions.forEach(q => {
-            if (q.question) existingMap.set(cleanText(q.question), q);
-            if (q.question_en) existingMap.set(cleanText(q.question_en), q);
-        });
-
-        const questionsOrdered = new Array(questionsArray.length);
-        const uniqueToInsert = []; // elements will be { q, idx }
-        let duplicateCount = 0;
-        let failedCount = 0;
-        const updatePromises = [];
-
-        for (let idx = 0; idx < questionsArray.length; idx++) {
-            const q = questionsArray[idx];
-            const cleanQ = cleanText(q.question);
-            const cleanQEn = cleanText(q.question_en);
-            const existing = existingMap.get(cleanQ) || (cleanQEn ? existingMap.get(cleanQEn) : null);
-            
-            if (existing) {
-                if (replaceDuplicates) {
-                    // Update duplicate question in database with new details
-                    const updatePromise = PracticeQuestion.findByIdAndUpdate(existing._id, {
-                        question: q.question,
-                        question_en: q.question_en || q.question,
-                        question_hi: q.question_hi || q.question,
-                        options: q.options || [q.optionA || '', q.optionB || '', q.optionC || '', q.optionD || ''],
-                        options_en: q.options_en || q.options,
-                        options_hi: q.options_hi || q.options,
-                        correctAnswer: q.correctAnswer || q.optionA,
-                        explanation: q.explanation || '',
-                        explanation_hi: q.explanation_hi || '',
-                        category: q.category || existing.category,
-                        subject: q.subject || existing.subject,
-                        topic: q.topic || existing.topic,
-                        difficulty: q.difficulty || existing.difficulty,
-                        image: q.image || existing.image
-                    }, { new: true }).then(updatedQ => {
-                        questionsOrdered[idx] = updatedQ;
-                    }).catch(err => {
-                        console.error(`[POST /questions] Failed to replace duplicate:`, err.message);
-                        questionsOrdered[idx] = existing;
-                        failedCount++;
-                    });
-                    updatePromises.push(updatePromise);
-                } else {
-                    questionsOrdered[idx] = existing;
-                    duplicateCount++;
-                }
-            } else {
-                uniqueToInsert.push({ q, idx });
-            }
-        }
-
-        if (updatePromises.length > 0) {
-            await Promise.all(updatePromises);
-        }
-
-        const batchSize = 200;
-        console.log(`[POST /questions] Found ${duplicateCount} duplicates. Inserting ${uniqueToInsert.length} unique questions.`);
-
-        for (let i = 0; i < uniqueToInsert.length; i += batchSize) {
-            const batch = uniqueToInsert.slice(i, i + batchSize);
-            const batchToInsert = batch.map(b => b.q);
-            try {
-                const inserted = await PracticeQuestion.insertMany(batchToInsert, { ordered: false });
-                inserted.forEach((insertedQ, bIdx) => {
-                    const originalIndex = batch[bIdx].idx;
-                    questionsOrdered[originalIndex] = insertedQ;
-                });
-            } catch (insertErr) {
-                console.error('[POST /questions] Batch insert error, running individual creates fallback:', insertErr.message);
-                for (let bIdx = 0; bIdx < batch.length; bIdx++) {
-                    const item = batch[bIdx];
-                    try {
-                        const singleQ = await PracticeQuestion.create(item.q);
-                        questionsOrdered[item.idx] = singleQ;
-                    } catch (singleErr) {
-                        failedCount++;
-                    }
-                }
-            }
-        }
-
-        // Filter out any undefined/failed entries from returned array to keep MongoDB valid docs
-        const finalQuestions = questionsOrdered.filter(Boolean);
-
-        // Link to mock test pack if requested (bulk-import flow)
+        const defaultCategory = req.body.category || 'General';
+        const defaultSubject = req.body.subject || 'General';
         const packId = req.body.packId || req.query.packId;
         const testId = req.body.testId || req.query.testId;
-        if (packId && testId && finalQuestions.length > 0) {
-            const pack = await MockTestPack.findOne({ id: packId });
-            if (pack) {
-                const subtest = pack.tests.find(t => t.testId === testId);
-                if (subtest) {
-                    const finalIds = finalQuestions.map(q => q._id);
-                    subtest.questions = finalIds;
-                    subtest.numQuestions = finalIds.length;
-                    await pack.save();
-                    console.log(`[POST /questions] Successfully linked ${finalIds.length} questions to Mock Test Pack ${packId}, Test ${testId}`);
-                }
-            }
-        }
+
+        const saveRes = await saveQuestionsBulk(
+            questionsArray,
+            replaceDuplicates,
+            defaultCategory,
+            defaultSubject,
+            packId,
+            testId
+        );
 
         const elapsed = Date.now() - startTime;
-        console.log(`[POST /questions] Completed bulk save in ${elapsed}ms. Saved unique: ${finalQuestions.length - duplicateCount}, duplicates: ${duplicateCount}, failed: ${failedCount}`);
+        console.log(`[POST /questions] Completed bulk save in ${elapsed}ms. Saved: ${saveRes.finalQuestions.length - (replaceDuplicates ? 0 : saveRes.duplicateCount)}, duplicates: ${saveRes.duplicateCount}, failed: ${saveRes.failedCount}`);
 
         return res.status(201).json({ 
             ok: true, 
-            count: finalQuestions.length, 
-            questions: finalQuestions, 
-            failedCount,
-            duplicateCount
+            count: saveRes.finalQuestions.length, 
+            questions: saveRes.finalQuestions, 
+            failedCount: saveRes.failedCount,
+            duplicateCount: saveRes.duplicateCount,
+            skippedCount: saveRes.skippedQuestions.length,
+            skippedQuestions: saveRes.skippedQuestions.map(s => ({
+                questionNumber: s.q.questionNumber,
+                question: s.q.question || s.q.question_en,
+                reason: s.reason
+            })),
+            timeMs: elapsed
         });
-    }
+    } else {
+        console.log(`[PDF Upload] Database save started for a single question.`);
+        const q = req.body;
+        
+        q.questionHash = getNormalizedHash(q.question || q.question_en || '');
+        const existing = await PracticeQuestion.findOne({
+            $or: [
+                { questionHash: q.questionHash },
+                { question: q.question },
+                { question_en: q.question_en }
+            ]
+        });
 
-    console.log(`[PDF Upload] Database save started for a single question.`);
-    const question = await PracticeQuestion.create(req.body);
-    console.log(`[PDF Upload] Database save completed for single question: ${question._id}`);
-    res.status(201).json({ ok: true, question });
+        if (existing && !replaceDuplicates) {
+            return res.status(400).json({ ok: false, message: 'Question already exists' });
+        }
+
+        let savedQ;
+        if (existing && replaceDuplicates) {
+            savedQ = await PracticeQuestion.findByIdAndUpdate(existing._id, q, { new: true });
+        } else {
+            savedQ = await PracticeQuestion.create(q);
+        }
+
+        console.log(`[PDF Upload] Database save completed for single question: ${savedQ._id}`);
+        res.status(201).json({ ok: true, question: savedQ });
+    }
 }));
 
 // ── 3b. ADD HINDI to existing questions (bulk) ──────────────────────────────

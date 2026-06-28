@@ -4,6 +4,7 @@ const practiceQuestionSchema = new mongoose.Schema({
     question: { type: String, required: true }, // Legacy/Default question
     question_en: { type: String },              // English version
     question_hi: { type: String },              // Hindi version
+    questionHash: { type: String },             // MD5 Hash of normalized question text for duplicate detection
 
     options: { type: [String], required: true }, // Legacy/Default options
     options_en: { type: [String] },              // English options
@@ -28,6 +29,7 @@ const practiceQuestionSchema = new mongoose.Schema({
 // Indexes for duplicate checking and fast queries
 practiceQuestionSchema.index({ question: 1 });
 practiceQuestionSchema.index({ question_en: 1 });
+practiceQuestionSchema.index({ questionHash: 1 });
 
 module.exports = mongoose.model('PracticeQuestion', practiceQuestionSchema);
 

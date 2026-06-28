@@ -2027,32 +2027,57 @@ async function handlePdfUpload() {
 
                     // Show success stats modal
                     const modalContainer = document.getElementById('modal-container');
+                    const skippedListHtml = saveData.skippedQuestions && saveData.skippedQuestions.length > 0
+                        ? `<div style="margin-top: 15px;">
+                                <span style="font-weight:600; font-size:0.8rem; display:block; margin-bottom:6px; color:#b91c1c;">Skipped / Invalid Questions Details:</span>
+                                <div style="max-height:150px; overflow-y:auto; background:#fff5f5; border:1px solid #fee2e2; border-radius:6px; padding:10px; font-size:0.75rem; display:flex; flex-direction:column; gap:6px;">
+                                    ${saveData.skippedQuestions.map(s => `
+                                        <div style="border-bottom:1px solid #fee2e2; padding-bottom:4px; text-align:left;">
+                                            <strong>Q${s.questionNumber}:</strong> <span style="color:#ef4444; font-weight:600;">[${s.reason}]</span> - ${escapeHtml(s.question || '').substring(0, 80)}...
+                                        </div>
+                                    `).join('')}
+                                </div>
+                           </div>`
+                        : '';
+
                     modalContainer.innerHTML = `
-                        <div class="modal-content admin-card" style="max-width: 600px; width: 90%; padding: 30px;">
-                            <div class="card-header" style="margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px;">
-                                <h3 style="color: var(--success); display: flex; align-items: center; gap: 10px;">
+                        <div class="modal-content admin-card" style="max-width: 700px; width: 90%; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);">
+                            <div class="card-header" style="margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; text-align:left;">
+                                <h3 style="color: #10b981; display: flex; align-items: center; gap: 10px; margin:0;">
                                     <i class="fas fa-check-circle"></i> Import Completed Successfully!
                                 </h3>
+                                <p style="font-size:0.8rem; color:var(--text-muted); margin:4px 0 0 0;">All valid questions were successfully written to MongoDB.</p>
                             </div>
-                            <div class="stats-grid" style="grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 25px;">
+                            <div class="stats-grid" style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px;">
                                 <div class="stat-card" style="padding: 15px; text-align: center; background: rgba(0,0,0,0.02); border: 1px solid var(--border-color); border-radius: 8px;">
-                                    <span style="font-size: 0.85rem; color: var(--text-muted); font-weight: 500;">Total Questions Found</span>
-                                    <h2 style="margin: 5px 0 0 0; font-size: 1.8rem; font-weight: 700; color: var(--text-main);">${saveData.count || 0}</h2>
+                                    <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 500;">Total Questions</span>
+                                    <h2 style="margin: 5px 0 0 0; font-size: 1.5rem; font-weight: 700; color: var(--text-main);">${saveData.count + saveData.skippedCount}</h2>
                                 </div>
                                 <div class="stat-card" style="padding: 15px; text-align: center; background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.1); border-radius: 8px;">
-                                    <span style="font-size: 0.85rem; color: #10b981; font-weight: 500;">Successfully Imported</span>
-                                    <h2 style="margin: 5px 0 0 0; font-size: 1.8rem; font-weight: 700; color: #10b981;">${(saveData.count || 0) - (saveData.duplicateCount || 0)}</h2>
+                                    <span style="font-size: 0.75rem; color: #10b981; font-weight: 500;">Saved (Insert/Update)</span>
+                                    <h2 style="margin: 5px 0 0 0; font-size: 1.5rem; font-weight: 700; color: #10b981;">${saveData.count - (replaceDuplicates ? 0 : saveData.duplicateCount)}</h2>
                                 </div>
                                 <div class="stat-card" style="padding: 15px; text-align: center; background: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.1); border-radius: 8px;">
-                                    <span style="font-size: 0.85rem; color: #f59e0b; font-weight: 500;">Duplicate (Updated/Skipped)</span>
-                                    <h2 style="margin: 5px 0 0 0; font-size: 1.8rem; font-weight: 700; color: #f59e0b;">${saveData.duplicateCount || 0}</h2>
+                                    <span style="font-size: 0.75rem; color: #f59e0b; font-weight: 500;">Duplicates Detected</span>
+                                    <h2 style="margin: 5px 0 0 0; font-size: 1.5rem; font-weight: 700; color: #f59e0b;">${saveData.duplicateCount || 0}</h2>
                                 </div>
                                 <div class="stat-card" style="padding: 15px; text-align: center; background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.1); border-radius: 8px;">
-                                    <span style="font-size: 0.85rem; color: #ef4444; font-weight: 500;">Failed Questions</span>
-                                    <h2 style="margin: 5px 0 0 0; font-size: 1.8rem; font-weight: 700; color: #ef4444;">${saveData.failedCount || 0}</h2>
+                                    <span style="font-size: 0.75rem; color: #ef4444; font-weight: 500;">Skipped Questions</span>
+                                    <h2 style="margin: 5px 0 0 0; font-size: 1.5rem; font-weight: 700; color: #ef4444;">${saveData.skippedCount || 0}</h2>
+                                </div>
+                                <div class="stat-card" style="padding: 15px; text-align: center; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px;">
+                                    <span style="font-size: 0.75rem; color: #1d4ed8; font-weight: 500;">OCR Pages Run</span>
+                                    <h2 style="margin: 5px 0 0 0; font-size: 1.5rem; font-weight: 700; color: #1d4ed8;">${window.currentPreviewQuestions.filter(pq => pq.ocrUsed).length}</h2>
+                                </div>
+                                <div class="stat-card" style="padding: 15px; text-align: center; background: rgba(0,0,0,0.02); border: 1px solid var(--border-color); border-radius: 8px;">
+                                    <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 500;">Execution Time</span>
+                                    <h2 style="margin: 5px 0 0 0; font-size: 1.5rem; font-weight: 700; color: var(--text-main);">${((saveData.timeMs || 0) / 1000).toFixed(2)}s</h2>
                                 </div>
                             </div>
-                            <div style="display: flex; justify-content: flex-end; border-top: 1px solid var(--border-color); padding-top: 20px;">
+                            
+                            ${skippedListHtml}
+                            
+                            <div style="display: flex; justify-content: flex-end; border-top: 1px solid var(--border-color); padding-top: 20px; margin-top:20px;">
                                 <button class="btn btn-primary" onclick="closeModal(); loadView('questions');">Done</button>
                             </div>
                         </div>
@@ -2812,7 +2837,7 @@ window.showQuestionsPreviewModal = function(questions, stats, onConfirm) {
     const modalContainer = document.getElementById('modal-container');
     modalContainer.innerHTML = `
         <div class="modal-content admin-card" style="max-width: 1000px; width: 95%; max-height: 90vh; display: flex; flex-direction: column; padding: 0;">
-            <div class="card-header" style="padding: 20px 24px; border-bottom: 1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; background:#fafafa;">
+            <div class="card-header" style="padding: 20px 24px; border-bottom: 1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; background:#fafafa; text-align:left;">
                 <div>
                     <h3 style="margin:0;"><i class="fas fa-eye" style="color:var(--primary);"></i> Preview Extracted Questions</h3>
                     <p style="font-size:0.8rem; color:var(--text-muted); margin: 4px 0 0 0;">Review and edit questions. Edits are auto-saved. Click "Save & Import Questions" to write to database.</p>
@@ -2842,7 +2867,7 @@ window.showQuestionsPreviewModal = function(questions, stats, onConfirm) {
                     <strong id="stats-ocr" style="font-size: 1rem; color: #1d4ed8; font-weight: 700;">${stats.ocr !== undefined ? stats.ocr : 0}</strong>
                 </div>
                 <div style="background: rgba(239, 68, 68, 0.03); padding: 6px; border-radius: 6px; border: 1px solid rgba(239, 68, 68, 0.08);">
-                    <div style="color: #ef4444; font-size: 0.65rem;">Corrupted ()</div>
+                    <div style="color: #ef4444; font-size: 0.65rem;">Corrupted (\\uFFFD)</div>
                     <strong id="stats-encoding" style="font-size: 1rem; color: #ef4444; font-weight: 700;">${stats.encodingErrors !== undefined ? stats.encodingErrors : 0}</strong>
                 </div>
                 <div style="background: rgba(245, 158, 11, 0.03); padding: 6px; border-radius: 6px; border: 1px solid rgba(245, 158, 11, 0.08);">
@@ -2869,6 +2894,7 @@ window.showQuestionsPreviewModal = function(questions, stats, onConfirm) {
                     </label>
                 </div>
                 <div style="display:flex; gap:10px;">
+                    <button class="btn btn-outline btn-sm" onclick="scrollToFirstError()" style="color:#ef4444; border-color:#ef4444;"><i class="fas fa-exclamation-circle"></i> Find Next Error</button>
                     <button class="btn btn-outline btn-sm" onclick="addBlankQuestionToPreview()"><i class="fas fa-plus"></i> Add Question</button>
                     <button class="btn btn-primary btn-sm" id="preview-import-btn" onclick="confirmPreviewImport()"><i class="fas fa-save"></i> Save & Import Questions</button>
                 </div>
@@ -2881,6 +2907,14 @@ window.showQuestionsPreviewModal = function(questions, stats, onConfirm) {
     `;
     modalContainer.classList.add('active');
     renderPreviewList();
+
+    // Auto-scroll to first error card on load
+    setTimeout(() => {
+        const errorCard = document.querySelector('.preview-q-card[style*="#ef4444"]');
+        if (errorCard) {
+            errorCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }, 400);
 };
 
 window.renderPreviewList = function() {
@@ -2909,19 +2943,41 @@ window.renderPreviewList = function() {
     }
 };
 
+window.scrollToFirstError = function() {
+    const errorCards = Array.from(document.querySelectorAll('.preview-q-card')).filter(card => {
+        const cardId = card.id.replace('q-card-', '');
+        const q = window.currentPreviewQuestions[parseInt(cardId)];
+        return q && !q.isValid;
+    });
+    if (errorCards.length > 0) {
+        const listContainer = document.getElementById('preview-questions-list');
+        const containerTop = listContainer.getBoundingClientRect().top;
+        const nextError = errorCards.find(card => card.getBoundingClientRect().top > containerTop + 20) || errorCards[0];
+        nextError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const origBorder = nextError.style.borderColor;
+        nextError.style.borderColor = '#b91c1c';
+        setTimeout(() => nextError.style.borderColor = origBorder, 1000);
+    } else {
+        alert('🎉 All questions are valid!');
+    }
+};
+
 window.createPreviewCardNode = function(q, idx) {
     const card = document.createElement('div');
     card.className = 'preview-q-card';
     card.id = `q-card-${idx}`;
-    card.style = `background:white; border-radius:12px; border: ${q.isValid ? '1px solid var(--border-color)' : '2px solid #ef4444'}; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); padding:20px; position:relative; display:flex; flex-direction:column; gap:12px;`;
+    card.style = `background:white; border-radius:12px; border: ${q.isValid ? '1px solid var(--border-color)' : '2px solid #ef4444'}; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); padding:20px; position:relative; display:flex; flex-direction:column; gap:12px; text-align:left;`;
 
-    // Render option input blocks
-    const optionsHtml = ['A', 'B', 'C', 'D', 'E'].map((letter, i) => {
+    // Render option input blocks with dynamic borders for required option blanks
+    const optionsHtml = ['A', 'B', 'C', 'D', 'E', 'F'].map((letter, i) => {
         const value = q[`option${letter}`] || '';
+        const isRequired = ['A', 'B', 'C', 'D'].includes(letter);
+        const isMissing = isRequired && !value.trim();
+        const borderStyle = isMissing ? 'border: 2px solid #ef4444; background: #fff5f5;' : '';
         return `
             <div style="display:flex; align-items:center; gap:8px;">
-                <span style="font-weight:600; font-size:0.85rem; width:20px;">${letter})</span>
-                <input type="text" class="admin-input" style="padding:6px; font-size:0.85rem; flex:1;" value="${escapeHtml(value)}" placeholder="Option ${letter}" oninput="updatePreviewQuestionField(${idx}, 'option${letter}', this.value)">
+                <span style="font-weight:600; font-size:0.85rem; width:20px; color:${isMissing ? '#ef4444' : 'inherit'};">${letter})</span>
+                <input type="text" class="admin-input" style="padding:6px; font-size:0.85rem; flex:1; ${borderStyle}" value="${escapeHtml(value)}" placeholder="Option ${letter}" oninput="updatePreviewQuestionField(${idx}, 'option${letter}', this.value)">
             </div>
         `;
     }).join('');
@@ -2930,6 +2986,8 @@ window.createPreviewCardNode = function(q, idx) {
         <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #f1f5f9; padding-bottom:10px;">
             <div style="display:flex; gap:10px; align-items:center;">
                 <span style="font-weight:700; font-size:0.95rem; color:var(--text-main);">Question #${q.questionNumber}</span>
+                <span style="background:#e0f2fe; color:#0369a1; font-size:0.7rem; font-weight:700; padding:2px 8px; border-radius:4px;">Page ${q.pageNum || 1}</span>
+                ${q.ocrUsed ? `<span style="background:#eff6ff; color:#1d4ed8; font-size:0.7rem; font-weight:700; padding:2px 8px; border-radius:4px; display:inline-flex; align-items:center; gap:4px;"><i class="fas fa-magic"></i> OCR Confidence: High</span>` : ''}
                 ${q.isDuplicate ? `<span style="background:#fee2e2; color:#ef4444; font-size:0.7rem; font-weight:700; padding:2px 8px; border-radius:4px; display:inline-flex; align-items:center; gap:4px;"><i class="fas fa-exclamation-triangle"></i> Duplicate in DB</span>` : ''}
                 <span style="background:#e2e8f0; color:#475569; font-size:0.7rem; font-weight:700; padding:2px 8px; border-radius:4px;">${q.language}</span>
             </div>
@@ -2967,6 +3025,7 @@ window.createPreviewCardNode = function(q, idx) {
                     <option value="C" ${q.answer === 'C' ? 'selected' : ''}>Option C</option>
                     <option value="D" ${q.answer === 'D' ? 'selected' : ''}>Option D</option>
                     <option value="E" ${q.answer === 'E' ? 'selected' : ''}>Option E</option>
+                    <option value="F" ${q.answer === 'F' ? 'selected' : ''}>Option F</option>
                 </select>
             </div>
             <div>
@@ -3017,14 +3076,14 @@ window.updatePreviewQuestionField = function(idx, field, value) {
     if (!q) return;
 
     if (field.startsWith('option')) {
-        const optionLetter = field.replace('option', ''); // A, B, C, D, E
+        const optionLetter = field.replace('option', ''); // A, B, C, D, E, F
         q[field] = value;
-        const alphabet = ['A', 'B', 'C', 'D', 'E'];
+        const alphabet = ['A', 'B', 'C', 'D', 'E', 'F'];
         const optIdx = alphabet.indexOf(optionLetter);
         if (optIdx !== -1) {
-            if (!q.options) q.options = ['', '', '', '', ''];
-            if (!q.options_en) q.options_en = ['', '', '', '', ''];
-            if (!q.options_hi) q.options_hi = ['', '', '', '', ''];
+            if (!q.options) q.options = ['', '', '', '', '', ''];
+            if (!q.options_en) q.options_en = ['', '', '', '', '', ''];
+            if (!q.options_hi) q.options_hi = ['', '', '', '', '', ''];
             q.options[optIdx] = value;
             q.options_en[optIdx] = value;
             q.options_hi[optIdx] = value;
@@ -3070,9 +3129,10 @@ window.addBlankQuestionToPreview = function() {
         optionC: '',
         optionD: '',
         optionE: '',
-        options: ['', '', '', '', ''],
-        options_en: ['', '', '', '', ''],
-        options_hi: ['', '', '', '', ''],
+        optionF: '',
+        options: ['', '', '', '', '', ''],
+        options_en: ['', '', '', '', '', ''],
+        options_hi: ['', '', '', '', '', ''],
         answer: 'A',
         correctAnswer: '',
         correctIndex: 0,
@@ -3098,7 +3158,7 @@ window.deleteQuestionFromPreview = function(idx) {
 window.updatePreviewQuestionCorrectIndex = function(idx, value) {
     const q = window.currentPreviewQuestions[idx];
     q.answer = value;
-    const alphabet = ['A', 'B', 'C', 'D', 'E'];
+    const alphabet = ['A', 'B', 'C', 'D', 'E', 'F'];
     q.correctIndex = alphabet.indexOf(value);
     q.correctAnswer = q.options[q.correctIndex] || '';
 };

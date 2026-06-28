@@ -73,6 +73,7 @@ function normalizeText(text) {
         .replace(/–/g, '-') // en-dash
         .replace(/—/g, '-') // em-dash
         .replace(/•/g, ' * ') // bullet points
+        .replace(/[□™©]/g, '') // remove special symbols
         .replace(/\uFFFD/g, '') // remove unresolvable symbols
         .replace(/\u0000/g, '') // remove null byte characters
         .replace(/[\u200B-\u200D\uFEFF]/g, ''); // remove invisible control characters
@@ -399,16 +400,38 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
     let expectedNextNum = 1;
     let currentPageNum = 1;
     
-    // Match question starts
-    const qPrefixRegex = /^(?:(?:Q|Question|प्र[.]?|प्रश्न|Que|S)\s*[-.:]?\s*([0-9०-९]+)|(?:\[|\()?([0-9०-९]+)(?:\]|\))|([0-9०-९]+)\s*[-.:)\]])\s*(.*)/i;
+    // Match question starts: matches Q1, Q.1, Question 1, Que 1, QUESTION NO. 1, प्रश्न 1, प्रश्न संख्या 1, 1.
+    const qPrefixRegex = /^(?:(?:QUESTION\s+NO\s*\.?|Question|QUESTION|Que|Q|प्र[.]?|प्रश्न\s+संख्या|प्रश्न)\s*[-.:]?\s*([0-9०-९]+)|(?:\[|\()?([0-9०-९]+)(?:\]|\))|([0-9०-९]+)\s*[-.:)\]])\s*(.*)/i;
     const romanPrefixRegex = /^(?:(?:Q|Question)?\s*[-.:]?\s*\b(i{1,3}|iv|v|vi{0,3}|ix|x|xi{1,3}|xiv|xv)\b)\s*[-.:)\]]\s*(.*)/i;
+
+    const stopKeywords = [
+        /copyright/i,
+        /www\./i,
+        /cracku/i,
+        /testbook/i,
+        /page\s+\d+/i,
+        /solutions?/i,
+        /explanations?/i,
+        /answers?/i,
+        /downloaded\s+from/i
+    ];
 
     function detectQuestionStart(line) {
         let match = line.match(qPrefixRegex);
         if (match) {
             const rawNum = match[1] || match[2] || match[3];
+            const rest = match[4] ? match[4].trim() : '';
+            
+            // Check if line contains stop words to prevent false question spawning
+            for (let kw of stopKeywords) {
+                if (kw.test(line)) return null;
+            }
+            if (rest.toLowerCase().includes('www.') || rest.toLowerCase().includes('http')) {
+                return null;
+            }
+
             const num = rawNum.replace(/[०१२३४५६७८९]/g, d => '0123456789'['०१२३४५६७८९'.indexOf(d)]);
-            return { qNum: parseInt(num, 10), rest: match[4] ? match[4].trim() : '' };
+            return { qNum: parseInt(num, 10), rest };
         }
         match = line.match(romanPrefixRegex);
         if (match) {
@@ -417,8 +440,8 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
         return null;
     }
 
-    // Option header pattern (e.g. A., A), (A), क), ख), ①, Option A)
-    const optionHeaderRegex = /(?:^|[\s✔✓✅☑(\[{-])(?:\(|\[)?([A-F1-6क-ङa-f①-⑥])(?:\)|\]|\.|\s)(?:\s|$)/gi;
+    // Option header pattern supporting circles, numbers, English, and Hindi option characters (अ, ब, स, द)
+    const optionHeaderRegex = /(?:^|[\s✔✓✅☑(\[{-])(?:\(|\[)?([A-F1-6क-ङa-f①-⑥अबसद])(?:\)|\]|\.|\s)(?:\s|$)/gi;
 
     function parseOptionsFromLine(line, optionsArray, correctIndexRef) {
         let matches = [];
@@ -466,8 +489,8 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
             }
         }
 
-        // Single option line
-        const singleMatch = line.match(/^(?:Ans\s*)?([^a-zA-Z0-9\u0900-\u097F]*(?:[xX✔✓✅☑][^a-zA-Z0-9\u0900-\u097F]*)?)([A-F1-6क-ङa-f①-⑥])(?:\)|\]|\.|\s)\s*(.*)/i);
+        // Single option line: requires a punctuation separator for standard keys (A-F, a-f, 1-6) to avoid matching "A body of..."
+        const singleMatch = line.match(/^(?:Ans\s*)?([^a-zA-Z0-9\u0900-\u097F]*(?:[xX✔✓✅☑][^a-zA-Z0-9\u0900-\u097F]*)?)([A-F1-6क-ङa-f①-⑥अबसद])(?:\)|\]|\.|\-|:)\s*(.*)/i);
         if (singleMatch) {
             const prefix = singleMatch[1];
             const key = singleMatch[2];
@@ -485,9 +508,9 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
         return false;
     }
 
-    // Answers detection
-    const answerRegex = /^(?:ans(?:wer)?|correct\s*(?:answer|option)?|key|solution|explanation|उत्तर|हल)\s*[:\-.]?\s*(\(?[A-F1-6क-ङa-f①-⑥]\)?)\.?$/i;
-    const chosenOptionRegex = /Chosen\s*Option\s*:\s*([1-6A-Fa-fक-ङ①-⑥]|\-\-)/i;
+    // Answers detection (updated for Hindi options support)
+    const answerRegex = /^(?:ans(?:wer)?|correct\s*(?:answer|option)?|key|solution|explanation|उत्तर|हल)\s*[:\-.]?\s*(\(?[A-F1-6क-ङa-f①-⑥अबसद]\)?)\.?$/i;
+    const chosenOptionRegex = /Chosen\s*Option\s*:\s*([1-6A-Fa-fक-ङ①-⑥अबसद]|\-\-)/i;
 
     function parseAnswerFromLine(line) {
         const chosenMatch = line.match(chosenOptionRegex);
@@ -512,13 +535,16 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
 
     let ignoreNewQuestions = false;
 
+    let currentOcrUsed = false;
+
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
 
-        // Track page marker
-        const pageMarkerMatch = line.match(/^\[PAGE_MARKER_(\d+)\]$/);
+        // Track page marker and OCR flag
+        const pageMarkerMatch = line.match(/^\[PAGE_MARKER_(\d+)(_OCR)?\]$/);
         if (pageMarkerMatch) {
             currentPageNum = parseInt(pageMarkerMatch[1], 10);
+            currentOcrUsed = !!pageMarkerMatch[2];
             continue;
         }
 
@@ -534,17 +560,46 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
         const qStart = detectQuestionStart(line);
         if (qStart && !ignoreNewQuestions) {
             let isNewQ = false;
-            if (questions.length === 0) {
-                isNewQ = true;
-                expectedNextNum = (typeof qStart.qNum === 'number') ? qStart.qNum + 1 : 2;
-            } else {
-                const isOptionNumber = currentQ && currentQ.optionsStarted && typeof qStart.qNum === 'number' && qStart.qNum <= 6 && qStart.qNum !== expectedNextNum;
-                if (!isOptionNumber) {
+            
+            // If explanation is in progress, be extremely strict:
+            // only allow starting a new question if the question number matches expectedNextNum
+            // or if the line starts with an explicit question keyword (Q, Question, Que, प्रश्न)
+            let isExplanationContinuation = false;
+            if (currentQ && currentQ.explanationStarted) {
+                const hasExplicitKeyword = /^(?:Q|Question|Que|प्रश्न|प्र[.]?)\s*[-.:]?\s*[0-9]+/i.test(line);
+                const isExpectedNumber = (typeof qStart.qNum === 'number' && qStart.qNum === expectedNextNum);
+                if (!hasExplicitKeyword && !isExpectedNumber) {
+                    isExplanationContinuation = true;
+                }
+            }
+
+            // Check if this looks like a numeric option instead of a new question
+            let isNumericOption = false;
+            if (currentQ && typeof qStart.qNum === 'number' && qStart.qNum >= 1 && qStart.qNum <= 6) {
+                const isOptionFormat = /^[①-⑥1-6]\s*[\)\]\.]/.test(line) || /^\([1-6]\)/.test(line);
+                if (isOptionFormat) {
+                    const filledCount = currentQ.options.filter(Boolean).length;
+                    if (filledCount < 4 && !currentQ.options[qStart.qNum - 1]) {
+                        isNumericOption = true;
+                    }
+                }
+            }
+
+            if (!isExplanationContinuation && !isNumericOption) {
+                if (questions.length === 0) {
+                    isNewQ = true;
+                    expectedNextNum = (typeof qStart.qNum === 'number') ? qStart.qNum + 1 : 2;
+                } else {
                     isNewQ = true;
                     if (typeof qStart.qNum === 'number') {
                         expectedNextNum = qStart.qNum + 1;
                     }
                 }
+            }
+
+            if (isExplanationContinuation) {
+                currentQ.explanationLines.push(line);
+                continue;
             }
 
             if (isNewQ) {
@@ -561,7 +616,8 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
                     explanationStarted: false,
                     category: defaultCategory,
                     subject: defaultSubject,
-                    pageNum: currentPageNum
+                    pageNum: currentPageNum,
+                    ocrUsed: currentOcrUsed
                 };
                 continue;
             }
@@ -685,7 +741,8 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
             type: 'MCQ',
             category: q.category,
             subject: q.subject,
-            pageNum: q.pageNum
+            pageNum: q.pageNum,
+            ocrUsed: q.ocrUsed || false
         };
     });
 }
@@ -693,6 +750,153 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
 /**
  * Universal PDF Parsing pipeline (Hybrid selectable text + Tesseract.js OCR)
  */
+const https = require('https');
+
+function requestGoogleVisionOCR(base64Image) {
+    return new Promise((resolve, reject) => {
+        const apiKey = process.env.GOOGLE_VISION_API_KEY;
+        const url = `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`;
+        const payload = JSON.stringify({
+            requests: [
+                {
+                    image: { content: base64Image },
+                    features: [{ type: "DOCUMENT_TEXT_DETECTION" }]
+                }
+            ]
+        });
+
+        const req = https.request(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(payload)
+            }
+        }, (res) => {
+            let data = '';
+            res.on('data', chunk => data += chunk);
+            res.on('end', () => {
+                try {
+                    const parsed = JSON.parse(data);
+                    const text = parsed.responses?.[0]?.fullTextAnnotation?.text || '';
+                    resolve(text);
+                } catch (e) {
+                    reject(e);
+                }
+            });
+        });
+
+        req.on('error', reject);
+        req.write(payload);
+        req.end();
+    });
+}
+
+function requestAzureOCR(base64Image) {
+    return new Promise((resolve, reject) => {
+        const key = process.env.AZURE_OCR_KEY;
+        const endpoint = process.env.AZURE_OCR_ENDPOINT.replace(/\/$/, "");
+        const url = `${endpoint}/vision/v3.2/read/analyze`;
+        const payload = Buffer.from(base64Image, 'base64');
+
+        const req = https.request(url, {
+            method: 'POST',
+            headers: {
+                'Ocp-Apim-Subscription-Key': key,
+                'Content-Type': 'application/octet-stream',
+                'Content-Length': payload.length
+            }
+        }, (res) => {
+            const operationLocation = res.headers['operation-location'];
+            if (!operationLocation) {
+                return reject(new Error('Missing Operation-Location header in Azure OCR response'));
+            }
+
+            const pollInterval = setInterval(() => {
+                https.get(operationLocation, {
+                    headers: { 'Ocp-Apim-Subscription-Key': key }
+                }, (pollRes) => {
+                    let pollData = '';
+                    pollRes.on('data', chunk => pollData += chunk);
+                    pollRes.on('end', () => {
+                        try {
+                            const result = JSON.parse(pollData);
+                            if (result.status === 'succeeded') {
+                                clearInterval(pollInterval);
+                                let text = '';
+                                if (result.analyzeResult?.readResults) {
+                                    result.analyzeResult.readResults.forEach(page => {
+                                        page.lines.forEach(line => {
+                                            text += line.text + '\n';
+                                        });
+                                    });
+                                }
+                                resolve(text);
+                            } else if (result.status === 'failed') {
+                                clearInterval(pollInterval);
+                                reject(new Error('Azure OCR analysis failed'));
+                            }
+                        } catch (e) {
+                            clearInterval(pollInterval);
+                            reject(e);
+                        }
+                    });
+                }).on('error', (err) => {
+                    clearInterval(pollInterval);
+                    reject(err);
+                });
+            }, 1000);
+        });
+
+        req.on('error', reject);
+        req.write(payload);
+        req.end();
+    });
+}
+
+async function runOCR(pngBuffer, logs) {
+    const base64Image = pngBuffer.toString('base64');
+    
+    if (process.env.GOOGLE_VISION_API_KEY) {
+        try {
+            logs.push('[OCR] Running Google Vision OCR...');
+            const text = await requestGoogleVisionOCR(base64Image);
+            if (text) {
+                logs.push('[OCR] Google Vision OCR complete.');
+                return text;
+            }
+        } catch (err) {
+            logs.push(`[OCR Warning] Google Vision OCR failed: ${err.message}. Retrying with Azure/Tesseract...`);
+        }
+    }
+    
+    if (process.env.AZURE_OCR_KEY && process.env.AZURE_OCR_ENDPOINT) {
+        try {
+            logs.push('[OCR] Running Azure Read API OCR...');
+            const text = await requestAzureOCR(base64Image);
+            if (text) {
+                logs.push('[OCR] Azure Read API OCR complete.');
+                return text;
+            }
+        } catch (err) {
+            logs.push(`[OCR Warning] Azure OCR failed: ${err.message}. Retrying with Tesseract...`);
+        }
+    }
+
+    logs.push('[OCR] Running local Tesseract.js OCR (eng+hin)...');
+    let retryCount = 0;
+    while (retryCount < 2) {
+        try {
+            const ocrResult = await Tesseract.recognize(pngBuffer, 'eng+hin');
+            logs.push('[OCR] Tesseract.js OCR complete.');
+            return ocrResult.data.text;
+        } catch (ocrErr) {
+            retryCount++;
+            logs.push(`[OCR Warning] Tesseract attempt ${retryCount} failed: ${ocrErr.message}`);
+            if (retryCount >= 2) throw ocrErr;
+        }
+    }
+}
+
 async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgress = null) {
     const startTime = Date.now();
     let totalPages = 1;
@@ -717,51 +921,80 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
 
     // 2. Loop through pages to extract sorted column text and images
     let accumulatedText = '';
-    for (let pNum = 1; pNum <= totalPages; pNum++) {
-        if (onProgress) onProgress(Math.floor(10 + (pNum / totalPages) * 60), `Processing page ${pNum}/${totalPages}`, `Extracting text and images from page ${pNum}...`);
-        
-        const page = await doc.getPage(pNum);
-        const textContent = await page.getTextContent();
-        
-        // Recover column layout and sort
-        const pageRawText = extractTextFromPageItems(textContent.items, page.view[2]);
-        
-        // Image extraction on page
-        const pageImages = await extractImagesFromPage(page, pNum);
-        allImages.push(...pageImages);
-        
-        // Measure selectable text quality
-        const quality = assessTextQuality(pageRawText);
-        let pageText = '';
+    let usedOcrForAnyPage = false;
 
-        if (quality >= 0.90) {
-            pageText = pageRawText;
-            logs.push(`Page ${pNum}: Selectable text used (quality ${Math.floor(quality * 100)}%)`);
-        } else {
-            // OCR fallback
-            logs.push(`Page ${pNum}: Low selectable quality (${Math.floor(quality * 100)}%). Running Tesseract.js OCR...`);
-            
-            try {
-                const viewport = page.getViewport({ scale: 2.0 }); // 2.0 scale for crisp OCR details
-                const canvas = createCanvas(viewport.width, viewport.height);
-                const context = canvas.getContext('2d');
-                await page.render({ canvasContext: context, viewport }).promise;
-                const pngBuffer = canvas.toBuffer('image/png');
-                
-                const ocrResult = await Tesseract.recognize(pngBuffer, 'eng+hin');
-                pageText = ocrResult.data.text;
-                ocrQuestionsCount++;
-                logs.push(`Page ${pNum}: Tesseract.js OCR complete.`);
-            } catch (ocrErr) {
-                console.error(`[OCR Error] Page ${pNum} failed:`, ocrErr.message);
-                logs.push(`Page ${pNum}: OCR failed (${ocrErr.message}). Using fallback selectable text.`);
-                pageText = pageRawText;
+    async function processPages(forceOcr = false) {
+        accumulatedText = '';
+        allImages.length = 0; // Clear images if we rerun
+        for (let pNum = 1; pNum <= totalPages; pNum++) {
+            if (onProgress) {
+                const stageText = forceOcr ? `OCR processing page ${pNum}/${totalPages}` : `Processing page ${pNum}/${totalPages}`;
+                onProgress(Math.floor(10 + (pNum / totalPages) * 60), stageText, `Extracting text and images from page ${pNum}...`);
             }
-        }
+            
+            const page = await doc.getPage(pNum);
+            const textContent = await page.getTextContent();
+            
+            // Recover column layout and sort
+            const pageRawText = extractTextFromPageItems(textContent.items, page.view[2]);
+            
+            // Image extraction on page
+            const pageImages = await extractImagesFromPage(page, pNum);
+            allImages.push(...pageImages);
+            
+            // Measure selectable text quality (force OCR if parameter is true)
+            const quality = forceOcr ? 0 : assessTextQuality(pageRawText);
+            let pageText = '';
 
-        // Embed page boundaries for accurate image mapping
-        accumulatedText += `\n[PAGE_MARKER_${pNum}]\n` + pageText;
+            if (quality >= 0.90) {
+                pageText = pageRawText;
+                logs.push(`Page ${pNum}: Selectable text used (quality ${Math.floor(quality * 100)}%)`);
+            } else {
+                // OCR fallback
+                usedOcrForAnyPage = true;
+                logs.push(`Page ${pNum}: Running OCR fallback (quality score: ${Math.floor(quality * 100)}%)...`);
+                
+                try {
+                    // Enhanced high-res rendering at scale 3.0
+                    const scale = 3.0;
+                    const viewport = page.getViewport({ scale });
+                    const canvas = createCanvas(viewport.width, viewport.height);
+                    const context = canvas.getContext('2d');
+                    await page.render({ canvasContext: context, viewport }).promise;
+                    
+                    // Preprocessing (Grayscale + High Contrast Thresholding for noise & watermark removal)
+                    const imgData = context.getImageData(0, 0, canvas.width, canvas.height);
+                    const data = imgData.data;
+                    for (let i = 0; i < data.length; i += 4) {
+                        const r = data[i];
+                        const g = data[i + 1];
+                        const b = data[i + 2];
+                        const v = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+                        const binarized = v < 180 ? 0 : 255;
+                        data[i] = binarized;
+                        data[i + 1] = binarized;
+                        data[i + 2] = binarized;
+                    }
+                    context.putImageData(imgData, 0, 0);
+                    
+                    const pngBuffer = canvas.toBuffer('image/png');
+                    const ocrText = await runOCR(pngBuffer, logs);
+                    pageText = ocrText;
+                    ocrQuestionsCount++;
+                } catch (ocrErr) {
+                    console.error(`[OCR Error] Page ${pNum} failed:`, ocrErr.message);
+                    logs.push(`Page ${pNum}: OCR failed (${ocrErr.message}). Using fallback selectable text.`);
+                    pageText = pageRawText;
+                }
+            }
+
+            // Embed page boundaries and OCR flag for accurate image mapping & frontend highlighting
+            accumulatedText += `\n[PAGE_MARKER_${pNum}${quality >= 0.90 ? '' : '_OCR'}]\n` + pageText;
+        }
     }
+
+    // Process using Hybrid approach
+    await processPages(false);
 
     // 3. Normalize text and tables (Step 4 of pipeline)
     if (onProgress) onProgress(75, 'Normalizing text', 'Cleaning Unicode, CID fonts, and symbols...');
@@ -772,6 +1005,19 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
     if (onProgress) onProgress(80, 'Parsing questions', 'Splitting questions, options, and boundaries...');
     questions = parseQuestionsHeuristically(cleanText, defaultCategory, defaultSubject);
     logs.push(`[Parser] Extracted ${questions.length} questions from parsed text layout.`);
+
+    // 4b. OCR Rerun Fallback check
+    // If we didn't use OCR for any page, but we got 0 questions, or the count is very low (< 5)
+    // while the expected count is high (e.g. >= 10), then rerun using full OCR on all pages!
+    if (!usedOcrForAnyPage && questions.length < 5 && (expectedCount >= 10 || totalPages >= 2)) {
+        logs.push(`[Hybrid Parsing Alert] Selectable text yielded only ${questions.length} questions. Rerunning with full OCR fallback...`);
+        ocrQuestionsCount = 0;
+        await processPages(true);
+        cleanText = normalizeText(accumulatedText);
+        cleanText = convertTextTablesToHtml(cleanText);
+        questions = parseQuestionsHeuristically(cleanText, defaultCategory, defaultSubject);
+        logs.push(`[Parser] After OCR fallback, extracted ${questions.length} questions.`);
+    }
 
     // AI Recovery fallback (if regex parsing failed entirely or found extremely few questions)
     const tooFew = questions.length < (expectedCount * 0.4);
@@ -828,12 +1074,7 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
         });
     }
 
-    // Final cleanups of parsing metadata (delete helper pageNum fields)
-    questions = questions.map(q => {
-        const { pageNum, ...rest } = q;
-        return rest;
-    });
-
+    // Keep pageNum in question object for frontend preview (Mongoose will ignore it when saving)
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
     logs.push(`[Job Complete] Parsing completed successfully in ${elapsed}s.`);
 
