@@ -2,7 +2,15 @@ const fs = require('fs');
 const path = require('path');
 const pdfjs = require('pdfjs-dist');
 const Tesseract = require('tesseract.js');
-const { createCanvas } = require('canvas');
+let createCanvas;
+try {
+    createCanvas = require('canvas').createCanvas;
+} catch (err) {
+    console.warn('⚠️ WARNING: Failed to load native "canvas" library. PDF parsing / OCR will not work.', err.message);
+    createCanvas = function() {
+        throw new Error('Native canvas library is not available. Please ensure system dependencies for node-canvas are installed.');
+    };
+}
 const { extractQuestionsFromPdf } = require('./aiService');
 
 /**

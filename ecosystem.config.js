@@ -3,8 +3,8 @@ module.exports = {
     {
       name: "coursenova",
       script: "./server.js",
-      instances: "max",
-      exec_mode: "cluster",
+      instances: 1,
+      exec_mode: "fork",
       watch: false,
       env: {
         NODE_ENV: "production",

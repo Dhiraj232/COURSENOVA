@@ -1,16 +1,15 @@
+console.log("=================================");
+console.log("Starting CourseNova Server...");
+console.log("Loading Environment...");
 require('dotenv').config();
 
 // Global Exception Handlers defined at the very top to protect imports and startup sequence
-process.on('uncaughtException', err => {
-  console.error('❌ UNCAUGHT EXCEPTION (non-fatal):', err?.name, err?.message, err?.stack);
-  if (err?.code === 'EADDRINUSE' || err?.code === 'EACCES') {
-    console.error('Fatal port error — exiting.');
-    process.exit(1);
-  }
+process.on("uncaughtException",(err)=>{
+    console.error(err);
 });
 
-process.on('unhandledRejection', err => {
-  console.error('⚠️ UNHANDLED REJECTION (non-fatal, server continues):', err?.name, err?.message, err?.stack);
+process.on("unhandledRejection",(err)=>{
+    console.error(err);
 });
 
 // Required Environment Validation
@@ -21,6 +20,7 @@ requiredEnv.forEach(envVar => {
   }
 });
 
+console.log("Initializing Express...");
 const express = require('express');
 const compression = require('compression');
 const fs = require('fs');
@@ -43,6 +43,7 @@ const session = require('express-session');
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 
+console.log("Loading Routes...");
 // ─── Store & Marketplace Routers (MongoDB-backed) ──────────────
 const storeRouter = require('./routes/store');
 const booksRoutes = require('./routes/booksRoutes');
@@ -68,6 +69,7 @@ const dashboardRoutes = require('./routes/dashboardRoutes');
 // ─── Environment Configuration Setup ────────────────────────────
 const isProduction = process.env.NODE_ENV === 'production';
 
+console.log("Connecting MongoDB...");
 // ─── MongoDB Connection (Asynchronous, Non-Blocking) ───────────
 const MONGO_URI = process.env.MONGO_URI;
 
@@ -182,17 +184,15 @@ const globalErrorHandler = require('./middleware/errorMiddleware');
 // Express's globalErrorHandler and catchAsync already catch route-level errors.
 const app = express();
 
+console.log("Health Endpoint Ready...");
 // Lightweight Health Endpoint defined before any other middleware or routes
-app.get('/health', (req, res) => {
+app.get("/health",(req,res)=>{
     res.status(200).json({
-        success: true,
-        status: 'OK',
-        uptime: process.uptime(),
-        timestamp: new Date()
+        status:"ok",
+        uptime:process.uptime(),
+        timestamp:new Date()
     });
 });
-console.log('✅ Server Started');
-console.log('✅ Health endpoint ready');
 
 app.use(compression());
 // Global Permissions-Policy header
@@ -848,45 +848,11 @@ app.get('*', (req, res) => {
 });
 
 const PORT = process.env.PORT || 5000;
-const server = require('http').createServer(app);
-const io = require('socket.io')(server, {
-  cors: {
-    origin: [
-      "https://www.coursenova.in",
-      "https://coursenova.in"
-    ],
-    methods: ["GET", "POST"]
-  }
-});
-app.set('io', io);
-global.io = io; // Set globally for cross-module notifications
 
-// Community Chat & Real-Time Dashboard Logic (Socket.io)
-const socketMap = new Map(); // userId -> Set of socketIds
-
-io.on('connection', (socket) => {
-  console.log('⚡ New Socket Connection:', socket.id);
-
-  // Unified Identification for Dashboard/Chat
-  socket.on('identify', (userId) => {
-    if (!userId) return;
-    const cleanUserId = String(userId).replace(/['"]+/g, '');
-    socket.userId = cleanUserId;
-    socket.join(`user:${cleanUserId}`);
-    console.log(`👤 User Verified: ${cleanUserId} | Joined Room: user:${cleanUserId}`);
-  });
-
-  socket.on('disconnect', () => {
-    console.log('🔌 Socket Disconnected:', socket.id);
-  });
-});
-
-// Attach socketMap to app for use in routes
-app.set('socketMap', socketMap);
-
-server.listen(PORT, '0.0.0.0', () => {
+const server = app.listen(PORT, "0.0.0.0", () => {
     console.log(`Listening on PORT ${PORT}`);
-    console.log(`[${new Date().toLocaleTimeString()}] COURSENOVA Community API & Chat listening on port ${PORT}`);
+    console.log("Server Started Successfully");
+    console.log("=================================");
 
     // Set server timeout to 5 minutes to accommodate large PDF uploads and background saves
     server.timeout = 300000;
@@ -922,3 +888,38 @@ server.listen(PORT, '0.0.0.0', () => {
         console.log(`[Keep-Alive] Self-ping enabled every 13 min → ${KEEP_ALIVE_URL}`);
     }
 });
+
+const io = require('socket.io')(server, {
+  cors: {
+    origin: [
+      "https://www.coursenova.in",
+      "https://coursenova.in"
+    ],
+    methods: ["GET", "POST"]
+  }
+});
+app.set('io', io);
+global.io = io; // Set globally for cross-module notifications
+
+// Community Chat & Real-Time Dashboard Logic (Socket.io)
+const socketMap = new Map(); // userId -> Set of socketIds
+
+io.on('connection', (socket) => {
+  console.log('⚡ New Socket Connection:', socket.id);
+
+  // Unified Identification for Dashboard/Chat
+  socket.on('identify', (userId) => {
+    if (!userId) return;
+    const cleanUserId = String(userId).replace(/['"]+/g, '');
+    socket.userId = cleanUserId;
+    socket.join(`user:${cleanUserId}`);
+    console.log(`👤 User Verified: ${cleanUserId} | Joined Room: user:${cleanUserId}`);
+  });
+
+  socket.on('disconnect', () => {
+    console.log('🔌 Socket Disconnected:', socket.id);
+  });
+});
+
+// Attach socketMap to app for use in routes
+app.set('socketMap', socketMap);
