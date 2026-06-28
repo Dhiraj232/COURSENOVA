@@ -1,20 +1,9 @@
 const fs = require('fs');
 const path = require('path');
-const pdfParseModule = require('pdf-parse');
+const pdfjs = require('pdfjs-dist');
+const Tesseract = require('tesseract.js');
+const { createCanvas } = require('canvas');
 const { extractQuestionsFromPdf } = require('./aiService');
-
-// Safe pdf-parse initialization
-const pdfParse = typeof pdfParseModule === 'function' 
-    ? (buffer, options) => pdfParseModule(buffer, options)
-    : async function(buffer, options) {
-        const { PDFParse } = pdfParseModule;
-        if (PDFParse) {
-            const parser = new PDFParse({ verbosity: 0, data: buffer });
-            const result = await parser.getText(options);
-            return { text: result.text || '', numpages: result.numpages || 1 };
-        }
-        throw new Error('pdf-parse module is not a function and does not export PDFParse');
-    };
 
 /**
  * Maps standard Hindi option letters to index (0-based)
@@ -32,8 +21,8 @@ function mapHindiOptionToIndex(letter) {
  */
 function mapCircleNumberToIndex(char) {
     const circleMap = {
-        '①': 0, '②': 1, '③': 2, '④': 3, '⑤': 4,
-        '❶': 0, '❷': 1, '❸': 2, '❹': 3, '❺': 4
+        '①': 0, '②': 1, '③': 2, '④': 3, '⑤': 4, '⑥': 5,
+        '❶': 0, '❷': 1, '❸': 2, '❹': 3, '❺': 4, '❻': 5
     };
     return circleMap[char] !== undefined ? circleMap[char] : -1;
 }
@@ -53,17 +42,17 @@ function mapOptionKeyToIndex(key) {
     const hindiIdx = mapHindiOptionToIndex(key);
     if (hindiIdx !== -1) return hindiIdx;
 
-    // Check English characters A-E
-    if (key >= 'A' && key <= 'E') {
+    // Check English characters A-F
+    if (key >= 'A' && key <= 'F') {
         return key.charCodeAt(0) - 65;
     }
-    if (key >= 'a' && key <= 'e') {
+    if (key >= 'a' && key <= 'f') {
         return key.toLowerCase().charCodeAt(0) - 97;
     }
 
-    // Check digits 1-5
+    // Check digits 1-6
     const num = parseInt(key, 10);
-    if (num >= 1 && num <= 5) {
+    if (num >= 1 && num <= 6) {
         return num - 1;
     }
 
@@ -71,108 +60,333 @@ function mapOptionKeyToIndex(key) {
 }
 
 /**
- * Scans PDF binary streams for raw JPEG image buffers, skips icons, and saves them
+ * Normalizes text encoding (ﬁ -> fi, etc.) and Unicode equivalence
  */
-function extractJpegsFromPDFBuffer(pdfBuffer) {
-    const images = [];
-    let pos = 0;
+function normalizeText(text) {
+    if (!text) return '';
     
-    // Scan up to 30 images to keep execution bounds reasonable
-    while (images.length < 30) {
-        // Search for JPEG start marker: FF D8 FF
-        const start = pdfBuffer.indexOf(Buffer.from([0xFF, 0xD8, 0xFF]), pos);
-        if (start === -1) break;
+    let normalized = text.normalize('NFKC');
+    
+    normalized = normalized
+        .replace(/ﬁ/g, 'fi')
+        .replace(/ﬂ/g, 'fl')
+        .replace(/–/g, '-') // en-dash
+        .replace(/—/g, '-') // em-dash
+        .replace(/•/g, ' * ') // bullet points
+        .replace(/\uFFFD/g, '') // remove unresolvable symbols
+        .replace(/\u0000/g, '') // remove null byte characters
+        .replace(/[\u200B-\u200D\uFEFF]/g, ''); // remove invisible control characters
         
-        // Search for JPEG end marker: FF D9
-        const end = pdfBuffer.indexOf(Buffer.from([0xFF, 0xD9]), start + 3);
-        if (end === -1) {
-            pos = start + 3;
-            continue;
+    const lines = normalized.split('\n');
+    const promoPatterns = [
+        /Downloaded\s+from/i,
+        /Cracku/i,
+        /Testbook/i,
+        /Page\s+\d+\s+of\s+\d+/i,
+        /Copyright\s+©/i,
+        /www\.\S+/i,
+        /CourseNova/i,
+        /SSC\s+GD\s+Free\s+App/i
+    ];
+    
+    const cleanedLines = lines.filter(line => {
+        const trimmed = line.trim();
+        if (!trimmed) return true;
+        for (let pattern of promoPatterns) {
+            if (pattern.test(trimmed)) {
+                return false;
+            }
         }
-        
-        const jpegLen = end + 2 - start;
-        // Skip small assets like icons or bullet graphics (must be > 2KB)
-        if (jpegLen > 2048) {
-            const jpegData = pdfBuffer.slice(start, end + 2);
-            images.push(jpegData);
-        }
-        pos = end + 2;
-    }
-    return images;
+        return true;
+    });
+    
+    return cleanedLines.join('\n');
+}
+
+function cleanExtractedText(text) {
+    if (!text) return { text: '', promoCount: 0 };
+    const rawLinesCount = text.split('\n').length;
+    const cleanedText = normalizeText(text);
+    const cleanLinesCount = cleanedText.split('\n').length;
+    return {
+        text: cleanedText,
+        promoCount: Math.max(0, rawLinesCount - cleanLinesCount)
+    };
 }
 
 /**
- * Cleans extracted text by stripping page numbers, headers, footers, watermarks
+ * Converts space-aligned columns of text into HTML table format
  */
-function cleanExtractedText(text) {
-    if (!text) return { text: '', promoCount: 0 };
-    
-    let lines = text.split('\n');
-    const cleanedLines = [];
-    let promoCount = 0;
-    
-    const blacklistPatterns = [
-        /downloaded\s+from/i,
-        /cracku/i,
-        /ssc\s+gd\s+free\s+app/i,
-        /ssc\s+gd\s+previous\s+papers/i,
-        /download\s+pdf/i,
-        /latest\s+pattern/i,
-        /study\s+material/i,
-        /youtube/i,
-        /support@/i,
-        /whatsapp/i,
-        /all\s+rights\s+reserved/i,
-        /take\s+this\s+mock/i,
-        /for\s+mba\/cat\s+courses/i,
-        /ssc\s+mts\s+previous\s+papers/i,
-        /ssc\s+cpo\s+previous\s+papers/i,
-        /ssc\s+chsl\s+previous\s+papers/i,
-        /ssc\s+stenographer\s+previous\s+papers/i,
-        /important\s+questions/i,
-        /syllabus/i,
-        /free\s+study\s+material/i,
-        /^(?:Reasoning|General\s+Knowledge|GK|English|Quantitative\s+Aptitude|Mathematics|Maths?|Hindi|Section\s+[A-Z]|Part\s+[A-Z]|General\s+Awareness|Logical\s+Reasoning|Mental\s+Ability)\b/i
-    ];
+function convertTextTablesToHtml(text) {
+    if (!text) return '';
+    const lines = text.split('\n');
+    let inTable = false;
+    let tableRows = [];
+    const newLines = [];
     
     for (let line of lines) {
-        let trimmed = line.trim();
-        
-        // Skip metadata / watermarks / typical header/footer lines
-        if (
-            !trimmed ||
-            /^Question ID\s*:/i.test(trimmed) ||
-            /^Option\s*\d+\s*ID\s*:/i.test(trimmed) ||
-            /^Status\s*:/i.test(trimmed) ||
-            /^https?:\/\//i.test(trimmed) ||
-            /^Page\s*\d+/i.test(trimmed) ||
-            /^(?:--\s*)?\d+\s*(?:of|\/)\s*\d+(?:\s*--)?$/i.test(trimmed) ||
-            /copyright/i.test(trimmed) ||
-            /all rights reserved/i.test(trimmed) ||
-            /testbook/i.test(trimmed) ||
-            trimmed.toLowerCase() === 'testbook' ||
-            /www\.[a-zA-Z0-9-]+\.[a-zA-Z]+/i.test(trimmed)
-        ) {
-            continue;
+        // Detect potential row: segments separated by 2 or more spaces
+        const parts = line.split(/\s{2,}/).map(p => p.trim()).filter(Boolean);
+        if (parts.length >= 2 && parts.length <= 8 && !/^[A-F1-6①-⑥क-घ]\b/.test(line)) { 
+            // Must not start with option header to avoid misclassifying options as table
+            if (!inTable) {
+                inTable = true;
+                tableRows = [parts];
+            } else {
+                if (Math.abs(parts.length - tableRows[0].length) <= 1) {
+                    tableRows.push(parts);
+                } else {
+                    newLines.push(renderHtmlTable(tableRows));
+                    tableRows = [parts];
+                }
+            }
+        } else {
+            if (inTable) {
+                newLines.push(renderHtmlTable(tableRows));
+                inTable = false;
+                tableRows = [];
+            }
+            newLines.push(line);
         }
-        
-        let isBlacklisted = false;
-        for (let pattern of blacklistPatterns) {
-            if (pattern.test(trimmed)) {
-                isBlacklisted = true;
+    }
+    if (inTable) {
+        newLines.push(renderHtmlTable(tableRows));
+    }
+    return newLines.join('\n');
+}
+
+function renderHtmlTable(rows) {
+    let html = '<table class="table-preview" style="border-collapse: collapse; width: 100%; margin: 10px 0; font-size: 0.85rem; border: 1px solid #cbd5e1;">';
+    rows.forEach((row, rIdx) => {
+        html += '<tr style="border-bottom: 1px solid #cbd5e1;">';
+        row.forEach(cell => {
+            const tag = rIdx === 0 ? 'th' : 'td';
+            const style = rIdx === 0 ? 'background: #f1f5f9; font-weight: 600; padding: 6px 10px; text-align: left;' : 'padding: 6px 10px;';
+            html += `<${tag} style="${style}">${cell}</${tag}>`;
+        });
+        html += '</tr>';
+    });
+    html += '</table>';
+    return html;
+}
+
+/**
+ * Extracts page items, detects column boundary gutters, and sorts text cleanly.
+ */
+function extractTextFromPageItems(items, pageWidth = 595) {
+    if (items.length === 0) return '';
+
+    const textItems = items.filter(item => item.str && item.str.trim().length > 0);
+    if (textItems.length === 0) return '';
+
+    const minX = Math.min(...textItems.map(item => item.transform[4]));
+    const maxX = Math.max(...textItems.map(item => item.transform[4] + (item.width || 0)));
+    const span = maxX - minX;
+
+    const numBins = 60;
+    const binWidth = span / numBins;
+    const bins = new Array(numBins).fill(false);
+
+    const ys = textItems.map(item => item.transform[5]);
+    const minY = Math.min(...ys);
+    const maxY = Math.max(...ys);
+    const heightSpan = maxY - minY;
+    const midYMin = minY + heightSpan * 0.15;
+    const midYMax = minY + heightSpan * 0.85;
+
+    textItems.forEach(item => {
+        const y = item.transform[5];
+        if (y < midYMin || y > midYMax) return; 
+
+        const itemWidth = item.width || 0;
+        if (itemWidth > span * 0.6) return;
+
+        const xStart = item.transform[4] - minX;
+        const xEnd = xStart + itemWidth;
+
+        const startBin = Math.max(0, Math.floor(xStart / binWidth));
+        const endBin = Math.min(numBins - 1, Math.ceil(xEnd / binWidth));
+
+        for (let b = startBin; b <= endBin; b++) {
+            bins[b] = true;
+        }
+    });
+
+    const startCheckBin = Math.floor(numBins * 0.25);
+    const endCheckBin = Math.floor(numBins * 0.75);
+    
+    let gaps = [];
+    let currentGapStart = -1;
+
+    for (let b = startCheckBin; b <= endCheckBin; b++) {
+        if (!bins[b]) {
+            if (currentGapStart === -1) {
+                currentGapStart = b;
+            }
+        } else {
+            if (currentGapStart !== -1) {
+                const gapWidth = b - currentGapStart;
+                if (gapWidth >= 2) { 
+                    gaps.push({ start: currentGapStart, end: b - 1, width: gapWidth });
+                }
+                currentGapStart = -1;
+            }
+        }
+    }
+    if (currentGapStart !== -1) {
+        gaps.push({ start: currentGapStart, end: endCheckBin, width: endCheckBin - currentGapStart + 1 });
+    }
+
+    gaps.sort((a, b) => b.width - a.width);
+
+    let colBoundaries = [];
+    if (gaps.length >= 2 && gaps[0].width >= 2 && gaps[1].width >= 2) {
+        const bound1 = minX + gaps[0].start * binWidth + (gaps[0].width * binWidth / 2);
+        const bound2 = minX + gaps[1].start * binWidth + (gaps[1].width * binWidth / 2);
+        colBoundaries = [Math.min(bound1, bound2), Math.max(bound1, bound2)];
+    } else if (gaps.length >= 1 && gaps[0].width >= 2) {
+        const bound = minX + gaps[0].start * binWidth + (gaps[0].width * binWidth / 2);
+        colBoundaries = [bound];
+    }
+
+    let columns = colBoundaries.length === 0 ? [textItems] : Array.from({ length: colBoundaries.length + 1 }, () => []);
+
+    if (colBoundaries.length > 0) {
+        textItems.forEach(item => {
+            const x = item.transform[4];
+            let colIdx = 0;
+            while (colIdx < colBoundaries.length && x >= colBoundaries[colIdx]) {
+                colIdx++;
+            }
+            columns[colIdx].push(item);
+        });
+
+        // Column balance check to discard false-positive watermarks/sidebar splits
+        const totalCount = textItems.length;
+        let isBalanced = true;
+        for (let colItems of columns) {
+            if (colItems.length < totalCount * 0.15 && colItems.length < 12) {
+                isBalanced = false;
                 break;
             }
         }
-        
-        if (isBlacklisted) {
-            promoCount++;
-            continue;
+
+        if (!isBalanced) {
+            colBoundaries = [];
+            columns = [textItems];
         }
-        
-        cleanedLines.push(trimmed);
     }
+
+    let pageText = '';
+    columns.forEach((colItems) => {
+        colItems.sort((a, b) => {
+            const yA = a.transform[5];
+            const yB = b.transform[5];
+            if (Math.abs(yA - yB) < 3.5) {
+                return a.transform[4] - b.transform[4];
+            }
+            return yB - yA;
+        });
+
+        let colText = '';
+        let lastY = -1;
+        colItems.forEach(item => {
+            const y = item.transform[5];
+            if (lastY === -1) {
+                colText += item.str;
+            } else if (Math.abs(y - lastY) < 3.5) {
+                colText += ' ' + item.str;
+            } else {
+                colText += '\n' + item.str;
+            }
+            lastY = y;
+        });
+
+        pageText += (pageText ? '\n\n' : '') + colText;
+    });
+
+    return pageText;
+}
+
+/**
+ * Assesses the selectable text quality of a page
+ */
+function assessTextQuality(text) {
+    if (!text || text.trim().length < 100) return 0;
     
-    return { text: cleanedLines.join('\n'), promoCount };
+    // Check replacement character count (\uFFFD)
+    const replacementCount = (text.match(/\uFFFD/g) || []).length;
+    const replacementRatio = replacementCount / text.length;
+    
+    // Check proportion of standard letters/numbers to detect gibberish encoding
+    const letterCount = (text.match(/[a-zA-Z\u0900-\u097F0-9]/g) || []).length;
+    const nonWhitespaceCount = text.replace(/\s/g, '').length;
+    const letterRatio = letterCount / Math.max(1, nonWhitespaceCount);
+    
+    if (replacementRatio > 0.05) return 0.5; // low quality
+    if (letterRatio < 0.6) return 0.4;        // corrupted fonts
+    
+    return 1.0; // high quality
+}
+
+/**
+ * Extracts embedded JPEG images page by page
+ */
+async function extractImagesFromPage(page, pageNum) {
+    const images = [];
+    try {
+        const operatorList = await page.getOperatorList();
+        const objIds = [];
+        for (let i = 0; i < operatorList.fnArray.length; i++) {
+            const fn = operatorList.fnArray[i];
+            if (fn === pdfjs.OPS.paintImageXObject || fn === pdfjs.OPS.paintInlineImageXObject) {
+                objIds.push(operatorList.argsArray[i][0]);
+            }
+        }
+        for (let objId of objIds) {
+            // Promise race to prevent page.objs.get from hanging forever on unresolvable images
+            const img = await Promise.race([
+                new Promise((resolve) => {
+                    page.objs.get(objId, (o) => resolve(o));
+                }),
+                new Promise((resolve) => {
+                    setTimeout(() => resolve(null), 1000);
+                })
+            ]);
+            
+            if (img && img.width > 20 && img.height > 20) {
+                const canvas = createCanvas(img.width, img.height);
+                const ctx = canvas.getContext('2d');
+                const imgData = ctx.createImageData(img.width, img.height);
+                const data = imgData.data;
+                const src = img.data;
+                
+                if (img.data.length === img.width * img.height * 3) {
+                    let dstIdx = 0;
+                    for (let srcIdx = 0; srcIdx < src.length; srcIdx += 3) {
+                        data[dstIdx] = src[srcIdx];
+                        data[dstIdx + 1] = src[srcIdx + 1];
+                        data[dstIdx + 2] = src[srcIdx + 2];
+                        data[dstIdx + 3] = 255;
+                        dstIdx += 4;
+                    }
+                } else {
+                    data.set(src);
+                }
+                ctx.putImageData(imgData, 0, 0);
+                const buffer = canvas.toBuffer('image/jpeg');
+                images.push({
+                    buffer,
+                    width: img.width,
+                    height: img.height,
+                    pageNum
+                });
+            }
+        }
+    } catch (err) {
+        // Safe skip image extraction error
+    }
+    return images;
 }
 
 /**
@@ -182,42 +396,38 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
     const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
     const questions = [];
     let currentQ = null;
+    let expectedNextNum = 1;
+    let currentPageNum = 1;
     
-    // Heuristic prefix checks
-    // Standard Question start regex matching 1., Q1., Question 1, प्र. 1, etc.
-    const qPrefixRegex = /^(?:(?:Q|Question|प्र[.]?|प्रश्न|Que|S)\s*[-.:]?\s*([0-9०-९]+)|(?:\[|\()?([0-9०-९]+)(?:\]|\))|([0-9०-९]+)\s*[-.:])\s*(.*)/i;
-    // Fallback Roman question numbering (restricted to avoid matching C. / D. options)
-    const romanPrefixRegex = /^(?:(?:Q|Question)?\s*[-.:]?\s*\b(i{1,3}|iv|v|vi{0,3}|ix|x|xi{1,3}|xiv|xv)\b)\s*[-.:)]\s*(.*)/i;
+    // Match question starts
+    const qPrefixRegex = /^(?:(?:Q|Question|प्र[.]?|प्रश्न|Que|S)\s*[-.:]?\s*([0-9०-९]+)|(?:\[|\()?([0-9०-९]+)(?:\]|\))|([0-9०-९]+)\s*[-.:)\]])\s*(.*)/i;
+    const romanPrefixRegex = /^(?:(?:Q|Question)?\s*[-.:]?\s*\b(i{1,3}|iv|v|vi{0,3}|ix|x|xi{1,3}|xiv|xv)\b)\s*[-.:)\]]\s*(.*)/i;
 
     function detectQuestionStart(line) {
         let match = line.match(qPrefixRegex);
         if (match) {
             const rawNum = match[1] || match[2] || match[3];
-            // Normalize Hindi/Devanagari numerals to standard digits (prevent off-by-one mapping)
             const num = rawNum.replace(/[०१२३४५६७८९]/g, d => '0123456789'['०१२३४५६७८९'.indexOf(d)]);
-            return { qNum: parseInt(num, 10), rest: match[4].trim() };
+            return { qNum: parseInt(num, 10), rest: match[4] ? match[4].trim() : '' };
         }
         match = line.match(romanPrefixRegex);
         if (match) {
-            return { qNum: match[1].toLowerCase(), rest: match[2].trim() };
+            return { qNum: match[1].toLowerCase(), rest: match[2] ? match[2].trim() : '' };
         }
         return null;
     }
 
-    // Matches standard options headers like (A), A., A), क), ①
-    // Handles E / 5 / Devanagari options
-    const optionHeaderRegex = /(?:^|[\s✔✓✅☑(\[{-])(?:\(|\[)?([A-E1-5क-ङa-e①-⑤])(?:\)|\]|\.|\))(?:\s|$)/gi;
+    // Option header pattern (e.g. A., A), (A), क), ख), ①, Option A)
+    const optionHeaderRegex = /(?:^|[\s✔✓✅☑(\[{-])(?:\(|\[)?([A-F1-6क-ङa-f①-⑥])(?:\)|\]|\.|\s)(?:\s|$)/gi;
 
-    function parseOptionsFromLine(line, optionsArray, correctIndexRef, optionsStarted) {
-        // Collect all potential option keys and their indexes
-        const matches = [];
+    function parseOptionsFromLine(line, optionsArray, correctIndexRef) {
+        let matches = [];
         let match;
         optionHeaderRegex.lastIndex = 0;
-        
         while ((match = optionHeaderRegex.exec(line)) !== null) {
             const key = match[1];
             const idx = mapOptionKeyToIndex(key);
-            if (idx >= 0 && idx < 5) {
+            if (idx >= 0 && idx < 6) {
                 matches.push({
                     key,
                     index: match.index,
@@ -227,9 +437,8 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
             }
         }
 
-        // Inline option splitting (e.g. A. option1 B. option2 C. option3 D. option4)
+        // Inline splitting (e.g. A. option1 B. option2 C. option3 D. option4)
         if (matches.length >= 2) {
-            // Ensure sequence index increases or is consistent
             let lastIdx = -1;
             const validMatches = [];
             for (let m of matches) {
@@ -243,16 +452,11 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
                 for (let i = 0; i < validMatches.length; i++) {
                     const currentMatch = validMatches[i];
                     const currentIdx = currentMatch.mappedIndex;
-                    
                     const startTextIdx = currentMatch.index + currentMatch.length;
-                    const endTextIdx = (i + 1 < validMatches.length) 
-                        ? validMatches[i + 1].index 
-                        : line.length;
-
+                    const endTextIdx = (i + 1 < validMatches.length) ? validMatches[i + 1].index : line.length;
                     const optionText = line.substring(startTextIdx, endTextIdx).trim();
                     optionsArray[currentIdx] = optionText;
 
-                    // Verify correct marks around option headers
                     const checkArea = line.substring(Math.max(0, currentMatch.index - 5), currentMatch.index + currentMatch.length);
                     if (/[✔✓✅☑]/.test(checkArea)) {
                         correctIndexRef.val = currentIdx;
@@ -262,15 +466,15 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
             }
         }
 
-        // Single option line parse (e.g. "A) option text") - Removed \b word boundary to support Hindi/circled options
-        const singleMatch = line.match(/^(?:Ans\s*)?([^a-zA-Z0-9\u0900-\u097F]*(?:[xX✔✓✅☑][^a-zA-Z0-9\u0900-\u097F]*)?)([A-E1-5क-ङa-e①-⑤])(?:\)|\]|\.|\s)\s*(.*)/i);
+        // Single option line
+        const singleMatch = line.match(/^(?:Ans\s*)?([^a-zA-Z0-9\u0900-\u097F]*(?:[xX✔✓✅☑][^a-zA-Z0-9\u0900-\u097F]*)?)([A-F1-6क-ङa-f①-⑥])(?:\)|\]|\.|\s)\s*(.*)/i);
         if (singleMatch) {
             const prefix = singleMatch[1];
             const key = singleMatch[2];
             const text = singleMatch[3].trim();
             const idx = mapOptionKeyToIndex(key);
 
-            if (idx >= 0 && idx < 5) {
+            if (idx >= 0 && idx < 6) {
                 optionsArray[idx] = text;
                 if (/[✔✓✅☑]/.test(prefix) || /[✔✓✅☑]/.test(line.substring(0, Math.min(line.length, 10)))) {
                     correctIndexRef.val = idx;
@@ -278,13 +482,12 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
                 return true;
             }
         }
-
         return false;
     }
 
-    // Matches answer formats: Answer: B, Ans: B, Correct Option: C, उत्तर: B, etc.
-    const answerRegex = /^(?:ans(?:wer)?|correct\s*(?:answer|option)?|key|उत्तर)\s*[:\-.]?\s*(\(?[A-E1-5क-ङa-e①-⑤]\)?)\.?$/i;
-    const chosenOptionRegex = /Chosen\s*Option\s*:\s*([1-5A-Ea-eक-ङ①-⑤]|\-\-)/i;
+    // Answers detection
+    const answerRegex = /^(?:ans(?:wer)?|correct\s*(?:answer|option)?|key|solution|explanation|उत्तर|हल)\s*[:\-.]?\s*(\(?[A-F1-6क-ङa-f①-⑥]\)?)\.?$/i;
+    const chosenOptionRegex = /Chosen\s*Option\s*:\s*([1-6A-Fa-fक-ङ①-⑥]|\-\-)/i;
 
     function parseAnswerFromLine(line) {
         const chosenMatch = line.match(chosenOptionRegex);
@@ -299,8 +502,7 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
         return null;
     }
 
-    // Matches explanation formats: Explanation, Solution, Sol., व्याख्या, हल
-    const explanationRegex = /^(?:explanation|solution|sol[.]?|व्याख्या|हल)\s*[:\-.]?\s*(.*)/i;
+    const explanationRegex = /^(?:explanation|solution|sol[.]?|hints|व्याख्या|हल)\s*[:\-.]?\s*(.*)/i;
     const stopHeaders = [
         /^(?:Answer\s*Keys?|Detailed\s*Solutions|Detailed\s*Explanations|Correct\s*Answers|Correct\s*Options|उत्तर\s*तालिका|उत्तरमाला|कुंजी|हल\s*माला)\b/i,
         /^Solutions\b/i,
@@ -309,17 +511,21 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
     ];
 
     let ignoreNewQuestions = false;
-    let expectedNextNum = 1;
 
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i];
 
-        // Check if we hit a stop header section
+        // Track page marker
+        const pageMarkerMatch = line.match(/^\[PAGE_MARKER_(\d+)\]$/);
+        if (pageMarkerMatch) {
+            currentPageNum = parseInt(pageMarkerMatch[1], 10);
+            continue;
+        }
+
         if (!ignoreNewQuestions) {
             for (let header of stopHeaders) {
                 if (header.test(line) && line.length < 30) {
                     ignoreNewQuestions = true;
-                    console.log(`[pdfParsingService] Stop header matched: "${line}". Ignoring subsequent new questions.`);
                     break;
                 }
             }
@@ -328,20 +534,14 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
         const qStart = detectQuestionStart(line);
         if (qStart && !ignoreNewQuestions) {
             let isNewQ = false;
-            
             if (questions.length === 0) {
                 isNewQ = true;
-                expectedNextNum = qStart.qNum + 1;
+                expectedNextNum = (typeof qStart.qNum === 'number') ? qStart.qNum + 1 : 2;
             } else {
-                // If options have started, numbers 1-5 are treated as option values, not new questions (unless they match expected sequence)
-                const isOptionNumber = qStart.qNum !== expectedNextNum && currentQ && currentQ.optionsStarted && qStart.qNum <= 5;
-                // Standalone list/diagram numbers (1-5 with empty rest) that break sequence are ignored
-                const isStandaloneNumber = qStart.qNum !== expectedNextNum && qStart.qNum <= 5 && !qStart.rest;
-                
-                if (!isOptionNumber && !isStandaloneNumber) {
-                    // Accept sequential, restart, or any number > 5 to capture all valid questions
-                    if (qStart.qNum === expectedNextNum || qStart.qNum === expectedNextNum + 1 || qStart.qNum === 1 || qStart.qNum > 5) {
-                        isNewQ = true;
+                const isOptionNumber = currentQ && currentQ.optionsStarted && typeof qStart.qNum === 'number' && qStart.qNum <= 6 && qStart.qNum !== expectedNextNum;
+                if (!isOptionNumber) {
+                    isNewQ = true;
+                    if (typeof qStart.qNum === 'number') {
                         expectedNextNum = qStart.qNum + 1;
                     }
                 }
@@ -354,22 +554,20 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
                 currentQ = {
                     questionNumber: qStart.qNum,
                     questionLines: qStart.rest ? [qStart.rest] : [],
-                    options: ['', '', '', '', ''], // Supports up to 5 options (E)
+                    options: ['', '', '', '', '', ''], 
                     correctIndexRef: { val: -1 },
                     optionsStarted: false,
                     explanationLines: [],
                     explanationStarted: false,
                     category: defaultCategory,
-                    subject: defaultSubject
+                    subject: defaultSubject,
+                    pageNum: currentPageNum
                 };
                 continue;
-            } else {
-                console.log(`[pdfParsingService] Ignored Q#${qStart.qNum} as standalone or option number. Merging: "${line}"`);
             }
         }
 
         if (currentQ) {
-            // Check explanation keyword
             const expMatch = line.match(explanationRegex);
             if (expMatch) {
                 currentQ.explanationStarted = true;
@@ -378,25 +576,27 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
             }
 
             if (currentQ.explanationStarted) {
-                currentQ.explanationLines.push(line);
-                continue;
+                const nextQStart = detectQuestionStart(line);
+                if (nextQStart && !ignoreNewQuestions) {
+                    // propagates to new question start in next loop iteration
+                } else {
+                    currentQ.explanationLines.push(line);
+                    continue;
+                }
             }
 
-            // Check correct answer keyword
             const ansIdx = parseAnswerFromLine(line);
             if (ansIdx !== null && ansIdx >= 0) {
                 currentQ.correctIndexRef.val = ansIdx;
                 continue;
             }
 
-            // Check option headers
-            const isOpt = parseOptionsFromLine(line, currentQ.options, currentQ.correctIndexRef, currentQ.optionsStarted);
+            const isOpt = parseOptionsFromLine(line, currentQ.options, currentQ.correctIndexRef);
             if (isOpt) {
                 currentQ.optionsStarted = true;
                 continue;
             }
 
-            // Accumulate wrapped text
             if (currentQ.optionsStarted) {
                 const lastFilledIdx = currentQ.options.reduce((acc, val, idx) => val ? idx : acc, -1);
                 if (lastFilledIdx !== -1) {
@@ -412,271 +612,239 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
         questions.push(currentQ);
     }
 
-    // Format into standard JSON structure
     return questions.map(q => {
-        // Clean options and filter out empty trailing option (e.g. Option E if unused)
         const rawOptions = q.options.map(o => o.trim()).filter(Boolean);
 
-        // Split question lines into English / Hindi if bilingual
         let englishLines = [];
         let hindiLines = [];
-        let hasSeenHindi = false;
-
+        
         q.questionLines.forEach(line => {
-            const hasHindi = /[\u0900-\u097F]/.test(line);
-            if (hasHindi) {
-                hasSeenHindi = true;
+            const hasDevanagari = /[\u0900-\u097F]/.test(line);
+            const hasEnglish = /[a-zA-Z]/.test(line);
+            
+            if (hasDevanagari && hasEnglish) {
+                hindiLines.push(line);
+                const englishPart = line.replace(/[\u0900-\u097F]/g, '').replace(/\s+/g, ' ').trim();
+                if (englishPart.length > 5) englishLines.push(englishPart);
+            } else if (hasDevanagari) {
                 hindiLines.push(line);
             } else {
-                if (hasSeenHindi) {
-                    hindiLines.push(line);
-                } else {
-                    englishLines.push(line);
-                }
+                englishLines.push(line);
             }
         });
 
-        // Heuristically join wrapped lines with space to heal breaks (Requirement 6)
         let questionEn = englishLines.join(' ').replace(/\s+/g, ' ').trim();
         let questionHi = hindiLines.join(' ').replace(/\s+/g, ' ').trim();
 
+        // Strict English-Hindi Separation
         if (!questionEn && !questionHi) {
             questionEn = `[Question ${q.questionNumber}]`;
-            questionHi = `[Question ${q.questionNumber}]`;
+            questionHi = '';
         } else if (!questionEn) {
             questionEn = questionHi;
-        } else if (!questionHi) {
-            questionHi = questionEn;
         }
 
-        // Split explanation lines
         let expEnLines = [];
         let expHiLines = [];
-        let expHasHindi = false;
-
         q.explanationLines.forEach(line => {
-            const hasHindi = /[\u0900-\u097F]/.test(line);
-            if (hasHindi) {
-                expHasHindi = true;
+            const hasDevanagari = /[\u0900-\u097F]/.test(line);
+            if (hasDevanagari) {
                 expHiLines.push(line);
             } else {
-                if (expHasHindi) {
-                    expHiLines.push(line);
-                } else {
-                    expEnLines.push(line);
-                }
+                expEnLines.push(line);
             }
         });
-
         const explanationEn = expEnLines.join(' ').replace(/\s+/g, ' ').trim();
         const explanationHi = expHiLines.join(' ').replace(/\s+/g, ' ').trim();
 
-        const correctIdx = q.correctIndexRef.val >= 0 && q.correctIndexRef.val < rawOptions.length ? q.correctIndexRef.val : 0;
-        const alphabet = ['A', 'B', 'C', 'D', 'E'];
-        const ansLabel = alphabet[correctIdx] || 'A';
+        const correctIdx = q.correctIndexRef.val >= 0 && q.correctIndexRef.val < rawOptions.length ? q.correctIndexRef.val : -1;
+        const alphabet = ['A', 'B', 'C', 'D', 'E', 'F'];
+        const ansLabel = correctIdx !== -1 ? alphabet[correctIdx] : '';
 
         return {
-            questionNumber: q.questionNumber || 1,
+            questionNumber: typeof q.questionNumber === 'number' ? q.questionNumber : 1,
             question: questionEn,
             question_en: questionEn,
-            question_hi: questionHi,
+            question_hi: questionHi || '', 
             optionA: rawOptions[0] || '',
             optionB: rawOptions[1] || '',
             optionC: rawOptions[2] || '',
             optionD: rawOptions[3] || '',
             optionE: rawOptions[4] || '',
+            optionF: rawOptions[5] || '',
             options: rawOptions,
             options_en: rawOptions,
-            options_hi: rawOptions,
+            options_hi: questionHi ? rawOptions : [], 
             answer: ansLabel,
-            correctAnswer: rawOptions[correctIdx] || '',
+            correctAnswer: correctIdx !== -1 ? rawOptions[correctIdx] : '',
             correctIndex: correctIdx,
             explanation: explanationEn,
-            explanation_hi: explanationHi,
-            language: /[\u0900-\u097F]/.test(questionEn + questionHi) ? 'Hindi' : 'English',
+            explanation_hi: explanationHi || '',
+            language: questionHi && questionEn ? 'Bilingual' : (questionHi ? 'Hindi' : 'English'),
             image: '',
             type: 'MCQ',
             category: q.category,
-            subject: q.subject
+            subject: q.subject,
+            pageNum: q.pageNum
         };
     });
 }
 
 /**
- * Universal PDF Parsing pipeline
+ * Universal PDF Parsing pipeline (Hybrid selectable text + Tesseract.js OCR)
  */
 async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgress = null) {
     const startTime = Date.now();
-    let text = '';
     let totalPages = 1;
-    let isScanned = false;
+    let ocrQuestionsCount = 0;
+    const logs = [];
     let questions = [];
-    let imagesSaved = [];
-    let ocrUsed = false;
-    let promoLinesRemoved = 0;
-    let initialDetectedCount = 0;
-    let rejectedCount = 0;
-    let duplicateQuestions = 0;
-    const rejectedReasons = [];
-
+    const allImages = [];
+    
     const defaultCategory = defaults.category || 'General';
     const defaultSubject = defaults.subject || 'General';
 
-    // 1. Image extraction from binary stream (Step 10)
-    if (onProgress) onProgress(5, 'Extracting images', 'Scanning PDF buffer for embedded images...');
-    try {
-        const imageBuffers = extractJpegsFromPDFBuffer(pdfBuffer);
-        const uploadDir = path.join(__dirname, '../public/uploads/questions');
-        if (!fs.existsSync(uploadDir)) {
-            fs.mkdirSync(uploadDir, { recursive: true });
-        }
+    // 1. Load PDF.js document
+    if (onProgress) onProgress(10, 'Loading PDF', 'Loading PDF document stream...');
+    const loadingTask = pdfjs.getDocument({
+        data: new Uint8Array(pdfBuffer),
+        useSystemFonts: true,
+        disableFontFace: true
+    });
+    const doc = await loadingTask.promise;
+    totalPages = doc.numPages;
+    logs.push(`[Hybrid Parsing] Loaded PDF document. Total pages: ${totalPages}`);
+
+    // 2. Loop through pages to extract sorted column text and images
+    let accumulatedText = '';
+    for (let pNum = 1; pNum <= totalPages; pNum++) {
+        if (onProgress) onProgress(Math.floor(10 + (pNum / totalPages) * 60), `Processing page ${pNum}/${totalPages}`, `Extracting text and images from page ${pNum}...`);
         
-        imageBuffers.forEach((buf, idx) => {
-            const filename = `extracted_${Date.now()}_img_${idx + 1}.jpg`;
-            const filepath = path.join(uploadDir, filename);
-            fs.writeFileSync(filepath, buf);
-            imagesSaved.push(`/uploads/questions/${filename}`);
-        });
-        console.log(`[pdfParsingService] Extracted ${imagesSaved.length} images from PDF.`);
-    } catch (imgErr) {
-        console.error('[pdfParsingService] Image extraction failed:', imgErr.message);
+        const page = await doc.getPage(pNum);
+        const textContent = await page.getTextContent();
+        
+        // Recover column layout and sort
+        const pageRawText = extractTextFromPageItems(textContent.items, page.view[2]);
+        
+        // Image extraction on page
+        const pageImages = await extractImagesFromPage(page, pNum);
+        allImages.push(...pageImages);
+        
+        // Measure selectable text quality
+        const quality = assessTextQuality(pageRawText);
+        let pageText = '';
+
+        if (quality >= 0.90) {
+            pageText = pageRawText;
+            logs.push(`Page ${pNum}: Selectable text used (quality ${Math.floor(quality * 100)}%)`);
+        } else {
+            // OCR fallback
+            logs.push(`Page ${pNum}: Low selectable quality (${Math.floor(quality * 100)}%). Running Tesseract.js OCR...`);
+            
+            try {
+                const viewport = page.getViewport({ scale: 2.0 }); // 2.0 scale for crisp OCR details
+                const canvas = createCanvas(viewport.width, viewport.height);
+                const context = canvas.getContext('2d');
+                await page.render({ canvasContext: context, viewport }).promise;
+                const pngBuffer = canvas.toBuffer('image/png');
+                
+                const ocrResult = await Tesseract.recognize(pngBuffer, 'eng+hin');
+                pageText = ocrResult.data.text;
+                ocrQuestionsCount++;
+                logs.push(`Page ${pNum}: Tesseract.js OCR complete.`);
+            } catch (ocrErr) {
+                console.error(`[OCR Error] Page ${pNum} failed:`, ocrErr.message);
+                logs.push(`Page ${pNum}: OCR failed (${ocrErr.message}). Using fallback selectable text.`);
+                pageText = pageRawText;
+            }
+        }
+
+        // Embed page boundaries for accurate image mapping
+        accumulatedText += `\n[PAGE_MARKER_${pNum}]\n` + pageText;
     }
 
-    // 2. Extract raw text with pdf-parse
-    if (onProgress) onProgress(15, 'Extracting text', 'Extracting selectable text from pages...');
-    try {
-        const result = await pdfParse(pdfBuffer);
-        text = result.text || '';
-        totalPages = result.numpages || 1;
-    } catch (pdfErr) {
-        console.error('[pdfParsingService] pdf-parse failed:', pdfErr.message);
-        isScanned = true;
-    }
+    // 3. Normalize text and tables (Step 4 of pipeline)
+    if (onProgress) onProgress(75, 'Normalizing text', 'Cleaning Unicode, CID fonts, and symbols...');
+    let cleanText = normalizeText(accumulatedText);
+    cleanText = convertTextTablesToHtml(cleanText);
 
-    // Automatically check if PDF is scanned (Step 1)
-    if (!isScanned && text.trim().length < 150) {
-        isScanned = true;
-    }
+    // 4. Parse layout text into structured questions
+    if (onProgress) onProgress(80, 'Parsing questions', 'Splitting questions, options, and boundaries...');
+    questions = parseQuestionsHeuristically(cleanText, defaultCategory, defaultSubject);
+    logs.push(`[Parser] Extracted ${questions.length} questions from parsed text layout.`);
 
-    // 3. Fallback to Gemini AI OCR if scanned, OR if regex parser fails to extract questions
-    if (isScanned && process.env.GEMINI_API_KEY) {
-        ocrUsed = true;
-        if (onProgress) onProgress(30, 'Running AI OCR', 'Scanned PDF detected. Running Gemini Multimodal OCR...');
+    // AI Recovery fallback (if regex parsing failed entirely or found extremely few questions)
+    const tooFew = questions.length < (expectedCount * 0.4);
+    if ((questions.length === 0 || tooFew) && process.env.GEMINI_API_KEY) {
+        logs.push(`[AI Recovery] Regex parser extracted only ${questions.length} questions. Running Gemini layout recovery...`);
+        if (onProgress) onProgress(85, 'Running AI Recovery', `Regex extracted only ${questions.length} questions. Running Gemini AI layout recovery...`);
         try {
             const aiQuestions = await extractQuestionsFromPdf(pdfBuffer, {
                 category: defaultCategory,
                 subject: defaultSubject
             });
-            questions = normalizeAIQuestions(aiQuestions, defaultCategory, defaultSubject);
-            initialDetectedCount = questions.length;
+            const normalized = normalizeAIQuestions(aiQuestions, defaultCategory, defaultSubject);
+            if (normalized.length > 0) {
+                questions = normalized;
+                logs.push(`[AI Recovery] AI Recovery succeeded. Extracted ${questions.length} questions.`);
+            }
         } catch (aiErr) {
-            console.error('[pdfParsingService] Gemini AI OCR fallback failed:', aiErr.message);
-            throw new Error(`Scanned PDF OCR failed: ${aiErr.message}`);
-        }
-    } else {
-        // Parse selectable text using regex heuristics (Step 3-9, 12-15)
-        if (onProgress) onProgress(30, 'Regex Heuristics', 'Running clean regex heuristic parser...');
-        const cleanResult = cleanExtractedText(text);
-        promoLinesRemoved = cleanResult.promoCount;
-        questions = parseQuestionsHeuristically(cleanResult.text, defaultCategory, defaultSubject);
-        initialDetectedCount = questions.length;
-
-        // AI Recovery: If regex extracted nothing or way fewer questions than expected, trigger AI recovery (Step 19)
-        const tooFew = questions.length < (expectedCount * 0.4);
-        if ((questions.length === 0 || tooFew) && process.env.GEMINI_API_KEY) {
-            ocrUsed = true;
-            if (onProgress) {
-                onProgress(50, 'Running AI Recovery', `Regex extracted only ${questions.length} questions. Running Gemini AI layout recovery...`);
-            }
-            try {
-                const aiQuestions = await extractQuestionsFromPdf(pdfBuffer, {
-                    category: defaultCategory,
-                    subject: defaultSubject
-                });
-                const normalized = normalizeAIQuestions(aiQuestions, defaultCategory, defaultSubject);
-                if (normalized.length > 0) {
-                    questions = normalized;
-                    initialDetectedCount = questions.length;
-                    console.log(`[pdfParsingService] AI Recovery succeeded. Extracted ${questions.length} questions.`);
-                }
-            } catch (recoveryErr) {
-                console.error('[pdfParsingService] Gemini AI Recovery failed:', recoveryErr.message);
-            }
+            console.error('[AI Recovery] Gemini recovery failed:', aiErr.message);
+            logs.push(`[AI Recovery] Gemini recovery failed: ${aiErr.message}`);
         }
     }
 
-    // 4. Attach extracted images to matching question numbers (Step 10)
-    questions.forEach((q, idx) => {
-        if (imagesSaved[idx]) {
-            q.image = imagesSaved[idx];
-        }
-    });
+    // 5. Map page images to questions
+    if (onProgress) onProgress(90, 'Mapping images', 'Associating extracted layout images to questions...');
+    
+    // Save images to disk
+    const uploadDir = path.join(__dirname, '../public/uploads/questions');
+    if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+    }
 
-    // 5. Final validation checks (Step 18)
-    let questionsWithWarning = 0;
-    questions = questions.map((q, idx) => {
-        const errors = [];
-        if (!q.question || q.question.trim().length <= 15) {
-            errors.push('Question text is missing, invalid, or too short (length <= 15).');
-        }
-        
-        const validOpts = q.options.filter(o => o && o.trim() !== '');
-        if (validOpts.length < 4) {
-            errors.push(`Missing valid options (found only ${validOpts.length}, minimum 4 required).`);
-        }
-        
-        if (errors.length > 0) {
-            questionsWithWarning++;
-        }
-        
-        return {
-            ...q,
-            questionNumber: q.questionNumber || (idx + 1),
-            isValid: errors.length === 0,
-            validationWarning: errors.length > 0,
-            validationErrors: errors
-        };
+    const savedImages = [];
+    allImages.forEach((img, idx) => {
+        const filename = `extracted_${Date.now()}_img_p${img.pageNum}_${idx + 1}.jpg`;
+        const filepath = path.join(uploadDir, filename);
+        fs.writeFileSync(filepath, img.buffer);
+        savedImages.push({
+            url: `/uploads/questions/${filename}`,
+            pageNum: img.pageNum
+        });
     });
+    logs.push(`[Images] Saved ${savedImages.length} extracted images to disk.`);
 
-    // Discard ONLY completely empty question candidates (Requirement 10)
-    questions = questions.filter(q => {
-        const isEmpty = (!q.question || q.question.trim() === '') && q.options.every(o => !o || o.trim() === '');
-        if (isEmpty) {
-            rejectedCount++;
-            rejectedReasons.push(`Q#${q.questionNumber || 'unknown'}: Completely empty card`);
-            return false;
-        }
-        return true;
+    // Match page images sequentially for each page
+    for (let p = 1; p <= totalPages; p++) {
+        const pageImages = savedImages.filter(img => img.pageNum === p);
+        const pageQuestions = questions.filter(q => q.pageNum === p);
+        
+        pageImages.forEach((img, idx) => {
+            if (pageQuestions[idx]) {
+                pageQuestions[idx].image = img.url;
+                logs.push(`[Images] Matched image to Question #${pageQuestions[idx].questionNumber} on page ${p}`);
+            }
+        });
+    }
+
+    // Final cleanups of parsing metadata (delete helper pageNum fields)
+    questions = questions.map(q => {
+        const { pageNum, ...rest } = q;
+        return rest;
     });
 
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
-    
-    // Log detailed statistics (Requirement 9 / 12)
-    console.log(`
-==================================================
-        UNIVERSAL PDF PARSER REPORT
-==================================================
-Total Pages: ${totalPages}
-Questions Found: ${initialDetectedCount}
-Questions Imported: ${questions.length}
-Questions With Warning: ${questionsWithWarning}
-Questions Rejected: ${rejectedCount}
-Rejected Reasons: 
-  ${rejectedReasons.length > 0 ? rejectedReasons.join('\n  ') : 'None'}
-Promotional Lines Removed: ${promoLinesRemoved}
-OCR Used: ${ocrUsed ? 'YES' : 'NO'}
-Images Extracted: ${imagesSaved.length}
-Duplicate Questions Merged/Skipped: ${duplicateQuestions}
-Final Questions Saved: ${questions.length}
-Import Time: ${elapsed} seconds
-==================================================
-`);
+    logs.push(`[Job Complete] Parsing completed successfully in ${elapsed}s.`);
 
+    // We store logs directly in return metadata
+    questions.parserLogs = logs;
+    questions.ocrQuestionsCount = ocrQuestionsCount;
     return questions;
 }
 
 /**
- * Cleanup false positive questions by aligning with the highest detected question number (Requirement 13)
+ * Cleanup false positive questions by aligning with the highest detected question number
  */
 function verifyAndFilterFalsePositives(questions) {
     if (questions.length === 0) return { questions: [], duplicateCount: 0 };
@@ -685,37 +853,27 @@ function verifyAndFilterFalsePositives(questions) {
     let duplicateCount = 0;
     
     if (questions.length > highestQNum) {
-        console.log(`[pdfParsingService] Invalid count detected: Questions count (${questions.length}) > Highest Question Number (${highestQNum}). Running automated false-positive cleanup.`);
-        
         const bestQuestionsMap = new Map();
         
         questions.forEach(q => {
             const num = q.questionNumber;
-            if (num > highestQNum || num < 1) {
-                console.log(`[pdfParsingService] Discarding out-of-bounds Q#${num}: "${q.question.substring(0, 30)}..."`);
-                return;
-            }
+            if (num > highestQNum || num < 1) return;
             
             if (!bestQuestionsMap.has(num)) {
                 bestQuestionsMap.set(num, q);
             } else {
                 duplicateCount++;
                 const existing = bestQuestionsMap.get(num);
-                const currentScore = (q.isValid ? 1000 : 0) + q.question.length;
-                const existingScore = (existing.isValid ? 1000 : 0) + existing.question.length;
+                const currentScore = (q.isValid ? 1000 : 0) + (q.question ? q.question.length : 0);
+                const existingScore = (existing.isValid ? 1000 : 0) + (existing.question ? existing.question.length : 0);
                 if (currentScore > existingScore) {
                     bestQuestionsMap.set(num, q);
-                    console.log(`[pdfParsingService] Replacing duplicate Q#${num} with a better match`);
-                } else {
-                    console.log(`[pdfParsingService] Skipping duplicate Q#${num}`);
                 }
             }
         });
         
         let filtered = Array.from(bestQuestionsMap.values());
         filtered.sort((a, b) => a.questionNumber - b.questionNumber);
-        
-        console.log(`[pdfParsingService] Cleanup complete. New questions count: ${filtered.length}`);
         return { questions: filtered, duplicateCount };
     }
     
@@ -742,27 +900,28 @@ function normalizeAIQuestions(aiQuestions, defaultCategory, defaultSubject) {
             correctIdx = 0;
         }
 
-        const alphabet = ['A', 'B', 'C', 'D', 'E'];
+        const alphabet = ['A', 'B', 'C', 'D', 'E', 'F'];
 
         return {
             questionNumber: q.questionNumber || (idx + 1),
             question: q.question || q.question_en || '',
             question_en: q.question_en || q.question || '',
-            question_hi: q.question_hi || q.question || '',
+            question_hi: q.question_hi || '', // NEVER copy English to Hindi
             optionA: opts[0] || '',
             optionB: opts[1] || '',
             optionC: opts[2] || '',
             optionD: opts[3] || '',
             optionE: opts[4] || '',
+            optionF: opts[5] || '',
             options: opts,
             options_en: opts,
-            options_hi: optsHi,
+            options_hi: q.question_hi ? optsHi : [], 
             answer: alphabet[correctIdx] || 'A',
             correctAnswer: opts[correctIdx] || q.correctAnswer || '',
             correctIndex: correctIdx,
             explanation: q.explanation || '',
             explanation_hi: q.explanation_hi || '',
-            language: /[\u0900-\u097F]/.test(q.question || q.question_hi) ? 'Hindi' : 'English',
+            language: q.question_hi && (q.question || q.question_en) ? 'Bilingual' : (q.question_hi ? 'Hindi' : 'English'),
             image: q.image || '',
             type: 'MCQ',
             category: q.category || defaultCategory,

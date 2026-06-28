@@ -168,6 +168,25 @@ router.get('/pdf-jobs/:jobId', requireAdmin, catchAsync(async (req, res) => {
     });
 }));
 
+// POST /api/admin/pdf-jobs/:jobId/cancel
+router.post('/pdf-jobs/:jobId/cancel', requireAdmin, catchAsync(async (req, res) => {
+    const job = await PdfJob.findOne({ jobId: req.params.jobId });
+    if (!job) {
+        return res.status(404).json({ ok: false, message: 'Job not found' });
+    }
+    
+    if (job.status === 'processing') {
+        job.status = 'failed';
+        job.error = 'Job cancelled by user';
+        const timestamp = new Date().toISOString();
+        job.logs.push(`[${timestamp}] Job cancelled by administrator.`);
+        await job.save();
+        res.json({ ok: true, message: 'Job cancellation requested' });
+    } else {
+        res.json({ ok: true, message: `Job is already in status: ${job.status}` });
+    }
+}));
+
 // ── Parse MCQ questions from raw PDF text ────────────────────────────
 async function parseMCQFromText(text, expectedCount = 100, onProgress = null) {
     // ── First: Reconstruct words by replacing cell separators (tabs) ──
@@ -532,6 +551,260 @@ async function parseQuestionsFromPDFBuffer(buffer, defaultCategory = '', default
     return await parsePDF(buffer, { category: defaultCategory, subject: defaultSubject }, expectedCount, updateJobCallback);
 }
 
+// Levenshtein distance similarity matching
+function getSimilarity(s1, s2) {
+    function cleanText(text) {
+        if (!text) return '';
+        return text.trim().toLowerCase().replace(/[^a-z0-9\u0900-\u097F]/g, '');
+    }
+    s1 = cleanText(s1);
+    s2 = cleanText(s2);
+    if (!s1 || !s2) return 0;
+    if (s1 === s2) return 1.0;
+    
+    const len1 = s1.length;
+    const len2 = s2.length;
+    const maxLen = Math.max(len1, len2);
+    
+    const track = Array(len2 + 1).fill(null).map(() => Array(len1 + 1).fill(null));
+    for (let i = 0; i <= len1; i++) track[0][i] = i;
+    for (let j = 0; j <= len2; j++) track[j][0] = j;
+    
+    for (let j = 1; j <= len2; j++) {
+        for (let i = 1; i <= len1; i++) {
+            const indicator = s1[i - 1] === s2[j - 1] ? 0 : 1;
+            track[j][i] = Math.min(
+                track[j - 1][i] + 1, // deletion
+                track[j][i - 1] + 1, // insertion
+                track[j - 1][i - 1] + indicator // substitution
+            );
+        }
+    }
+    
+    const distance = track[len2][len1];
+    return (maxLen - distance) / maxLen;
+}
+
+// Question validator
+function validateQuestion(q) {
+    if (!q) return false;
+    
+    // 1. Question text exists
+    const questionText = q.question || q.question_en || '';
+    if (!questionText.trim()) return false;
+    
+    // 2. Minimum 2 options
+    const opts = q.options || [];
+    const validOpts = opts.filter(o => o && o.trim() !== '');
+    if (validOpts.length < 2) return false;
+    
+    // 3. Correct answer valid (if present)
+    if (q.correctAnswer && q.correctAnswer.trim()) {
+        const correctIdx = q.correctIndex !== undefined ? q.correctIndex : -1;
+        const hasMatchingOption = opts.some(o => o && o.trim() === q.correctAnswer.trim());
+        if (correctIdx >= 0 && correctIdx < opts.length && !opts[correctIdx]) {
+            return false;
+        }
+        if (correctIdx === -1 && !hasMatchingOption) {
+            return false;
+        }
+    }
+    
+    // 4. No corrupted encoding (no  character)
+    if (questionText.includes('')) return false;
+    if (opts.some(o => o && o.includes(''))) return false;
+    
+    return true;
+}
+
+// Bulk save questions with transaction + fallback
+async function saveQuestionsTransactional(questionsArray, replaceDuplicates, defaultCategory, defaultSubject, packId, testId) {
+    const session = await mongoose.startSession();
+    let transactionStarted = false;
+    
+    function cleanText(text) {
+        if (!text) return '';
+        return text.trim().toLowerCase().replace(/[^a-z0-9\u0900-\u097F]/g, '');
+    }
+
+    async function executeOperations(optsSession = null) {
+        const validQuestions = [];
+        let failedCount = 0;
+        
+        for (let q of questionsArray) {
+            if (validateQuestion(q)) {
+                validQuestions.push(q);
+            } else {
+                failedCount++;
+            }
+        }
+
+        const questionTexts = validQuestions.map(q => q.question).filter(Boolean);
+        const questionEnTexts = validQuestions.map(q => q.question_en).filter(Boolean);
+
+        const existingQuestions = await PracticeQuestion.find({
+            $or: [
+                { question: { $in: questionTexts } },
+                { question_en: { $in: questionEnTexts } }
+            ]
+        }, null, optsSession ? { session: optsSession } : {}).select('_id question question_en category subject topic difficulty image');
+
+        const existingMap = new Map();
+        existingQuestions.forEach(eq => {
+            if (eq.question) existingMap.set(cleanText(eq.question), eq);
+            if (eq.question_en) existingMap.set(cleanText(eq.question_en), eq);
+        });
+
+        // Similarity check (90% threshold for duplicates)
+        function findDuplicateBySimilarity(qText) {
+            const cleanQ = cleanText(qText);
+            if (existingMap.has(cleanQ)) return existingMap.get(cleanQ);
+            
+            for (let [existingClean, eq] of existingMap.entries()) {
+                if (getSimilarity(cleanQ, existingClean) > 0.90) {
+                    return eq;
+                }
+            }
+            return null;
+        }
+
+        const questionsOrdered = new Array(validQuestions.length);
+        const uniqueToInsert = [];
+        let duplicateCount = 0;
+        const updatePromises = [];
+
+        for (let idx = 0; idx < validQuestions.length; idx++) {
+            const q = validQuestions[idx];
+            const existing = findDuplicateBySimilarity(q.question) || (q.question_en ? findDuplicateBySimilarity(q.question_en) : null);
+            
+            if (existing) {
+                if (replaceDuplicates) {
+                    const updatePayload = {
+                        question: q.question,
+                        question_en: q.question_en || q.question,
+                        question_hi: q.question_hi || '',
+                        options: q.options || [q.optionA || '', q.optionB || '', q.optionC || '', q.optionD || ''],
+                        options_en: q.options_en || q.options,
+                        options_hi: q.options_hi || [],
+                        correctAnswer: q.correctAnswer || q.optionA,
+                        explanation: q.explanation || '',
+                        explanation_hi: q.explanation_hi || '',
+                        category: q.category || existing.category,
+                        subject: q.subject || existing.subject,
+                        topic: q.topic || existing.topic,
+                        difficulty: q.difficulty || existing.difficulty,
+                        image: q.image || existing.image
+                    };
+
+                    const updatePromise = PracticeQuestion.findByIdAndUpdate(existing._id, updatePayload, { 
+                        new: true,
+                        session: optsSession
+                    }).then(updatedQ => {
+                        questionsOrdered[idx] = updatedQ;
+                    }).catch(err => {
+                        console.error(`Failed to replace duplicate:`, err.message);
+                        questionsOrdered[idx] = existing;
+                        failedCount++;
+                    });
+                    updatePromises.push(updatePromise);
+                } else {
+                    questionsOrdered[idx] = existing;
+                    duplicateCount++;
+                }
+            } else {
+                uniqueToInsert.push({ q, idx });
+            }
+        }
+
+        if (updatePromises.length > 0) {
+            await Promise.all(updatePromises);
+        }
+
+        const batchSize = 200;
+        for (let i = 0; i < uniqueToInsert.length; i += batchSize) {
+            const batch = uniqueToInsert.slice(i, i + batchSize);
+            const batchToInsert = batch.map(b => {
+                const q = b.q;
+                return {
+                    question: q.question,
+                    question_en: q.question_en || q.question,
+                    question_hi: q.question_hi || '',
+                    options: q.options || [q.optionA || '', q.optionB || '', q.optionC || '', q.optionD || ''],
+                    options_en: q.options_en || q.options,
+                    options_hi: q.options_hi || [],
+                    correctAnswer: q.correctAnswer || q.optionA,
+                    explanation: q.explanation || '',
+                    explanation_hi: q.explanation_hi || '',
+                    category: q.category || defaultCategory || 'General',
+                    subject: q.subject || defaultSubject || 'General',
+                    topic: q.topic || '',
+                    difficulty: q.difficulty || 'Medium',
+                    isMockTestOnly: !!q.isMockTestOnly,
+                    image: q.image || ''
+                };
+            });
+
+            try {
+                const inserted = await PracticeQuestion.insertMany(batchToInsert, { 
+                    ordered: false,
+                    session: optsSession
+                });
+                inserted.forEach((insertedQ, bIdx) => {
+                    const originalIndex = batch[bIdx].idx;
+                    questionsOrdered[originalIndex] = insertedQ;
+                });
+            } catch (insertErr) {
+                for (let bIdx = 0; bIdx < batch.length; bIdx++) {
+                    const item = batch[bIdx];
+                    try {
+                        const singleQ = await PracticeQuestion.create([item.q], { session: optsSession });
+                        questionsOrdered[item.idx] = singleQ[0];
+                    } catch (singleErr) {
+                        failedCount++;
+                    }
+                }
+            }
+        }
+
+        const finalQuestions = questionsOrdered.filter(Boolean);
+
+        if (packId && testId && finalQuestions.length > 0) {
+            const pack = await MockTestPack.findOne({ id: packId }, null, optsSession ? { session: optsSession } : {});
+            if (pack) {
+                const subtest = pack.tests.find(t => t.testId === testId);
+                if (subtest) {
+                    const finalIds = finalQuestions.map(q => q._id);
+                    subtest.questions = finalIds;
+                    subtest.numQuestions = finalIds.length;
+                    await pack.save({ session: optsSession });
+                }
+            }
+        }
+
+        return { finalQuestions, duplicateCount, failedCount };
+    }
+
+    try {
+        session.startTransaction();
+        transactionStarted = true;
+        const res = await executeOperations(session);
+        await session.commitTransaction();
+        return res;
+    } catch (err) {
+        if (transactionStarted) {
+            await session.abortTransaction();
+        }
+        if (err.message.includes('replica set') || err.message.includes('transaction') || err.message.includes('session')) {
+            console.log('[Database] Mongoose transactions not supported. Running non-transactional fallback...');
+            return await executeOperations(null);
+        } else {
+            throw err;
+        }
+    } finally {
+        session.endSession();
+    }
+}
+
 // ── BACKGROUND WORKERS ───────────────────────────────────────────────
 // ── BACKGROUND WORKERS ───────────────────────────────────────────────
 async function runPreviewPDFJob(jobId, buffer, defaultCategory, defaultSubject, expectedCount, startTime = Date.now()) {
@@ -546,7 +819,6 @@ async function runPreviewPDFJob(jobId, buffer, defaultCategory, defaultSubject, 
             startTime
         );
 
-        // Perform duplicate check
         await updateJob(jobId, 85, 'Checking duplicates', `Checking database duplicates for ${questions.length} questions...`);
         
         const questionTexts = questions.map(q => q.question).filter(Boolean);
@@ -570,10 +842,20 @@ async function runPreviewPDFJob(jobId, buffer, defaultCategory, defaultSubject, 
             if (eq.question_en) existingMap.set(cleanText(eq.question_en), eq);
         });
 
+        function findDuplicateBySimilarity(qText) {
+            const cleanQ = cleanText(qText);
+            if (existingMap.has(cleanQ)) return existingMap.get(cleanQ);
+            
+            for (let [existingClean, eq] of existingMap.entries()) {
+                if (getSimilarity(cleanQ, existingClean) > 0.90) {
+                    return eq;
+                }
+            }
+            return null;
+        }
+
         const markedQuestions = questions.map(q => {
-            const cleanQ = cleanText(q.question);
-            const cleanQEn = cleanText(q.question_en);
-            const existing = existingMap.get(cleanQ) || (cleanQEn ? existingMap.get(cleanQEn) : null);
+            const existing = findDuplicateBySimilarity(q.question) || (q.question_en ? findDuplicateBySimilarity(q.question_en) : null);
             if (existing) {
                 return {
                     ...q,
@@ -584,15 +866,84 @@ async function runPreviewPDFJob(jobId, buffer, defaultCategory, defaultSubject, 
             return q;
         });
 
+        // Forward parser logs to background job logger
+        const parserLogs = questions.parserLogs || [];
+        const ocrQuestionsCount = questions.ocrQuestionsCount || 0;
+        for (let log of parserLogs) {
+            await updateJob(jobId, undefined, undefined, log);
+        }
+
         const elapsedSec = ((Date.now() - startTime) / 1000).toFixed(2);
-        await completeJob(jobId, { questions: markedQuestions, count: markedQuestions.length }, `Preview questions extracted successfully in ${elapsedSec}s. Count: ${markedQuestions.length}`);
+        
+        let validCount = 0;
+        let warningCount = 0;
+        let missingOptionsCount = 0;
+        let missingAnswersCount = 0;
+        let encodingErrorsCount = 0;
+
+        const validatedQuestions = markedQuestions.map((q, idx) => {
+            const errors = [];
+            if (!q.question || q.question.trim().length <= 15) {
+                errors.push('Question text is missing, invalid, or too short (length <= 15).');
+            }
+            
+            const validOpts = q.options.filter(o => o && o.trim() !== '');
+            if (validOpts.length < 2) {
+                errors.push(`Missing valid options (found only ${validOpts.length}, minimum 2 required).`);
+                missingOptionsCount++;
+            }
+            
+            if (!q.correctAnswer || !q.correctAnswer.trim() || q.correctIndex === -1) {
+                errors.push('Correct answer is missing or invalid.');
+                missingAnswersCount++;
+            }
+
+            if (q.question && q.question.includes('')) {
+                errors.push('Question has corrupted encoding characters ().');
+                encodingErrorsCount++;
+            }
+
+            const isValid = errors.length === 0;
+            if (isValid) {
+                validCount++;
+            } else {
+                warningCount++;
+            }
+
+            return {
+                ...q,
+                isValid,
+                validationWarning: errors.length > 0,
+                validationErrors: errors
+            };
+        });
+
+        const previewResult = {
+            questions: validatedQuestions,
+            count: validatedQuestions.length,
+            stats: {
+                total: validatedQuestions.length,
+                valid: validCount,
+                warning: warningCount,
+                duplicate: markedQuestions.filter(q => q.isDuplicate).length,
+                ocr: ocrQuestionsCount,
+                encodingErrors: encodingErrorsCount,
+                missingOptions: missingOptionsCount,
+                missingAnswers: missingAnswersCount
+            }
+        };
+
+        await completeJob(jobId, previewResult, `Preview questions extracted successfully in ${elapsedSec}s. Count: ${validatedQuestions.length}`);
     } catch (err) {
+        if (err.message === 'AbortJobError') {
+            console.log(`[PDF Job ${jobId}] Preview job stopped because of user cancellation.`);
+            return;
+        }
         await failJob(jobId, err.message);
     }
 }
 
-async function runImportPDFJob(jobId, buffer, defaultCategory, defaultSubject, packId, testId, reqUser, expectedCount = 100, startTime = Date.now()) {
-    const elapsedSecStart = ((Date.now() - startTime) / 1000).toFixed(2);
+async function runImportPDFJob(jobId, buffer, defaultCategory, defaultSubject, packId, testId, reqUser, expectedCount = 100, replaceDuplicates = false, startTime = Date.now()) {
     await updateJob(jobId, 5, 'Extracting text', 'Received PDF buffer. Starting text extraction...');
     
     try {
@@ -617,133 +968,21 @@ async function runImportPDFJob(jobId, buffer, defaultCategory, defaultSubject, p
             return;
         }
 
-        await updateJob(jobId, 65, 'Checking duplicates', `Checking duplicates in database for ${parsedQuestions.length} parsed questions...`);
-        const dupStartTime = Date.now();
-        
-        const questionTexts = parsedQuestions.map(q => q.question).filter(Boolean);
-        const questionEnTexts = parsedQuestions.map(q => q.question_en).filter(Boolean);
-
-        const existingQuestions = await PracticeQuestion.find({
-            $or: [
-                { question: { $in: questionTexts } },
-                { question_en: { $in: questionEnTexts } }
-            ]
-        }).select('_id question question_en');
-
-        function cleanText(text) {
-            if (!text) return '';
-            return text.trim().toLowerCase().replace(/[^a-z0-9\u0900-\u097F]/g, '');
+        const parserLogs = parsedQuestions.parserLogs || [];
+        for (let log of parserLogs) {
+            await updateJob(jobId, undefined, undefined, log);
         }
 
-        const existingMap = new Map();
-        existingQuestions.forEach(q => {
-            if (q.question) existingMap.set(cleanText(q.question), q);
-            if (q.question_en) existingMap.set(cleanText(q.question_en), q);
-        });
+        await updateJob(jobId, 65, 'Saving questions', `Importing and validating ${parsedQuestions.length} parsed questions...`);
 
-        const uniqueQuestions = [];
-        const questionIdMapping = [];
-        let duplicateCount = 0;
-        let failedCount = 0;
-
-        parsedQuestions.forEach((q, idx) => {
-            if (!q.question || !q.options || !Array.isArray(q.options) || q.options.length < 4 || !q.correctAnswer) {
-                failedCount++;
-                return;
-            }
-
-            const categoryVal = (q.category || defaultCategory || 'General').trim();
-            const subjectVal = mapSubject(q.subject || defaultSubject || 'General').trim();
-
-            const formattedQ = {
-                question: q.question,
-                question_en: q.question_en || q.question,
-                question_hi: q.question_hi || q.question,
-                options: q.options,
-                options_en: q.options_en || q.options,
-                options_hi: q.options_hi || q.options,
-                correctAnswer: q.correctAnswer,
-                explanation: q.explanation || '',
-                explanation_hi: q.explanation_hi || '',
-                category: categoryVal,
-                subject: subjectVal,
-                topic: q.topic || '',
-                difficulty: ['Easy', 'Medium', 'Hard'].includes(q.difficulty) ? q.difficulty : 'Medium',
-                isMockTestOnly: !!q.isMockTestOnly
-            };
-
-            const cleanQ = cleanText(formattedQ.question);
-            const cleanQEn = cleanText(formattedQ.question_en);
-
-            const existing = existingMap.get(cleanQ) || (cleanQEn ? existingMap.get(cleanQEn) : null);
-            if (existing) {
-                duplicateCount++;
-                questionIdMapping.push({ index: idx, id: existing._id });
-            } else {
-                uniqueQuestions.push({ formattedQ, index: idx });
-            }
-        });
-
-        const dupElapsedMs = Date.now() - dupStartTime;
-        await updateJob(jobId, 75, 'Database insertion', `Duplicate check completed in ${dupElapsedMs}ms. Found ${uniqueQuestions.length} unique questions and ${duplicateCount} duplicates.`);
-        console.log(`[8] Duplicate detection completed - elapsed: ${Date.now() - startTime}ms`);
-
-        console.log(`[9] MongoDB insert started - elapsed: ${Date.now() - startTime}ms`);
-        const dbStartTime = Date.now();
-        let importedCount = 0;
-        const batchSize = 200;
-
-        for (let i = 0; i < uniqueQuestions.length; i += batchSize) {
-            const batch = uniqueQuestions.slice(i, i + batchSize);
-            const batchToInsert = batch.map(b => b.formattedQ);
-            try {
-                const inserted = await PracticeQuestion.insertMany(batchToInsert, { ordered: false });
-                inserted.forEach((insertedQ, bIdx) => {
-                    const originalIndex = batch[bIdx].index;
-                    questionIdMapping.push({ index: originalIndex, id: insertedQ._id });
-                    importedCount++;
-                });
-            } catch (insertErr) {
-                for (let bIdx = 0; bIdx < batch.length; bIdx++) {
-                    const item = batch[bIdx];
-                    try {
-                        const singleQ = await PracticeQuestion.create(item.formattedQ);
-                        questionIdMapping.push({ index: item.index, id: singleQ._id });
-                        importedCount++;
-                    } catch (singleErr) {
-                        failedCount++;
-                    }
-                }
-            }
-        }
-
-        const dbElapsedMs = Date.now() - dbStartTime;
-        await updateJob(jobId, 90, 'Linking to mock test', `Database save completed in ${dbElapsedMs}ms. Saved ${importedCount} unique questions. Starting mock test linking...`);
-        console.log(`[10] MongoDB insert completed - elapsed: ${Date.now() - startTime}ms`);
-
-        console.log(`[11] Mock Test linking started - elapsed: ${Date.now() - startTime}ms`);
-        questionIdMapping.sort((a, b) => a.index - b.index);
-        const finalQuestionIds = questionIdMapping.map(m => m.id);
-
-        const linkStartTime = Date.now();
-        if (packId && testId && finalQuestionIds.length > 0) {
-            const pack = await MockTestPack.findOne({ id: packId });
-            if (pack) {
-                const subtest = pack.tests.find(t => t.testId === testId);
-                if (subtest) {
-                    subtest.questions = finalQuestionIds;
-                    subtest.numQuestions = finalQuestionIds.length;
-                    await pack.save();
-                    const linkElapsedMs = Date.now() - linkStartTime;
-                    await updateJob(jobId, 95, 'Mock test linked', `Mock test linked successfully in ${linkElapsedMs}ms.`);
-                } else {
-                    await updateJob(jobId, 95, 'Mock test linking skipped', `Warning: Test ${testId} not found in pack ${packId}.`);
-                }
-            } else {
-                await updateJob(jobId, 95, 'Mock test linking skipped', `Warning: Pack ${packId} not found.`);
-            }
-        }
-        console.log(`[12] Mock Test linking completed - elapsed: ${Date.now() - startTime}ms`);
+        const saveRes = await saveQuestionsTransactional(
+            parsedQuestions,
+            replaceDuplicates,
+            defaultCategory,
+            defaultSubject,
+            packId,
+            testId
+        );
 
         const elapsedSec = ((Date.now() - startTime) / 1000).toFixed(2);
         
@@ -755,9 +994,9 @@ async function runImportPDFJob(jobId, buffer, defaultCategory, defaultSubject, p
             targetModel: 'PracticeQuestion',
             details: {
                 totalFound: parsedQuestions.length,
-                imported: importedCount,
-                duplicates: duplicateCount,
-                failed: failedCount,
+                imported: saveRes.finalQuestions.length - saveRes.duplicateCount,
+                duplicates: saveRes.duplicateCount,
+                failed: saveRes.failedCount,
                 timeSec: elapsedSec,
                 linkedPackId: packId,
                 linkedTestId: testId,
@@ -767,13 +1006,17 @@ async function runImportPDFJob(jobId, buffer, defaultCategory, defaultSubject, p
 
         await completeJob(jobId, {
             totalQuestions: parsedQuestions.length,
-            importedCount,
-            duplicateCount,
-            failedCount,
+            importedCount: saveRes.finalQuestions.length - saveRes.duplicateCount,
+            duplicateCount: saveRes.duplicateCount,
+            failedCount: saveRes.failedCount,
             importTimeSec: elapsedSec
         }, `PDF Import job completed successfully in ${elapsedSec}s.`);
 
     } catch (err) {
+        if (err.message === 'AbortJobError') {
+            console.log(`[PDF Job ${jobId}] Import job stopped because of user cancellation.`);
+            return;
+        }
         await failJob(jobId, err.message);
     }
 }
@@ -824,6 +1067,7 @@ router.post('/import-pdf-questions', (req, res, next) => {
     const packId = req.body.packId || req.query.packId || '';
     const testId = req.body.testId || req.query.testId || '';
     const expectedCount = parseInt(req.body.expectedCount || req.query.expectedCount || 100, 10);
+    const replaceDuplicates = req.body.replaceDuplicates === 'true' || req.body.replaceDuplicates === true || req.query.replaceDuplicates === 'true';
 
     const jobId = await createJob('import-pdf', {
         name: req.file.originalname,
@@ -832,7 +1076,8 @@ router.post('/import-pdf-questions', (req, res, next) => {
         subject: defaultSubject,
         packId,
         testId,
-        expectedCount
+        expectedCount,
+        replaceDuplicates
     });
 
     const reqUser = {
@@ -841,7 +1086,7 @@ router.post('/import-pdf-questions', (req, res, next) => {
     };
 
     setImmediate(() => {
-        runImportPDFJob(jobId, req.file.buffer, defaultCategory, defaultSubject, packId, testId, reqUser, expectedCount, req.startTime)
+        runImportPDFJob(jobId, req.file.buffer, defaultCategory, defaultSubject, packId, testId, reqUser, expectedCount, replaceDuplicates, req.startTime)
             .catch(err => console.error(`[PDF Job ${jobId}] error:`, err));
     });
 

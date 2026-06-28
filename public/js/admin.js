@@ -1137,7 +1137,7 @@ async function handlePdfToTest(input, index, lang = 'en') {
                     btnEn.disabled = false;
                     btnHi.disabled = false;
 
-                    showQuestionsPreviewModal(data.questions, async (editedQuestions, replaceDuplicates) => {
+                    showQuestionsPreviewModal(data.questions, data.stats || {}, async (editedQuestions, replaceDuplicates) => {
                         // ── MERGE TRANSLATIONS IF QUESTIONS ALREADY EXIST ──
                         if (existingQIds.length > 0 && existingQIds.length === editedQuestions.length) {
                             activeStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Merging translations...';
@@ -1937,14 +1937,63 @@ async function handlePdfUpload() {
             throw new Error(data.message || 'No job ID received.');
         }
 
-        status.innerHTML = '<div style="color:var(--primary); font-weight:500;"><i class="fas fa-spinner fa-spin"></i> Processing job: <span class="pdf-job-stage">Queueing...</span> (<span class="pdf-job-pct">0%</span>)</div>';
+        status.innerHTML = `
+            <div class="pdf-progress-container" style="border-top:1px solid var(--border-color); margin-top:20px; padding-top:20px; display:flex; flex-direction:column; gap:15px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.85rem; font-weight:600;">
+                    <span class="pdf-job-stage" style="color:var(--primary);"><i class="fas fa-spinner fa-spin"></i> Processing PDF...</span>
+                    <span class="pdf-job-pct" style="color:var(--text-main);">0%</span>
+                </div>
+                <div style="width:100%; height:8px; background:#e2e8f0; border-radius:4px; overflow:hidden;">
+                    <div class="pdf-job-progress-bar" style="width:0%; height:100%; background:linear-gradient(90deg, #4f46e5, #06b6d4); transition:width 0.3s;"></div>
+                </div>
+                
+                <div class="pdf-job-stats-grid" style="display:none; grid-template-columns: repeat(4, 1fr); gap: 10px; font-size:0.8rem; text-align:center;">
+                    <div style="background:#f1f5f9; padding:8px; border-radius:6px; border:1px solid var(--border-color);">
+                        <div style="color:var(--text-muted); font-size:0.7rem; font-weight:500;">Total</div>
+                        <strong class="stat-total" style="font-size:1.1rem; color:var(--text-main);">0</strong>
+                    </div>
+                    <div style="background:rgba(16, 185, 129, 0.05); padding:8px; border-radius:6px; border:1px solid rgba(16, 185, 129, 0.1);">
+                        <div style="color:#10b981; font-size:0.7rem; font-weight:500;">Valid</div>
+                        <strong class="stat-valid" style="font-size:1.1rem; color:#10b981;">0</strong>
+                    </div>
+                    <div style="background:rgba(245, 158, 11, 0.05); padding:8px; border-radius:6px; border:1px solid rgba(245, 158, 11, 0.1);">
+                        <div style="color:#f59e0b; font-size:0.7rem; font-weight:500;">Duplicates</div>
+                        <strong class="stat-dup" style="font-size:1.1rem; color:#f59e0b;">0</strong>
+                    </div>
+                    <div style="background:rgba(239, 68, 68, 0.05); padding:8px; border-radius:6px; border:1px solid rgba(239, 68, 68, 0.1);">
+                        <div style="color:#ef4444; font-size:0.7rem; font-weight:500;">Warnings</div>
+                        <strong class="stat-warn" style="font-size:1.1rem; color:#ef4444;">0</strong>
+                    </div>
+                </div>
+                
+                <div style="font-size:0.75rem; font-weight:600; color:var(--text-muted);">Execution Logs:</div>
+                <div class="pdf-job-logs-terminal" style="height:120px; background:#0f172a; color:#e2e8f0; border-radius:8px; padding:10px; font-family:monospace; font-size:0.75rem; overflow-y:auto; display:flex; flex-direction:column; gap:4px; border: 1px solid var(--border-color); text-align:left;">
+                    <div>[System] Initializing connection...</div>
+                </div>
+                
+                <div style="display:flex; justify-content:flex-end;">
+                    <button class="btn btn-sm btn-outline danger" id="pdfCancelBtn" style="border-color:#ef4444; color:#ef4444;">
+                        <i class="fas fa-times"></i> Cancel Job
+                    </button>
+                </div>
+            </div>
+        `;
 
         pollJob(data.jobId,
             (progress, stage, logs) => {
                 const stageEl = status.querySelector('.pdf-job-stage');
                 const pctEl = status.querySelector('.pdf-job-pct');
-                if (stageEl) stageEl.textContent = stage;
+                const barEl = status.querySelector('.pdf-job-progress-bar');
+                const terminalEl = status.querySelector('.pdf-job-logs-terminal');
+                
+                if (stageEl) stageEl.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${stage}`;
                 if (pctEl) pctEl.textContent = `${progress}%`;
+                if (barEl) barEl.style.width = `${progress}%`;
+                
+                if (terminalEl && Array.isArray(logs)) {
+                    terminalEl.innerHTML = logs.map(l => `<div style="line-height:1.4;">${escapeHtml(l)}</div>`).join('');
+                    terminalEl.scrollTop = terminalEl.scrollHeight;
+                }
                 btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Parsing... ${progress}%`;
             },
             (result) => {
@@ -1952,7 +2001,7 @@ async function handlePdfUpload() {
                 btn.disabled = false;
                 btn.textContent = 'Import PDF';
 
-                showQuestionsPreviewModal(result.questions, async (editedQuestions, replaceDuplicates) => {
+                showQuestionsPreviewModal(result.questions, result.stats || {}, async (editedQuestions, replaceDuplicates) => {
                     const saveRes = await fetch(`${API_BASE}/questions?replaceDuplicates=${replaceDuplicates}`, {
                         method: 'POST',
                         headers: { 
@@ -2016,6 +2065,36 @@ async function handlePdfUpload() {
                 btn.textContent = 'Try Again';
             }
         );
+
+        const cancelBtn = status.querySelector('#pdfCancelBtn');
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', async () => {
+                if (confirm('Are you sure you want to cancel the PDF import job?')) {
+                    try {
+                        cancelBtn.disabled = true;
+                        cancelBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Cancelling...';
+                        const cancelRes = await fetch(`${API_BASE}/pdf-jobs/${data.jobId}/cancel`, {
+                            method: 'POST',
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        const cancelData = await cancelRes.json();
+                        if (cancelData.ok) {
+                            status.innerHTML = `<span style="color:var(--danger)">⚠️ Job cancelled by administrator.</span>`;
+                            btn.disabled = false;
+                            btn.textContent = 'Import PDF';
+                        } else {
+                            alert('Failed to cancel job: ' + (cancelData.message || 'Unknown error'));
+                            cancelBtn.disabled = false;
+                            cancelBtn.innerHTML = '<i class="fas fa-times"></i> Cancel Job';
+                        }
+                    } catch (cancelErr) {
+                        alert('Error during cancellation: ' + cancelErr.message);
+                        cancelBtn.disabled = false;
+                        cancelBtn.innerHTML = '<i class="fas fa-times"></i> Cancel Job';
+                    }
+                }
+            });
+        }
     } catch (e) {
         status.innerHTML = `<span style="color:var(--danger)">Failed to process PDF: ${e.message}</span>`;
         btn.disabled = false;
@@ -2722,7 +2801,11 @@ async function deleteAdminNotification(id) {
 }
 
 // ── Universal PDF Preview Modal and Edit System ─────────────────────────
-window.showQuestionsPreviewModal = function(questions, onConfirm) {
+window.showQuestionsPreviewModal = function(questions, stats, onConfirm) {
+    if (typeof stats === 'function') {
+        onConfirm = stats;
+        stats = {};
+    }
     window.currentPreviewQuestions = JSON.parse(JSON.stringify(questions));
     window.confirmPreviewImportCallback = onConfirm;
 
@@ -2737,10 +2820,45 @@ window.showQuestionsPreviewModal = function(questions, onConfirm) {
                 <button class="btn btn-icon" onclick="closeModal()">×</button>
             </div>
             
+            <div class="stats-bar" style="padding: 12px 24px; background: white; border-bottom: 1px solid var(--border-color); display: grid; grid-template-columns: repeat(8, 1fr); gap: 10px; font-size: 0.75rem; text-align: center; font-weight: 500;">
+                <div style="background: #f1f5f9; padding: 6px; border-radius: 6px; border: 1px solid var(--border-color);">
+                    <div style="color: var(--text-muted); font-size: 0.65rem;">Total</div>
+                    <strong id="stats-total" style="font-size: 1rem; color: var(--text-main); font-weight: 700;">${stats.total || questions.length}</strong>
+                </div>
+                <div style="background: rgba(16, 185, 129, 0.05); padding: 6px; border-radius: 6px; border: 1px solid rgba(16, 185, 129, 0.1);">
+                    <div style="color: #10b981; font-size: 0.65rem;">Valid</div>
+                    <strong id="stats-valid" style="font-size: 1rem; color: #10b981; font-weight: 700;">${stats.valid !== undefined ? stats.valid : questions.length}</strong>
+                </div>
+                <div style="background: rgba(239, 68, 68, 0.05); padding: 6px; border-radius: 6px; border: 1px solid rgba(239, 68, 68, 0.1);">
+                    <div style="color: #ef4444; font-size: 0.65rem;">Warnings</div>
+                    <strong id="stats-warning" style="font-size: 1rem; color: #ef4444; font-weight: 700;">${stats.warning !== undefined ? stats.warning : 0}</strong>
+                </div>
+                <div style="background: rgba(245, 158, 11, 0.05); padding: 6px; border-radius: 6px; border: 1px solid rgba(245, 158, 11, 0.1);">
+                    <div style="color: #f59e0b; font-size: 0.65rem;">Duplicates</div>
+                    <strong id="stats-duplicate" style="font-size: 1rem; color: #f59e0b; font-weight: 700;">${stats.duplicate !== undefined ? stats.duplicate : 0}</strong>
+                </div>
+                <div style="background: #eff6ff; padding: 6px; border-radius: 6px; border: 1px solid #bfdbfe;">
+                    <div style="color: #1d4ed8; font-size: 0.65rem;">OCR Run</div>
+                    <strong id="stats-ocr" style="font-size: 1rem; color: #1d4ed8; font-weight: 700;">${stats.ocr !== undefined ? stats.ocr : 0}</strong>
+                </div>
+                <div style="background: rgba(239, 68, 68, 0.03); padding: 6px; border-radius: 6px; border: 1px solid rgba(239, 68, 68, 0.08);">
+                    <div style="color: #ef4444; font-size: 0.65rem;">Corrupted ()</div>
+                    <strong id="stats-encoding" style="font-size: 1rem; color: #ef4444; font-weight: 700;">${stats.encodingErrors !== undefined ? stats.encodingErrors : 0}</strong>
+                </div>
+                <div style="background: rgba(245, 158, 11, 0.03); padding: 6px; border-radius: 6px; border: 1px solid rgba(245, 158, 11, 0.08);">
+                    <div style="color: #f59e0b; font-size: 0.65rem;">Short Options</div>
+                    <strong id="stats-missing-options" style="font-size: 1rem; color: #f59e0b; font-weight: 700;">${stats.missingOptions !== undefined ? stats.missingOptions : 0}</strong>
+                </div>
+                <div style="background: rgba(239, 68, 68, 0.03); padding: 6px; border-radius: 6px; border: 1px solid rgba(239, 68, 68, 0.08);">
+                    <div style="color: #ef4444; font-size: 0.65rem;">No Ans</div>
+                    <strong id="stats-missing-answers" style="font-size: 1rem; color: #ef4444; font-weight: 700;">${stats.missingAnswers !== undefined ? stats.missingAnswers : 0}</strong>
+                </div>
+            </div>
+            
             <div class="preview-actions" style="padding: 15px 24px; background: #f8fafc; border-bottom: 1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; gap: 15px; flex-wrap: wrap;">
                 <div style="display:flex; gap:15px; align-items:center;">
                     <span class="badge badge-info" style="background:#e0e7ff; color:#4f46e5; padding:6px 12px; border-radius:20px; font-weight:600; font-size:0.8rem;">
-                        Total: <span id="preview-total-count">0</span>
+                        Preview Count: <span id="preview-total-count">0</span>
                     </span>
                     <span class="badge badge-danger" id="preview-warning-badge" style="background:#fee2e2; color:#ef4444; padding:6px 12px; border-radius:20px; font-weight:600; font-size:0.8rem; display:none;">
                         Warnings: <span id="preview-warning-count">0</span>
