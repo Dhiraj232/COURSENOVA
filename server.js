@@ -1,4 +1,26 @@
 require('dotenv').config();
+
+// Global Exception Handlers defined at the very top to protect imports and startup sequence
+process.on('uncaughtException', err => {
+  console.error('❌ UNCAUGHT EXCEPTION (non-fatal):', err?.name, err?.message, err?.stack);
+  if (err?.code === 'EADDRINUSE' || err?.code === 'EACCES') {
+    console.error('Fatal port error — exiting.');
+    process.exit(1);
+  }
+});
+
+process.on('unhandledRejection', err => {
+  console.error('⚠️ UNHANDLED REJECTION (non-fatal, server continues):', err?.name, err?.message, err?.stack);
+});
+
+// Required Environment Validation
+const requiredEnv = ['MONGO_URI', 'JWT_SECRET', 'CASHFREE_APP_ID', 'CASHFREE_SECRET_KEY'];
+requiredEnv.forEach(envVar => {
+  if (!process.env[envVar]) {
+    console.warn(`⚠️ WARNING: Required environment variable ${envVar} is missing!`);
+  }
+});
+
 const express = require('express');
 const compression = require('compression');
 const fs = require('fs');
@@ -15,9 +37,6 @@ const xss = require('xss-clean');
 const mongoSanitize = require('express-mongo-sanitize');
 const { logSuspiciousActivity, paymentLimiter, preventInjection } = require('./middleware/security');
 const notificationService = require('./services/notificationService');
-
-
-// Environment variables loaded at the very top
 
 const mongoose = require('mongoose');
 const session = require('express-session');
@@ -49,43 +68,24 @@ const dashboardRoutes = require('./routes/dashboardRoutes');
 // ─── Environment Configuration Setup ────────────────────────────
 const isProduction = process.env.NODE_ENV === 'production';
 
-if (!process.env.MONGO_URI) console.warn('⚠️ MONGO_URI is missing.');
-if (!process.env.GOOGLE_CLIENT_ID) console.warn('⚠️ GOOGLE_CLIENT_ID is missing. Google OAuth will fail.');
-if (!process.env.GOOGLE_CLIENT_SECRET) console.warn('⚠️ GOOGLE_CLIENT_SECRET is missing. Google OAuth will fail.');
-if (!process.env.JWT_SECRET) console.warn('⚠️ JWT_SECRET is missing. Using insecure fallback secret.');
-if (!process.env.BASE_URL) console.warn('⚠️ BASE_URL is missing. Webhook notify_url will default to localhost — payments WON\'T work in production!');
-// ─── Cashfree Env Validation ──────────────────────────────────────
-if (!process.env.CASHFREE_APP_ID) console.error('❌ CASHFREE_APP_ID is missing! Payments will fail.');
-if (!process.env.CASHFREE_SECRET_KEY) console.error('❌ CASHFREE_SECRET_KEY is missing! Webhook verification will fail.');
-if (!process.env.CASHFREE_ENV) {
-    console.warn('⚠️ CASHFREE_ENV is missing! Defaulting to SANDBOX.');
-} else {
-    console.log(`ℹ️ Cashfree: Configured to use environment mode: ${process.env.CASHFREE_ENV}`);
-}
-if (process.env.BASE_URL && process.env.BASE_URL.includes('localhost') && process.env.NODE_ENV === 'production') {
-    console.error('❌ BASE_URL is still localhost in production! Cashfree webhook notify_url will be unreachable.');
-}
-
-// ─── MongoDB Connection ───────────────────────────────────────
+// ─── MongoDB Connection (Asynchronous, Non-Blocking) ───────────
 const MONGO_URI = process.env.MONGO_URI;
 
 if (!MONGO_URI) {
-  console.error('❌ CRITICAL ERROR: MONGO_URI missing in production! Exiting...');
-  process.exit(1);
+  console.error('❌ CRITICAL ERROR: MONGO_URI is missing! Server will run but DB calls will fail.');
+} else {
+  mongoose.connect(MONGO_URI, {
+      maxPoolSize: 20,              // Keep up to 20 connections open in pool
+      minPoolSize: 5,               // Always maintain at least 5 connections
+      socketTimeoutMS: 45000,       // Close sockets after 45s of inactivity
+      serverSelectionTimeoutMS: 5000, // Timeout after 5s if replica set is down
+      family: 4                     // Force IPv4 to skip potential DNS lags
+  })
+    .then(() => console.log('✅ MongoDB Connected'))
+    .catch(err => {
+        console.error('❌ MongoDB Connection Failed:', err.message);
+    });
 }
-
-mongoose.connect(MONGO_URI, {
-    maxPoolSize: 20,              // Keep up to 20 connections open in pool
-    minPoolSize: 5,               // Always maintain at least 5 connections
-    socketTimeoutMS: 45000,       // Close sockets after 45s of inactivity
-    serverSelectionTimeoutMS: 5000, // Timeout after 5s if replica set is down
-    family: 4                     // Force IPv4 to skip potential DNS lags
-})
-  .then(() => console.log('✅ MongoDB connected:', MONGO_URI.split('@').pop() || MONGO_URI))
-  .catch(err => {
-      console.error('❌ MongoDB connection error:', err.message);
-      if (isProduction) process.exit(1);
-  });
 
 const DATA_FILE = path.join(__dirname, 'data', 'users.json');
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || 'DUMMY_CLIENT_ID';
@@ -180,17 +180,20 @@ const globalErrorHandler = require('./middleware/errorMiddleware');
 // ✅ FIXED: Only log — do NOT exit. Exiting on every uncaught exception kills
 // the server over routine request errors (e.g. bad ObjectId cast, missing header).
 // Express's globalErrorHandler and catchAsync already catch route-level errors.
-process.on('uncaughtException', err => {
-  console.error('❌ UNCAUGHT EXCEPTION (non-fatal):', err.name, err.message);
-  // Only exit on truly fatal startup errors (listen errors, etc.)
-  if (err.code === 'EADDRINUSE' || err.code === 'EACCES') {
-    console.error('Fatal port error — exiting.');
-    process.exit(1);
-  }
-  // Otherwise: log and continue
-});
-
 const app = express();
+
+// Lightweight Health Endpoint defined before any other middleware or routes
+app.get('/health', (req, res) => {
+    res.status(200).json({
+        success: true,
+        status: 'OK',
+        uptime: process.uptime(),
+        timestamp: new Date()
+    });
+});
+console.log('✅ Server Started');
+console.log('✅ Health endpoint ready');
+
 app.use(compression());
 // Global Permissions-Policy header
 app.use((req, res, next) => {
@@ -309,10 +312,7 @@ app.get('/sitemap.xml', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'sitemap.xml'));
 });
 
-// ─── Health Check (bypasses ALL middleware — keeps Render service alive) ──────
-app.get('/health', (req, res) => {
-    res.status(200).json({ status: 'ok', uptime: process.uptime() });
-});
+
 
 // ─── 2. Body Parsers ─────────────────────────────────────────────────────────
 app.use(express.json({ 
@@ -847,18 +847,8 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
 const server = require('http').createServer(app);
-
-// Handle Unhandled Rejections (Asynchronous errors)
-// ✅ FIXED: Do NOT shut down the server on unhandled rejections.
-// This was crashing the entire server every time a route threw an async error
-// (e.g. Activity.create failing, a bad MongoDB query in a route handler).
-// Express catchAsync + globalErrorHandler already deal with route-level errors.
-process.on('unhandledRejection', err => {
-  console.error('⚠️ UNHANDLED REJECTION (non-fatal, server continues):', err?.name, err?.message);
-  // Intentionally NOT calling process.exit() — keep the server alive
-});
 const io = require('socket.io')(server, {
   cors: {
     origin: [
@@ -894,7 +884,8 @@ io.on('connection', (socket) => {
 // Attach socketMap to app for use in routes
 app.set('socketMap', socketMap);
 
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
+    console.log(`Listening on PORT ${PORT}`);
     console.log(`[${new Date().toLocaleTimeString()}] COURSENOVA Community API & Chat listening on port ${PORT}`);
 
     // Set server timeout to 5 minutes to accommodate large PDF uploads and background saves
