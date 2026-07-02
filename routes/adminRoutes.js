@@ -1373,12 +1373,22 @@ router.delete('/courses/:id', requireAdmin, catchAsync(async (req, res) => {
 
 // ── 3. QUESTION MANAGEMENT ─────────────────────────────────────────────
 router.get('/questions', requireAdmin, catchAsync(async (req, res) => {
-    const { category, subject } = req.query;
+    const { category, subject, search } = req.query;
     const filter = {};
     if (category) filter.category = category;
     if (subject) filter.subject = subject;
 
-    const questions = await PracticeQuestion.find(filter).limit(100);
+    if (search) {
+        filter.$or = [
+            { question: { $regex: search, $options: 'i' } },
+            { question_en: { $regex: search, $options: 'i' } },
+            { question_hi: { $regex: search, $options: 'i' } },
+            { category: { $regex: search, $options: 'i' } },
+            { subject: { $regex: search, $options: 'i' } }
+        ];
+    }
+
+    const questions = await PracticeQuestion.find(filter).sort({ createdAt: -1 }).limit(100);
     res.json({ ok: true, questions });
 }));
 
@@ -1649,6 +1659,7 @@ router.post('/mock-tests', requireAdmin, catchAsync(async (req, res) => {
 }));
 
 router.put('/mock-tests/:id', requireAdmin, catchAsync(async (req, res) => {
+    console.log(`[PUT /mock-tests/${req.params.id}] Received request body:`, JSON.stringify(req.body, null, 2));
     // ── Auto-Pruning Replaced/Orphaned Questions ──
     const oldPack = await MockTestPack.findById(req.params.id);
     if (oldPack) {

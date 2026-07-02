@@ -236,6 +236,76 @@ async function renderQuestionsUI() {
     setTimeout(() => searchQuestions(''), 100);
 }
 
+async function searchQuestions(query = null) {
+    const resultsContainer = document.getElementById('questions-results');
+    if (!resultsContainer) return;
+
+    if (query === null) {
+        query = (document.getElementById('q-search')?.value || '').trim();
+    }
+
+    resultsContainer.innerHTML = `
+        <div style="padding:40px; text-align:center; color:var(--text-muted);">
+            <i class="fas fa-spinner fa-spin"></i> Searching questions...
+        </div>
+    `;
+
+    try {
+        let url = `${API_BASE}/questions`;
+        if (query) {
+            url += `?search=${encodeURIComponent(query)}`;
+        }
+        
+        const data = await fetchData(url);
+        if (!data.ok || !data.questions || data.questions.length === 0) {
+            resultsContainer.innerHTML = `
+                <div style="padding:40px; text-align:center; color:var(--text-muted);">
+                    <i class="fas fa-search" style="font-size: 2rem; margin-bottom: 10px; opacity:0.3;"></i>
+                    <p>No questions found.</p>
+                </div>
+            `;
+            return;
+        }
+
+        resultsContainer.innerHTML = `
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th style="width: 50%;">Question</th>
+                        <th>Category</th>
+                        <th>Subject</th>
+                        <th>Difficulty</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${data.questions.map(q => `
+                        <tr>
+                            <td>
+                                <div style="font-weight: 600; margin-bottom: 4px;">${escapeHtml(q.question_en || q.question)}</div>
+                                ${q.question_hi ? `<div style="color: var(--text-muted); font-size: 0.85rem; border-top: 1px dashed var(--border); padding-top:4px;">${escapeHtml(q.question_hi)}</div>` : ''}
+                            </td>
+                            <td><span class="admin-badge">${q.category}</span></td>
+                            <td>${q.subject}</td>
+                            <td>
+                                <span class="admin-badge" style="background:${q.difficulty === 'Hard' ? '#fee2e2' : q.difficulty === 'Medium' ? '#fef3c7' : '#ecfdf5'}; color:${q.difficulty === 'Hard' ? '#ef4444' : q.difficulty === 'Medium' ? '#d97706' : '#10b981'}">
+                                    ${q.difficulty}
+                                </span>
+                            </td>
+                        </tr>
+                    `).join('')}
+                </tbody>
+            </table>
+        `;
+    } catch (err) {
+        resultsContainer.innerHTML = `
+            <div style="padding:40px; text-align:center; color:var(--danger);">
+                <i class="fas fa-exclamation-triangle" style="font-size: 2rem; margin-bottom: 10px;"></i>
+                <p>Failed to load questions: ${err.message}</p>
+            </div>
+        `;
+    }
+}
+
 function renderDailyChallenge(challenges) {
     const content = document.getElementById('content-area');
     content.innerHTML = `
@@ -1205,7 +1275,7 @@ async function handlePdfToTest(input, index, lang = 'en') {
                             subjectName = testTitleText.split(':').pop().trim();
                         }
 
-                        const mappedQuestions = editedQuestions.map(q => {
+                        const mappedQuestions = editedQuestions.map((q, idx) => {
                             const opts = q.options || [q.optionA, q.optionB, q.optionC, q.optionD, q.optionE].filter(Boolean);
                             const correctIdx = q.correctIndex !== undefined ? q.correctIndex : 0;
                             const correctAnswerText = opts[correctIdx] || '';
@@ -1221,6 +1291,7 @@ async function handlePdfToTest(input, index, lang = 'en') {
                                 subject: q.subject || subjectName,
                                 difficulty: q.difficulty || 'Medium',
                                 image: q.image || '',
+                                questionNumber: q.questionNumber !== undefined ? q.questionNumber : (idx + 1),
                                 isMockTestOnly: true
                             };
                         });

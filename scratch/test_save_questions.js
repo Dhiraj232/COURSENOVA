@@ -54,6 +54,7 @@ async function run() {
             correctAnswer: "4",
             category: "Mock Test",
             subject: "Mathematics",
+            questionNumber: i + 1,
             isMockTestOnly: true
         });
     }
