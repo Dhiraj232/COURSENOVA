@@ -908,7 +908,6 @@ async function runOCR(pngBuffer, logs) {
 async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgress = null) {
     const startTime = Date.now();
     let totalPages = 1;
-    let ocrQuestionsCount = 0;
     const logs = [];
     let questions = [];
     const allImages = [];
@@ -916,7 +915,13 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
     const defaultCategory = defaults.category || 'General';
     const defaultSubject = defaults.subject || 'General';
 
-    // 1. Load PDF.js document
+    // 1. Check for Gemini API Key
+    if (!process.env.GEMINI_API_KEY) {
+        logs.push('[CRITICAL ERROR] GEMINI_API_KEY environment variable is not defined.');
+        throw new Error('GEMINI_API_KEY environment variable is not defined. Please define it in your .env file to enable PDF question parsing.');
+    }
+
+    // 2. Load PDF.js document to extract metadata & inline images
     if (onProgress) onProgress(10, 'Loading PDF', 'Loading PDF document stream...');
     const loadingTask = pdfjs.getDocument({
         data: new Uint8Array(pdfBuffer),
@@ -925,131 +930,44 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
     });
     const doc = await loadingTask.promise;
     totalPages = doc.numPages;
-    logs.push(`[Hybrid Parsing] Loaded PDF document. Total pages: ${totalPages}`);
+    logs.push(`[AI PDF Parser] Loaded PDF document. Total pages: ${totalPages}`);
 
-    // 2. Loop through pages to extract sorted column text and images
-    let accumulatedText = '';
-    let usedOcrForAnyPage = false;
-
-    async function processPages(forceOcr = false) {
-        accumulatedText = '';
-        allImages.length = 0; // Clear images if we rerun
-        for (let pNum = 1; pNum <= totalPages; pNum++) {
-            if (onProgress) {
-                const stageText = forceOcr ? `OCR processing page ${pNum}/${totalPages}` : `Processing page ${pNum}/${totalPages}`;
-                onProgress(Math.floor(10 + (pNum / totalPages) * 60), stageText, `Extracting text and images from page ${pNum}...`);
-            }
-            
+    // 3. Extract page images for diagram mapping (optional)
+    if (onProgress) onProgress(20, 'Extracting Images', 'Scanning document for inline images and diagrams...');
+    for (let pNum = 1; pNum <= totalPages; pNum++) {
+        try {
             const page = await doc.getPage(pNum);
-            const textContent = await page.getTextContent();
-            
-            // Recover column layout and sort
-            const pageRawText = extractTextFromPageItems(textContent.items, page.view[2]);
-            
-            // Image extraction on page
             const pageImages = await extractImagesFromPage(page, pNum);
             allImages.push(...pageImages);
-            
-            // Measure selectable text quality (force OCR if parameter is true)
-            const quality = forceOcr ? 0 : assessTextQuality(pageRawText);
-            let pageText = '';
-
-            if (quality >= 0.90) {
-                pageText = pageRawText;
-                logs.push(`Page ${pNum}: Selectable text used (quality ${Math.floor(quality * 100)}%)`);
-            } else {
-                // OCR fallback
-                usedOcrForAnyPage = true;
-                logs.push(`Page ${pNum}: Running OCR fallback (quality score: ${Math.floor(quality * 100)}%)...`);
-                
-                try {
-                    // Enhanced high-res rendering at scale 3.0
-                    const scale = 3.0;
-                    const viewport = page.getViewport({ scale });
-                    const canvas = createCanvas(viewport.width, viewport.height);
-                    const context = canvas.getContext('2d');
-                    await page.render({ canvasContext: context, viewport }).promise;
-                    
-                    // Preprocessing (Grayscale + High Contrast Thresholding for noise & watermark removal)
-                    const imgData = context.getImageData(0, 0, canvas.width, canvas.height);
-                    const data = imgData.data;
-                    for (let i = 0; i < data.length; i += 4) {
-                        const r = data[i];
-                        const g = data[i + 1];
-                        const b = data[i + 2];
-                        const v = 0.2126 * r + 0.7152 * g + 0.0722 * b;
-                        const binarized = v < 180 ? 0 : 255;
-                        data[i] = binarized;
-                        data[i + 1] = binarized;
-                        data[i + 2] = binarized;
-                    }
-                    context.putImageData(imgData, 0, 0);
-                    
-                    const pngBuffer = canvas.toBuffer('image/png');
-                    const ocrText = await runOCR(pngBuffer, logs);
-                    pageText = ocrText;
-                    ocrQuestionsCount++;
-                } catch (ocrErr) {
-                    console.error(`[OCR Error] Page ${pNum} failed:`, ocrErr.message);
-                    logs.push(`Page ${pNum}: OCR failed (${ocrErr.message}). Using fallback selectable text.`);
-                    pageText = pageRawText;
-                }
-            }
-
-            // Embed page boundaries and OCR flag for accurate image mapping & frontend highlighting
-            accumulatedText += `\n[PAGE_MARKER_${pNum}${quality >= 0.90 ? '' : '_OCR'}]\n` + pageText;
+        } catch (imgErr) {
+            logs.push(`[Image Extraction Warning] Page ${pNum} images extraction failed: ${imgErr.message}`);
         }
     }
+    logs.push(`[AI PDF Parser] Extracted ${allImages.length} inline images/diagrams from document.`);
 
-    // Process using Hybrid approach
-    await processPages(false);
-
-    // 3. Normalize text and tables (Step 4 of pipeline)
-    if (onProgress) onProgress(75, 'Normalizing text', 'Cleaning Unicode, CID fonts, and symbols...');
-    let cleanText = normalizeText(accumulatedText);
-    cleanText = convertTextTablesToHtml(cleanText);
-
-    // 4. Parse layout text into structured questions
-    if (onProgress) onProgress(80, 'Parsing questions', 'Splitting questions, options, and boundaries...');
-    questions = parseQuestionsHeuristically(cleanText, defaultCategory, defaultSubject);
-    logs.push(`[Parser] Extracted ${questions.length} questions from parsed text layout.`);
-
-    // 4b. OCR Rerun Fallback check
-    // If we didn't use OCR for any page, but we got 0 questions, or the count is very low (< 5)
-    // while the expected count is high (e.g. >= 10), then rerun using full OCR on all pages!
-    if (!usedOcrForAnyPage && questions.length < 5 && (expectedCount >= 10 || totalPages >= 2)) {
-        logs.push(`[Hybrid Parsing Alert] Selectable text yielded only ${questions.length} questions. Rerunning with full OCR fallback...`);
-        ocrQuestionsCount = 0;
-        await processPages(true);
-        cleanText = normalizeText(accumulatedText);
-        cleanText = convertTextTablesToHtml(cleanText);
-        questions = parseQuestionsHeuristically(cleanText, defaultCategory, defaultSubject);
-        logs.push(`[Parser] After OCR fallback, extracted ${questions.length} questions.`);
+    // 4. Directly call Gemini API to parse PDF questions
+    if (onProgress) onProgress(50, 'Gemini AI Parsing', 'Analyzing PDF and extracting structured questions, options, and correct answers with Gemini...');
+    logs.push('[AI PDF Parser] Sending PDF to Gemini API for high-precision extraction...');
+    
+    try {
+        const aiQuestions = await extractQuestionsFromPdf(pdfBuffer, {
+            category: defaultCategory,
+            subject: defaultSubject
+        });
+        
+        logs.push(`[AI PDF Parser] Gemini API completed. Received ${aiQuestions.length} raw questions.`);
+        
+        // 5. Normalize questions
+        if (onProgress) onProgress(80, 'Normalizing Questions', 'Normalizing questions and verifying schema structure...');
+        questions = normalizeAIQuestions(aiQuestions, defaultCategory, defaultSubject);
+    } catch (aiErr) {
+        console.error('[AI PDF Parser] Gemini parsing failed:', aiErr.message);
+        logs.push(`[AI PDF Parser] Gemini parsing failed: ${aiErr.message}`);
+        throw new Error('Gemini API extraction failed: ' + aiErr.message);
     }
 
-    // AI Recovery fallback (if regex parsing failed entirely or found extremely few questions)
-    const tooFew = questions.length < (expectedCount * 0.4);
-    if ((questions.length === 0 || tooFew) && process.env.GEMINI_API_KEY) {
-        logs.push(`[AI Recovery] Regex parser extracted only ${questions.length} questions. Running Gemini layout recovery...`);
-        if (onProgress) onProgress(85, 'Running AI Recovery', `Regex extracted only ${questions.length} questions. Running Gemini AI layout recovery...`);
-        try {
-            const aiQuestions = await extractQuestionsFromPdf(pdfBuffer, {
-                category: defaultCategory,
-                subject: defaultSubject
-            });
-            const normalized = normalizeAIQuestions(aiQuestions, defaultCategory, defaultSubject);
-            if (normalized.length > 0) {
-                questions = normalized;
-                logs.push(`[AI Recovery] AI Recovery succeeded. Extracted ${questions.length} questions.`);
-            }
-        } catch (aiErr) {
-            console.error('[AI Recovery] Gemini recovery failed:', aiErr.message);
-            logs.push(`[AI Recovery] Gemini recovery failed: ${aiErr.message}`);
-        }
-    }
-
-    // 5. Map page images to questions
-    if (onProgress) onProgress(90, 'Mapping images', 'Associating extracted layout images to questions...');
+    // 6. Map page images to questions sequentially
+    if (onProgress) onProgress(90, 'Mapping Images', 'Mapping extracted diagrams to questions...');
     
     // Save images to disk
     const uploadDir = path.join(__dirname, '../public/uploads/questions');
@@ -1067,7 +985,7 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
             pageNum: img.pageNum
         });
     });
-    logs.push(`[Images] Saved ${savedImages.length} extracted images to disk.`);
+    logs.push(`[AI PDF Parser] Saved ${savedImages.length} extracted images to disk.`);
 
     // Match page images sequentially for each page
     for (let p = 1; p <= totalPages; p++) {
@@ -1082,13 +1000,13 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
         });
     }
 
-    // Keep pageNum in question object for frontend preview (Mongoose will ignore it when saving)
+    // Keep pageNum in question object for frontend preview
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
-    logs.push(`[Job Complete] Parsing completed successfully in ${elapsed}s.`);
+    logs.push(`[Job Complete] Gemini parsing completed successfully in ${elapsed}s.`);
 
-    // We store logs directly in return metadata
+    // Store logs in return metadata
     questions.parserLogs = logs;
-    questions.ocrQuestionsCount = ocrQuestionsCount;
+    questions.ocrQuestionsCount = 0; // Gemini does not need legacy Tesseract OCR run count
     return questions;
 }
 
@@ -1153,6 +1071,7 @@ function normalizeAIQuestions(aiQuestions, defaultCategory, defaultSubject) {
 
         return {
             questionNumber: q.questionNumber || (idx + 1),
+            pageNum: q.pageNum || 1,
             question: q.question || q.question_en || '',
             question_en: q.question_en || q.question || '',
             question_hi: q.question_hi || '', // NEVER copy English to Hindi

@@ -35,6 +35,8 @@ Preserve all mathematical formulas in standard LaTeX format (e.g. $x^2 + y^2 = z
 Preserve tables and diagrams as Markdown or HTML representations inside the question text.
 
 For each MCQ, construct a JSON object containing the exact fields:
+- questionNumber: The integer question number detected in the PDF (e.g. 1, 2, 3, etc.).
+- pageNum: The 1-based page number of the PDF where this question is found (MUST be an integer).
 - question: The main question text in English. If the PDF has bilingual questions (English and Hindi), this should be the English version. If only Hindi is available, this should be in Hindi.
 - question_en: The English version of the question text. If the PDF only has Hindi, translate the question to English here.
 - question_hi: The Hindi version of the question text. If the PDF only has English, translate the question to Hindi here.
