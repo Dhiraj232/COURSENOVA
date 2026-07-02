@@ -358,8 +358,10 @@
         }
 
         function renderQuestion(index) {
+            if (!questions || questions.length === 0) return;
             currentIndex = index;
             const q = questions[index];
+            if (!q) return;
             
             let baseQ = q.question || '';
             let baseQHi = q.question_hi || '';
