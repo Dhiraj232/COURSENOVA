@@ -3038,7 +3038,7 @@ window.showQuestionsPreviewModal = function(questions, stats, onConfirm) {
             </div>
         </div>
     `;
-    modalContainer.classList.add('active');
+    previewContainer.classList.add('active');
     renderPreviewList();
 
     // Auto-scroll to first error card on load
