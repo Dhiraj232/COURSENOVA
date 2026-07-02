@@ -1,64 +1,82 @@
 PDF loaded. Starting parser...
 [Progress 10%] Stage: Loading PDF | Log: Loading PDF document stream...
 [Progress 20%] Stage: Extracting Images | Log: Scanning document for inline images and diagrams...
-[Progress 50%] Stage: Gemini AI Parsing | Log: Analyzing PDF and extracting structured questions, options, and correct answers with Gemini...
-[Progress 80%] Stage: Normalizing Questions | Log: Normalizing questions and verifying schema structure...
+[Progress 50%] Stage: Extracting PDF Text | Log: Extracting text page-by-page (with OCR fallback for custom fonts)...
+[Progress 51%] Stage: Extracting Text | Log: Extracting page 1/22...
+[Progress 52%] Stage: Extracting Text | Log: Extracting page 2/22...
+[Progress 54%] Stage: Extracting Text | Log: Extracting page 3/22...
+[Progress 55%] Stage: Extracting Text | Log: Extracting page 4/22...
+[Progress 56%] Stage: Extracting Text | Log: Extracting page 5/22...
+[Progress 58%] Stage: Extracting Text | Log: Extracting page 6/22...
+[Progress 59%] Stage: Extracting Text | Log: Extracting page 7/22...
+[Progress 60%] Stage: Extracting Text | Log: Extracting page 8/22...
+[Progress 62%] Stage: Extracting Text | Log: Extracting page 9/22...
+[Progress 63%] Stage: Extracting Text | Log: Extracting page 10/22...
+[Progress 65%] Stage: Extracting Text | Log: Extracting page 11/22...
+[Progress 66%] Stage: Extracting Text | Log: Extracting page 12/22...
+[Progress 67%] Stage: Extracting Text | Log: Extracting page 13/22...
+[Progress 69%] Stage: Extracting Text | Log: Extracting page 14/22...
+[Progress 70%] Stage: Extracting Text | Log: Extracting page 15/22...
+[Progress 71%] Stage: Extracting Text | Log: Extracting page 16/22...
+[Progress 73%] Stage: Extracting Text | Log: Extracting page 17/22...
+[Progress 74%] Stage: Extracting Text | Log: Extracting page 18/22...
+[Progress 75%] Stage: Extracting Text | Log: Extracting page 19/22...
+[Progress 77%] Stage: Extracting Text | Log: Extracting page 20/22...
+[Progress 78%] Stage: Extracting Text | Log: Extracting page 21/22...
+[Progress 80%] Stage: Extracting Text | Log: Extracting page 22/22...
+[Progress 70%] Stage: Heuristic Parsing | Log: Running local heuristic rule engine to find MCQ questions...
+[Progress 85%] Stage: Normalizing Questions | Log: Standardizing questions schema structure...
 [Progress 90%] Stage: Mapping Images | Log: Mapping extracted diagrams to questions...
 
 =======================================
-Parser complete! Total questions extracted: 13
+Parser complete! Total questions extracted: 77
 =======================================
 
 --- Sample Question 1 ---
 {
   "questionNumber": 1,
   "pageNum": 2,
-  "question": "Select the option that is related to the fifth word in the same way as the fourth word is related to the third word and the second word is related to the first word.\nBIHAR : PATNA :: JHARKHAND : RANCHI :: RAJASTHAN : ?",
-  "question_en": "Select the option that is related to the fifth word in the same way as the fourth word is related to the third word and the second word is related to the first word.\nBIHAR : PATNA :: JHARKHAND : RANCHI :: RAJASTHAN : ?",
-  "question_hi": "उस विकल्प का चयन कीजिए जो पांचवें शब्द से उसी प्रकार संबंधित है जैसे चौथा शब्द तीसरे शब्द से संबंधित है और दूसरा शब्द पहले शब्द से संबंधित है।\nBIHAR : PATNA :: JHARKHAND : RANCHI :: RAJASTHAN : ?",
+  "question": "Select the option that is related to the \u0000 fth word in ihe same way as the fourth word is related to the third word and the second word is related to the \u0000 rst word. BIHAR : PATNA :: JHARKHAND : RANCHI :: RAJASTHAN : ?",
+  "question_en": "Select the option that is related to the \u0000 fth word in ihe same way as the fourth word is related to the third word and the second word is related to the \u0000 rst word. BIHAR : PATNA :: JHARKHAND : RANCHI :: RAJASTHAN : ?",
+  "question_hi": "",
   "optionA": "UDAIPUR",
   "optionB": "JAIPUR",
   "optionC": "JODHPUR",
-  "optionD": "MANIPUR",
+  "optionD": "MANIPUR SSC GD Free App",
   "optionE": "",
   "optionF": "",
   "options": [
     "UDAIPUR",
     "JAIPUR",
     "JODHPUR",
-    "MANIPUR"
+    "MANIPUR SSC GD Free App"
   ],
   "options_en": [
     "UDAIPUR",
     "JAIPUR",
     "JODHPUR",
-    "MANIPUR"
+    "MANIPUR SSC GD Free App"
   ],
-  "options_hi": [
-    "उदयपुर",
-    "जयपुर",
-    "जोधपुर",
-    "मणिपुर"
-  ],
-  "answer": "B",
-  "correctAnswer": "JAIPUR",
-  "correctIndex": 1,
-  "explanation": "The logic is: State : Capital. Patna is the capital of Bihar, Ranchi is the capital of Jharkhand, and Jaipur is the capital of Rajasthan.",
-  "explanation_hi": "तर्क इस प्रकार है: राज्य : राजधानी। पटना बिहार की राजधानी है, रांची झारखंड की राजधानी है, और जयपुर राजस्थान की राजधानी है।",
-  "language": "Bilingual",
-  "image": "/uploads/questions/extracted_1782967107354_img_p2_2.jpg",
+  "options_hi": [],
+  "answer": "A",
+  "correctAnswer": "UDAIPUR",
+  "correctIndex": 0,
+  "explanation": "",
+  "explanation_hi": "",
+  "language": "English",
+  "image": "/uploads/questions/extracted_1783004692058_img_p2_2.jpg",
   "type": "MCQ",
   "category": "SSC GD",
-  "subject": "Reasoning"
+  "subject": "General"
 }
 
 --- Sample Question 2 ---
 {
   "questionNumber": 2,
   "pageNum": 2,
-  "question": "Which of the following numbers will replace the question mark (?) in the given series?\n12, 24, 48, 96, 192, ?",
-  "question_en": "Which of the following numbers will replace the question mark (?) in the given series?\n12, 24, 48, 96, 192, ?",
-  "question_hi": "निम्नलिखित में से कौन सी संख्या दी गई श्रृंखला में प्रश्न चिह्न (?) को प्रतिस्थापित करेगी?\n12, 24, 48, 96, 192, ?",
+  "question": "Which of the following numbers will replace the question mark (?) in the given series? 12, 24, 48, 96, 192, ?",
+  "question_en": "Which of the following numbers will replace the question mark (?) in the given series? 12, 24, 48, 96, 192, ?",
+  "question_hi": "",
   "optionA": "222",
   "optionB": "384",
   "optionC": "318",
@@ -77,36 +95,42 @@ Parser complete! Total questions extracted: 13
     "318",
     "280"
   ],
-  "options_hi": [
-    "222",
-    "384",
-    "318",
-    "280"
-  ],
-  "answer": "B",
-  "correctAnswer": "384",
-  "correctIndex": 1,
-  "explanation": "The logic of the series is multiplication by 2:\n12 * 2 = 24\n24 * 2 = 48\n48 * 2 = 96\n96 * 2 = 192\n192 * 2 = 384.",
-  "explanation_hi": "श्रृंखला का तर्क 2 से गुणा करना है:\n12 * 2 = 24\n24 * 2 = 48\n48 * 2 = 96\n96 * 2 = 192\n192 * 2 = 384.",
-  "language": "Bilingual",
+  "options_hi": [],
+  "answer": "A",
+  "correctAnswer": "222",
+  "correctIndex": 0,
+  "explanation": "",
+  "explanation_hi": "",
+  "language": "English",
   "image": "",
   "type": "MCQ",
   "category": "SSC GD",
-  "subject": "Reasoning"
+  "subject": "General"
 }
 
-Languages distribution: {"Bilingual":13}
-Questions with correct answers detected: 13 / 13
+Languages distribution: {"English":77}
+Questions with correct answers detected: 77 / 77
 Questions with corrupted unicode (\uFFFD): 0
 
 Parser Logs Summary (first 20 items):
-  [AI PDF Parser] Loaded PDF document. Total pages: 22
-  [AI PDF Parser] Extracted 22 inline images/diagrams from document.
-  [AI PDF Parser] Sending PDF to Gemini API for high-precision extraction...
-  [AI PDF Parser] Gemini API completed. Received 13 raw questions.
+  [Offline PDF Parser] Loaded PDF document. Total pages: 22
+  [Offline PDF Parser] Extracted 22 inline images/diagrams from document.
+  [Offline PDF Parser] Extracting text page-by-page...
+  [Offline PDF Parser] Low text quality (0.00) on Page 22. Running local OCR fallback...
+  [OCR] Running local Tesseract.js OCR (eng+hin)...
+  [OCR] Tesseract.js OCR complete.
+  [Offline PDF Parser] Page 22 OCR returned empty/short text. Falling back to selectable text.
+  [Offline PDF Parser] Completed text extraction. OCR run on 0/22 pages. Total chars: 19323
+  [Debug] Wrote raw text to scratch/debug_extracted_text.txt
+  [Offline PDF Parser] Running local heuristic rule engine...
+  [Offline PDF Parser] Heuristic parser extracted 77 questions.
   [AI PDF Parser] Saved 22 extracted images to disk.
   [Images] Matched image to Question #1 on page 2
-  [Images] Matched image to Question #6 on page 3
+  [Images] Matched image to Question #7 on page 3
+  [Images] Matched image to Question #8 on page 3
   [Images] Matched image to Question #9 on page 4
+  [Images] Matched image to Question #10 on page 4
+  [Images] Matched image to Question #11 on page 5
   [Images] Matched image to Question #12 on page 5
-  [Job Complete] Gemini parsing completed successfully in 79.56s.
+  [Images] Matched image to Question #13 on page 5
+  ... and 4 more log entries.

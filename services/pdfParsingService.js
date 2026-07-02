@@ -462,7 +462,7 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
     }
 
     // Option header pattern supporting circles, numbers, English, and Hindi option characters (अ, ब, स, द)
-    const optionHeaderRegex = /(?:^|[\s✔✓✅☑(\[{-])(?:\(|\[)?([A-F1-6क-ङa-f①-⑥अबसद])(?:\)|\]|\.|\s)(?:\s|$)/gi;
+    const optionHeaderRegex = /(?:^|[\s✔✓✅☑(\[{-])(?:\(|\[)?([A-F1-6क-ङa-f①-⑥अबसद])(?:\)|\]|\.|\s+)(?=[a-zA-Z0-9\u0900-\u097F\(\[\{\-\+]|$)/gi;
 
     function parseOptionsFromLine(line, optionsArray, correctIndexRef) {
         let matches = [];
@@ -509,24 +509,70 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
                 return true;
             }
         }
+        return false;
+    }
 
-        // Single option line: requires a punctuation separator for standard keys (A-F, a-f, 1-6) to avoid matching "A body of..."
-        const singleMatch = line.match(/^(?:Ans\s*)?([^a-zA-Z0-9\u0900-\u097F]*(?:[xX✔✓✅☑][^a-zA-Z0-9\u0900-\u097F]*)?)([A-F1-6क-ङa-f①-⑥अबसद])(?:\)|\]|\.|\-|:)\s*(.*)/i);
-        if (singleMatch) {
-            const prefix = singleMatch[1];
-            const key = singleMatch[2];
-            const text = singleMatch[3].trim();
-            const idx = mapOptionKeyToIndex(key);
+    // Helper function to check if a line is a single option line (including punctuation-less like "A 50")
+    function isOptionLine(line, nextLine) {
+        // Matches standard punctuation like A) B. [C] etc.
+        const hasPunctuation = /^(?:Ans\s*)?[^a-zA-Z0-9\u0900-\u097F]*([A-F1-6क-ङa-f①-⑥अबसद])(?:\)|\]|\.|\-|:)\s*/i.test(line);
+        if (hasPunctuation) return true;
 
-            if (idx >= 0 && idx < 6) {
-                optionsArray[idx] = text;
-                if (/[✔✓✅☑]/.test(prefix) || /[✔✓✅☑]/.test(line.substring(0, Math.min(line.length, 10)))) {
-                    correctIndexRef.val = idx;
-                }
+        // Matches space separator: e.g. "A 50"
+        const spaceMatch = line.match(/^(?:Ans\s*)?([A-F1-6क-ङa-f①-⑥अबसद])\s+(.*)/i);
+        if (spaceMatch) {
+            const key = spaceMatch[1].toUpperCase();
+            
+            // If the key is B-F, it's very safe to assume it's an option
+            if (['B', 'C', 'D', 'E', 'F'].includes(key)) {
                 return true;
+            }
+            
+            // If the key is A (or Hindi equivalent 'अ'/'क' or '1'), check if the next non-empty line starts with the next option key (B/ख/ब/2)
+            if (key === 'A' || key === '1' || key === 'क' || key === 'अ') {
+                if (nextLine) {
+                    const cleanNext = nextLine.trim();
+                    const nextMatch = cleanNext.match(/^(?:Ans\s*)?([A-F1-6क-ङa-f①-⑥अबसद])(?:\)|\]|\.|\-|:|\s)/i);
+                    if (nextMatch) {
+                        const nextKey = nextMatch[1].toUpperCase();
+                        const expectedKeys = {
+                            'A': ['B', '2', 'ख', 'ब'],
+                            '1': ['B', '2', 'ख', 'ब'],
+                            'क': ['B', '2', 'ख', 'ब'],
+                            'अ': ['B', '2', 'ख', 'ब']
+                        };
+                        if (expectedKeys[key] && expectedKeys[key].includes(nextKey)) {
+                            return true;
+                        }
+                    }
+                }
             }
         }
         return false;
+    }
+
+    function parseSingleOption(line, nextLine) {
+        // 1. Try punctuation separator first
+        const punctMatch = line.match(/^(?:Ans\s*)?([^a-zA-Z0-9\u0900-\u097F]*(?:[xX✔✓✅☑][^a-zA-Z0-9\u0900-\u097F]*)?)([A-F1-6क-ङa-f①-⑥अबसद])(?:\)|\]|\.|\-|:)\s*(.*)/i);
+        if (punctMatch) {
+            return {
+                key: punctMatch[2],
+                text: punctMatch[3].trim()
+            };
+        }
+
+        // 2. Try space separator if validated by isOptionLine logic
+        const spaceMatch = line.match(/^(?:Ans\s*)?([A-F1-6क-ङa-f①-⑥अबसद])\s+(.*)/i);
+        if (spaceMatch) {
+            const key = spaceMatch[1];
+            if (isOptionLine(line, nextLine)) {
+                return {
+                    key: key,
+                    text: spaceMatch[2].trim()
+                };
+            }
+        }
+        return null;
     }
 
     // Answers detection (updated for Hindi options support)
@@ -578,8 +624,41 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
             }
         }
 
+        // Lookahead to find next valid text line (ignoring empty lines and page markers)
+        let nextLine = '';
+        for (let j = i + 1; j < lines.length; j++) {
+            const nextL = lines[j].trim();
+            if (nextL && !nextL.startsWith('[PAGE_MARKER_')) {
+                nextLine = nextL;
+                break;
+            }
+        }
+
         const qStart = detectQuestionStart(line);
         if (qStart && !ignoreNewQuestions) {
+            // Strict check for question start to avoid math analogies (e.g. "19 : 34 :: 5 : 6")
+            let isValidStart = false;
+            if (!currentQ) {
+                isValidStart = true;
+            } else if (/^(?:QUESTION|Question|Que|Q|प्र[.]?|प्रश्न)/i.test(line)) {
+                isValidStart = true;
+            } else {
+                if (qStart.qNum === expectedNextNum || qStart.qNum === 1) {
+                    isValidStart = true;
+                } else if (typeof qStart.qNum === 'number' && Math.abs(qStart.qNum - expectedNextNum) <= 2) {
+                    isValidStart = true;
+                }
+                if (line.includes('::') || (line.match(/:/g) || []).length >= 2) {
+                    isValidStart = false;
+                }
+                if (isValidStart && qStart.rest) {
+                    const rest = qStart.rest.trim();
+                    if (/^\d+\s*::/i.test(rest) || /^\d+\s*:/i.test(rest)) {
+                        isValidStart = false;
+                    }
+                }
+            }
+
             let isNewQ = false;
             
             // If explanation is in progress, be extremely strict:
@@ -606,7 +685,7 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
                 }
             }
 
-            if (!isExplanationContinuation && !isNumericOption) {
+            if (isValidStart && !isExplanationContinuation && !isNumericOption) {
                 if (questions.length === 0) {
                     isNewQ = true;
                     expectedNextNum = (typeof qStart.qNum === 'number') ? qStart.qNum + 1 : 2;
@@ -672,6 +751,21 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
             if (isOpt) {
                 currentQ.optionsStarted = true;
                 continue;
+            }
+
+            const optData = parseSingleOption(line, nextLine);
+            if (optData) {
+                const idx = mapOptionKeyToIndex(optData.key);
+                if (idx >= 0 && idx < 6) {
+                    currentQ.options[idx] = optData.text;
+                    currentQ.optionsStarted = true;
+                    
+                    const prefix = line.substring(0, line.indexOf(optData.key));
+                    if (/[✔✓✅☑]/.test(prefix) || /[✔✓✅☑]/.test(line.substring(0, Math.min(line.length, 10)))) {
+                        currentQ.correctIndexRef.val = idx;
+                    }
+                    continue;
+                }
             }
 
             if (currentQ.optionsStarted) {
