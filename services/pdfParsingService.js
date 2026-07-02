@@ -967,6 +967,15 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
         }
     }
     logs.push(`[Offline PDF Parser] Extracted ${text.length} characters of raw text.`);
+    
+    // Write to debug file
+    try {
+        const debugPath = path.join(__dirname, '../scratch/debug_extracted_text.txt');
+        fs.writeFileSync(debugPath, text, 'utf8');
+        logs.push(`[Debug] Wrote raw text to scratch/debug_extracted_text.txt`);
+    } catch (writeErr) {
+        console.warn('Failed to write debug text file:', writeErr.message);
+    }
 
     // 5. Parse questions heuristically
     if (onProgress) onProgress(70, 'Heuristic Parsing', 'Running local heuristic rule engine to find MCQ questions...');

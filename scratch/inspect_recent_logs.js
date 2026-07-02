@@ -1,25 +1,22 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
-const AuditLog = require('../models/AuditLog');
-const MockTestPack = require('../models/MockTestPack');
+const PdfJob = require('../models/PdfJob');
 
 async function main() {
-    await mongoose.connect(process.env.MONGO_URI);
+    await mongoose.connect(process.env.MONGO_URI || 'mongodb+srv://coursenovain_db_user:coursenova123@cluster0.xnokxr5.mongodb.net/coursenova?retryWrites=true&w=majority');
     
     try {
-        console.log('--- RECENT AUDIT LOGS ---');
-        const logs = await AuditLog.find().sort({ createdAt: -1 }).limit(10);
-        logs.forEach(l => {
-            console.log(`[${l.createdAt.toISOString()}] Email: ${l.adminEmail} | Action: ${l.action} | TargetModel: ${l.targetModel} | Details: ${JSON.stringify(l.details)}`);
-        });
-
-        console.log('\n--- RECENT MOCK TEST PACK UPDATES ---');
-        const packs = await MockTestPack.find().sort({ updatedAt: -1 }).limit(5);
-        packs.forEach(p => {
-            console.log(`[${p.updatedAt ? p.updatedAt.toISOString() : 'N/A'}] Pack: "${p.title}" (${p.id}) | Tests: ${p.tests.length}`);
-            p.tests.forEach(t => {
-                console.log(`  Test: "${t.testTitle}" | Questions linked: ${t.questions.length} | numQuestions: ${t.numQuestions}`);
-            });
+        console.log('--- RECENT PDF JOBS ---');
+        const jobs = await PdfJob.find().sort({ createdAt: -1 }).limit(5);
+        jobs.forEach(j => {
+            console.log(`\n===================================`);
+            console.log(`Job ID: ${j.jobId} | Type: ${j.type} | Status: ${j.status}`);
+            console.log(`Created: ${j.createdAt.toISOString()}`);
+            console.log(`Progress: ${j.progress}% | Stage: ${j.stage}`);
+            console.log(`Error: ${j.error}`);
+            console.log(`Result: ${JSON.stringify(j.result)}`);
+            console.log(`Logs:`);
+            j.logs.forEach(l => console.log(`  ${l}`));
         });
     } catch (e) {
         console.error(e);
