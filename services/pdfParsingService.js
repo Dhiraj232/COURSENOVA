@@ -952,21 +952,55 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
     }
     logs.push(`[Offline PDF Parser] Extracted ${allImages.length} inline images/diagrams from document.`);
 
-    // 4. Extract text offline page-by-page using PDF.js getTextContent
-    if (onProgress) onProgress(50, 'Extracting PDF Text', 'Extracting selectable text from PDF pages locally...');
+    // 4. Extract text offline page-by-page using PDF.js getTextContent (with OCR fallback for custom fonts)
+    if (onProgress) onProgress(50, 'Extracting PDF Text', 'Extracting text page-by-page (with OCR fallback for custom fonts)...');
     logs.push('[Offline PDF Parser] Extracting text page-by-page...');
     let text = '';
+    let ocrCount = 0;
     for (let pNum = 1; pNum <= totalPages; pNum++) {
         try {
+            if (onProgress) onProgress(50 + Math.floor((pNum / totalPages) * 30), 'Extracting Text', `Extracting page ${pNum}/${totalPages}...`);
             const page = await doc.getPage(pNum);
             const textContent = await page.getTextContent();
-            const pageText = extractTextFromPageItems(textContent.items, page.view ? page.view[2] : 595);
-            text += `[PAGE_MARKER_${pNum}]\n` + pageText + '\n\n';
+            let pageText = extractTextFromPageItems(textContent.items, page.view ? page.view[2] : 595);
+            
+            const quality = assessTextQuality(pageText);
+            let isOcrUsed = false;
+            
+            if (quality < 0.8) {
+                logs.push(`[Offline PDF Parser] Low text quality (${quality.toFixed(2)}) on Page ${pNum}. Running local OCR fallback...`);
+                try {
+                    // Render page to canvas
+                    const viewport = page.getViewport({ scale: 1.5 });
+                    const canvas = createCanvas(viewport.width, viewport.height);
+                    const context = canvas.getContext('2d');
+                    await page.render({
+                        canvasContext: context,
+                        viewport: viewport
+                    }).promise;
+                    const pngBuffer = canvas.toBuffer('image/png');
+                    
+                    // Run local OCR
+                    const ocrText = await runOCR(pngBuffer, logs);
+                    if (ocrText && ocrText.trim().length > 100) {
+                        pageText = ocrText;
+                        isOcrUsed = true;
+                        ocrCount++;
+                        logs.push(`[Offline PDF Parser] Page ${pNum} OCR successful. Extracted ${pageText.length} characters.`);
+                    } else {
+                        logs.push(`[Offline PDF Parser] Page ${pNum} OCR returned empty/short text. Falling back to selectable text.`);
+                    }
+                } catch (ocrErr) {
+                    logs.push(`[Offline PDF Parser] Page ${pNum} OCR failed: ${ocrErr.message}. Using selectable text.`);
+                }
+            }
+            
+            text += `[PAGE_MARKER_${pNum}${isOcrUsed ? '_OCR' : ''}]\n` + pageText + '\n\n';
         } catch (textErr) {
             logs.push(`[Text Extraction Warning] Page ${pNum} text extraction failed: ${textErr.message}`);
         }
     }
-    logs.push(`[Offline PDF Parser] Extracted ${text.length} characters of raw text.`);
+    logs.push(`[Offline PDF Parser] Completed text extraction. OCR run on ${ocrCount}/${totalPages} pages. Total chars: ${text.length}`);
     
     // Write to debug file
     try {
