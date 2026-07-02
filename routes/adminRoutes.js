@@ -1648,8 +1648,15 @@ router.get('/mock-tests/:id', requireAdmin, catchAsync(async (req, res) => {
 router.post('/mock-tests', requireAdmin, catchAsync(async (req, res) => {
     if (req.body && req.body.tests && Array.isArray(req.body.tests)) {
         req.body.tests.forEach(t => {
-            if (t.questions && Array.isArray(t.questions)) {
-                t.numQuestions = t.questions.length;
+            if (t.numQuestions === undefined || t.numQuestions === null || t.numQuestions === 0) {
+                if (t.questions && Array.isArray(t.questions)) {
+                    t.numQuestions = t.questions.length;
+                } else {
+                    t.numQuestions = 0;
+                }
+            }
+            if (t.totalMarks === undefined || t.totalMarks === null || t.totalMarks === 0) {
+                t.totalMarks = t.numQuestions * 4;
             }
         });
     }
@@ -1689,8 +1696,15 @@ router.put('/mock-tests/:id', requireAdmin, catchAsync(async (req, res) => {
 
     if (req.body && req.body.tests && Array.isArray(req.body.tests)) {
         req.body.tests.forEach(t => {
-            if (t.questions && Array.isArray(t.questions)) {
-                t.numQuestions = t.questions.length;
+            if (t.numQuestions === undefined || t.numQuestions === null || t.numQuestions === 0) {
+                if (t.questions && Array.isArray(t.questions)) {
+                    t.numQuestions = t.questions.length;
+                } else {
+                    t.numQuestions = 0;
+                }
+            }
+            if (t.totalMarks === undefined || t.totalMarks === null || t.totalMarks === 0) {
+                t.totalMarks = t.numQuestions * 4;
             }
         });
     }

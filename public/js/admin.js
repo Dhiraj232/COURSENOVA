@@ -1048,6 +1048,10 @@ function renderMockTestModal(title, pack = null) {
                         <div class="form-group"><label>Pack ID (Unique)</label><input type="text" id="mtId" class="admin-input" value="${pack?.id || ''}" required></div>
                         <div class="form-group"><label>Category</label><input type="text" id="mtCategory" class="admin-input" value="${pack?.category || ''}" placeholder="JEE, NEET, SSC..."></div>
                         <div class="form-group"><label>Price (₹)</label><input type="number" id="mtPrice" class="admin-input" value="${pack?.price || 0}"></div>
+                        <div class="form-group"><label>Total Tests (Sets)</label><input type="number" id="mtTotalTests" class="admin-input" value="${pack?.totalTests || 0}" placeholder="0 = Auto from tests count"></div>
+                        <div class="form-group"><label>Total Questions (Override)</label><input type="number" id="mtTotalQuestions" class="admin-input" value="${pack?.totalQuestions || 0}" placeholder="0 = Auto from tests"></div>
+                        <div class="form-group"><label>Total Marks (Override)</label><input type="number" id="mtTotalMarks" class="admin-input" value="${pack?.totalMarks || 0}" placeholder="0 = Auto from questions"></div>
+                        <div class="form-group"><label>Total Duration (Mins, Override)</label><input type="number" id="mtDurationMinutes" class="admin-input" value="${pack?.durationMinutes || 90}"></div>
                     </div>
                     <div class="form-group">
                         <label>Status</label>
@@ -1097,10 +1101,20 @@ function renderMockTestRow(t = {}, i) {
                     <input type="text" placeholder="ID (slug)" class="admin-input mt-t-id" value="${t.testId || ''}" style="padding:8px;">
                 </div>
                 <div style="background: var(--bg-light); padding:12px; border-radius:8px; border: 1px dashed var(--border);">
-                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
-                        <span style="font-size:0.8rem; font-weight:600;">
-                            <i class="fas fa-list-ol"></i> <span class="q-count-badge">${qCount}</span> Questions Linked
-                            ${hasHindi ? '<span style="margin-left:8px; background:#fef3c7; color:#d97706; padding:2px 8px; border-radius:20px; font-size:0.7rem;">🇮🇳 Hindi Added</span>' : ''}
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
+                        <div>
+                            <label style="font-size:0.7rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">QUESTIONS COUNT</label>
+                            <input type="number" placeholder="Questions count" class="admin-input mt-t-num-qs" value="${t.numQuestions || qCount}" style="padding:6px; font-size:0.8rem;" oninput="const row = this.closest('.mt-row'); const marksInput = row.querySelector('.mt-t-marks'); if(marksInput) marksInput.value = parseInt(this.value || 0) * 4;">
+                        </div>
+                        <div>
+                            <label style="font-size:0.7rem; font-weight:700; color:var(--text-muted); display:block; margin-bottom:4px;">TOTAL MARKS</label>
+                            <input type="number" placeholder="Total Marks" class="admin-input mt-t-marks" value="${t.totalMarks || (t.numQuestions || qCount) * 4}" style="padding:6px; font-size:0.8rem;">
+                        </div>
+                    </div>
+                    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; font-size:0.75rem;">
+                        <span style="font-weight:600;">
+                            <i class="fas fa-link"></i> <span class="q-count-badge">${qCount}</span> Qs imported in PDF
+                            ${hasHindi ? '<span style="margin-left:8px; background:#fef3c7; color:#d97706; padding:2px 8px; border-radius:20px; font-size:0.75rem;">🇮🇳 Hindi</span>' : ''}
                         </span>
                         <input type="hidden" class="mt-t-qids" value="${qIds}">
                     </div>
@@ -1319,6 +1333,11 @@ async function handlePdfToTest(input, index, lang = 'en') {
                             qIdsInput.value = newQIds; 
                             countBadge.textContent = saveData.questions.length;
                             
+                            const numQsInput = row.querySelector('.mt-t-num-qs');
+                            const marksInput = row.querySelector('.mt-t-marks');
+                            if (numQsInput) numQsInput.value = saveData.questions.length;
+                            if (marksInput) marksInput.value = saveData.questions.length * 4;
+                            
                             if (lang === 'en') {
                                 statusEn.innerHTML = `<span style="color:#6366f1; font-weight:600;">✅ Import Successful: ${saveData.questions.length} English Qs imported!</span>`;
                                 statusHi.innerHTML = `<span style="color:#94a3b8;">Pending Hindi upload...</span>`;
@@ -1385,10 +1404,16 @@ async function handleMockTestSubmit(id) {
         isFree: Number(document.getElementById('mtPrice').value) === 0,
         isActive: document.getElementById('mtActive').value === 'true',
         description: document.getElementById('mtDescription').value,
+        totalTests: Number(document.getElementById('mtTotalTests')?.value || 0),
+        totalQuestions: Number(document.getElementById('mtTotalQuestions')?.value || 0),
+        totalMarks: Number(document.getElementById('mtTotalMarks')?.value || 0),
+        durationMinutes: Number(document.getElementById('mtDurationMinutes')?.value || 90),
         tests: Array.from(document.querySelectorAll('.mt-row')).map(row => ({
             testTitle: row.querySelector('.mt-t-title').value,
             testId: row.querySelector('.mt-t-id').value,
             durationMinutes: Number(row.querySelector('.mt-t-dur').value),
+            numQuestions: Number(row.querySelector('.mt-t-num-qs')?.value || 0),
+            totalMarks: Number(row.querySelector('.mt-t-marks')?.value || 0),
             questions: row.querySelector('.mt-t-qids').value.split(',').map(s => s.trim()).filter(s => s)
         }))
     };

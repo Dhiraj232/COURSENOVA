@@ -128,10 +128,20 @@ function renderPacks(packs) {
 
     packs.forEach(pack => {
         const d        = getDiff(pack);
-        const totalQs  = pack.tests && pack.tests[0] ? pack.tests[0].numQuestions : 75;
-        const totalTime= pack.tests && pack.tests[0] ? pack.tests[0].durationMinutes : 90;
+        const firstTest = pack.tests && pack.tests[0] ? pack.tests[0] : null;
+        const totalQs  = pack.totalQuestions !== undefined && pack.totalQuestions !== null && pack.totalQuestions > 0
+            ? pack.totalQuestions
+            : (firstTest ? (firstTest.numQuestions || 0) : 75);
+        const totalTime= pack.durationMinutes !== undefined && pack.durationMinutes !== null && pack.durationMinutes > 0
+            ? pack.durationMinutes
+            : (firstTest ? (firstTest.durationMinutes || 0) : 90);
         const icon     = getCatIcon(pack.category);
-        const marks    = totalQs * 4;
+        const marks    = pack.totalMarks !== undefined && pack.totalMarks !== null && pack.totalMarks > 0
+            ? pack.totalMarks
+            : (firstTest && firstTest.totalMarks ? firstTest.totalMarks : totalQs * 4);
+        const testsCount = pack.totalTests !== undefined && pack.totalTests !== null && pack.totalTests > 0
+            ? pack.totalTests
+            : (pack.tests ? pack.tests.length : 1);
 
         // Detection for Free vs Premium cards
         const isActuallyFree = pack.isFree === true || pack.price === 0;
@@ -158,7 +168,7 @@ function renderPacks(packs) {
                     <div class="stat-item"><i class="far fa-question-circle"></i> ${totalQs} Questions</div>
                     <div class="stat-item"><i class="far fa-clock"></i> ${totalTime} Mins</div>
                     <div class="stat-item"><i class="far fa-star"></i> ${marks} Marks</div>
-                    <div class="stat-item"><i class="fas fa-layer-group"></i> ${pack.totalTests || 1} Tests</div>
+                    <div class="stat-item"><i class="fas fa-layer-group"></i> ${testsCount} Tests</div>
                 </div>
             </div>
             <div class="card-footer">

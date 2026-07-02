@@ -13,6 +13,19 @@ try {
 }
 const { extractQuestionsFromPdf } = require('./aiService');
 
+const pdfParseModule = require('pdf-parse');
+const pdfParse = typeof pdfParseModule === 'function' 
+    ? (buffer, options) => pdfParseModule(buffer, options)
+    : async function(buffer, options) {
+        const { PDFParse } = pdfParseModule;
+        if (PDFParse) {
+            const parser = new PDFParse({ verbosity: 0, data: buffer });
+            const result = await parser.getText(options);
+            return { text: result.text || '' };
+        }
+        throw new Error('pdf-parse module is not a function');
+    };
+
 /**
  * Maps standard Hindi option letters to index (0-based)
  */
@@ -915,12 +928,6 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
     const defaultCategory = defaults.category || 'General';
     const defaultSubject = defaults.subject || 'General';
 
-    // 1. Check for Gemini API Key
-    if (!process.env.GEMINI_API_KEY) {
-        logs.push('[CRITICAL ERROR] GEMINI_API_KEY environment variable is not defined.');
-        throw new Error('GEMINI_API_KEY environment variable is not defined. Please define it in your .env file to enable PDF question parsing.');
-    }
-
     // 2. Load PDF.js document to extract metadata & inline images
     if (onProgress) onProgress(10, 'Loading PDF', 'Loading PDF document stream...');
     const loadingTask = pdfjs.getDocument({
@@ -930,7 +937,7 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
     });
     const doc = await loadingTask.promise;
     totalPages = doc.numPages;
-    logs.push(`[AI PDF Parser] Loaded PDF document. Total pages: ${totalPages}`);
+    logs.push(`[Offline PDF Parser] Loaded PDF document. Total pages: ${totalPages}`);
 
     // 3. Extract page images for diagram mapping (optional)
     if (onProgress) onProgress(20, 'Extracting Images', 'Scanning document for inline images and diagrams...');
@@ -943,28 +950,33 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
             logs.push(`[Image Extraction Warning] Page ${pNum} images extraction failed: ${imgErr.message}`);
         }
     }
-    logs.push(`[AI PDF Parser] Extracted ${allImages.length} inline images/diagrams from document.`);
+    logs.push(`[Offline PDF Parser] Extracted ${allImages.length} inline images/diagrams from document.`);
 
-    // 4. Directly call Gemini API to parse PDF questions
-    if (onProgress) onProgress(50, 'Gemini AI Parsing', 'Analyzing PDF and extracting structured questions, options, and correct answers with Gemini...');
-    logs.push('[AI PDF Parser] Sending PDF to Gemini API for high-precision extraction...');
-    
-    try {
-        const aiQuestions = await extractQuestionsFromPdf(pdfBuffer, {
-            category: defaultCategory,
-            subject: defaultSubject
-        });
-        
-        logs.push(`[AI PDF Parser] Gemini API completed. Received ${aiQuestions.length} raw questions.`);
-        
-        // 5. Normalize questions
-        if (onProgress) onProgress(80, 'Normalizing Questions', 'Normalizing questions and verifying schema structure...');
-        questions = normalizeAIQuestions(aiQuestions, defaultCategory, defaultSubject);
-    } catch (aiErr) {
-        console.error('[AI PDF Parser] Gemini parsing failed:', aiErr.message);
-        logs.push(`[AI PDF Parser] Gemini parsing failed: ${aiErr.message}`);
-        throw new Error('Gemini API extraction failed: ' + aiErr.message);
+    // 4. Extract text offline page-by-page using PDF.js getTextContent
+    if (onProgress) onProgress(50, 'Extracting PDF Text', 'Extracting selectable text from PDF pages locally...');
+    logs.push('[Offline PDF Parser] Extracting text page-by-page...');
+    let text = '';
+    for (let pNum = 1; pNum <= totalPages; pNum++) {
+        try {
+            const page = await doc.getPage(pNum);
+            const textContent = await page.getTextContent();
+            const pageText = extractTextFromPageItems(textContent.items, page.view ? page.view[2] : 595);
+            text += `[PAGE_MARKER_${pNum}]\n` + pageText + '\n\n';
+        } catch (textErr) {
+            logs.push(`[Text Extraction Warning] Page ${pNum} text extraction failed: ${textErr.message}`);
+        }
     }
+    logs.push(`[Offline PDF Parser] Extracted ${text.length} characters of raw text.`);
+
+    // 5. Parse questions heuristically
+    if (onProgress) onProgress(70, 'Heuristic Parsing', 'Running local heuristic rule engine to find MCQ questions...');
+    logs.push('[Offline PDF Parser] Running local heuristic rule engine...');
+    const rawQuestions = parseQuestionsHeuristically(text, defaultCategory, defaultSubject);
+    logs.push(`[Offline PDF Parser] Heuristic parser extracted ${rawQuestions.length} questions.`);
+
+    // 6. Normalize questions
+    if (onProgress) onProgress(85, 'Normalizing Questions', 'Standardizing questions schema structure...');
+    questions = normalizeAIQuestions(rawQuestions, defaultCategory, defaultSubject);
 
     // 6. Map page images to questions sequentially
     if (onProgress) onProgress(90, 'Mapping Images', 'Mapping extracted diagrams to questions...');

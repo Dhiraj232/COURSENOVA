@@ -9,12 +9,16 @@ const mockTestPackSchema = new mongoose.Schema({
     price: { type: Number, default: 0 },
     isFree: { type: Boolean, default: true },
     totalTests: { type: Number, default: 0 },
+    totalQuestions: { type: Number, default: 0 },
+    totalMarks: { type: Number, default: 0 },
+    durationMinutes: { type: Number, default: 90 },
     // Individual tests within this pack
     tests: [{
         testId: String,
         testTitle: String,
         numQuestions: { type: Number, default: 0 },
         durationMinutes: { type: Number, default: 60 },
+        totalMarks: { type: Number, default: 0 },
         questions: [{ type: mongoose.Schema.Types.ObjectId, ref: 'PracticeQuestion' }]
     }],
     isActive: { type: Boolean, default: true },
@@ -22,3 +26,4 @@ const mockTestPackSchema = new mongoose.Schema({
 });
 
 module.exports = mongoose.model('MockTestPack', mockTestPackSchema);
+
