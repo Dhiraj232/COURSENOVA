@@ -13,8 +13,8 @@ async function extractQuestionsFromPdf(pdfBuffer, defaults = {}, startPage = nul
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    // Use gemini-1.5-flash for PDF analysis and structured output
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    // Use gemini-flash-latest for PDF analysis and structured output
+    const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
 
     // Prepare PDF inline data
     const pdfPart = {

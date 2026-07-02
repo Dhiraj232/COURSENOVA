@@ -1,12 +1,4 @@
 PDF loaded. Starting parser...
-[CRITICAL ERROR] Parser crashed: Error: GEMINI_API_KEY environment variable is not defined. Please define it in your .env file to enable PDF question parsing.
-    at parsePDF (D:\COURSENOVA\services\pdfParsingService.js:921:15)
-    at main (D:\COURSENOVA\verify_parser_scratch.js:28:33)
-    at Object.<anonymous> (D:\COURSENOVA\verify_parser_scratch.js:77:1)
-    at Module._compile (node:internal/modules/cjs/loader:1854:14)
-    at Object..js (node:internal/modules/cjs/loader:1985:10)
-    at Module.load (node:internal/modules/cjs/loader:1577:32)
-    at Module._load (node:internal/modules/cjs/loader:1379:12)
-    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
-    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
-    at node:internal/main/run_main_module:33:47
+[Progress 10%] Stage: Loading PDF | Log: Loading PDF document stream...
+[Progress 20%] Stage: Extracting Images | Log: Scanning document for inline images and diagrams...
+[Progress 50%] Stage: Gemini AI Parsing | Log: Analyzing PDF and extracting structured questions, options, and correct answers with Gemini...
