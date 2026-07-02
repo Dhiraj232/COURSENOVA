@@ -1424,6 +1424,13 @@ function switchModalTab(tabId, btn) {
 }
 
 function closeModal() { document.getElementById('modal-container').classList.remove('active'); }
+window.closePreviewModal = function() {
+    const previewContainer = document.getElementById('preview-modal-container');
+    if (previewContainer) {
+        previewContainer.classList.remove('active');
+        previewContainer.innerHTML = '';
+    }
+};
 
 function addLessonRow() { const div = document.createElement('div'); div.innerHTML = renderLessonRow({}, 0); document.getElementById('lessons-list').appendChild(div.firstElementChild); }
 function addQuizRow() { const div = document.createElement('div'); div.innerHTML = renderQuizRow({}, 0); document.getElementById('quiz-list').appendChild(div.firstElementChild); }
@@ -2926,15 +2933,24 @@ window.showQuestionsPreviewModal = function(questions, stats, onConfirm) {
     window.currentPreviewQuestions = JSON.parse(JSON.stringify(questions));
     window.confirmPreviewImportCallback = onConfirm;
 
-    const modalContainer = document.getElementById('modal-container');
-    modalContainer.innerHTML = `
+    let previewContainer = document.getElementById('preview-modal-container');
+    if (!previewContainer) {
+        previewContainer = document.createElement('div');
+        previewContainer.id = 'preview-modal-container';
+        previewContainer.className = 'modal-overlay';
+        document.body.appendChild(previewContainer);
+    }
+
+    previewContainer.classList.add('active');
+
+    previewContainer.innerHTML = `
         <div class="modal-content admin-card" style="max-width: 1000px; width: 95%; max-height: 90vh; display: flex; flex-direction: column; padding: 0;">
             <div class="card-header" style="padding: 20px 24px; border-bottom: 1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; background:#fafafa; text-align:left;">
                 <div>
                     <h3 style="margin:0;"><i class="fas fa-eye" style="color:var(--primary);"></i> Preview Extracted Questions</h3>
                     <p style="font-size:0.8rem; color:var(--text-muted); margin: 4px 0 0 0;">Review and edit questions. Edits are auto-saved. Click "Save & Import Questions" to write to database.</p>
                 </div>
-                <button class="btn btn-icon" onclick="closeModal()">×</button>
+                <button class="btn btn-icon" onclick="window.closePreviewModal()">×</button>
             </div>
             
             <div class="stats-bar" style="padding: 12px 24px; background: white; border-bottom: 1px solid var(--border-color); display: grid; grid-template-columns: repeat(8, 1fr); gap: 10px; font-size: 0.75rem; text-align: center; font-weight: 500;">
@@ -3307,7 +3323,7 @@ window.confirmPreviewImport = async function() {
 
     try {
         await window.confirmPreviewImportCallback(window.currentPreviewQuestions, replaceDuplicates);
-        closeModal();
+        window.closePreviewModal();
     } catch (err) {
         alert('Import failed: ' + err.message);
     } finally {
