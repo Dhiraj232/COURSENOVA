@@ -1259,6 +1259,27 @@ async function handlePdfToTest(input, index, lang = 'en') {
                                 btnHi.innerHTML = '<i class="fas fa-check"></i> Hindi Uploaded';
                                 btnEn.innerHTML = '<i class="fas fa-file-pdf"></i> Upload English PDF';
                             }
+
+                            // ── Visual Guidance & Alert for Admin ──
+                            setTimeout(() => {
+                                const saveBtn = document.querySelector('#mtForm button[type="submit"]');
+                                if (saveBtn) {
+                                    saveBtn.style.animation = 'pulse-save-btn 1.5s infinite';
+                                    if (!document.getElementById('pulse-save-style')) {
+                                        const style = document.createElement('style');
+                                        style.id = 'pulse-save-style';
+                                        style.innerHTML = `
+                                            @keyframes pulse-save-btn {
+                                                0% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7); transform: scale(1); }
+                                                70% { box-shadow: 0 0 0 12px rgba(99, 102, 241, 0); transform: scale(1.03); }
+                                                100% { box-shadow: 0 0 0 0 rgba(99, 102, 241, 0); transform: scale(1); }
+                                            }
+                                        `;
+                                        document.head.appendChild(style);
+                                    }
+                                }
+                                alert("🎉 Questions imported successfully!\n\n👉 IMPORTANT: Please make sure to click the pulsing blue \"Save Pack\" (or \"Create Pack\") button at the bottom of the modal to finalize and save the questions to your Mock Test Pack in the database.");
+                            }, 400);
                         } else {
                             activeStatus.innerHTML = `<span style="color:var(--danger)">❌ Import Failed: Save failed: ${saveData.message || 'DB error'}</span>`;
                         }

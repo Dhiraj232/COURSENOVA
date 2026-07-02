@@ -1649,6 +1649,33 @@ router.post('/mock-tests', requireAdmin, catchAsync(async (req, res) => {
 }));
 
 router.put('/mock-tests/:id', requireAdmin, catchAsync(async (req, res) => {
+    // ── Auto-Pruning Replaced/Orphaned Questions ──
+    const oldPack = await MockTestPack.findById(req.params.id);
+    if (oldPack) {
+        const oldQIds = [];
+        oldPack.tests.forEach(t => {
+            if (t.questions) {
+                t.questions.forEach(qid => oldQIds.push(qid.toString()));
+            }
+        });
+
+        const newQIds = [];
+        if (req.body && req.body.tests && Array.isArray(req.body.tests)) {
+            req.body.tests.forEach(t => {
+                if (t.questions) {
+                    t.questions.forEach(qid => newQIds.push(qid.toString()));
+                }
+            });
+        }
+
+        // Find question IDs that were linked before but are not in the new pack update
+        const orphanedQIds = oldQIds.filter(qid => !newQIds.includes(qid));
+        if (orphanedQIds.length > 0) {
+            await PracticeQuestion.deleteMany({ _id: { $in: orphanedQIds } });
+            console.log(`[Auto-Cleanup] Replaced and deleted ${orphanedQIds.length} orphaned questions.`);
+        }
+    }
+
     if (req.body && req.body.tests && Array.isArray(req.body.tests)) {
         req.body.tests.forEach(t => {
             if (t.questions && Array.isArray(t.questions)) {
@@ -1663,8 +1690,24 @@ router.put('/mock-tests/:id', requireAdmin, catchAsync(async (req, res) => {
 }));
 
 router.delete('/mock-tests/:id', requireAdmin, catchAsync(async (req, res) => {
-    const pack = await MockTestPack.findByIdAndDelete(req.params.id);
+    const pack = await MockTestPack.findById(req.params.id);
     if (!pack) throw new AppError('Mock test pack not found', 404);
+
+    // Collect all question IDs linked to this pack
+    const qIdsToDelete = [];
+    pack.tests.forEach(t => {
+        if (t.questions) {
+            t.questions.forEach(qid => qIdsToDelete.push(qid.toString()));
+        }
+    });
+
+    // Delete those questions from the database
+    if (qIdsToDelete.length > 0) {
+        await PracticeQuestion.deleteMany({ _id: { $in: qIdsToDelete } });
+        console.log(`[Auto-Cleanup] Deleted ${qIdsToDelete.length} cascaded questions associated with pack "${pack.title}".`);
+    }
+
+    await MockTestPack.findByIdAndDelete(req.params.id);
     await logAdminAction(req, 'DELETE_MOCK_TEST', pack._id, 'MockTestPack', { title: pack.title });
     res.json({ ok: true, message: 'Pack deleted' });
 }));
