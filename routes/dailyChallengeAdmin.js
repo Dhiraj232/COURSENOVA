@@ -229,16 +229,19 @@ router.post('/save', async (req, res) => {
     try {
         const { date, title, questions, examType } = req.body;
         
-        // Find if already exists for this date AND examType
-        let challenge = await DailyChallenge.findOne({ date, examType });
-        if (challenge) {
-            challenge.questions = questions;
-            challenge.title = title;
-            await challenge.save();
-        } else {
-            challenge = new DailyChallenge({ date, title, examType, questions });
-            await challenge.save();
-        }
+        // WIPE OUT previous daily challenge questions completely for this date & examType
+        await DailyChallenge.deleteMany({ date, examType });
+        
+        // Recreate it clean with the new questions from PDF
+        const challenge = new DailyChallenge({
+            date,
+            title,
+            examType,
+            questions,
+            totalQuestions: questions.length,
+            durationMinutes: Math.max(15, questions.length) // 1 min per question, minimum 15 mins
+        });
+        await challenge.save();
 
         res.json({ ok: true });
     } catch (err) {
