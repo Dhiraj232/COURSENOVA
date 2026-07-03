@@ -372,6 +372,80 @@ function updateDashboardUI(data, userStats) {
             dot.classList.add('today');
         }
     });
+
+    // J. Render My Mock Tests History inside Dynamic Vault
+    const mocktestGrid = document.getElementById('vaultMockTest');
+    if (mocktestGrid) {
+        if (userStats.recentTests && userStats.recentTests.length > 0) {
+            mocktestGrid.style.display = 'block';
+            mocktestGrid.innerHTML = `
+                <div style="width: 100%; overflow-x: auto; background: rgba(255, 255, 255, 0.6); border-radius: 16px; border: 1px solid rgba(255,255,255,0.2); padding: 5px;">
+                    <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem;">
+                        <thead>
+                            <tr style="border-bottom: 2px solid rgba(0,0,0,0.06); color: #1e3a8a; font-weight: 700;">
+                                <th style="padding: 12px 15px;">Exam Series</th>
+                                <th style="padding: 12px 15px;">Set / Subject</th>
+                                <th style="padding: 12px 15px;">Marks Obtained</th>
+                                <th style="padding: 12px 15px;">Correct / Wrong</th>
+                                <th style="padding: 12px 15px;">Accuracy</th>
+                                <th style="padding: 12px 15px;">Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${userStats.recentTests.map(t => {
+                                const correct = Number(t.correctQuestions) || 0;
+                                const wrong = Number(t.incorrectQuestions) || 0;
+                                const total = Number(t.totalQuestions) || 0;
+                                const rawScore = (correct * 1.0) - (wrong * 0.25);
+                                const accuracyVal = t.accuracy !== undefined ? Math.round(t.accuracy) : (correct + wrong > 0 ? Math.round((correct / (correct + wrong)) * 100) : 100);
+                                
+                                // Format setTitle nicely
+                                let setTitle = t.courseId || 'Practice Set';
+                                if (setTitle.includes('-')) {
+                                    setTitle = setTitle.split('-').slice(1).join(' ').replace(/_/g, ' ');
+                                }
+                                if (setTitle.startsWith('daily_challenge_')) {
+                                    setTitle = 'Daily Challenge';
+                                }
+
+                                return `
+                                    <tr style="border-bottom: 1px solid rgba(0,0,0,0.04); transition: background 0.2s;">
+                                        <td style="padding: 12px 15px; font-weight: 700; color: #1e293b;">${t.courseName || 'Practice'}</td>
+                                        <td style="padding: 12px 15px; color: #475569; font-weight: 600; text-transform: capitalize;">${setTitle}</td>
+                                        <td style="padding: 12px 15px; font-weight: 800; color: #1e3a8a;">${rawScore.toFixed(2)} <span style="font-size: 0.75rem; color:#94a3b8; font-weight:normal;">/ ${total}</span></td>
+                                        <td style="padding: 12px 15px; font-weight: 700;">
+                                            <span style="color:#10b981;">${correct} Correct</span> / 
+                                            <span style="color:#ef4444;">${wrong} Wrong</span>
+                                        </td>
+                                        <td style="padding: 12px 15px; color: #6366f1; font-weight: 800;">${accuracyVal}%</td>
+                                        <td style="padding: 12px 15px; color: #64748b; font-size: 0.8rem; font-weight: 500;">${new Date(t.timestamp).toLocaleDateString('en-IN')}</td>
+                                    </tr>
+                                `;
+                            }).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+        } else {
+            mocktestGrid.innerHTML = `
+                <div style="padding: 30px; text-align: center; background: rgba(255,255,255,0.4); border-radius: 16px; border: 1px dashed #cbd5e1;">
+                    <p style="color:#64748b; font-weight: 500; margin-bottom: 15px;">No mock tests attempted yet.</p>
+                    <a href="mock-tests.html" class="btn-sm-view" style="display:inline-block; text-decoration:none; padding: 8px 16px;">Start Your First Mock Test</a>
+                </div>
+            `;
+        }
+    }
+
+    // K. Render My Books Catalog Placeholder
+    const bookGrid = document.getElementById('vaultBooks');
+    if (bookGrid) {
+        bookGrid.innerHTML = `
+            <div style="padding: 30px; text-align: center; background: rgba(255,255,255,0.4); border-radius: 16px; border: 1px dashed #cbd5e1;">
+                <p style="color:#64748b; font-weight: 500; margin-bottom: 15px;">No books or study notes purchased yet.</p>
+                <a href="store.html" class="btn-sm-view" style="display:inline-block; text-decoration:none; padding: 8px 16px;">Browse Study Store</a>
+            </div>
+        `;
+    }
 }
 
 function showPhoneUpdateModal(user) {

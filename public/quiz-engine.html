@@ -266,7 +266,24 @@
         let timerSeconds = 3600;
         let timerInterval;
 
+        function getTestKey() {
+            return `ongoing_test_${courseId || packId || `${category}_${subject}`}`;
+        }
+
+        function saveTestState() {
+            if (mode !== 'mock' && !courseId) return;
+            localStorage.setItem(getTestKey(), JSON.stringify({
+                userChoices: userChoices,
+                timerSeconds: timerSeconds,
+                currentIndex: currentIndex,
+                timestamp: Date.now()
+            }));
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
+            if (mode === 'mock' || courseId) {
+                alert("⚠️ IMPORTANT EXAM RULE:\n\nYou must not take help from any electronic devices, books, or online search tools. Please take the exam honestly using your own mind. Good luck!");
+            }
             loadQuestions();
             if (mode === 'mock' || courseId) startTimer();
             else document.getElementById('timerBox').style.display = 'none';
@@ -346,7 +363,35 @@
 
                 document.getElementById('totalNum').innerText = questions.length;
                 renderPalette();
-                renderQuestion(0);
+                
+                // Resume Attempt Check
+                let startFromIdx = 0;
+                if (mode === 'mock' || courseId) {
+                    const savedStateStr = localStorage.getItem(getTestKey());
+                    if (savedStateStr) {
+                        const savedState = JSON.parse(savedStateStr);
+                        // If saved attempt is under 24 hours old
+                        if (Date.now() - savedState.timestamp < 24 * 60 * 60 * 1000) {
+                            if (confirm("⚠️ You have an unfinished attempt saved for this test. Would you like to resume from where you left off?")) {
+                                userChoices = savedState.userChoices || {};
+                                timerSeconds = savedState.timerSeconds || timerSeconds;
+                                startFromIdx = savedState.currentIndex || 0;
+                            } else {
+                                localStorage.removeItem(getTestKey());
+                            }
+                        } else {
+                            localStorage.removeItem(getTestKey());
+                        }
+                    }
+                }
+
+                renderQuestion(startFromIdx);
+                
+                // Color palette items already answered
+                Object.keys(userChoices).forEach(idx => {
+                    const palBtn = document.getElementById(`pal-${idx}`);
+                    if (palBtn) palBtn.classList.add('answered');
+                });
             } catch (err) { console.error(err); document.getElementById('questionText').innerText = "Network error loading questions."; }
         }
 
@@ -405,6 +450,7 @@
         function handleOptionSelect(optIdx) {
             if (mode === 'practice' && userChoices[currentIndex] !== undefined) return;
             userChoices[currentIndex] = optIdx;
+            saveTestState();
             renderQuestion(currentIndex);
             document.getElementById(`pal-${currentIndex}`).classList.add('answered');
             if (mode === 'practice') showFeedback();
@@ -416,7 +462,7 @@
             
             // The index of the correct answer is always determined by the English options
             const correctIdx = q.options.indexOf(q.correctAnswer);
-
+ 
             btns.forEach((btn, i) => {
                 if (i === correctIdx) {
                     btn.classList.add('correct');
@@ -424,7 +470,7 @@
                     btn.classList.add('wrong');
                 }
             });
-
+ 
             const exp = document.getElementById('explanationBox');
             if (exp.style.display !== 'block') {
                 exp.style.display = 'block';
@@ -432,26 +478,28 @@
                 if (qExp) document.getElementById('explanationText').innerText = qExp;
             }
         }
-
+ 
         function changeQuestion(delta) {
             const newIndex = currentIndex + delta;
             if (newIndex >= 0 && newIndex < questions.length) renderQuestion(newIndex);
             else if (newIndex === questions.length) submitTest();
         }
-
+ 
         function startTimer() {
             timerInterval = setInterval(() => {
                 timerSeconds--;
+                if (timerSeconds % 5 === 0) saveTestState(); // Save every 5 seconds to reduce local storage writes
                 if (timerSeconds <= 0) { clearInterval(timerInterval); submitTest(); }
                 const mins = Math.floor(timerSeconds / 60);
                 const secs = timerSeconds % 60;
                 document.getElementById('timerText').innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
             }, 1000);
         }
-
+ 
         async function submitTest() {
             if (!confirm('Finish test?')) return;
             clearInterval(timerInterval);
+            localStorage.removeItem(getTestKey());
 
             let correctCount = 0;
             let wrongCount = 0;

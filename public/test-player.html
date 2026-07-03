@@ -106,6 +106,24 @@
         document.getElementById('boardLabel').innerText = board;
         document.getElementById('subjectLabel').innerText = subject;
 
+        function getTestKey() {
+            return `ongoing_test_player_${packId}_${subject}`;
+        }
+
+        function saveTestState() {
+            localStorage.setItem(getTestKey(), JSON.stringify({
+                userAnswers: userAnswers,
+                timeLeft: timeLeft,
+                currentIndex: currentIndex,
+                timestamp: Date.now()
+            }));
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            alert("⚠️ IMPORTANT EXAM RULE:\n\nYou must not take help from any electronic devices, books, or online search tools. Please take the exam honestly using your own mind. Good luck!");
+            fetchQuestions();
+        });
+
         async function fetchQuestions() {
             const token = typeof getAuthToken === 'function' ? getAuthToken() : (localStorage.getItem('token') || localStorage.getItem('coursenova_token') || localStorage.getItem('coursenovaToken'));
             try {
@@ -118,6 +136,26 @@
                     const test = data.pack.tests.find(t => t.testTitle.includes(subject)) || data.pack.tests[0];
                     questions = test.questions;
                     document.getElementById('qTotal').innerText = questions.length;
+                    
+                    // Resume Attempt Check
+                    let startFromIdx = 0;
+                    const savedStateStr = localStorage.getItem(getTestKey());
+                    if (savedStateStr) {
+                        const savedState = JSON.parse(savedStateStr);
+                        if (Date.now() - savedState.timestamp < 24 * 60 * 60 * 1000) {
+                            if (confirm("⚠️ You have an unfinished attempt saved for this test. Would you like to resume from where you left off?")) {
+                                userAnswers = savedState.userAnswers || {};
+                                timeLeft = savedState.timeLeft !== undefined ? savedState.timeLeft : timeLeft;
+                                startFromIdx = savedState.currentIndex || 0;
+                            } else {
+                                localStorage.removeItem(getTestKey());
+                            }
+                        } else {
+                            localStorage.removeItem(getTestKey());
+                        }
+                    }
+
+                    currentIndex = startFromIdx;
                     renderQuestion();
                     startTimer();
                 } else {
@@ -158,12 +196,14 @@
 
         function selectOption(opt) {
             userAnswers[currentIndex] = opt;
+            saveTestState();
             renderQuestion();
         }
 
         function nextQ() {
             if (currentIndex < questions.length - 1) {
                 currentIndex++;
+                saveTestState();
                 renderQuestion();
             }
         }
@@ -171,6 +211,7 @@
         function prevQ() {
             if (currentIndex > 0) {
                 currentIndex--;
+                saveTestState();
                 renderQuestion();
             }
         }
@@ -189,6 +230,10 @@
                 const secs = timeLeft % 60;
                 timerEl.innerText = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
                 
+                if (timeLeft % 5 === 0) {
+                    saveTestState(); // Save every 5 seconds
+                }
+
                 if (timeLeft <= 0) {
                     clearInterval(interval);
                     alert("Time's up! Submitting your test.");
@@ -219,6 +264,9 @@
             // Calculate score with negative marking (-0.25 for incorrect answers)
             const computedScore = (correct * 1.0) - (incorrect * 0.25);
             const accuracyVal = (correct / (correct + incorrect || 1)) * 100;
+
+            // Clear ongoing state upon submission
+            localStorage.removeItem(getTestKey());
 
             try {
                 const res = await fetch('/api/mocktest/submit', {
