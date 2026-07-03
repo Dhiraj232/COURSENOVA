@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const multer = require('multer');
-const { parsePDF } = require('../services/pdfParsingService');
+const { parsePDF, normalizeAIQuestions } = require('../services/pdfParsingService');
+const { extractQuestionsFromPdf } = require('../services/aiService');
 const PDFDocument = require('pdfkit');
 const DailyChallenge = require('../models/DailyChallenge');
 const { requireAuth } = require('../middleware/auth');
@@ -92,8 +93,18 @@ router.post('/upload', (req, res, next) => {
         const pdfBuffer = req.file.buffer;
         
         const expectedCount = req.query.expectedCount || req.body.expectedCount || 100;
-        const questions = await parsePDF(pdfBuffer, { category: 'Daily Challenge', subject: examType || 'General' }, expectedCount);
-        console.log(`[3] Text extraction and parsing completed - elapsed: ${Date.now() - req.startTime}ms`);
+        
+        let questions = [];
+        try {
+            console.log('[3] Calling Gemini AI for PDF question extraction...');
+            const aiQuestions = await extractQuestionsFromPdf(pdfBuffer, { category: 'Daily Challenge', subject: examType || 'General' });
+            questions = normalizeAIQuestions(aiQuestions, 'Daily Challenge', examType || 'General');
+            console.log(`[3] Gemini AI successfully extracted and normalized ${questions.length} questions.`);
+        } catch (aiErr) {
+            console.warn('[Warning] Gemini PDF extraction failed, falling back to offline parser:', aiErr.message);
+            questions = await parsePDF(pdfBuffer, { category: 'Daily Challenge', subject: examType || 'General' }, expectedCount);
+            console.log(`[3] Offline parser completed - elapsed: ${Date.now() - req.startTime}ms`);
+        }
 
         if (questions.length === 0) {
             res.json({

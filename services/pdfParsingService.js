@@ -1251,5 +1251,6 @@ module.exports = {
     parsePDF,
     cleanExtractedText,
     parseQuestionsHeuristically,
-    verifyAndFilterFalsePositives
+    verifyAndFilterFalsePositives,
+    normalizeAIQuestions
 };
