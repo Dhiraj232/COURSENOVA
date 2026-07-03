@@ -295,7 +295,17 @@ router.post('/submit-exam', requireAuth, async (req, res) => {
         try {
             const TestResult = require('../models/TestResult');
             const Activity2  = require('../models/Activity');
-            await TestResult.create({ userId, courseId: String(course._id), courseName: course.title, score, passed, totalQuestions: total, correctQuestions: correct });
+            await TestResult.create({
+                userId,
+                courseId: String(course._id),
+                courseName: course.title,
+                score,
+                passed,
+                totalQuestions: total,
+                correctQuestions: correct,
+                incorrectQuestions: total - correct,
+                accuracy: (correct / (total || 1)) * 100
+            });
             await Activity2.create({ userId, type: passed ? 'test_passed' : 'test_failed', title: `Final Exam: ${course.title}`, courseId: String(course._id), courseName: course.title, score });
             if (passed) {
                 await Activity2.create({ userId, type: 'certificate_earned', title: `Certificate: ${course.title}`, courseId: String(course._id), courseName: course.title });

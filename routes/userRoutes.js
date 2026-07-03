@@ -151,7 +151,7 @@ router.get('/dashboard-stats', requireAuth, async (req, res) => {
 
         // Calculate avg accuracy from last 5 tests
         const accuracy = testResults.length > 0 
-            ? (testResults.reduce((acc, curr) => acc + curr.accuracy, 0) / testResults.length).toFixed(1)
+            ? (testResults.reduce((acc, curr) => acc + (curr.accuracy !== undefined ? curr.accuracy : (curr.score || 0)), 0) / testResults.length).toFixed(1)
             : 0;
 
         res.json({

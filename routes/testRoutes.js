@@ -321,17 +321,23 @@ router.get('/daily-challenge/all', requireAdmin, async (req, res) => {
 
 router.post('/daily-challenge/submit', requireAuth, async (req, res) => {
     try {
-        const { challengeId, answers, score, correct, wrong, accuracy, timeTaken } = req.body;
-        const userId = req.userId;
+        const correctCount = Number(correct) || 0;
+        const wrongCount = Number(wrong) || 0;
+        const total = correctCount + wrongCount || 1;
+        const rawScore = Number(score) !== undefined && !isNaN(Number(score)) ? Number(score) : (correctCount - 0.25 * wrongCount);
+        const scorePercent = (rawScore / total) * 100;
+        const accuracyVal = Number(accuracy) || (correctCount / (correctCount + wrongCount || 1) * 100);
 
         // 1. Save Result
         const result = await TestResult.create({
             userId,
             courseId: `daily_challenge_${challengeId}`,
-            score: Number(score),
+            score: scorePercent,
+            accuracy: accuracyVal,
             passed: true, // required by schema, mark true as completed
-            totalQuestions: Number(correct) + Number(wrong),
-            correctQuestions: Number(correct),
+            totalQuestions: total,
+            correctQuestions: correctCount,
+            incorrectQuestions: wrongCount,
             timestamp: new Date()
         });
 

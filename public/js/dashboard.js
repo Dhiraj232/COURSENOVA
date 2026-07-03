@@ -297,9 +297,10 @@ function updateDashboardUI(data, userStats) {
     // D. Performance Analytics
     setElText('accuracyDisplay', (userStats.avgAccuracy || 0) + "%");
     if (userStats.recentTests && userStats.recentTests.length > 0) {
-        const bestScore = Math.max(...userStats.recentTests.map(t => t.scorePercent || 0));
+        const scores = userStats.recentTests.map(t => typeof t.score === 'number' ? Math.round(t.score) : 0);
+        const bestScore = Math.max(...scores, 0);
         setElText('bestScoreDisplay', bestScore + "%");
-        setElText('avgScoreDisplay', userStats.avgAccuracy + "%");
+        setElText('avgScoreDisplay', Math.round(userStats.avgAccuracy) + "%");
     }
 
     localTimeSpent = data.stats.totalTime || 0;

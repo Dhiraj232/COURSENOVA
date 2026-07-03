@@ -98,28 +98,29 @@
     <script src="js/navigation.js"></script>
     <script>
         const urlParams = new URLSearchParams(window.location.search);
-        const score = parseInt(urlParams.get('score')) || 0;
+        const score = parseFloat(urlParams.get('score')) || 0;
         const total = parseInt(urlParams.get('total')) || 0;
+        const correct = parseInt(urlParams.get('correct')) || Math.max(0, Math.ceil(score));
+        const incorrect = parseInt(urlParams.get('incorrect')) || (total - correct);
         const board = urlParams.get('board');
         const subject = urlParams.get('subject');
 
         document.getElementById('boardName').innerText = board;
         document.getElementById('subjectName').innerText = subject;
-        document.getElementById('scoreVal').innerText = score;
+        document.getElementById('scoreVal').innerText = score.toFixed(2);
         document.getElementById('totalVal').innerText = total;
-        document.getElementById('correctVal').innerText = score;
-        document.getElementById('incorrectVal').innerText = total - score;
+        document.getElementById('correctVal').innerText = correct;
+        document.getElementById('incorrectVal').innerText = incorrect;
         
-        const accuracy = total > 0 ? Math.round((score / total) * 100) : 0;
+        const accuracy = (correct + incorrect) > 0 ? Math.round((correct / (correct + incorrect)) * 100) : 0;
         document.getElementById('accuracyVal').innerText = `${accuracy}%`;
 
-        if (accuracy < 40) {
+        if (total > 0 && (score / total) < 0.4) {
             document.getElementById('resultTitle').innerText = "Keep Practicing!";
             document.getElementById('resultMsg').innerText = "Focus on the weak areas and try again.";
         }
 
         function retryTest() {
-            const packId = board.toLowerCase().replace(/\s+/g, '-');
             window.location.href = `board-selector.html?board=${encodeURIComponent(board)}`;
         }
     </script>

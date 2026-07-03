@@ -200,10 +200,25 @@
 
         async function submitTest() {
             const token = typeof getAuthToken === 'function' ? getAuthToken() : (localStorage.getItem('token') || localStorage.getItem('coursenova_token') || localStorage.getItem('coursenovaToken'));
-            let score = 0;
+            
+            let correct = 0;
+            let incorrect = 0;
+            let unattempted = 0;
+
             questions.forEach((q, i) => {
-                if (userAnswers[i] === q.correctAnswer) score++;
+                const ans = userAnswers[i];
+                if (ans === undefined || ans === null || ans === '') {
+                    unattempted++;
+                } else if (ans === q.correctAnswer) {
+                    correct++;
+                } else {
+                    incorrect++;
+                }
             });
+
+            // Calculate score with negative marking (-0.25 for incorrect answers)
+            const computedScore = (correct * 1.0) - (incorrect * 0.25);
+            const accuracyVal = (correct / (correct + incorrect || 1)) * 100;
 
             try {
                 const res = await fetch('/api/mocktest/submit', {
@@ -212,16 +227,17 @@
                     body: JSON.stringify({
                         testId: `${packId}-${subject}`,
                         packId: board,
-                        score: score,
+                        score: computedScore,
                         total: questions.length,
-                        correct: score,
-                        incorrect: questions.length - score,
+                        correct: correct,
+                        incorrect: incorrect,
+                        unattempted: unattempted,
                         timeSpentSec: (30 * 60) - timeLeft
                     })
                 });
                 const data = await res.json();
                 if (data.ok) {
-                    window.location.href = `mock-test-result.html?score=${score}&total=${questions.length}&board=${encodeURIComponent(board)}&subject=${encodeURIComponent(subject)}`;
+                    window.location.href = `mock-test-result.html?score=${computedScore}&correct=${correct}&incorrect=${incorrect}&total=${questions.length}&board=${encodeURIComponent(board)}&subject=${encodeURIComponent(subject)}`;
                 }
             } catch (e) { alert('Failed to submit results'); }
         }

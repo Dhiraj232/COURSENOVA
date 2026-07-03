@@ -92,18 +92,55 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const results = JSON.parse(localStorage.getItem('last_quiz_results'));
-            if (!results) {
-                window.location.href = 'mock-tests.html';
-                return;
+            
+            // Read from localStorage or fallback to URL query parameters
+            let correct = 0;
+            let total = 0;
+            let wrong = 0;
+            let unattempted = 0;
+            let rawScore = 0;
+            let accuracy = 0;
+            let avgTime = 0;
+
+            if (results) {
+                correct = Number(results.correct) || 0;
+                total = Number(results.total) || 0;
+                wrong = results.wrong !== undefined ? Number(results.wrong) : (total - correct);
+                unattempted = results.unattempted !== undefined ? Number(results.unattempted) : 0;
+                rawScore = results.score !== undefined ? Number(results.score) : (correct - 0.25 * wrong);
+                accuracy = results.accuracy !== undefined ? Number(results.accuracy) : Math.round((correct / (correct + wrong || 1)) * 100);
+                avgTime = Number(results.avgTime) || 0;
+            } else {
+                const params = new URLSearchParams(window.location.search);
+                correct = parseInt(params.get('correct')) || 0;
+                total = parseInt(params.get('total')) || 0;
+                wrong = parseInt(params.get('wrong')) || 0;
+                unattempted = parseInt(params.get('unattempted')) || 0;
+                rawScore = parseFloat(params.get('score')) || (correct - 0.25 * wrong);
+                accuracy = parseFloat(params.get('accuracy')) || Math.round((correct / (correct + wrong || 1)) * 100);
+                avgTime = parseInt(params.get('avgTime')) || 0;
+
+                if (!params.has('correct')) {
+                    // Redirect back if no results are found in storage or query params
+                    window.location.href = 'mock-tests.html';
+                    return;
+                }
             }
 
-            const score = Math.round((results.correct / results.total) * 100);
-            const passed = score >= 50;
+            const scorePercent = (rawScore / (total || 1)) * 100;
+            const passed = scorePercent >= 40;
 
-            document.getElementById('scoreValue').textContent = score + '%';
-            document.getElementById('correctCount').textContent = results.correct;
-            document.getElementById('wrongCount').textContent = results.total - results.correct;
-            document.getElementById('avgTime').textContent = results.avgTime + 's';
+            // Render details
+            document.getElementById('scoreValue').innerHTML = `${rawScore.toFixed(2)} <span style="font-size: 1.2rem; color: #94a3b8; font-weight: 500;">/ ${total}</span>`;
+            document.getElementById('correctCount').textContent = correct;
+            document.getElementById('wrongCount').textContent = wrong;
+            document.getElementById('avgTime').textContent = accuracy + '%';
+            
+            // Update labels dynamically
+            const labels = document.querySelectorAll('.stat-label');
+            if (labels.length >= 3) {
+                labels[2].textContent = 'Accuracy'; // Change Avg Time box to Accuracy for better utility
+            }
 
             const badge = document.getElementById('passBadge');
             const title = document.getElementById('resultTitle');
@@ -111,7 +148,7 @@
             if (passed) {
                 badge.textContent = 'PASSED';
                 badge.className = 'result-badge pass';
-                title.textContent = 'Great job!';
+                title.textContent = 'Well Done!';
                 confetti({
                     particleCount: 150,
                     spread: 70,
@@ -121,7 +158,7 @@
             } else {
                 badge.textContent = 'NEEDS REVIEW';
                 badge.className = 'result-badge fail';
-                title.textContent = 'Not quiet there yet';
+                title.textContent = 'Keep Practicing!';
             }
         });
     </script>

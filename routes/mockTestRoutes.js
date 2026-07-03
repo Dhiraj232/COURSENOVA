@@ -75,16 +75,29 @@ router.get('/packs/:id', requireAuth, async (req, res) => {
 
 // ── 5. Submit Mock Test Result ──────────────────────────────────────────
 router.post('/submit', requireAuth, async (req, res) => {
-    const { testId, packId, score, total, correct, incorrect, timeSpentSec } = req.body;
+    const { testId, packId, score, total, correct, incorrect, unattempted, timeSpentSec } = req.body;
     try {
+        const correctCount = Number(correct) || 0;
+        const incorrectCount = Number(incorrect) || 0;
+        const totalCount = Number(total) || 1;
+        const unattemptedCount = unattempted !== undefined ? Number(unattempted) : (totalCount - correctCount - incorrectCount);
+        
+        // Calculate raw obtained marks with negative marking (-0.25)
+        const rawScore = (correctCount * 1.0) - (incorrectCount * 0.25);
+        const scorePercent = (rawScore / totalCount) * 100;
+        const accuracyVal = (correctCount / (correctCount + incorrectCount || 1)) * 100;
+
         const result = await TestResult.create({
             userId: req.userId,
             courseId: testId,
             courseName: packId, // Using packId for grouping analysis
-            score: (score / total) * 100,
-            passed: (score / total) >= 0.4, // 40% pass criteria for practice
-            totalQuestions: total,
-            correctQuestions: correct,
+            score: scorePercent, // percentage score for dashboard and progress charts
+            accuracy: accuracyVal,
+            passed: scorePercent >= 40, // 40% pass criteria for practice
+            totalQuestions: totalCount,
+            correctQuestions: correctCount,
+            incorrectQuestions: incorrectCount,
+            unattemptedQuestions: unattemptedCount,
             topic: 'Mock Test Attempt',
             timestamp: new Date()
         });
@@ -93,9 +106,9 @@ router.post('/submit', requireAuth, async (req, res) => {
         const Activity = require('../models/Activity');
         await Activity.create({
             userId: req.userId,
-            type: (score / total) >= 0.4 ? 'test_passed' : 'test_failed',
+            type: scorePercent >= 40 ? 'test_passed' : 'test_failed',
             title: `Attempted: ${packId} (${testId})`,
-            score: (score / total) * 100
+            score: scorePercent
         });
 
         // Award points: +20 for test attempt (as per new rules)
@@ -110,12 +123,13 @@ router.post('/submit', requireAuth, async (req, res) => {
             io.to(`user:${req.userId}`).emit('dashboard_update', {
                 type: 'TEST_COMPLETE',
                 title: packId,
-                score: (score / total) * 100,
-                passed: (score / total) >= 0.4,
-                message: `Finished ${packId} with ${(score / total) * 100}%`
+                score: scorePercent,
+                passed: scorePercent >= 40,
+                message: `Finished ${packId} with ${scorePercent.toFixed(1)}% (Marks: ${rawScore.toFixed(2)}/${totalCount})`
             });
         }
     } catch (err) {
+        console.error(err);
         res.status(500).json({ ok: false, message: 'Submission failed' });
     }
 });

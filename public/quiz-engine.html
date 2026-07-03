@@ -454,11 +454,28 @@
             clearInterval(timerInterval);
 
             let correctCount = 0;
+            let wrongCount = 0;
+            let unattemptedCount = 0;
+
             questions.forEach((q, i) => {
                 const selectedIdx = userChoices[i];
+                if (selectedIdx === undefined || selectedIdx === null) {
+                    unattemptedCount++;
+                    return;
+                }
                 const correctIdx = q.options.indexOf(q.correctAnswer);
-                if (selectedIdx === correctIdx) correctCount++;
+                if (selectedIdx === correctIdx) {
+                    correctCount++;
+                } else {
+                    wrongCount++;
+                }
             });
+
+            // Calculate raw score with -0.25 negative marking
+            const rawScore = (correctCount * 1.0) - (wrongCount * 0.25);
+            const totalAttempted = correctCount + wrongCount;
+            const accuracyVal = totalAttempted > 0 ? Math.round((correctCount / totalAttempted) * 100) : 0;
+            const timeSpent = 3600 - timerSeconds;
 
             const payload = {
                 courseId: courseId || packId || `${category}-${subject}`,
@@ -466,9 +483,23 @@
                 packId: packId || 'Practice',
                 total: questions.length,
                 correct: correctCount,
-                score: correctCount,
+                incorrect: wrongCount,
+                unattempted: unattemptedCount,
+                score: rawScore, // Raw marks with negative marking
+                accuracy: accuracyVal,
                 mode: mode
             };
+
+            // Save results locally so quiz-results.html has immediate access without redirects
+            localStorage.setItem('last_quiz_results', JSON.stringify({
+                correct: correctCount,
+                wrong: wrongCount,
+                unattempted: unattemptedCount,
+                total: questions.length,
+                score: rawScore,
+                accuracy: accuracyVal,
+                avgTime: Math.round(timeSpent / (questions.length || 1))
+            }));
 
             const endpoint = courseId ? '/api/course/submit-test' : '/api/mocktest/submit';
             try {
@@ -481,8 +512,17 @@
                     body: JSON.stringify(payload)
                 });
                 const data = await res.json();
-                if (data.ok) window.location.href = `quiz-results.html?correct=${correctCount}&total=${questions.length}&mode=${mode}`;
-            } catch (err) { console.error(err); }
+                if (data.ok) {
+                    window.location.href = `quiz-results.html?correct=${correctCount}&total=${questions.length}&wrong=${wrongCount}&unattempted=${unattemptedCount}&score=${rawScore}&accuracy=${accuracyVal}&mode=${mode}`;
+                } else {
+                    // Even if API logging fails, let the user see their results page from local storage
+                    window.location.href = `quiz-results.html?correct=${correctCount}&total=${questions.length}&wrong=${wrongCount}&unattempted=${unattemptedCount}&score=${rawScore}&accuracy=${accuracyVal}&mode=${mode}`;
+                }
+            } catch (err) {
+                console.error(err);
+                // Fallback redirect so user still sees their local results
+                window.location.href = `quiz-results.html?correct=${correctCount}&total=${questions.length}&wrong=${wrongCount}&unattempted=${unattemptedCount}&score=${rawScore}&accuracy=${accuracyVal}&mode=${mode}`;
+            }
         }
         document.getElementById('mainSubmit').onclick = submitTest;
     </script>

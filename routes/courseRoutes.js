@@ -277,7 +277,9 @@ router.post('/submit-test', async (req, res) => {
                 score,
                 passed,
                 totalQuestions: total,
-                correctQuestions: correct
+                correctQuestions: correct,
+                incorrectQuestions: total - correct,
+                accuracy: (correct / (total || 1)) * 100
             });
 
             await Activity.create({
