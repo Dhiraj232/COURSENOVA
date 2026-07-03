@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tax Invoice | CourseNova</title>
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --surface: #ffffff;
+            --bg: #f8fafc;
+            --primary: #1e3a8a;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .invoice-container {
+            background: var(--surface);
+            max-width: 800px;
+            width: 100%;
+            padding: 50px;
+            border-radius: 24px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border);
+        }
+
+        .invoice-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 30px;
+            margin-bottom: 30px;
+        }
+
+        .brand-section h1 {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin: 0 0 5px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .brand-section h1 img {
+            width: 36px;
+            height: 36px;
+        }
+
+        .brand-section p {
+            margin: 0;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .meta-section {
+            text-align: right;
+        }
+
+        .meta-section h2 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--text-main);
+            margin: 0 0 10px 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .meta-row {
+            margin-bottom: 5px;
+            font-size: 0.95rem;
+        }
+
+        .meta-label {
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .meta-value {
+            font-weight: 700;
+        }
+
+        .details-section {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-bottom: 45px;
+        }
+
+        .details-box h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin: 0 0 12px 0;
+            text-transform: uppercase;
+            color: var(--primary);
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 6px;
+            letter-spacing: 0.5px;
+        }
+
+        .details-box p {
+            margin: 0 0 6px 0;
+            font-size: 0.95rem;
+            color: #334155;
+        }
+
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+
+        .items-table th {
+            background: var(--bg);
+            color: var(--text-main);
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .items-table td {
+            padding: 16px;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.95rem;
+        }
+
+        .item-desc {
+            font-weight: 600;
+        }
+
+        .text-right {
+            text-align: right !important;
+        }
+
+        .summary-section {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 40px;
+        }
+
+        .summary-table {
+            width: 300px;
+            border-collapse: collapse;
+        }
+
+        .summary-table td {
+            padding: 8px 12px;
+            font-size: 0.95rem;
+        }
+
+        .summary-table tr.total-row td {
+            border-top: 2px solid var(--border);
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--primary);
+            padding-top: 12px;
+        }
+
+        .invoice-footer {
+            border-top: 1px solid var(--border);
+            padding-top: 25px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .print-btn-container {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+        }
+
+        .btn-print {
+            background: var(--primary);
+            color: #ffffff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-print:hover {
+            opacity: 0.9;
+        }
+
+        @media print {
+            body {
+                background: none;
+                padding: 0;
+            }
+            .invoice-container {
+                box-shadow: none;
+                border: none;
+                padding: 0;
+            }
+            .print-btn-container {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div style="display: flex; flex-direction: column; width: 100%; max-width: 800px;">
+        <div class="print-btn-container">
+            <button onclick="window.print()" class="btn-print">
+                <i class="fas fa-print"></i> Print Invoice
+            </button>
+        </div>
+
+        <main class="invoice-container">
+            <header class="invoice-header">
+                <div class="brand-section">
+                    <h1><img src="images/coursenova-logo.png" alt="Logo"> <span>CourseNova</span></h1>
+                    <p>Skill Development & Mock Hub</p>
+                </div>
+                <div class="meta-section">
+                    <h2>Tax Invoice</h2>
+                    <div class="meta-row">
+                        <span class="meta-label">Invoice No:</span>
+                        <span class="meta-value" id="invNo">INV-2026-92849</span>
+                    </div>
+                    <div class="meta-row">
+                        <span class="meta-label">Date:</span>
+                        <span class="meta-value" id="invDate">03/07/2026</span>
+                    </div>
+                </div>
+            </header>
+
+            <section class="details-section">
+                <div class="details-box">
+                    <h3>Seller Details</h3>
+                    <p><strong>CourseNova EdTech</strong></p>
+                    <p>Operational Area: Sector 62, Noida</p>
+                    <p>Uttar Pradesh, 201301, India</p>
+                    <p>Email: dhirajkumar464748@gmail.com</p>
+                </div>
+
+                <div class="details-box">
+                    <h3>Student Details</h3>
+                    <p><strong>Name:</strong> <span id="studentName">Dhiraj Kumar</span></p>
+                    <p><strong>Email:</strong> <span id="studentEmail">dhiraj@gmail.com</span></p>
+                    <p><strong>College:</strong> <span id="studentCollege">N/A</span></p>
+                </div>
+            </section>
+
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th>Description</th>
+                        <th class="text-right">Qty</th>
+                        <th class="text-right">Unit Price</th>
+                        <th class="text-right">Amount (INR)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="item-desc" id="itemName">Premium Notes Store Package - Full SQL Course</td>
+                        <td class="text-right">1</td>
+                        <td class="text-right" id="itemPrice">₹1,499.00</td>
+                        <td class="text-right" id="itemPriceSub">₹1,499.00</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="summary-section">
+                <table class="summary-table">
+                    <tr>
+                        <td class="receipt-label">Subtotal:</td>
+                        <td class="text-right receipt-value" id="subTotal">₹1,270.34</td>
+                    </tr>
+                    <tr>
+                        <td class="receipt-label">Taxes / GST (18%):</td>
+                        <td class="text-right receipt-value" id="taxValue">₹228.66</td>
+                    </tr>
+                    <tr>
+                        <td class="receipt-label">Discount:</td>
+                        <td class="text-right receipt-value" id="discountValue">₹0.00</td>
+                    </tr>
+                    <tr class="total-row">
+                        <td>Total Amount:</td>
+                        <td class="text-right" id="totalAmount">₹1,499.00</td>
+                    </tr>
+                </table>
+            </div>
+
+            <footer class="invoice-footer">
+                <p>This is a computer-generated tax invoice. No signature is required.</p>
+                <p>For support inquiries regarding this invoice, contact <a href="mailto:dhirajkumar464748@gmail.com">dhirajkumar464748@gmail.com</a> or call +91 80766 29906</p>
+                <p style="margin-top: 15px; font-weight: 600;">Thank you for studying with CourseNova!</p>
+            </footer>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const orderId = params.get('orderId') || params.get('id') || 'ORD-' + Math.floor(1000000 + Math.random() * 9000000);
+            const title = params.get('title') || 'CourseNova Premium Education Pack';
+            const price = parseFloat(params.get('price')) || 1499.00;
+            const buyerName = params.get('name') || 'Registered Student';
+            const buyerEmail = params.get('email') || 'student@coursenova.in';
+            const dateStr = params.get('date') || new Date().toLocaleDateString('en-IN');
+            
+            document.getElementById('invNo').textContent = 'INV-26-' + orderId.replace('ORD-', '');
+            document.getElementById('invDate').textContent = dateStr;
+            document.getElementById('itemName').textContent = title;
+            document.getElementById('studentName').textContent = buyerName;
+            document.getElementById('studentEmail').textContent = buyerEmail;
+
+            // Math calculations for compliance items
+            const gstRate = 0.18; // 18% GST standard for education in India
+            const subtotal = price / (1 + gstRate);
+            const gstAmount = price - subtotal;
+
+            document.getElementById('itemPrice').textContent = '₹' + price.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+            document.getElementById('itemPriceSub').textContent = '₹' + price.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+            document.getElementById('subTotal').textContent = '₹' + subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+            document.getElementById('taxValue').textContent = '₹' + gstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+            document.getElementById('totalAmount').textContent = '₹' + price.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+        });
+    </script>
+</body>
+
+</html>

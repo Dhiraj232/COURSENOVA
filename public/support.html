@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support & Help Desk | CourseNova</title>
+
+    <!-- SEO Meta Tags -->
+    <meta name="title" content="Support & Help Desk | CourseNova">
+    <meta name="description" content="Access CourseNova support. Submit support tickets, browse billing and technical FAQs, or connect directly with our operational help desk.">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://coursenova.in/support">
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- External CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/navigation.css">
+    <link rel="stylesheet" href="css/responsive.css">
+    <script src="js/navigation.js"></script>
+
+    <style>
+        :root {
+            --surface: #ffffff;
+            --bg: #f8fafc;
+            --primary: #1e3a8a;
+            --accent: #10b981;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            line-height: 1.7;
+            margin: 0;
+            padding: 0;
+        }
+
+        .support-container {
+            max-width: 1200px;
+            margin: 60px auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: 1.2fr 1fr;
+            gap: 40px;
+        }
+
+        .faq-panel {
+            background: var(--surface);
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border);
+        }
+
+        .support-header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        .support-header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            margin-bottom: 30px;
+        }
+
+        .faq-list {
+            margin-top: 25px;
+        }
+
+        .faq-item {
+            border-bottom: 1px solid var(--border);
+            padding: 15px 0;
+            cursor: pointer;
+        }
+
+        .faq-question {
+            font-weight: 700;
+            font-size: 1.1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: var(--text-main);
+            transition: color 0.2s;
+        }
+
+        .faq-item:hover .faq-question {
+            color: var(--primary);
+        }
+
+        .faq-answer {
+            margin-top: 10px;
+            color: var(--text-muted);
+            font-size: 1rem;
+            display: none;
+            padding-right: 20px;
+        }
+
+        .faq-item.active .faq-answer {
+            display: block;
+        }
+
+        .faq-item.active .faq-question i {
+            transform: rotate(180deg);
+        }
+
+        .faq-question i {
+            transition: transform 0.2s;
+            color: var(--text-muted);
+        }
+
+        .ticket-panel {
+            background: var(--surface);
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border);
+            height: fit-content;
+        }
+
+        .channel-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .channel-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            border-radius: 16px;
+            border: 1px solid var(--border);
+            text-decoration: none;
+            color: var(--text-main);
+            font-weight: 700;
+            transition: all 0.2s;
+            text-align: center;
+            background: var(--bg);
+        }
+
+        .channel-btn i {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .channel-btn.whatsapp i {
+            color: #25d366;
+        }
+
+        .channel-btn.email i {
+            color: #ea4335;
+        }
+
+        .channel-btn:hover {
+            border-color: var(--primary);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 24px rgba(30, 58, 138, 0.08);
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--text-main);
+        }
+
+        .form-group input, 
+        .form-group select, 
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.2s;
+        }
+
+        .form-group input:focus, 
+        .form-group select:focus, 
+        .form-group textarea:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.1);
+        }
+
+        .btn-submit {
+            background: var(--primary);
+            color: var(--white);
+            border: none;
+            padding: 14px 28px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 1.05rem;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn-submit:hover {
+            background: #1e40af;
+            transform: translateY(-2px);
+        }
+
+        .form-status {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
+            display: none;
+        }
+
+        .form-status.success {
+            background: #dcfce7;
+            color: #15803d;
+            display: block;
+        }
+
+        @media (max-width: 968px) {
+            .support-container {
+                grid-template-columns: 1fr;
+                margin: 30px auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="/" class="logo"><img src="images/coursenova-logo.png" alt="COURSENOVA"> <span>COURSENOVA</span></a>
+            <ul class="nav-menu" id="navMenu"></ul>
+            <div class="nav-buttons" id="navButtons"></div>
+            <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+        </div>
+    </nav>
+
+    <main class="support-container">
+        <!-- FAQs Panel -->
+        <section class="faq-panel">
+            <div class="support-header">
+                <h1>Help Desk & FAQs</h1>
+                <p>Browse through quick billing, course accessibility, and general inquiries.</p>
+            </div>
+
+            <div class="faq-list">
+                <!-- Group 1: Access & Courses -->
+                <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-question">
+                        <span>How do I access my purchased study materials or courses?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Once checkout is completed successfully, access is activated instantly. Simply navigate to your "Dashboard" or check the order receipt sent to your registered email address.
+                    </div>
+                </div>
+
+                <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-question">
+                        <span>Can I access CourseNova on mobile devices?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Yes! CourseNova is built with a responsive design. You can access all video lessons, notes, and mock tests seamlessly on any mobile, tablet, or desktop browser.
+                    </div>
+                </div>
+
+                <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-question">
+                        <span>Is there a time limit on course validity?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        No. Once you purchase a course or study notes package, you get lifetime access to that content, including any future syllabus updates.
+                    </div>
+                </div>
+
+                <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-question">
+                        <span>Can I download course videos for offline viewing?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        To protect intellectual property and comply with our Responsible Use Policy, video content cannot be downloaded directly. However, notes and PDF solutions can be downloaded for offline reference.
+                    </div>
+                </div>
+
+                <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-question">
+                        <span>Do you provide syllabus updates for exam materials?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Yes, our team monitors standard board updates (e.g. NEET, SSC syllabus changes) and reviews mock questions regularly to keep materials relevant.
+                    </div>
+                </div>
+
+                <!-- Group 2: Payments & Taxes -->
+                <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-question">
+                        <span>What payment options are available?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Through our partner Cashfree, we accept all major Indian credit/debit cards, Net Banking, popular UPI apps (Google Pay, PhonePe, Paytm), and digital wallets.
+                    </div>
+                </div>
+
+                <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-question">
+                        <span>What should I do if a payment failed but amount was deducted?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        If money was debited but platform access was not granted, the amount is usually auto-refunded by your bank within 2-4 business days. If you do not receive it, raise a ticket using the form on the right or email us with your payment receipt.
+                    </div>
+                </div>
+
+                <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-question">
+                        <span>Is my transaction information secure?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Yes, all checkout transactions are encrypted using SSL protocol and handled via Cashfree's PCI-DSS compliant secure payment gateway. We do not store raw card/banking numbers on our servers.
+                    </div>
+                </div>
+
+                <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-question">
+                        <span>Is GST included in the product price?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Yes, a detailed tax breakdown (including GST) is shown on the checkout page before making a payment, and a tax invoice is generated upon checkout completion.
+                    </div>
+                </div>
+
+                <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-question">
+                        <span>Do you charge extra for certificates or processing fees?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        No. The price displayed at checkout is inclusive of all educational materials, examination access, and the final certificate generation. No hidden charges are applied.
+                    </div>
+                </div>
+
+                <!-- Group 3: Refunds & Cancellations -->
+                <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-question">
+                        <span>Can I request a refund for a course or notes?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        As per our Refund & Cancellation Policy, digital products are non-refundable once dashboard access has been provided. In cases of duplicate charges, refunds are processed within 5-7 business days.
+                    </div>
+                </div>
+
+                <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-question">
+                        <span>How are duplicate billing errors resolved?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        If a network lag causes double-debits for a single purchase, write to us with the transaction IDs. The duplicate amount will be credited back to your bank account within 5-7 working days.
+                    </div>
+                </div>
+
+                <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-question">
+                        <span>Can I cancel an order once paid?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Since all content is digitally delivered instantly upon receipt validation, paid orders cannot be cancelled mid-term.
+                    </div>
+                </div>
+
+                <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-question">
+                        <span>My payment failed, how do I retry?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Go back to the store, select your product, click checkout, check the Terms acceptance box, and select an alternate payment method like UPI or Net Banking to try again.
+                    </div>
+                </div>
+
+                <!-- Group 4: Certificates & Verification -->
+                <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-question">
+                        <span>Are certificates verified and shareable?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Yes! All CourseNova certificates are generated with a unique Certificate ID and QR Code, allowing universities or recruiters to verify student status dynamically via our /verify-certificate lookup.
+                    </div>
+                </div>
+
+                <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-question">
+                        <span>How do I qualify for a certificate?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        You must complete all lessons/videos in the respective certificate course and score at least 60% in the final course grading quiz.
+                    </div>
+                </div>
+
+                <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-question">
+                        <span>Are there retakes available if I fail the final quiz?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Yes, you can review the materials and retake the final quiz after a 24-hour cooling period to pass and claim your certificate.
+                    </div>
+                </div>
+
+                <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-question">
+                        <span>Can I link certificates to my LinkedIn profile?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Absolutely. Copy your unique certificate link and add it under the "Licenses & Certifications" section on LinkedIn.
+                    </div>
+                </div>
+
+                <!-- Group 5: Account & Security -->
+                <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-question">
+                        <span>How can I edit my profile or academic details?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Log in to your CourseNova account, navigate to the Dashboard, click on "Profile Settings", update your college name/branch/year, and click save.
+                    </div>
+                </div>
+
+                <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-question">
+                        <span>Can I share my account with my friends?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        No. To safeguard credentials and content guidelines, sharing login sessions with others is prohibited and can cause permanent lock-out.
+                    </div>
+                </div>
+
+                <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-question">
+                        <span>How do I request deletion of my data?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Please email us a request using your registered email address. Our privacy desk will delete your profile data within 5 business days.
+                    </div>
+                </div>
+
+                <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-question">
+                        <span>Can I login on multiple devices simultaneously?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        To protect your account, concurrent login sessions are restricted. Logging in on a new device will log you out of older sessions.
+                    </div>
+                </div>
+
+                <!-- Group 6: Support & Inquiries -->
+                <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-question">
+                        <span>How do I submit a support ticket?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Fill out the Support Ticket form on this page with your details, query department, and query description. Our helpdesk team will respond within 24 hours.
+                    </div>
+                </div>
+
+                <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-question">
+                        <span>How quickly do you respond to emails?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        All email inquiries sent to dhirajkumar464748@gmail.com are reviewed and responded to within 12 to 24 business hours.
+                    </div>
+                </div>
+
+                <div class="faq-item" onclick="toggleFaq(this)">
+                    <div class="faq-question">
+                        <span>Where is your operational head office located?</span>
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                    <div class="faq-answer">
+                        Our main operations are managed from Sector 62, Noida, Uttar Pradesh, 201301, India.
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Ticket & Contact Panel -->
+        <section class="ticket-panel">
+            <h2>Support Ticket</h2>
+            <p style="color: var(--text-muted); margin-bottom: 25px;">Connect with support specialists or submit a formal ticket below.</p>
+            
+            <div class="channel-buttons">
+                <a href="https://wa.me/918076629906" target="_blank" class="channel-btn whatsapp">
+                    <i class="fab fa-whatsapp"></i>
+                    <span>WhatsApp Chat</span>
+                </a>
+                <a href="mailto:dhirajkumar464748@gmail.com" class="channel-btn email">
+                    <i class="fas fa-envelope"></i>
+                    <span>Email Support</span>
+                </a>
+            </div>
+
+            <form id="ticketForm" onsubmit="submitSupportTicket(event)">
+                <div class="form-group">
+                    <label for="ticketName">Full Name</label>
+                    <input type="text" id="ticketName" required placeholder="Enter your name">
+                </div>
+
+                <div class="form-group">
+                    <label for="ticketEmail">Email Address</label>
+                    <input type="email" id="ticketEmail" required placeholder="Enter registered email">
+                </div>
+
+                <div class="form-group">
+                    <label for="ticketType">Query Department</label>
+                    <select id="ticketType" required>
+                        <option value="" disabled selected>Select category</option>
+                        <option value="Billing / Payment Failed">Billing / Payment Failed</option>
+                        <option value="Course Access Problem">Course Access Problem</option>
+                        <option value="Notes Store Inquiry">Notes Store Inquiry</option>
+                        <option value="Certificate Verification">Certificate Verification</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="ticketMessage">Description</label>
+                    <textarea id="ticketMessage" rows="4" required placeholder="Explain your problem or transaction ID..."></textarea>
+                </div>
+
+                <button type="submit" class="btn-submit" id="btnSubmit">
+                    <span>Submit Ticket</span> <i class="fas fa-ticket-alt"></i>
+                </button>
+
+                <div id="ticketStatus" class="form-status"></div>
+            </form>
+        </section>
+    </main>
+
+    <!-- ==================== FOOTER ==================== -->
+    <footer class="footer">
+        <div class="footer-glow"></div>
+        <div class="footer-container">
+            <div class="footer-brand-column">
+                <a href="/" class="footer-logo">
+                    <img src="images/coursenova-logo.png" alt="COURSENOVA Logo">
+                    <span>COURSENOVA</span>
+                </a>
+                <p class="footer-tagline">Empowering Indian students and professionals with premium courses, syllabus-aligned notes, mock exams, and verified certificates.</p>
+                <div class="footer-social-links">
+                    <a href="https://www.linkedin.com/in/course-nova-26958b405/" target="_blank" aria-label="LinkedIn" class="social-link linkedin"><i class="fa-brands fa-linkedin-in"></i></a>
+                    <a href="https://github.com/Dhiraj232" target="_blank" aria-label="GitHub" class="social-link github"><i class="fa-brands fa-github"></i></a>
+                    <a href="https://www.instagram.com/coursenova.in/" target="_blank" aria-label="Instagram" class="social-link instagram"><i class="fa-brands fa-instagram"></i></a>
+                </div>
+            </div>
+            
+            <div class="footer-links-column">
+                <h4>Products</h4>
+                <ul>
+                    <li><a href="certificates">Certificate Courses</a></li>
+                    <li><a href="mock-tests">Mock Test Hub</a></li>
+                    <li><a href="store">Study Notes Store</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-links-column">
+                <h4>Company</h4>
+                <ul>
+                    <li><a href="about">About Us</a></li>
+                    <li><a href="contact">Contact Us</a></li>
+                    <li><a href="community">Community Hub</a></li>
+                    <li><a href="verify-certificate">Verify Certificate</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-newsletter-column">
+                <h4>Stay Updated</h4>
+                <p>Subscribe to our newsletter for new course alerts, mock tests, and career opportunities.</p>
+                <form class="newsletter-form" id="newsletterForm" onsubmit="handleNewsletterSubmit(event)">
+                    <div class="input-group">
+                        <input type="email" placeholder="Enter your email" required aria-label="Email address" id="newsletterEmail">
+                        <button type="submit" aria-label="Subscribe"><i class="fas fa-paper-plane"></i></button>
+                    </div>
+                    <span class="newsletter-msg" id="newsletterMsg"></span>
+                </form>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p class="copyright">&copy; 2026 COURSENOVA. Founded & Developed by <a href="about" class="founder-link">Dhiraj Kumar Kushwaha</a>. All rights reserved.</p>
+            <div class="footer-bottom-links">
+                <a href="privacy-policy">Privacy Policy</a>
+                <a href="terms-and-conditions">Terms of Service</a>
+                <a href="refund-policy">Refund Policy</a>
+                <a href="shipping-policy">Shipping Policy</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        function toggleFaq(element) {
+            element.classList.toggle('active');
+        }
+
+        function handleNewsletterSubmit(event) {
+            event.preventDefault();
+            const emailInput = document.getElementById('newsletterEmail');
+            const submitBtn = event.currentTarget.querySelector('button');
+            const msgSpan = document.getElementById('newsletterMsg');
+            
+            if (!emailInput || !submitBtn || !msgSpan) return;
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            
+            setTimeout(() => {
+                emailInput.value = '';
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-check"></i>';
+                submitBtn.style.background = '#10b981';
+                submitBtn.style.color = '#fff';
+                
+                msgSpan.textContent = '🎉 Thank you for subscribing!';
+                msgSpan.className = 'newsletter-msg success show';
+                
+                setTimeout(() => {
+                    submitBtn.innerHTML = '<i class="fas fa-paper-plane"></i>';
+                    submitBtn.style.background = '';
+                    submitBtn.style.color = '';
+                    msgSpan.className = 'newsletter-msg';
+                    msgSpan.textContent = '';
+                }, 4000);
+            }, 1200);
+        }
+
+        function submitSupportTicket(event) {
+            event.preventDefault();
+            const btnSubmit = document.getElementById('btnSubmit');
+            const status = document.getElementById('ticketStatus');
+            
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = '<span>Submitting...</span> <i class="fas fa-spinner fa-spin"></i>';
+            status.className = 'form-status';
+            status.style.display = 'none';
+
+            // Simulate form submission
+            setTimeout(() => {
+                btnSubmit.disabled = false;
+                btnSubmit.innerHTML = '<span>Submit Ticket</span> <i class="fas fa-ticket-alt"></i>';
+                status.textContent = '🎉 Support ticket raised successfully! Ticket Reference ID: #CN-' + Math.floor(100000 + Math.random() * 900000);
+                status.className = 'form-status success';
+                document.getElementById('ticketForm').reset();
+            }, 1000);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof setupUserDropdown === 'function') setupUserDropdown();
+        });
+    </script>
+</body>
+
+</html>

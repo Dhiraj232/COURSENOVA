@@ -349,6 +349,16 @@
             </div>
         </div>
 
+        <!-- Terms Acceptance Checkbox -->
+        <div class="form-section" style="padding: 20px 30px;">
+            <div class="form-group" style="margin-bottom: 0; display: flex; align-items: flex-start; gap: 10px;">
+                <input type="checkbox" id="acceptTerms" style="width: auto; margin-top: 4px;" required>
+                <label for="acceptTerms" style="font-weight: 500; font-size: 14px; margin-bottom: 0; cursor: pointer; line-height: 1.5; color: #374151;">
+                    I agree to the <a href="terms-and-conditions" target="_blank" style="color: #667eea; text-decoration: underline;">Terms & Conditions</a>, <a href="privacy-policy" target="_blank" style="color: #667eea; text-decoration: underline;">Privacy Policy</a>, <a href="refund-policy" target="_blank" style="color: #667eea; text-decoration: underline;">Refund & Cancellation Policy</a>, and <a href="shipping-policy" target="_blank" style="color: #667eea; text-decoration: underline;">Shipping & Delivery Policy</a>.
+                </label>
+            </div>
+        </div>
+
         <!-- Action Buttons -->
         <div class="button-group">
             <button class="btn btn-secondary" onclick="window.history.back()">Back to Cart</button>
@@ -381,7 +391,7 @@
 
         async function loadCartSummary() {
             try {
-                                const token = typeof getAuthToken === 'function' ? getAuthToken() : (localStorage.getItem('token') || localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token'));
+                const token = typeof getAuthToken === 'function' ? getAuthToken() : (localStorage.getItem('token') || localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token'));
                 if (!token) {
                     window.location.href = 'signup.html';
                     return;
@@ -400,19 +410,28 @@
 
                 cartData = data.cart;
                 totalAmount = cartData.totalPrice || 0;
+                
+                // Math breakdown for GST compliance
+                const gstRate = 0.18; // 18% GST standard
+                const subtotal = totalAmount / (1 + gstRate);
+                const gstAmount = totalAmount - subtotal;
 
                 let summaryHtml = `
                     <div class="summary-row">
-                        <span>Subtotal</span>
-                        <strong>?${totalAmount}</strong>
+                        <span>Base Amount (Excl. Tax)</span>
+                        <strong>₹${subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
                     </div>
                     <div class="summary-row">
-                        <span>Shipping</span>
-                        <strong>${totalAmount > 500 ? 'FREE' : '?50'}</strong>
+                        <span>Taxes / GST (18%)</span>
+                        <strong>₹${gstAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                    </div>
+                    <div class="summary-row">
+                        <span>Delivery Fee</span>
+                        <strong>FREE (Instant Digital Delivery)</strong>
                     </div>
                     <div class="summary-row" style="border-top: 1px solid #ddd; padding-top: 10px; margin-top: 10px;">
-                        <span class="summary-total">Total Amount</span>
-                        <span class="summary-total">?${(totalAmount + (totalAmount > 500 ? 0 : 50))}</span>
+                        <span class="summary-total">Total Amount (Incl. Taxes)</span>
+                        <span class="summary-total">₹${totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                     </div>
                 `;
 
@@ -448,6 +467,12 @@
 
             if (!fullName || !phone || !street || !city || !state || !pincode) {
                 showMessage('Please fill in all required fields', 'error');
+                return;
+            }
+
+            const acceptTerms = document.getElementById('acceptTerms').checked;
+            if (!acceptTerms) {
+                showMessage('Please accept the Terms & Conditions and policies before placing the order.', 'error');
                 return;
             }
 

@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment Failed | CourseNova</title>
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- External CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/navigation.css">
+    <link rel="stylesheet" href="css/responsive.css">
+    <script src="js/navigation.js"></script>
+
+    <style>
+        :root {
+            --surface: #ffffff;
+            --bg: #f8fafc;
+            --primary: #1e3a8a;
+            --accent: #10b981;
+            --danger: #ef4444;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .failed-wrapper {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .failed-card {
+            background: var(--surface);
+            max-width: 600px;
+            width: 100%;
+            padding: 45px;
+            border-radius: 24px;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .failed-icon-box {
+            width: 80px;
+            height: 80px;
+            background: #fee2e2;
+            color: var(--danger);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2rem;
+            margin: 0 auto 25px auto;
+            box-shadow: 0 8px 24px rgba(239, 68, 68, 0.15);
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .failed-card h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        .failed-card p {
+            color: var(--text-muted);
+            font-size: 1.05rem;
+            margin-bottom: 30px;
+        }
+
+        .failed-advice {
+            background: var(--bg);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid var(--border);
+            margin-bottom: 35px;
+            text-align: left;
+        }
+
+        .failed-advice h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            margin: 0 0 10px 0;
+            color: var(--text-main);
+        }
+
+        .failed-advice ul {
+            padding-left: 20px;
+            margin: 0;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        .failed-advice ul li {
+            margin-bottom: 8px;
+        }
+
+        .failed-advice ul li:last-child {
+            margin-bottom: 0;
+        }
+
+        .failed-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .btn-action {
+            padding: 14px 20px;
+            border-radius: 12px;
+            font-weight: 700;
+            text-decoration: none;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 1rem;
+        }
+
+        .btn-action.primary {
+            background: var(--primary);
+            color: var(--white);
+            border: none;
+        }
+
+        .btn-action.primary:hover {
+            background: #1e40af;
+            transform: translateY(-2px);
+        }
+
+        .btn-action.secondary {
+            background: var(--surface);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+        }
+
+        .btn-action.secondary:hover {
+            background: var(--bg);
+            border-color: var(--text-muted);
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 580px) {
+            .failed-actions {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="/" class="logo"><img src="images/coursenova-logo.png" alt="COURSENOVA"> <span>COURSENOVA</span></a>
+            <ul class="nav-menu" id="navMenu"></ul>
+            <div class="nav-buttons" id="navButtons"></div>
+            <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+        </div>
+    </nav>
+
+    <div class="failed-wrapper">
+        <main class="failed-card">
+            <div class="failed-icon-box">
+                <i class="fas fa-times"></i>
+            </div>
+            
+            <h1>Payment Failed</h1>
+            <p>We were unable to process your transaction. Your bank or card issuer declined the charge.</p>
+
+            <div class="failed-advice">
+                <h3>What should I do?</h3>
+                <ul>
+                    <li>Check if your card has sufficient balance or is enabled for online transactions.</li>
+                    <li>If the money was debited from your account, it will be automatically refunded by your bank within 2-4 business days.</li>
+                    <li>Alternatively, try using a different payment option like UPI or Net Banking.</li>
+                </ul>
+            </div>
+
+            <div class="failed-actions">
+                <a href="checkout" class="btn-action primary" id="retryLink">
+                    <i class="fas fa-redo"></i> <span>Try Again</span>
+                </a>
+                <a href="support" class="btn-action secondary">
+                    <i class="fas fa-headset"></i> <span>Get Support</span>
+                </a>
+            </div>
+        </main>
+    </div>
+
+    <!-- ==================== FOOTER ==================== -->
+    <footer class="footer">
+        <div class="footer-glow"></div>
+        <div class="footer-container">
+            <div class="footer-brand-column">
+                <a href="/" class="footer-logo">
+                    <img src="images/coursenova-logo.png" alt="COURSENOVA Logo">
+                    <span>COURSENOVA</span>
+                </a>
+                <p class="footer-tagline">Empowering Indian students and professionals with premium courses, syllabus-aligned notes, mock exams, and verified certificates.</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p class="copyright">&copy; 2026 COURSENOVA. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const params = new URLSearchParams(window.location.search);
+            const courseId = params.get('courseId') || params.get('id');
+            if (courseId) {
+                document.getElementById('retryLink').href = `checkout?id=${courseId}`;
+            }
+            if (typeof setupUserDropdown === 'function') setupUserDropdown();
+        });
+    </script>
+</body>
+
+</html>

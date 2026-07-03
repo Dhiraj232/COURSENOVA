@@ -20,5 +20,9 @@ Disallow: /testing-center
 Disallow: /quiz-engine
 Disallow: /quiz-results
 Disallow: /auth-callback
+Disallow: /payment-success
+Disallow: /payment-failed
+Disallow: /cancellation
+Disallow: /invoice
 
 Sitemap: https://www.coursenova.in/sitemap.xml

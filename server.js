@@ -452,6 +452,7 @@ app.use((req, res, next) => {
 
 // Serve frontend static files from the specialized 'public' directory
 app.use(express.static(path.join(__dirname, 'public'), {
+  extensions: ['html', 'htm'],
   setHeaders: (res, filePath) => {
     const ext = path.extname(filePath).toLowerCase();
     

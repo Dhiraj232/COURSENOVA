@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transaction Cancelled | CourseNova</title>
+
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- External CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/navigation.css">
+    <link rel="stylesheet" href="css/responsive.css">
+    <script src="js/navigation.js"></script>
+
+    <style>
+        :root {
+            --surface: #ffffff;
+            --bg: #f8fafc;
+            --primary: #1e3a8a;
+            --accent: #10b981;
+            --warning: #f59e0b;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .cancel-wrapper {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .cancel-card {
+            background: var(--surface);
+            max-width: 600px;
+            width: 100%;
+            padding: 45px;
+            border-radius: 24px;
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.05);
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .cancel-icon-box {
+            width: 80px;
+            height: 80px;
+            background: #fef3c7;
+            color: var(--warning);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2rem;
+            margin: 0 auto 25px auto;
+            box-shadow: 0 8px 24px rgba(245, 158, 11, 0.15);
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .cancel-card h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        .cancel-card p {
+            color: var(--text-muted);
+            font-size: 1.05rem;
+            margin-bottom: 30px;
+        }
+
+        .cancel-actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .btn-action {
+            padding: 14px 20px;
+            border-radius: 12px;
+            font-weight: 700;
+            text-decoration: none;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 1rem;
+        }
+
+        .btn-action.primary {
+            background: var(--primary);
+            color: var(--white);
+            border: none;
+        }
+
+        .btn-action.primary:hover {
+            background: #1e40af;
+            transform: translateY(-2px);
+        }
+
+        .btn-action.secondary {
+            background: var(--surface);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+        }
+
+        .btn-action.secondary:hover {
+            background: var(--bg);
+            border-color: var(--text-muted);
+            transform: translateY(-2px);
+        }
+
+        @media (max-width: 580px) {
+            .cancel-actions {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="/" class="logo"><img src="images/coursenova-logo.png" alt="COURSENOVA"> <span>COURSENOVA</span></a>
+            <ul class="nav-menu" id="navMenu"></ul>
+            <div class="nav-buttons" id="navButtons"></div>
+            <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+        </div>
+    </nav>
+
+    <div class="cancel-wrapper">
+        <main class="cancel-card">
+            <div class="cancel-icon-box">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            
+            <h1>Checkout Cancelled</h1>
+            <p>You have explicitly cancelled the payment process. No amount has been debited from your account.</p>
+
+            <div class="cancel-actions" style="max-width: 400px; margin: 0 auto;">
+                <a href="store" class="btn-action primary">
+                    <i class="fas fa-shopping-bag"></i> <span>Return to Store</span>
+                </a>
+                <a href="/" class="btn-action secondary">
+                    <i class="fas fa-home"></i> <span>Back to Home</span>
+                </a>
+            </div>
+        </main>
+    </div>
+
+    <!-- ==================== FOOTER ==================== -->
+    <footer class="footer">
+        <div class="footer-glow"></div>
+        <div class="footer-container">
+            <div class="footer-brand-column">
+                <a href="/" class="footer-logo">
+                    <img src="images/coursenova-logo.png" alt="COURSENOVA Logo">
+                    <span>COURSENOVA</span>
+                </a>
+                <p class="footer-tagline">Empowering Indian students and professionals with premium courses, syllabus-aligned notes, mock exams, and verified certificates.</p>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p class="copyright">&copy; 2026 COURSENOVA. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (typeof setupUserDropdown === 'function') setupUserDropdown();
+        });
+    </script>
+</body>
+
+</html>
