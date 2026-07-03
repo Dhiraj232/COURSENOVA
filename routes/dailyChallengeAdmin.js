@@ -5,7 +5,94 @@ const { parsePDF, normalizeAIQuestions } = require('../services/pdfParsingServic
 const { extractQuestionsFromPdf } = require('../services/aiService');
 const PDFDocument = require('pdfkit');
 const DailyChallenge = require('../models/DailyChallenge');
+const PdfJob = require('../models/PdfJob');
 const { requireAuth } = require('../middleware/auth');
+
+async function createJob(type, params) {
+    const jobId = `job_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+    await PdfJob.create({
+        jobId,
+        type,
+        status: 'processing',
+        progress: 0,
+        stage: 'Uploading PDF',
+        logs: [`[Job Started] ID: ${jobId}, Type: ${type}`],
+        result: null,
+        error: null,
+        totalQuestions: 0,
+        imported: 0,
+        duplicates: 0,
+        failed: 0
+    });
+    return jobId;
+}
+
+async function updateJob(jobId, progress, stage, logMessage) {
+    try {
+        const update = {};
+        if (progress !== undefined) update.progress = progress;
+        if (stage !== undefined) update.stage = stage;
+        
+        const push = {};
+        if (logMessage) {
+            const timestamp = new Date().toISOString();
+            push.logs = `[${timestamp}] ${logMessage}`;
+            console.log(`[PDF Job ${jobId}] ${logMessage}`);
+        }
+        
+        const updateObj = {};
+        if (Object.keys(update).length > 0) updateObj.$set = update;
+        if (Object.keys(push).length > 0) updateObj.$push = push;
+        
+        await PdfJob.updateOne({ jobId }, updateObj);
+    } catch (err) {
+        console.error(`Failed to update job ${jobId}:`, err.message);
+    }
+}
+
+async function completeJob(jobId, result, logMessage = 'Job completed successfully.') {
+    try {
+        const timestamp = new Date().toISOString();
+        const updateObj = {
+            status: 'completed',
+            progress: 100,
+            stage: 'Completed',
+            result,
+            totalQuestions: result.questions ? result.questions.length : 0
+        };
+        await PdfJob.updateOne(
+            { jobId },
+            {
+                $set: updateObj,
+                $push: { logs: `[${timestamp}] ${logMessage}` }
+            }
+        );
+        console.log(`[PDF Job ${jobId}] ${logMessage}`);
+    } catch (err) {
+        console.error(`Failed to complete job ${jobId}:`, err.message);
+    }
+}
+
+async function failJob(jobId, errorMsg) {
+    try {
+        const timestamp = new Date().toISOString();
+        await PdfJob.updateOne(
+            { jobId },
+            {
+                $set: {
+                    status: 'failed',
+                    stage: 'Failed',
+                    error: errorMsg,
+                    progress: 100
+                },
+                $push: { logs: `[${timestamp}] Job failed: ${errorMsg}` }
+            }
+        );
+        console.error(`[PDF Job ${jobId}] Failed: ${errorMsg}`);
+    } catch (err) {
+        console.error(`Failed to fail job ${jobId}:`, err.message);
+    }
+}
 
 const upload = multer({ storage: multer.memoryStorage() });
 
@@ -78,6 +165,31 @@ router.get('/pdf-solutions/:date', async (req, res) => {
 });
 
 
+async function runDailyChallengePDFJob(jobId, pdfBuffer, examType, expectedCount, startTime = Date.now()) {
+    try {
+        await updateJob(jobId, 15, 'Calling Gemini AI', 'Sending PDF to Gemini AI for question extraction...');
+        
+        let questions = [];
+        try {
+            const aiQuestions = await extractQuestionsFromPdf(pdfBuffer, { category: 'Daily Challenge', subject: examType || 'General' });
+            await updateJob(jobId, 70, 'Normalizing Questions', 'Standardizing parsed questions schema...');
+            questions = normalizeAIQuestions(aiQuestions, 'Daily Challenge', examType || 'General');
+            await updateJob(jobId, 90, 'Finalizing', 'Completing question parsing...');
+        } catch (aiErr) {
+            await updateJob(jobId, 40, 'Heuristic Fallback', `Gemini AI failed: ${aiErr.message}. Falling back to heuristic offline parser...`);
+            questions = await parsePDF(pdfBuffer, { category: 'Daily Challenge', subject: examType || 'General' }, expectedCount);
+        }
+
+        if (questions.length === 0) {
+            throw new Error('No MCQ questions detected. Format your PDF with standard MCQ numbering and option blocks (A, B, C, D).');
+        }
+
+        await completeJob(jobId, { questions }, `Job complete. Extracted ${questions.length} questions.`);
+    } catch (err) {
+        await failJob(jobId, err.message);
+    }
+}
+
 // POST /api/admin/daily-challenge/upload
 router.post('/upload', (req, res, next) => {
     req.startTime = Date.now();
@@ -91,35 +203,24 @@ router.post('/upload', (req, res, next) => {
 
         const { examType } = req.body;
         const pdfBuffer = req.file.buffer;
-        
         const expectedCount = req.query.expectedCount || req.body.expectedCount || 100;
-        
-        let questions = [];
-        try {
-            console.log('[3] Calling Gemini AI for PDF question extraction...');
-            const aiQuestions = await extractQuestionsFromPdf(pdfBuffer, { category: 'Daily Challenge', subject: examType || 'General' });
-            questions = normalizeAIQuestions(aiQuestions, 'Daily Challenge', examType || 'General');
-            console.log(`[3] Gemini AI successfully extracted and normalized ${questions.length} questions.`);
-        } catch (aiErr) {
-            console.warn('[Warning] Gemini PDF extraction failed, falling back to offline parser:', aiErr.message);
-            questions = await parsePDF(pdfBuffer, { category: 'Daily Challenge', subject: examType || 'General' }, expectedCount);
-            console.log(`[3] Offline parser completed - elapsed: ${Date.now() - req.startTime}ms`);
-        }
 
-        if (questions.length === 0) {
-            res.json({
-                ok: false,
-                error: '❌ No MCQ questions detected. Format your PDF with standard MCQ numbering and option blocks (A, B, C, D).'
-            });
-            console.log(`[4] Response sent - elapsed: ${Date.now() - req.startTime}ms`);
-            return;
-        }
+        const jobId = await createJob('daily-challenge-pdf', {
+            name: req.file.originalname,
+            size: req.file.size,
+            examType
+        });
 
-        res.json({ ok: true, questions });
-        console.log(`[4] Response sent - elapsed: ${Date.now() - req.startTime}ms`);
+        setImmediate(() => {
+            runDailyChallengePDFJob(jobId, pdfBuffer, examType, expectedCount, req.startTime)
+                .catch(err => console.error(`[PDF Job ${jobId}] error:`, err));
+        });
+
+        res.json({ ok: true, jobId });
+        console.log(`[4] Response sent with jobId - elapsed: ${Date.now() - req.startTime}ms`);
     } catch (err) {
         console.error(err);
-        res.status(500).json({ ok: false, error: 'Failed to process PDF: ' + err.message });
+        res.status(500).json({ ok: false, error: 'Failed to initiate PDF processing: ' + err.message });
     }
 });
 

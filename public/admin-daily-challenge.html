@@ -136,6 +136,37 @@
             }
         }
 
+        function pollJob(jobId, onProgress, onSuccess, onError) {
+            const token = localStorage.getItem('token');
+            const interval = setInterval(async () => {
+                try {
+                    const res = await fetch(`/api/admin/pdf-jobs/${jobId}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    if (!res.ok) {
+                        const msg = await getFetchErrorMessage(res);
+                        throw new Error(msg);
+                    }
+                    const data = await res.json();
+                    if (!data.ok) {
+                        throw new Error(data.message || 'Failed to poll job');
+                    }
+                    if (data.status === 'completed') {
+                        clearInterval(interval);
+                        onSuccess(data.result);
+                    } else if (data.status === 'failed') {
+                        clearInterval(interval);
+                        onError(new Error(data.error || 'Job failed'));
+                    } else {
+                        onProgress(data.progress, data.stage, data.logs);
+                    }
+                } catch (err) {
+                    clearInterval(interval);
+                    onError(err);
+                }
+            }, 1000);
+        }
+
         document.getElementById('uploadForm').onsubmit = async (e) => {
             e.preventDefault();
             const formData = new FormData();
@@ -144,7 +175,9 @@
             formData.append('title', document.getElementById('testTitle').value);
             formData.append('examType', document.getElementById('examType').value);
 
-            document.getElementById('loadingMsg').style.display = 'block';
+            const loadingMsg = document.getElementById('loadingMsg');
+            loadingMsg.innerHTML = '<i class="fas fa-spinner fa-spin fa-2x"></i><br><br><span id="loadingStage">Uploading PDF...</span> <span id="loadingPct">0%</span>';
+            loadingMsg.style.display = 'block';
             document.getElementById('previewArea').style.display = 'none';
 
             const expectedCount = extractedQuestions.length;
@@ -161,22 +194,36 @@
                 if (!res.ok) {
                     const errorMsg = await getFetchErrorMessage(res);
                     alert('Upload failed: ' + errorMsg);
+                    loadingMsg.style.display = 'none';
                     return;
                 }
 
                 const data = await res.json();
                 
-                if (data.ok) {
-                    extractedQuestions = data.questions;
-                    renderPreview();
+                if (data.ok && data.jobId) {
+                    pollJob(data.jobId, 
+                        (progress, stage, logs) => {
+                            document.getElementById('loadingStage').textContent = stage || 'Processing...';
+                            document.getElementById('loadingPct').textContent = `${progress}%`;
+                        },
+                        (result) => {
+                            loadingMsg.style.display = 'none';
+                            extractedQuestions = result.questions || [];
+                            renderPreview();
+                        },
+                        (err) => {
+                            loadingMsg.style.display = 'none';
+                            alert('Processing failed: ' + err.message);
+                        }
+                    );
                 } else {
+                    loadingMsg.style.display = 'none';
                     alert('Error: ' + (data.error || data.message || 'Unknown error'));
                 }
             } catch (err) {
                 console.error(err);
                 alert('Upload failed: ' + err.message);
-            } finally {
-                document.getElementById('loadingMsg').style.display = 'none';
+                loadingMsg.style.display = 'none';
             }
         };
 
