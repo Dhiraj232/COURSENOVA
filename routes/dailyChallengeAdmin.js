@@ -167,17 +167,31 @@ router.get('/pdf-solutions/:date', async (req, res) => {
 
 async function runDailyChallengePDFJob(jobId, pdfBuffer, examType, expectedCount, startTime = Date.now()) {
     try {
-        await updateJob(jobId, 15, 'Calling Gemini AI', 'Sending PDF to Gemini AI for question extraction...');
+        await updateJob(jobId, 5, 'Initializing Parser', 'Starting local PDF parsing engine...');
         
         let questions = [];
         try {
-            const aiQuestions = await extractQuestionsFromPdf(pdfBuffer, { category: 'Daily Challenge', subject: examType || 'General' });
-            await updateJob(jobId, 70, 'Normalizing Questions', 'Standardizing parsed questions schema...');
-            questions = normalizeAIQuestions(aiQuestions, 'Daily Challenge', examType || 'General');
-            await updateJob(jobId, 90, 'Finalizing', 'Completing question parsing...');
-        } catch (aiErr) {
-            await updateJob(jobId, 40, 'Heuristic Fallback', `Gemini AI failed: ${aiErr.message}. Falling back to heuristic offline parser...`);
-            questions = await parsePDF(pdfBuffer, { category: 'Daily Challenge', subject: examType || 'General' }, expectedCount);
+            // Run standard offline parser first (matching mock test functionality)
+            questions = await parsePDF(pdfBuffer, { category: 'Daily Challenge', subject: examType || 'General' }, expectedCount, (progress, stage, log) => {
+                updateJob(jobId, progress, stage, log);
+            });
+            console.log(`[PDF Job ${jobId}] Offline parser completed. Questions extracted: ${questions.length}`);
+        } catch (parseErr) {
+            console.warn('[Warning] Offline parser failed:', parseErr.message);
+            await updateJob(jobId, undefined, undefined, `Offline parser warning: ${parseErr.message}`);
+        }
+
+        // If offline parser fails to find any questions, try Gemini AI as a robust fallback
+        if (questions.length === 0) {
+            try {
+                await updateJob(jobId, 45, 'Gemini AI Fallback', 'Offline parser found 0 questions. Trying Gemini AI fallback parser...');
+                const aiQuestions = await extractQuestionsFromPdf(pdfBuffer, { category: 'Daily Challenge', subject: examType || 'General' });
+                await updateJob(jobId, 80, 'Normalizing Questions', 'Standardizing Gemini AI questions schema...');
+                questions = normalizeAIQuestions(aiQuestions, 'Daily Challenge', examType || 'General');
+            } catch (aiErr) {
+                console.error('[Error] Gemini AI fallback also failed:', aiErr.message);
+                await updateJob(jobId, undefined, undefined, `Gemini AI error: ${aiErr.message}`);
+            }
         }
 
         if (questions.length === 0) {
