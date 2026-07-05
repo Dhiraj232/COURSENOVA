@@ -30,7 +30,9 @@ router.get('/', requireAuth, async (req, res) => {
             totalBooksBought,
             recentActivity,
             analytics,
-            earningsResult
+            earningsResult,
+            totalBooksSold,
+            testResults
         ] = await Promise.all([
             StoreUser.findById(userId).select('name email picture points rank hasMockSeriesAccess purchasedMockTest'),
             Enrollment.countDocuments({ $or: [{ userId: userId }, { userId: uidString }] }),
@@ -44,7 +46,12 @@ router.get('/', requireAuth, async (req, res) => {
             UsedBook.aggregate([
                 { $match: { sellerId: new mongoose.Types.ObjectId(uidString), status: 'sold' } },
                 { $group: { _id: null, total: { $sum: "$price" } } }
-            ])
+            ]),
+            UsedBook.countDocuments({ 
+                sellerId: new mongoose.Types.ObjectId(uidString), 
+                status: 'sold' 
+            }),
+            TestResult.find({ $or: [{ userId: userId }, { userId: uidString }] }).select('score')
         ]);
 
         if (!user) {
@@ -53,13 +60,8 @@ router.get('/', requireAuth, async (req, res) => {
 
         // 2. Process Statistics
         const totalBooksRevenue = earningsResult.length > 0 ? earningsResult[0].total : 0;
-        const totalBooksSold = await UsedBook.countDocuments({ 
-            sellerId: new mongoose.Types.ObjectId(uidString), 
-            status: 'sold' 
-        });
         
         // 3. Optional: Test Analysis (Average Score)
-        const testResults = await TestResult.find({ $or: [{ userId: userId }, { userId: uidString }] }).select('score');
         const avgScore = testResults.length > 0 
             ? Math.round(testResults.reduce((acc, t) => acc + (t.score || 0), 0) / testResults.length) 
             : 0;

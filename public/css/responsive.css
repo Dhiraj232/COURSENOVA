@@ -142,14 +142,39 @@ img, video, iframe, embed, object, canvas, svg { max-width: 100%; height: auto; 
 /* ============================================================
    4. STORE / MARKETPLACE PAGE
    ============================================================ */
+.mobile-filter-toggle-btn {
+  display: none;
+  background: linear-gradient(135deg, #6c5ce7 0%, #4f46e5 100%);
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin: 15px auto;
+  width: calc(100% - 40px);
+  max-width: 400px;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px rgba(108, 92, 231, 0.2);
+  transition: all 0.2s ease;
+}
+.mobile-filter-toggle-btn:active {
+  transform: scale(0.98);
+}
+
 @media (max-width: 768px) {
+  .mobile-filter-toggle-btn { display: flex; }
   .store-header, .store-hero { padding: 1.5rem 1rem !important; text-align: center; }
   .store-filters { flex-direction: column !important; gap: 0.7rem !important; }
   .store-filters select, .store-filters input { width: 100% !important; }
   .books-grid { grid-template-columns: 1fr 1fr !important; gap: 1rem !important; }
   .book-card { font-size: 0.88rem; }
   .sell-btn-wrap { position: fixed !important; bottom: 1.2rem; right: 1.2rem; z-index: 999; }
-  .filter-sidebar { position: relative !important; top: 0 !important; margin-bottom: 1.5rem !important; }
+  .filter-sidebar { display: none !important; position: relative !important; top: 0 !important; margin-bottom: 1.5rem !important; }
+  .filter-sidebar.show-mobile { display: block !important; }
   .stats-bar {
     display: grid !important;
     grid-template-columns: 1fr 1fr !important;
@@ -332,8 +357,51 @@ img, video, iframe, embed, object, canvas, svg { max-width: 100%; height: auto; 
    10. QUIZ ENGINE / DAILY CHALLENGE
    ============================================================ */
 @media (max-width: 768px) {
-  .quiz-container { padding: 1rem !important; margin: 0 !important; border-radius: 0 !important; }
-  .quiz-header { flex-direction: column; gap: 0.6rem; text-align: center; }
+  .quiz-container { 
+    grid-template-columns: 1fr !important; 
+    gap: 20px !important;
+    padding: 12px !important; 
+    margin: 0 !important; 
+    border-radius: 0 !important; 
+  }
+  .quiz-header { 
+    flex-direction: column !important; 
+    align-items: center !important;
+    gap: 12px !important; 
+    padding: 12px !important;
+    text-align: center; 
+  }
+  .quiz-header div[style*="display: flex"] {
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    gap: 12px !important;
+    width: 100% !important;
+  }
+  #quizMeta {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    justify-content: center !important;
+    gap: 12px !important;
+    width: 100% !important;
+  }
+  .btn-submit {
+    white-space: nowrap !important;
+    width: auto !important;
+  }
+  .quiz-controls {
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    margin-top: 25px !important;
+    gap: 15px !important;
+  }
+  .btn-quiz {
+    padding: 12px 24px !important;
+    border-radius: 12px !important;
+    font-size: 0.95rem !important;
+    white-space: nowrap !important;
+    flex: 1 !important;
+    justify-content: center !important;
+  }
   .question-text { font-size: 1rem !important; }
   .option-btn { padding: 0.8rem 1rem !important; font-size: 0.9rem !important; }
   .quiz-progress-bar { height: 6px !important; }

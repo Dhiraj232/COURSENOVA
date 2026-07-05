@@ -158,6 +158,10 @@
                     currentIndex = startFromIdx;
                     renderQuestion();
                     startTimer();
+
+                    if (currentLang === 'hi') {
+                        preTranslateAllQuestions();
+                    }
                 } else {
                     alert(data.message);
                     window.location.href = 'mock-tests.html';
@@ -288,6 +292,47 @@
             document.getElementById('lang-en').classList.toggle('active');
             document.getElementById('lang-hi').classList.toggle('active');
             renderQuestion();
+            if (currentLang === 'hi') {
+                preTranslateAllQuestions();
+            }
+        }
+
+        async function preTranslateAllQuestions() {
+            if (currentLang !== 'hi' || !questions || questions.length === 0) return;
+            for (let i = 0; i < questions.length; i++) {
+                const q = questions[i];
+                if (!q.question_hi && !q.isTranslating) {
+                    q.isTranslating = true;
+                    translateQuestionInBackground(i, q._id, q.question || q.questionText, q.options, 'practice');
+                }
+            }
+        }
+
+        async function translateQuestionInBackground(index, questionId, questionText, options, type) {
+            try {
+                const token = typeof getAuthToken === 'function' ? getAuthToken() : (localStorage.getItem('token') || localStorage.getItem('coursenova_token') || localStorage.getItem('coursenovaToken'));
+                const res = await fetch('/api/test/translate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ questionId, questionText, options, type })
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    questions[index].question_hi = data.question_hi;
+                    questions[index].options_hi = data.options_hi;
+                    questions[index].explanation_hi = data.explanation_hi;
+                    if (currentIndex === index) {
+                        renderQuestion();
+                    }
+                }
+            } catch (err) {
+                console.warn('Background translation error for index ' + index, err);
+            } finally {
+                questions[index].isTranslating = false;
+            }
         }
 
         function startTimer() {

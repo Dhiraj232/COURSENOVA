@@ -1283,6 +1283,11 @@
             </div>
         </section>
 
+        <!-- Toggle button for mobile filters -->
+        <button class="mobile-filter-toggle-btn" onclick="toggleMobileFilters()" id="mobileFilterToggleBtn">
+            <i class="fas fa-filter"></i> Filters / Search Options
+        </button>
+
         <!-- --------------- MAIN MARKETPLACE LAYOUT --------------- -->
         <div class="store-layout">
             <!-- -- Filter Sidebar -- -->
@@ -1986,6 +1991,14 @@
             t.textContent = msg;
             t.className = `toast show ${type}`;
             setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+        // --- MOBILE FILTERS ---
+        function toggleMobileFilters() {
+            const sidebar = document.querySelector('.filter-sidebar');
+            if (sidebar) {
+                sidebar.classList.toggle('show-mobile');
+            }
         }
     </script>
 

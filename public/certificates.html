@@ -921,8 +921,7 @@
                 </div>
             </div>`).join('');
 
-            await loadUserStatus();
-            await fetchCoursesFromServer();
+            await Promise.all([loadUserStatus(), fetchCoursesFromServer()]);
 
             // ── 0. Handle Post-Payment Verification ──────────────────────────
             const urlParams = new URLSearchParams(window.location.search);

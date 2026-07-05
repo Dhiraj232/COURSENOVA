@@ -696,17 +696,18 @@
             }
 
             try {
-                // ── 1. Auto-enroll instantly (Idempotent) ──────────────────────
-                await fetch(`${API}/api/enrollments/enroll-free`, {
+                // ── 1. Auto-enroll instantly (Idempotent) & Load course details (lessons + progress + quiz) in parallel ───────────────────
+                const enrollPromise = fetch(`${API}/api/enrollments/enroll-free`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
                     body: JSON.stringify({ courseId })
                 }).catch(e => console.warn('Auto-enroll error:', e));
 
-                // ── 2. Load course details (lessons + progress + quiz) ───────────────────
-                const res = await fetch(`${API}/api/course/details?courseId=${encodeURIComponent(courseId)}`, {
+                const detailsPromise = fetch(`${API}/api/course/details?courseId=${encodeURIComponent(courseId)}`, {
                     headers: { Authorization: 'Bearer ' + token }
                 });
+
+                const [, res] = await Promise.all([enrollPromise, detailsPromise]);
 
                 // Handle expired/invalid token
                 if (res.status === 401) {

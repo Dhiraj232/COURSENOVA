@@ -30,6 +30,7 @@ const practiceQuestionSchema = new mongoose.Schema({
 practiceQuestionSchema.index({ question: 1 });
 practiceQuestionSchema.index({ question_en: 1 });
 practiceQuestionSchema.index({ questionHash: 1 });
+practiceQuestionSchema.index({ category: 1, subject: 1 });
 
 module.exports = mongoose.model('PracticeQuestion', practiceQuestionSchema);
 

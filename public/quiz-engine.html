@@ -258,6 +258,9 @@
         function toggleLanguage() {
             displayLang = document.getElementById('langToggle').value;
             renderQuestion(currentIndex);
+            if (displayLang === 'hi') {
+                preTranslateAllQuestions();
+            }
         }
 
         let questions = [];
@@ -392,6 +395,10 @@
                     const palBtn = document.getElementById(`pal-${idx}`);
                     if (palBtn) palBtn.classList.add('answered');
                 });
+
+                if (displayLang === 'hi') {
+                    preTranslateAllQuestions();
+                }
             } catch (err) { console.error(err); document.getElementById('questionText').innerText = "Network error loading questions."; }
         }
 
@@ -493,6 +500,46 @@
                 if (currentIndex === index) {
                     renderQuestion(currentIndex);
                 }
+            }
+        }
+
+        async function preTranslateAllQuestions() {
+            if (displayLang !== 'hi' || !questions || questions.length === 0) return;
+            const type = (mode === 'daily_ssc') ? 'daily' : 'practice';
+            for (let i = 0; i < questions.length; i++) {
+                const q = questions[i];
+                if (!q.question_hi && !q.isTranslating) {
+                    q.isTranslating = true;
+                    // Trigger in background without await
+                    translateQuestionInBackground(i, q._id, q.question || q.questionText, q.options, type);
+                }
+            }
+        }
+
+        async function translateQuestionInBackground(index, questionId, questionText, options, type) {
+            try {
+                const token = typeof getAuthToken === 'function' ? getAuthToken() : (localStorage.getItem('token') || localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token') || '');
+                const res = await fetch('/api/test/translate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ questionId, questionText, options, type })
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    questions[index].question_hi = data.question_hi;
+                    questions[index].options_hi = data.options_hi;
+                    questions[index].explanation_hi = data.explanation_hi;
+                    if (currentIndex === index) {
+                        renderQuestion(currentIndex);
+                    }
+                }
+            } catch (err) {
+                console.warn('Background translation error for index ' + index, err);
+            } finally {
+                questions[index].isTranslating = false;
             }
         }
 
