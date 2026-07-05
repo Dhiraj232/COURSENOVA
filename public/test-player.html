@@ -210,7 +210,7 @@
                 return `
                     <div class="option ${isSelected ? 'selected' : ''}" onclick="selectOption(${i})">
                         <div class="option-radio"></div>
-                        <span>${opt}</span>
+                        <span>${cleanOptionText(opt)}</span>
                     </div>
                 `;
             }).join('');
@@ -365,6 +365,11 @@
                     window.location.href = `mock-test-result.html?score=${computedScore}&correct=${correct}&incorrect=${incorrect}&total=${questions.length}&board=${encodeURIComponent(board)}&subject=${encodeURIComponent(subject)}`;
                 }
             } catch (e) { alert('Failed to submit results'); }
+        }
+
+        function cleanOptionText(text) {
+            if (!text) return '';
+            return text.replace(/\s*(?:Testbook\s+)?(?:Solution\s+)?Correct\s+Option\s*[-:]\s*[a-eA-E\d]+\s*$/i, '').trim();
         }
 
         fetchQuestions();

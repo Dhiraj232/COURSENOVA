@@ -535,7 +535,7 @@
                         ${q.opts.map((opt, i) => `
                             <label class="option-label ${userAnswers[currentQ] === i ? 'selected' : ''}" onclick="selectAnswer(${i})">
                                 <div class="option-letter">${letters[i]}</div>
-                                ${opt}
+                                ${cleanOptionText(opt)}
                             </label>
                         `).join('')}
                     </div>
@@ -629,6 +629,11 @@
                         <i class="fas fa-arrow-left"></i> Review Material
                     </button>`;
             }
+        }
+
+        function cleanOptionText(text) {
+            if (!text) return '';
+            return text.replace(/\s*(?:Testbook\s+)?(?:Solution\s+)?Correct\s+Option\s*[-:]\s*[a-eA-E\d]+\s*$/i, '').trim();
         }
 
         // Init

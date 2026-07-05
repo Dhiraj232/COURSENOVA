@@ -953,7 +953,7 @@
                         ${(q.options || []).map((opt, oi) => `
                         <label class="q-option" id="opt-${qi}-${oi}">
                             <input type="radio" name="q${qi}" value="${oi}" onchange="selectOption(${qi}, ${oi})">
-                            ${opt}
+                            ${cleanOptionText(opt)}
                         </label>`).join('')}
                     </div>
                 </div>`;
@@ -1105,6 +1105,11 @@
                 btn.disabled = false;
                 btn.textContent = '🔓 Unlock Now';
             }
+        }
+
+        function cleanOptionText(text) {
+            if (!text) return '';
+            return text.replace(/\s*(?:Testbook\s+)?(?:Solution\s+)?Correct\s+Option\s*[-:]\s*[a-eA-E\d]+\s*$/i, '').trim();
         }
 
         function showTestPassed() {

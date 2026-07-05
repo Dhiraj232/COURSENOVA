@@ -355,9 +355,9 @@
                 <div class="q-text">${cleanQ}</div>
                 <div class="options-grid">
                     ${q.options.map((opt, i) => `
-                        <button class="option-btn ${answers[currentIndex] === opt ? 'selected' : ''}" onclick="selectOption('${opt}')">
+                        <button class="option-btn ${answers[currentIndex] === opt ? 'selected' : ''}" onclick="selectOption(\`${opt.replace(/`/g, '\\`').replace(/\$/g, '\\$')}\`)">
                             <div class="option-circle">${String.fromCharCode(65 + i)}</div>
-                            ${opt}
+                            ${cleanOptionText(opt)}
                         </button>
                     `).join('')}
                 </div>
@@ -458,6 +458,11 @@
                     })
                 });
             } catch (err) { console.error("Save failed:", err); }
+        }
+
+        function cleanOptionText(text) {
+            if (!text) return '';
+            return text.replace(/\s*(?:Testbook\s+)?(?:Solution\s+)?Correct\s+Option\s*[-:]\s*[a-eA-E\d]+\s*$/i, '').trim();
         }
     </script>
 </body>

@@ -446,7 +446,7 @@
             const grid = document.getElementById('optionsGrid');
             grid.innerHTML = qOpts.map((opt, i) => `
                 <button class="option-btn ${userChoices[index] === i ? 'selected' : ''}" 
-                        onclick="handleOptionSelect(${i})">${opt}</button>
+                        onclick="handleOptionSelect(${i})">${cleanOptionText(opt)}</button>
             `).join('');
 
             document.getElementById('explanationBox').style.display = 'none';
@@ -622,6 +622,11 @@
                 window.location.href = `quiz-results.html?correct=${correctCount}&total=${questions.length}&wrong=${wrongCount}&unattempted=${unattemptedCount}&score=${rawScore}&accuracy=${accuracyVal}&mode=${mode}`;
             }
         }
+        function cleanOptionText(text) {
+            if (!text) return '';
+            return text.replace(/\s*(?:Testbook\s+)?(?:Solution\s+)?Correct\s+Option\s*[-:]\s*[a-eA-E\d]+\s*$/i, '').trim();
+        }
+
         document.getElementById('mainSubmit').onclick = submitTest;
     </script>
 </body>
