@@ -373,4 +373,119 @@ router.post('/daily-challenge/submit', requireAuth, async (req, res) => {
     }
 });
 
+
+// POST /api/test/translate
+router.post('/translate', async (req, res) => {
+    const { questionId, questionText, options, type } = req.body;
+    if (!questionText) {
+        return res.status(400).json({ ok: false, message: 'questionText is required' });
+    }
+
+    try {
+        // 1. If questionId is provided, check if we already have translation in DB
+        if (questionId && typeof questionId === 'string' && questionId.match(/^[0-9a-fA-F]{24}$/)) {
+            if (type === 'practice') {
+                const PracticeQuestion = require('../models/PracticeQuestion');
+                const q = await PracticeQuestion.findById(questionId);
+                if (q && q.question_hi && q.options_hi && q.options_hi.length === q.options.length) {
+                    return res.json({
+                        ok: true,
+                        question_hi: q.question_hi,
+                        options_hi: q.options_hi,
+                        explanation_hi: q.explanation_hi
+                    });
+                }
+            } else if (type === 'daily') {
+                const DailyChallenge = require('../models/DailyChallenge');
+                const challenge = await DailyChallenge.findOne({ 'questions._id': questionId });
+                if (challenge) {
+                    const q = challenge.questions.id(questionId);
+                    if (q && q.question_hi && q.options_hi && q.options_hi.length === q.options.length) {
+                        return res.json({
+                            ok: true,
+                            question_hi: q.question_hi,
+                            options_hi: q.options_hi,
+                            explanation_hi: q.explanation_hi
+                        });
+                    }
+                }
+            }
+        }
+
+        // 2. Call Gemini to translate
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) {
+            return res.status(500).json({ ok: false, message: 'Gemini API key is not configured' });
+        }
+
+        const { GoogleGenerativeAI } = require('@google/generative-ai');
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
+
+        const prompt = `You are a professional Hindi translator for educational exams.
+Translate the following English exam question, options, and explanation (if provided) into natural, grammatically correct, and standard academic Hindi.
+For options, translate each option in the list. Ensure the translated options list has the exact same number of items and order as the English options.
+For mathematical formulas or terms, keep them in LaTeX (e.g. $x^2$ or \\frac{a}{b}) if they are in LaTeX, or write them naturally.
+
+Input Data:
+- Question: "${questionText.replace(/"/g, '\\"')}"
+- Options: ${JSON.stringify(options || [])}
+
+Return the translation ONLY as a valid JSON object with these exact fields:
+- question_hi: (string) The Hindi translated question text
+- options_hi: (array of strings) The Hindi translated options in the same order
+- explanation_hi: (string, optional) The Hindi translated explanation
+
+Do NOT include any markdown code block formatting (like \`\`\`json). Return only the raw JSON.`;
+
+        const response = await model.generateContent(prompt);
+        const text = response.response.text().trim();
+        
+        let cleanText = text;
+        if (cleanText.startsWith('```')) {
+            cleanText = cleanText.replace(/^```(?:json)?\n?/, '');
+            cleanText = cleanText.replace(/\n?```$/, '');
+            cleanText = cleanText.trim();
+        }
+
+        const result = JSON.parse(cleanText);
+
+        // 3. Save translation to DB if questionId is provided
+        if (questionId && typeof questionId === 'string' && questionId.match(/^[0-9a-fA-F]{24}$/)) {
+            if (type === 'practice') {
+                const PracticeQuestion = require('../models/PracticeQuestion');
+                await PracticeQuestion.findByIdAndUpdate(questionId, {
+                    question_hi: result.question_hi,
+                    options_hi: result.options_hi,
+                    explanation_hi: result.explanation_hi
+                });
+            } else if (type === 'daily') {
+                const DailyChallenge = require('../models/DailyChallenge');
+                const challenge = await DailyChallenge.findOne({ 'questions._id': questionId });
+                if (challenge) {
+                    const q = challenge.questions.id(questionId);
+                    if (q) {
+                        q.question_hi = result.question_hi;
+                        q.options_hi = result.options_hi;
+                        q.explanation_hi = result.explanation_hi;
+                        await challenge.save();
+                    }
+                }
+            }
+        }
+
+        res.json({
+            ok: true,
+            question_hi: result.question_hi,
+            options_hi: result.options_hi,
+            explanation_hi: result.explanation_hi
+        });
+
+    } catch (err) {
+        console.error('Translation error:', err);
+        res.status(500).json({ ok: false, message: 'Translation failed' });
+    }
+});
+
 module.exports = router;
+

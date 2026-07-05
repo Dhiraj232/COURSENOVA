@@ -425,7 +425,18 @@
                     qText = baseQHi;
                     qOpts = (q.options_hi && q.options_hi.length === q.options.length) ? q.options_hi : q.options;
                 } else {
-                    qText = `<span style="color:#ef4444">[Hindi translation missing]</span><br>${baseQ}`;
+                    if (!q.isTranslating) {
+                        q.isTranslating = true;
+                        let type = 'practice';
+                        if (mode === 'daily_ssc') {
+                            type = 'daily';
+                        }
+                        translateQuestion(index, q._id, baseQ, q.options, type);
+                    }
+                    qText = `<div class="translation-loading" style="display: flex; align-items: center; gap: 10px; color: #6366f1; font-weight: 600;">
+                                <i class="fas fa-spinner fa-spin"></i> हिंदी अनुवाद हो रहा है... (Translating to Hindi...)
+                             </div>`;
+                    qOpts = [];
                 }
             }
 
@@ -446,6 +457,45 @@
             document.getElementById('btnPrev').disabled = (index === 0);
             document.getElementById('btnNext').innerText = (index === questions.length - 1) ? 'Finish' : 'Next';
         }
+
+        async function translateQuestion(index, questionId, questionText, options, type) {
+            try {
+                const token = typeof getAuthToken === 'function' ? getAuthToken() : (localStorage.getItem('token') || localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token') || '');
+                const res = await fetch('/api/test/translate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        questionId,
+                        questionText,
+                        options,
+                        type
+                    })
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    questions[index].question_hi = data.question_hi;
+                    questions[index].options_hi = data.options_hi;
+                    questions[index].explanation_hi = data.explanation_hi;
+                } else {
+                    console.error('Translation failed:', data.message);
+                    questions[index].question_hi = questionText;
+                    questions[index].options_hi = options;
+                }
+            } catch (err) {
+                console.error('Translation error:', err);
+                questions[index].question_hi = questionText;
+                questions[index].options_hi = options;
+            } finally {
+                questions[index].isTranslating = false;
+                if (currentIndex === index) {
+                    renderQuestion(currentIndex);
+                }
+            }
+        }
+
 
         function handleOptionSelect(optIdx) {
             if (mode === 'practice' && userChoices[currentIndex] !== undefined) return;

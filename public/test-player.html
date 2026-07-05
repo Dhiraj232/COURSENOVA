@@ -167,24 +167,53 @@
 
         function renderQuestion() {
             const q = questions[currentIndex];
-            let rawQText = currentLang === 'hi' ? (q.question_hi || q.question) : (q.question_en || q.question);
-            if (rawQText) {
-                rawQText = rawQText.replace(/^(?:Question|Q)\s*\d+\s*[:.-]\s*/i, '').trim();
+            if (!q) return;
+
+            let baseQ = q.question || '';
+            let baseQHi = q.question_hi || '';
+
+            baseQ = baseQ.replace(/^(?:Question|Q)\s*\d+\s*[:.-]\s*/i, '').trim();
+            if (baseQHi) {
+                baseQHi = baseQHi.replace(/^(?:Question|Q)\s*\d+\s*[:.-]\s*/i, '').trim();
             }
-            const qOptions = currentLang === 'hi'
+
+            let qText = currentLang === 'hi' ? baseQHi : baseQ;
+            let qOptions = currentLang === 'hi'
                 ? ((q.options_hi && q.options_hi.length === q.options.length) ? q.options_hi : q.options)
                 : ((q.options_en && q.options_en.length === q.options.length) ? q.options_en : q.options);
-            
+
+            if (currentLang === 'hi' && !q.question_hi) {
+                if (!q.isTranslating) {
+                    q.isTranslating = true;
+                    translateQuestion(currentIndex, q._id, baseQ, q.options, 'practice');
+                }
+                qText = `<div style="display: flex; align-items: center; gap: 10px; color: #3b82f6; font-weight: 600;">
+                            <i class="fas fa-spinner fa-spin"></i> हिंदी अनुवाद हो रहा है... (Translating to Hindi...)
+                         </div>`;
+                qOptions = [];
+            }
+
             document.getElementById('qIdx').innerText = currentIndex + 1;
-            document.getElementById('qText').innerText = rawQText;
+            document.getElementById('qText').innerHTML = qText;
             
             const grid = document.getElementById('optionsGrid');
-            grid.innerHTML = qOptions.map((opt, i) => `
-                <div class="option ${userAnswers[currentIndex] === opt ? 'selected' : ''}" onclick="selectOption('${opt}')">
-                    <div class="option-radio"></div>
-                    <span>${opt}</span>
-                </div>
-            `).join('');
+            grid.innerHTML = qOptions.map((opt, i) => {
+                let isSelected = false;
+                const savedAns = userAnswers[currentIndex];
+                if (savedAns !== undefined && savedAns !== null) {
+                    if (typeof savedAns === 'number' || /^\d+$/.test(savedAns)) {
+                        isSelected = (parseInt(savedAns, 10) === i);
+                    } else {
+                        isSelected = (savedAns === opt || savedAns === q.options[i]);
+                    }
+                }
+                return `
+                    <div class="option ${isSelected ? 'selected' : ''}" onclick="selectOption(${i})">
+                        <div class="option-radio"></div>
+                        <span>${opt}</span>
+                    </div>
+                `;
+            }).join('');
 
             // Progress Fill
             document.getElementById('progressFill').style.width = `${((currentIndex + 1) / questions.length) * 100}%`;
@@ -194,11 +223,49 @@
             document.getElementById('nextBtn').innerText = currentIndex === questions.length - 1 ? 'Last Question' : 'Next Question';
         }
 
-        function selectOption(opt) {
-            userAnswers[currentIndex] = opt;
+        async function translateQuestion(index, questionId, questionText, options, type) {
+            try {
+                const token = typeof getAuthToken === 'function' ? getAuthToken() : (localStorage.getItem('token') || localStorage.getItem('coursenova_token') || localStorage.getItem('coursenovaToken'));
+                const res = await fetch('/api/test/translate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        questionId,
+                        questionText,
+                        options,
+                        type
+                    })
+                });
+                const data = await res.json();
+                if (data.ok) {
+                    questions[index].question_hi = data.question_hi;
+                    questions[index].options_hi = data.options_hi;
+                    questions[index].explanation_hi = data.explanation_hi;
+                } else {
+                    questions[index].question_hi = questionText;
+                    questions[index].options_hi = options;
+                }
+            } catch (err) {
+                console.error(err);
+                questions[index].question_hi = questionText;
+                questions[index].options_hi = options;
+            } finally {
+                questions[index].isTranslating = false;
+                if (currentIndex === index) {
+                    renderQuestion();
+                }
+            }
+        }
+
+        function selectOption(optIdx) {
+            userAnswers[currentIndex] = optIdx;
             saveTestState();
             renderQuestion();
         }
+
 
         function nextQ() {
             if (currentIndex < questions.length - 1) {
@@ -251,13 +318,23 @@
             let unattempted = 0;
 
             questions.forEach((q, i) => {
-                const ans = userAnswers[i];
-                if (ans === undefined || ans === null || ans === '') {
+                const rawAns = userAnswers[i];
+                if (rawAns === undefined || rawAns === null || rawAns === '') {
                     unattempted++;
-                } else if (ans === q.correctAnswer) {
-                    correct++;
                 } else {
-                    incorrect++;
+                    let ans = '';
+                    if (typeof rawAns === 'number' || (typeof rawAns === 'string' && /^\d+$/.test(rawAns))) {
+                        const idx = parseInt(rawAns, 10);
+                        ans = q.options[idx];
+                    } else {
+                        ans = rawAns;
+                    }
+
+                    if (ans === q.correctAnswer) {
+                        correct++;
+                    } else {
+                        incorrect++;
+                    }
                 }
             });
 
