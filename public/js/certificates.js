@@ -23,7 +23,7 @@
         
         try {
             const authHeaders = USER_TOKEN ? { 'Authorization': 'Bearer ' + USER_TOKEN } : {};
-            const response = await fetch(API_BASE + '/api/premium/courses', { headers: authHeaders });
+            const response = await fetch(API_BASE + '/api/courses', { headers: authHeaders });
             const result = await response.json();
 
             if (result.ok && Array.isArray(result.courses)) {

@@ -61,6 +61,7 @@ const paymentRoutes = require('./routes/paymentRoutes');
 const enrollmentRoutes = require('./routes/enrollmentRoutes');
 const certificateRoutes = require('./routes/certificateRoutes');
 const courseRoutes = require('./routes/courseRoutes');
+const coursesRoutes = require('./routes/courses');
 
 // ─── Community Routers (New) ──────────────────────────────────────
 const communityRoutes = require('./routes/community');
@@ -622,6 +623,7 @@ app.use((err, req, res, next) => {
 // ─── Premium Course Routes ─────────────────────────────────────
 const premiumCourseRoutes = require('./routes/premiumCourseRoutes');
 app.use('/api/premium', premiumCourseRoutes);
+app.use('/api/courses', coursesRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/enrollments', enrollmentRoutes);
 app.use('/api/certificates', certificateRoutes);

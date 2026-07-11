@@ -45,7 +45,7 @@ async function initDashboardData(token) {
 
 async function fetchMasterCourses() {
     try {
-        const res = await fetch('/api/premium/courses');
+        const res = await fetch('/api/courses');
         const data = await res.json();
         if (data.ok) {
             data.courses.forEach(c => {

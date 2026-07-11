@@ -967,7 +967,7 @@
 
         async function fetchCoursesFromServer() {
             try {
-                const res = await fetch(`${API}/api/premium/courses`, {
+                const res = await fetch(`${API}/api/courses`, {
                     headers: token ? { Authorization: `Bearer ${token}` } : {}
                 });
                 const data = await res.json();
