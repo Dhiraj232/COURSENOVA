@@ -4,8 +4,15 @@ require('dotenv').config();
 async function testTranslation() {
     try {
         const apiKey = process.env.GEMINI_API_KEY;
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
+        const genAI = new GoogleGenerativeAI("");
+        const model = genAI.getGenerativeModel(
+            { model: 'gemini-flash-latest' },
+            {
+                customHeaders: {
+                    'Authorization': `Bearer ${apiKey}`
+                }
+            }
+        );
 
         const questionText = "Choose the correct order of electrical resistivity of metals.";
         const options = [

@@ -381,6 +381,23 @@ router.post('/translate', async (req, res) => {
         return res.status(400).json({ ok: false, message: 'questionText is required' });
     }
 
+    // Helper for public Google Translate fallback
+    async function translateText(text) {
+        if (!text || typeof text !== 'string') return '';
+        try {
+            const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=hi&dt=t&q=${encodeURIComponent(text)}`;
+            const response = await fetch(url);
+            const data = await response.json();
+            if (data && data[0]) {
+                return data[0].map(item => item[0]).join('');
+            }
+            return text;
+        } catch (err) {
+            console.error('[translateText fallback] Error:', err.message);
+            return text;
+        }
+    }
+
     try {
         // 1. If questionId is provided, check if we already have translation in DB
         if (questionId && typeof questionId === 'string' && questionId.match(/^[0-9a-fA-F]{24}$/)) {
@@ -415,7 +432,7 @@ router.post('/translate', async (req, res) => {
         // 2. Call Gemini to translate
         const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey) {
-            return res.status(500).json({ ok: false, message: 'Gemini API key is not configured' });
+            throw new Error('Gemini API key is not configured');
         }
 
         const { GoogleGenerativeAI } = require('@google/generative-ai');
@@ -474,7 +491,7 @@ Do NOT include any markdown code block formatting (like \`\`\`json). Return only
             }
         }
 
-        res.json({
+        return res.json({
             ok: true,
             question_hi: result.question_hi,
             options_hi: result.options_hi,
@@ -482,8 +499,52 @@ Do NOT include any markdown code block formatting (like \`\`\`json). Return only
         });
 
     } catch (err) {
-        console.error('Translation error:', err);
-        res.status(500).json({ ok: false, message: 'Translation failed' });
+        console.warn('Gemini Translation failed, falling back to public Google Translate:', err.message || err);
+        
+        try {
+            const question_hi = await translateText(questionText);
+            const options_hi = [];
+            if (Array.isArray(options)) {
+                for (const opt of options) {
+                    options_hi.push(opt ? await translateText(opt) : '');
+                }
+            }
+            const explanation_hi = '';
+
+            // Save translation to DB if questionId is provided
+            if (questionId && typeof questionId === 'string' && questionId.match(/^[0-9a-fA-F]{24}$/)) {
+                if (type === 'practice') {
+                    const PracticeQuestion = require('../models/PracticeQuestion');
+                    await PracticeQuestion.findByIdAndUpdate(questionId, {
+                        question_hi,
+                        options_hi,
+                        explanation_hi
+                    });
+                } else if (type === 'daily') {
+                    const DailyChallenge = require('../models/DailyChallenge');
+                    const challenge = await DailyChallenge.findOne({ 'questions._id': questionId });
+                    if (challenge) {
+                        const q = challenge.questions.id(questionId);
+                        if (q) {
+                            q.question_hi = question_hi;
+                            q.options_hi = options_hi;
+                            q.explanation_hi = explanation_hi;
+                            await challenge.save();
+                        }
+                    }
+                }
+            }
+
+            return res.json({
+                ok: true,
+                question_hi,
+                options_hi,
+                explanation_hi
+            });
+        } catch (fallbackErr) {
+            console.error('Translation fallback failed:', fallbackErr);
+            return res.status(500).json({ ok: false, message: 'Translation failed' });
+        }
     }
 });
 
