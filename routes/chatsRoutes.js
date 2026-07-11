@@ -35,7 +35,7 @@ router.get('/', requireAuth, async (req, res) => {
 // ─────────────────────────────────────────────────────────
 // POST /api/chats - Start a new conversation
 // ─────────────────────────────────────────────────────────
-router.post('/', authMiddleware, async (req, res) => {
+router.post('/', requireAuth, async (req, res) => {
     try {
         const { sellerId, bookId, message } = req.body;
 
