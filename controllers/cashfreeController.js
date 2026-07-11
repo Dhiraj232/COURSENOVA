@@ -447,11 +447,14 @@ exports.createOrder = async (req, res) => {
         console.log(`[createOrder] ✅ Order ${orderId} created — ₹${course.price} | course: ${course.title}`);
 
         return res.json({
-            ok:                true,
-            payment_session_id,
-            orderId,
-            amount:            course.price,
-            courseId:          itemType === 'mock' ? course.id : course._id,
+            ok:                  true,
+            success:             true,
+            payment_session_id:  payment_session_id,
+            paymentSessionId:    payment_session_id,
+            orderId:             orderId,
+            order_id:            orderId,
+            amount:              course.price,
+            courseId:            itemType === 'mock' ? course.id : course._id,
         });
 
     } catch (error) {
@@ -469,11 +472,12 @@ exports.createOrder = async (req, res) => {
 // ═════════════════════════════════════════════════════════════════════════════
 exports.verifyPayment = async (req, res) => {
     try {
-        const { orderId, courseId } = req.body;
+        const { orderId } = req.body;
+        const courseId = req.body.courseId || 'placeholder';
         const userId = String(req.userId);
 
-        if (!orderId || !courseId) {
-            return res.status(400).json({ ok: false, message: 'Missing orderId or courseId' });
+        if (!orderId) {
+            return res.status(400).json({ ok: false, message: 'Missing orderId' });
         }
 
         // Check for idempotency — webhook may have already processed this
