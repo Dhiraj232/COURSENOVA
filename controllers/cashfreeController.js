@@ -407,7 +407,7 @@ exports.createOrder = async (req, res) => {
             
             console.error(`[createOrder] ❌ Cashfree [${errCode}] Rejection:`, JSON.stringify(errData || cfErr.message, null, 2));
             
-            return res.status(502).json({
+            return res.status(400).json({
                 ok:      false,
                 message: `Cashfree Error: ${errMsg}`, // Show specific error to user
                 details: errMsg,
@@ -504,7 +504,7 @@ exports.verifyPayment = async (req, res) => {
             cfResponse = await cashfree.PGOrderFetchPayments(orderId);
         } catch (cfErr) {
             console.error('[verifyPayment] Cashfree API error:', cfErr.response?.data || cfErr.message);
-            return res.status(502).json({ ok: false, message: 'Unable to verify payment with Cashfree.' });
+            return res.status(400).json({ ok: false, message: 'Unable to verify payment with Cashfree.' });
         }
 
         const payments = cfResponse.data;
