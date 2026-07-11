@@ -33,16 +33,48 @@
 
         .content-container {
             display: grid;
-            grid-template-columns: 320px 1fr;
+            grid-template-columns: 1fr 340px;
             min-height: calc(100vh - 72px);
             margin-top: 72px;
+        }
+
+        .main-content {
+            grid-column: 1;
+            grid-row: 1;
+            background: var(--main-bg);
+            overflow-y: auto;
+            padding: 40px;
+        }
+
+        .sidebar {
+            grid-column: 2;
+            background: var(--sidebar-bg);
+            border-left: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
         }
 
         @media (max-width: 992px) {
             .content-container {
                 grid-template-columns: 1fr;
+                display: flex !important;
+                flex-direction: column !important;
                 height: auto;
                 overflow-y: auto;
+            }
+            
+            .main-content {
+                order: 1;
+                padding: 20px 15px !important;
+            }
+            
+            .sidebar {
+                order: 2;
+                width: 100% !important;
+                max-height: 350px !important;
+                border-left: none !important;
+                border-top: 1px solid #e2e8f0;
             }
         }
 
@@ -132,12 +164,7 @@
             color: white;
         }
 
-        /* Main Area Styling */
-        .main-content {
-            background: var(--main-bg);
-            overflow-y: auto;
-            padding: 40px;
-        }
+
 
         .lesson-header {
             margin-bottom: 30px;

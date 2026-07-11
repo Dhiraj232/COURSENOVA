@@ -5,61 +5,63 @@
 }
 
 :root {
-    /* ── Core Brand Colors ── */
-    --primary-color: #1e3a8a;
-    --secondary-color: #f3f4f6;
-    --accent-color: #10b981;
-    --accent-orange: #f97316;
-    --text-dark: #1f2937;
-    --text-light: #4b5563;
-    --border-color: #e5e7eb;
+    /* ── Premium HSL Color Palette ── */
+    --primary-color: #4f46e5; /* Premium Indigo */
+    --primary-hover: #4338ca;
+    --primary-light: #eef2ff;
+    --secondary-color: #f8fafc;
+    --accent-color: #10b981; /* Premium Emerald */
+    --accent-orange: #f97316; /* Premium Orange */
+    --text-dark: #0f172a; /* Slate 900 */
+    --text-light: #475569; /* Slate 600 */
+    --border-color: #e2e8f0; /* Slate 200 */
     --white: #ffffff;
 
     /* ── Extended Palette ── */
-    --primary-50: #eff6ff;
-    --primary-100: #dbeafe;
-    --primary-500: #3b82f6;
-    --primary-600: #2563eb;
-    --primary-700: #1d4ed8;
-    --primary-900: #1e3a8a;
+    --primary-50: #f5f3ff;
+    --primary-100: #ede9fe;
+    --primary-500: #8b5cf6;
+    --primary-600: #7c3aed;
+    --primary-700: #6d28d9;
+    --primary-900: #4c1d95;
 
-    /* ── Gradients ── */
-    --gradient-primary: linear-gradient(135deg, #1e3a8a 0%, #3730a3 100%);
-    --gradient-primary-alt: linear-gradient(135deg, #1e3a8a 0%, #2563eb 60%, #10b981 100%);
+    /* ── Premium Gradients (PW / Unacademy Inspired) ── */
+    --gradient-primary: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    --gradient-primary-alt: linear-gradient(135deg, #4f46e5 0%, #3b82f6 60%, #10b981 100%);
     --gradient-accent: linear-gradient(135deg, #10b981 0%, #059669 100%);
     --gradient-warm: linear-gradient(135deg, #f97316 0%, #ef4444 100%);
     --gradient-purple: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
     --gradient-sky: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 100%);
-    --gradient-hero: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 50%, #0ea5e9 100%);
+    --gradient-hero: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #0ea5e9 100%);
 
-    /* ── Shadows ── */
-    --shadow-xs: 0 1px 3px rgba(0,0,0,0.05);
-    --shadow-sm: 0 2px 8px rgba(0,0,0,0.07);
-    --shadow-md: 0 4px 20px rgba(0,0,0,0.09);
-    --shadow-lg: 0 10px 40px rgba(0,0,0,0.12);
-    --shadow-xl: 0 20px 60px rgba(0,0,0,0.16);
-    --shadow-primary: 0 8px 32px rgba(30,58,138,0.28);
-    --shadow-accent:  0 8px 32px rgba(16,185,129,0.28);
-    --shadow-card: 0 2px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
-    --shadow-card-hover: 0 16px 48px rgba(30,58,138,0.15), 0 4px 12px rgba(0,0,0,0.08);
+    /* ── Modern Premium Shadows ── */
+    --shadow-xs: 0 1px 2px rgba(0,0,0,0.05);
+    --shadow-sm: 0 2px 4px rgba(15, 23, 42, 0.05);
+    --shadow-md: 0 4px 12px rgba(15, 23, 42, 0.08);
+    --shadow-lg: 0 12px 24px rgba(15, 23, 42, 0.12);
+    --shadow-xl: 0 20px 40px rgba(15, 23, 42, 0.16);
+    --shadow-primary: 0 8px 30px rgba(79, 70, 229, 0.3);
+    --shadow-accent: 0 8px 30px rgba(16, 185, 129, 0.25);
+    --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    --shadow-card-hover: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 
     /* ── Border Radius ── */
-    --radius-sm: 6px;
-    --radius-md: 10px;
-    --radius-lg: 16px;
-    --radius-xl: 24px;
-    --radius-2xl: 32px;
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 18px;
+    --radius-xl: 26px;
+    --radius-2xl: 34px;
     --radius-full: 9999px;
 
     /* ── Transitions ── */
-    --transition-fast: 0.15s ease;
-    --transition-base: 0.25s ease;
-    --transition-slow: 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+    --transition-fast: 0.12s ease;
+    --transition-base: 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 0.35s cubic-bezier(0.165, 0.84, 0.44, 1);
 
     /* ── Glassmorphism ── */
-    --glass-bg: rgba(255,255,255,0.72);
-    --glass-border: rgba(255,255,255,0.25);
-    --glass-shadow: 0 8px 32px rgba(30,58,138,0.12);
+    --glass-bg: rgba(255, 255, 255, 0.75);
+    --glass-border: rgba(255, 255, 255, 0.3);
+    --glass-shadow: 0 8px 32px rgba(15, 23, 42, 0.08);
 
     /* ── Surface ── */
     --surface-1: #ffffff;

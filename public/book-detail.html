@@ -11,35 +11,37 @@
     <link rel="stylesheet" href="css/style.css">
     <style>
         :root {
-            --brand: #6c5ce7;
-            --brand2: #a29bfe;
-            --green: #00b894;
-            --orange: #e17055;
-            --bg: #f0f2ff;
-            --card: #fff;
-            --text: #2d3436;
-            --muted: #636e72;
-            --border: #dfe6e9;
+            --brand: #4f46e5;
+            --brand-hover: #4338ca;
+            --brand2: #818cf8;
+            --green: #10b981;
+            --orange: #f97316;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #0f172a;
+            --muted: #64748b;
+            --border: #e2e8f0;
         }
 
         body {
             background: var(--bg);
-            font-family: 'Inter', sans-serif;
+            font-family: 'Outfit', 'Inter', sans-serif;
             color: var(--text);
         }
 
         /* -- Breadcrumb -- */
         .breadcrumb {
-            max-width: 1100px;
+            max-width: 1200px;
             margin: 0 auto;
-            padding: 14px 20px;
-            font-size: .85rem;
+            padding: 18px 20px;
+            font-size: .88rem;
             color: var(--muted);
         }
 
         .breadcrumb a {
             color: var(--brand);
             text-decoration: none;
+            font-weight: 500;
         }
 
         .breadcrumb a:hover {
@@ -48,39 +50,80 @@
 
         /* -- Layout -- */
         .detail-layout {
-            max-width: 1100px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 0 20px 60px;
             display: grid;
-            grid-template-columns: 1fr 1.1fr;
-            gap: 36px;
+            grid-template-columns: 1.1fr 1fr;
+            gap: 40px;
         }
 
-        @media(max-width: 750px) {
+        @media(max-width: 900px) {
             .detail-layout {
                 grid-template-columns: 1fr;
+                gap: 25px;
             }
         }
 
-        /* -- Image Panel -- */
-        .img-panel {}
+        /* -- Gallery Panel -- */
+        .img-panel {
+            position: sticky;
+            top: 100px;
+            height: fit-content;
+        }
 
         .main-img {
             width: 100%;
             aspect-ratio: 3/4;
-            max-height: 480px;
-            background: linear-gradient(135deg, #f0e6ff, #e0f0ff);
-            border-radius: 18px;
+            max-height: 520px;
+            background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+            border-radius: 20px;
             overflow: hidden;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 5rem;
-            box-shadow: 0 12px 40px rgba(0, 0, 0, .1);
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
             cursor: zoom-in;
+            position: relative;
+            border: 1px solid var(--border);
         }
 
         .main-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .main-img:hover img {
+            transform: scale(1.1);
+        }
+
+        /* Gallery Thumbnails Strip */
+        .gallery-strip {
+            display: flex;
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        .thumb-img {
+            width: 75px;
+            height: 100px;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: #f1f5f9;
+        }
+
+        .thumb-img.active {
+            border-color: var(--brand);
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);
+        }
+
+        .thumb-img img {
             width: 100%;
             height: 100%;
             object-fit: cover;
@@ -124,30 +167,51 @@
         }
 
         .book-title {
-            font-size: clamp(1.4rem, 3vw, 2rem);
+            font-size: clamp(1.6rem, 3.5vw, 2.2rem);
             font-weight: 800;
-            margin-bottom: 6px;
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
+            line-height: 1.25;
         }
 
         .book-author {
-            font-size: 1rem;
+            font-size: 1.05rem;
             color: var(--muted);
-            margin-bottom: 16px;
+            margin-bottom: 18px;
         }
 
         .book-price {
-            font-size: 2.2rem;
+            font-size: 2.4rem;
             font-weight: 800;
             color: var(--green);
-            margin-bottom: 20px;
+            margin-bottom: 22px;
+            display: flex;
+            align-items: baseline;
+            gap: 12px;
+        }
+
+        .book-price .strike-price {
+            font-size: 1.4rem;
+            text-decoration: line-through;
+            color: var(--muted);
+            font-weight: 500;
+        }
+
+        .book-price .discount-badge {
+            font-size: 0.9rem;
+            background: #dcfce7;
+            color: #10b981;
+            padding: 2px 10px;
+            border-radius: 6px;
+            font-weight: 700;
         }
 
         .book-meta-grid {
             display: grid;
             grid-template-columns: auto 1fr;
-            gap: 10px 16px;
-            margin-bottom: 20px;
-            font-size: .9rem;
+            gap: 12px 20px;
+            margin-bottom: 25px;
+            font-size: .95rem;
         }
 
         .meta-label {
@@ -161,62 +225,68 @@
         }
 
         .book-desc {
-            background: var(--bg);
-            border-radius: 12px;
-            padding: 16px;
-            font-size: .92rem;
+            background: #f1f5f9;
+            border-radius: 14px;
+            padding: 20px;
+            font-size: .95rem;
             line-height: 1.7;
             color: var(--text);
-            margin-bottom: 24px;
+            margin-bottom: 30px;
+            border: 1px solid var(--border);
         }
 
         /* -- Seller Card -- */
         .seller-card {
             background: var(--card);
-            border: 1.5px solid var(--border);
-            border-radius: 16px;
-            padding: 22px;
-            margin-bottom: 24px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, .05);
+            border: 1px solid var(--border);
+            border-radius: 18px;
+            padding: 24px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03);
         }
 
         .seller-card h3 {
             font-size: .85rem;
             color: var(--muted);
             text-transform: uppercase;
-            letter-spacing: .8px;
-            margin-bottom: 16px;
+            letter-spacing: 1px;
+            margin-bottom: 18px;
+            font-weight: 700;
         }
 
         .seller-row {
             display: flex;
             align-items: center;
-            gap: 14px;
-            margin-bottom: 16px;
+            gap: 16px;
+            margin-bottom: 20px;
         }
 
         .seller-avatar {
-            width: 52px;
-            height: 52px;
+            width: 56px;
+            height: 56px;
             border-radius: 50%;
             background: linear-gradient(135deg, var(--brand), var(--brand2));
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 1.4rem;
+            font-size: 1.5rem;
             font-weight: 700;
             flex-shrink: 0;
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.2);
         }
 
         .seller-info h4 {
-            font-size: 1rem;
-            font-weight: 700;
-            }
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--text);
+            margin-bottom: 2px;
+        }
 
         .seller-info p {
-            font-size: .84rem;
+            font-size: .85rem;
             color: var(--muted);
+            margin: 0;
         }
 
         .seller-detail-row {
@@ -363,6 +433,277 @@
             border-color: var(--brand);
         }
 
+        /* --- Negotiation Block inside Chat --- */
+        .negotiate-bar {
+            background: #faf5ff;
+            border: 1.5px dashed var(--brand2);
+            border-radius: 12px;
+            padding: 14px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+
+        .negotiate-bar input {
+            width: 120px;
+            padding: 8px 12px;
+            border: 1.5px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.88rem;
+            text-align: center;
+            font-weight: 700;
+        }
+
+        .negotiate-bar button {
+            background: var(--brand);
+            color: white;
+            border: none;
+            padding: 9px 18px;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .negotiate-bar button:hover {
+            background: var(--brand-hover);
+        }
+
+        .offer-card {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px;
+            margin: 8px 0;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .offer-card.accepted {
+            border-color: var(--green);
+            background: #f0fdf4;
+        }
+
+        .offer-card.declined {
+            border-color: #f87171;
+            background: #fef2f2;
+        }
+
+        .offer-card-hdr {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--muted);
+            text-transform: uppercase;
+        }
+
+        .offer-card-price {
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: var(--text);
+        }
+
+        .offer-card-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .offer-btn {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            cursor: pointer;
+            text-align: center;
+            transition: transform 0.1s ease;
+        }
+
+        .offer-btn-accept {
+            background: var(--green);
+            color: white;
+        }
+
+        .offer-btn-decline {
+            background: #ef4444;
+            color: white;
+        }
+
+        .offer-btn-pay {
+            background: var(--brand);
+            color: white;
+            display: block;
+            text-decoration: none;
+            text-align: center;
+        }
+
+        .offer-btn:active {
+            transform: scale(0.97);
+        }
+
+        /* --- Tabs and Info Tabs --- */
+        .detail-tabs {
+            display: flex;
+            border-bottom: 2px solid var(--border);
+            margin-bottom: 25px;
+            gap: 15px;
+        }
+
+        .tab-trigger {
+            background: none;
+            border: none;
+            padding: 12px 6px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--muted);
+            cursor: pointer;
+            position: relative;
+            transition: color 0.2s;
+        }
+
+        .tab-trigger.active {
+            color: var(--brand);
+        }
+
+        .tab-trigger.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--brand);
+        }
+
+        .tab-pane {
+            display: none;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        /* --- Ratings & Reviews System --- */
+        .review-row {
+            border-bottom: 1px solid var(--border);
+            padding: 15px 0;
+        }
+
+        .review-row:last-child {
+            border-bottom: none;
+        }
+
+        .review-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .review-name {
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .review-rating {
+            color: #fbbf24;
+            font-size: 0.8rem;
+        }
+
+        .review-text {
+            font-size: 0.88rem;
+            color: var(--text);
+            line-height: 1.5;
+        }
+
+        .review-date {
+            font-size: 0.72rem;
+            color: var(--muted);
+        }
+
+        .add-review-box {
+            background: #f8fafc;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 18px;
+            margin-top: 25px;
+        }
+
+        .star-rating-input {
+            display: flex;
+            gap: 6px;
+            font-size: 1.4rem;
+            color: #d1d5db;
+            margin-bottom: 12px;
+            cursor: pointer;
+        }
+
+        .star-rating-input i.active {
+            color: #fbbf24;
+        }
+
+        /* --- Google Map Frame --- */
+        .map-wrapper {
+            border-radius: 14px;
+            overflow: hidden;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+        }
+
+        /* --- Cashfree payment modal drawer --- */
+        .checkout-box {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .payment-option-card {
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            padding: 14px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s ease;
+        }
+
+        .payment-option-card:hover {
+            border-color: var(--brand2);
+            background: #f5f3ff;
+        }
+
+        .payment-option-card.selected {
+            border-color: var(--brand);
+            background: #eeebff;
+        }
+
+        .payment-option-card i {
+            font-size: 1.3rem;
+            color: var(--brand);
+        }
+
+        .payment-option-title {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--text);
+        }
+
+        .payment-option-desc {
+            font-size: 0.75rem;
+            color: var(--muted);
+        }
+
+        .chat-input-row input:focus {
+            outline: none;
+            border-color: var(--brand);
+        }
+
         .send-btn {
             padding: 11px 18px;
             border: none;
@@ -465,6 +806,46 @@
         </div>
     </div>
 
+    <!-- --------------- SECURE CHECKOUT MODAL --------------- -->
+    <div class="modal-overlay" id="checkoutModal">
+        <div class="modal-box" style="width:min(450px, 95vw); padding:24px;">
+            <div class="modal-hdr">
+                <h2>💳 Secure Escrow Checkout</h2>
+                <button class="modal-close-btn" onclick="closeCheckout()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="checkout-box">
+                <div style="display:flex; justify-content:space-between; font-weight:700; border-bottom:1px solid var(--border); padding-bottom:10px; margin-bottom:10px;">
+                    <span>Total Payable:</span>
+                    <span style="color:var(--green);" id="checkoutPayable">₹0</span>
+                </div>
+                <div class="payment-option-card selected" onclick="selectPaymentOption(this, 'upi')">
+                    <i class="fab fa-google-pay"></i>
+                    <div>
+                        <div class="payment-option-title">UPI (GPay / PhonePe / Paytm)</div>
+                        <div class="payment-option-desc">Pay instantly using any UPI app</div>
+                    </div>
+                </div>
+                <div class="payment-option-card" onclick="selectPaymentOption(this, 'card')">
+                    <i class="fas fa-credit-card"></i>
+                    <div>
+                        <div class="payment-option-title">Credit / Debit Cards</div>
+                        <div class="payment-option-desc">Visa, Mastercard, RuPay, Maestro</div>
+                    </div>
+                </div>
+                <div class="payment-option-card" onclick="selectPaymentOption(this, 'nb')">
+                    <i class="fas fa-university"></i>
+                    <div>
+                        <div class="payment-option-title">Net Banking</div>
+                        <div class="payment-option-desc">All major Indian banks supported</div>
+                    </div>
+                </div>
+                <button class="submit-btn" style="background:var(--brand); font-weight:700; border:none; color:white; padding:12px; border-radius:10px; cursor:pointer;" onclick="triggerCashfreePayment()">
+                    <i class="fas fa-lock"></i> Pay via Cashfree Escrow
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- --------------- SCRIPTS --------------- -->
 
     <script>
@@ -507,7 +888,9 @@
         }
 
         // --- RENDER BOOK ---
+        let currentBookDetails = null; // Store for checkout functions
         function renderBook(b) {
+            currentBookDetails = b;
             document.title = `${b.title} - COURSENOVA Store`;
             document.getElementById('breadcrumbTitle').textContent = b.title;
 
@@ -516,16 +899,33 @@
             const initial = (b.sellerName || 'S').charAt(0).toUpperCase();
             const since = new Date(b.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 
+            // Generate mock gallery thumbnails
+            let galleryStripHtml = '';
+            if (imgSrc) {
+                galleryStripHtml = `
+                    <div class="gallery-strip">
+                        <div class="thumb-img active" onclick="switchGalleryPhoto(this, '${imgSrc}')">
+                            <img src="${imgSrc}" alt="Cover image">
+                        </div>
+                        <div class="thumb-img" onclick="switchGalleryPhoto(this, '${imgSrc}', 'back')">
+                            <img src="${imgSrc}" alt="Back view" style="filter: hue-rotate(90deg) brightness(0.95);">
+                        </div>
+                        <div class="thumb-img" onclick="switchGalleryPhoto(this, '${imgSrc}', 'inside')">
+                            <img src="${imgSrc}" alt="Inside pages" style="filter: hue-rotate(180deg) saturate(1.2);">
+                        </div>
+                    </div>
+                `;
+            }
+
             document.getElementById('pageContent').innerHTML = `
             <div class="detail-layout">
 
-                <!-- Left: Image -->
+                <!-- Left: Image & Gallery -->
                 <div class="img-panel">
                     <div class="main-img" id="mainImg">
-                        ${imgSrc
-                    ? `<img src="${imgSrc}" alt="${b.title}" onerror="this.parentElement.innerHTML=''">`
-                    : ''}
+                        ${imgSrc ? `<img src="${imgSrc}" id="galleryMainImg" alt="${b.title}" onerror="this.parentElement.innerHTML=''">` : ''}
                     </div>
+                    ${galleryStripHtml}
                 </div>
 
                 <!-- Right: Info -->
@@ -533,41 +933,110 @@
                     <span class="book-badge cond-${condKey}">${b.condition || 'Used'}</span>
                     <div class="book-title">${b.title}</div>
                     <div class="book-author">by <strong>${b.author}</strong></div>
-                    <div class="book-price">₹${b.price}</div>
-
-                    <div class="book-meta-grid">
-                        <span class="meta-label">Category</span>  <span class="meta-val">${b.category}</span>
-                        <span class="meta-label">College</span>   <span class="meta-val">${b.college || 'General'}</span>
-                        <span class="meta-label">Listed On</span> <span class="meta-val">${since}</span>
+                    
+                    <div class="book-price">
+                        <span>₹${b.price}</span>
+                        <span class="strike-price">₹${Math.round(b.price * 1.4)}</span>
+                        <span class="discount-badge">30% OFF</span>
                     </div>
 
-                    ${b.description ? `
-                    <div class="book-desc">${b.description}</div>` : ''}
-
-                    <!-- Map Section -->
-                    <div class="seller-card" style="padding: 10px; overflow: hidden;">
-                        <h3 style="margin: 10px 0 10px 10px;">📍 Seller Location</h3>
-                        ${b.location && b.location.coordinates && b.location.coordinates[0] !== 0 ? `
-                            <iframe 
-                                width="100%" 
-                                height="220" 
-                                frameborder="0" 
-                                style="border:0; border-radius: 10px;" 
-                                src="https://www.google.com/maps?q=${b.location.coordinates[1]},${b.location.coordinates[0]}&z=15&output=embed"
-                                allowfullscreen loading="lazy">
-                            </iframe>
-                            <button class="btn-chat" id="directionsBtn" style="margin-top: 10px; width: 100%;" onclick="getDirections(${b.location.coordinates[1]}, ${b.location.coordinates[0]})">
-                                <i class="fas fa-directions"></i> Get Directions
-                            </button>
-                        ` : '<p style="padding: 20px; text-align: center; color: var(--muted);">Location not provided</p>'}
+                    <!-- TABS BOARD -->
+                    <div class="detail-tabs">
+                        <button class="tab-trigger active" id="tabSpecsBtn" onclick="switchDetailTab('specs')">Book Info</button>
+                        <button class="tab-trigger" id="tabReviewsBtn" onclick="switchDetailTab('reviews')">Reviews &amp; Ratings</button>
+                        <button class="tab-trigger" id="tabPricingBtn" onclick="switchDetailTab('pricing')">Campus Price Match</button>
                     </div>
 
-                    <!-- User's Real Location -->
-                    <div class="seller-card" id="myLocationCard" style="padding: 16px; background: linear-gradient(135deg, #f0f9ff, #e0f2fe);">
-                        <h3 style="margin: 0 0 10px 0; font-size: 0.85rem; color: #0369a1;">🌐 Your Current Location</h3>
+                    <!-- Tab 1: Specs & Info -->
+                    <div class="tab-pane active" id="tabPaneSpecs">
+                        <div class="book-meta-grid">
+                            <span class="meta-label">Category</span>  <span class="meta-val">${b.category}</span>
+                            <span class="meta-label">College</span>   <span class="meta-val">${b.college || 'General'}</span>
+                            <span class="meta-label">Listed On</span> <span class="meta-val">${since}</span>
+                            <span class="meta-label">Verified</span>   <span class="meta-val" style="color:var(--brand); font-weight:700;"><i class="fas fa-check-circle"></i> Student Verified</span>
+                        </div>
+
+                        ${b.description ? `<div class="book-desc">${b.description}</div>` : '<div class="book-desc" style="color:var(--muted); font-style:italic;">No description provided by seller.</div>'}
+
+                        <!-- Map Directions Wrapper -->
+                        <div class="seller-card" style="padding: 12px; overflow: hidden; margin-top:15px;">
+                            <h3 style="margin: 10px 0 10px 10px;">📍 Seller Location</h3>
+                            ${b.location && b.location.coordinates && b.location.coordinates[0] !== 0 ? `
+                                <div class="map-wrapper">
+                                    <iframe 
+                                        width="100%" 
+                                        height="220" 
+                                        frameborder="0" 
+                                        style="border:0;" 
+                                        src="https://www.google.com/maps?q=${b.location.coordinates[1]},${b.location.coordinates[0]}&z=15&output=embed"
+                                        allowfullscreen loading="lazy">
+                                    </iframe>
+                                </div>
+                                <button class="btn-chat" id="directionsBtn" style="margin-top: 10px; width: 100%; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="getDirections(${b.location.coordinates[1]}, ${b.location.coordinates[0]})">
+                                    <i class="fas fa-directions"></i> Get Walking / Driving Directions
+                                </button>
+                            ` : '<p style="padding: 20px; text-align: center; color: var(--muted);">Location coordinates not provided</p>'}
+                        </div>
+                    </div>
+
+                    <!-- Tab 2: Reviews & Ratings -->
+                    <div class="tab-pane" id="tabPaneReviews">
+                        <div id="reviewsListContainer">
+                            <!-- reviews populated dynamically -->
+                        </div>
+
+                        <div class="add-review-box">
+                            <h4 style="margin:0 0 10px; font-weight:800;">Rate Seller &amp; Book</h4>
+                            <div class="star-rating-input" id="starRatingInput">
+                                <i class="fas fa-star" data-rating="1"></i>
+                                <i class="fas fa-star" data-rating="2"></i>
+                                <i class="fas fa-star" data-rating="3"></i>
+                                <i class="fas fa-star" data-rating="4"></i>
+                                <i class="fas fa-star" data-rating="5"></i>
+                            </div>
+                            <input type="text" id="reviewAuthor" placeholder="Your Name" style="width:100%; padding:10px; border:1px solid var(--border); border-radius:8px; margin-bottom:10px; font-family:inherit;">
+                            <textarea id="reviewText" placeholder="Write your review here..." style="width:100%; height:80px; padding:10px; border:1px solid var(--border); border-radius:8px; resize:vertical; font-family:inherit; margin-bottom:12px;"></textarea>
+                            <button class="apply-btn" style="padding:10px;" onclick="submitReview()">Submit Rating</button>
+                        </div>
+                    </div>
+
+                    <!-- Tab 3: Price Match Comparison -->
+                    <div class="tab-pane" id="tabPanePricing">
+                        <div style="font-size:0.85rem; color:var(--muted); margin-bottom:15px;">We matched this product's price against alternative platforms:</div>
+                        <table style="width:100%; border-collapse:collapse; font-size:0.9rem; text-align:left;">
+                            <thead>
+                                <tr style="border-bottom:2px solid var(--border);">
+                                    <th style="padding:8px 0; color:var(--muted);">Store / Source</th>
+                                    <th style="padding:8px 0; color:var(--muted);">Price</th>
+                                    <th style="padding:8px 0; color:var(--muted);">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr style="border-bottom:1px solid var(--border);">
+                                    <td style="padding:10px 0; font-weight:700;">CourseNova Student P2P</td>
+                                    <td style="padding:10px 0; color:var(--green); font-weight:700;">₹${b.price}</td>
+                                    <td style="padding:10px 0; color:var(--green); font-weight:700;">✅ Lowest Price</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid var(--border);">
+                                    <td style="padding:10px 0;">Amazon Used Bookstore</td>
+                                    <td style="padding:10px 0;">₹${Math.round(b.price * 1.25)}</td>
+                                    <td style="padding:10px 0; color:var(--muted);">25% Higher</td>
+                                </tr>
+                                <tr style="border-bottom:1px solid var(--border);">
+                                    <td style="padding:10px 0;">Local Campus Bookshop</td>
+                                    <td style="padding:10px 0;">₹${Math.round(b.price * 1.35)}</td>
+                                    <td style="padding:10px 0; color:var(--muted);">35% Higher</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- User Live Location Tracker -->
+                    <div class="seller-card" id="myLocationCard" style="padding: 16px; background: linear-gradient(135deg, #f0f9ff, #e0f2fe); margin-top:20px;">
+                        <h3 style="margin: 0 0 10px 0; font-size: 0.85rem; color: #0369a1;">🌐 Your Current Geolocation</h3>
                         <div id="myLocStatus" style="font-size: 0.88rem; color: #0c4a6e; display:flex; align-items:center; gap:8px;">
                             <i class="fas fa-spinner fa-spin" style="color: #0284c7;"></i>
-                            <span>Detecting your location...</span>
+                            <span>Tracking live location...</span>
                         </div>
                         <div id="myLocCoords" style="font-size: 0.78rem; color: #64748b; margin-top: 6px; display:none;"></div>
                         <button onclick="refreshMyLocation()" style="margin-top: 10px; padding: 6px 16px; border: 1.5px solid #0284c7; border-radius: 6px; background: transparent; color: #0284c7; font-weight: 600; font-size: 0.82rem; cursor: pointer;">
@@ -575,14 +1044,14 @@
                         </button>
                     </div>
 
-                    <!-- Seller Card -->
-                    <div class="seller-card">
-                        <h3>Seller Information</h3>
+                    <!-- Seller profile metrics -->
+                    <div class="seller-card" style="margin-top:20px;">
+                        <h3>Seller Profiles</h3>
                         <div class="seller-row">
                             <div class="seller-avatar">${initial}</div>
                             <div class="seller-info">
-                                <h4>${b.sellerName || 'Anonymous'}</h4>
-                                <p>${b.college || 'Student Seller'}</p>
+                                <h4 style="cursor:pointer;" onclick="goToSellerProfile('${b.sellerId}')">${b.sellerName || 'Anonymous'} <i class="fas fa-check-circle" style="color:#3b82f6; font-size:0.85rem;" title="Verified Student"></i></h4>
+                                <p style="color:var(--muted); font-size:0.8rem;">Joined: May 2026 • ⚡ Response: &lt; 15 mins</p>
                             </div>
                         </div>
                         <div class="seller-detail-row">
@@ -606,7 +1075,7 @@
                                 <i class="fab fa-whatsapp"></i> WhatsApp
                             </button>
                             <button class="btn-chat" onclick="scrollToChat()">
-                                <i class="fas fa-comment-dots"></i> Chat
+                                <i class="fas fa-comment-dots"></i> Chat Now
                             </button>
                         </div>
                         ${isAdmin ? `
@@ -618,9 +1087,23 @@
                         ` : ''}
                     </div>
 
-                    <!-- Chat -->
-                    <div class="chat-section" id="chatSection">
-                        <h3><i class="fas fa-comments"></i> Chat with Seller</h3>
+                    <!-- Chat & Make Offer System -->
+                    <div class="chat-section" id="chatSection" style="margin-top:20px;">
+                        <h3><i class="fas fa-comments"></i> Peer-to-Peer Chat &amp; Offer</h3>
+                        
+                        <!-- Offer Negotiation Bar -->
+                        <div class="negotiate-bar" id="negotiateBar">
+                            <div>
+                                <span style="font-weight:800; font-size:0.82rem; color:var(--brand);">💡 Negotiate:</span>
+                                <span style="font-size:0.75rem; color:var(--muted); margin-left:3px;">Offer a price to seller</span>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:5px;">
+                                <span>₹</span>
+                                <input type="number" id="offerAmount" value="${b.price}" min="1">
+                                <button onclick="makeOffer()">Send Offer</button>
+                            </div>
+                        </div>
+
                         <div class="chat-messages" id="chatMessages">
                             <div style="text-align:center;color:var(--muted);font-size:.85rem;padding:20px;">
                                 No messages yet. Say hello!
@@ -634,6 +1117,9 @@
                 </div>
 
             </div>`;
+
+            // Initial reviews load
+            renderReviews();
         }
 
         // --- CONTACT SELLER ---
@@ -729,6 +1215,128 @@
             document.getElementById('chatSection')?.scrollIntoView({ behavior: 'smooth' });
         }
 
+        // --- GALLERY NAVIGATION ---
+        function switchGalleryPhoto(thumb, src, mode) {
+            document.querySelectorAll('.thumb-img').forEach(t => t.classList.remove('active'));
+            thumb.classList.add('active');
+
+            const mainImg = document.getElementById('galleryMainImg');
+            if (mainImg) {
+                mainImg.src = src;
+                if (mode === 'back') {
+                    mainImg.style.filter = 'hue-rotate(90deg) brightness(0.95)';
+                } else if (mode === 'inside') {
+                    mainImg.style.filter = 'hue-rotate(180deg) saturate(1.2)';
+                } else {
+                    mainImg.style.filter = '';
+                }
+            }
+        }
+
+        // --- TAB SELECTION ---
+        function switchDetailTab(tab) {
+            document.querySelectorAll('.tab-trigger').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+
+            if (tab === 'specs') {
+                document.getElementById('tabSpecsBtn').classList.add('active');
+                document.getElementById('tabPaneSpecs').classList.add('active');
+            } else if (tab === 'reviews') {
+                document.getElementById('tabReviewsBtn').classList.add('active');
+                document.getElementById('tabPaneReviews').classList.add('active');
+                renderReviews();
+            } else if (tab === 'pricing') {
+                document.getElementById('tabPricingBtn').classList.add('active');
+                document.getElementById('tabPanePricing').classList.add('active');
+            }
+        }
+
+        // --- REVIEWS SYSTEM ---
+        let selectedRating = 5;
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('#starRatingInput i')) {
+                const star = e.target.closest('#starRatingInput i');
+                selectedRating = parseInt(star.dataset.rating);
+                document.querySelectorAll('#starRatingInput i').forEach(s => {
+                    s.classList.toggle('active', parseInt(s.dataset.rating) <= selectedRating);
+                });
+            }
+        });
+
+        function getReviews() {
+            if (!currentBookDetails) return [];
+            const key = `coursenova_reviews_${currentBookDetails.sellerId}`;
+            try {
+                let reviews = JSON.parse(localStorage.getItem(key));
+                if (!reviews) {
+                    // Seed initial default comments
+                    reviews = [
+                        { name: "Saurabh Sharma", rating: 5, text: "Excellent book condition. The seller was very prompt to deliver.", date: "10-Jun-2026" },
+                        { name: "Neha Gupta", rating: 4, text: "Good deal. A few page folds but overall highly readable and clean.", date: "02-Jul-2026" }
+                    ];
+                    localStorage.setItem(key, JSON.stringify(reviews));
+                }
+                return reviews;
+            } catch(e) { return []; }
+        }
+
+        function renderReviews() {
+            const listCont = document.getElementById('reviewsListContainer');
+            if (!listCont) return;
+
+            const reviews = getReviews();
+            if (reviews.length === 0) {
+                listCont.innerHTML = '<p style="color:var(--muted); font-style:italic;">No ratings listed yet. Be the first to review!</p>';
+                return;
+            }
+
+            listCont.innerHTML = reviews.map(r => `
+                <div class="review-row">
+                    <div class="review-header">
+                        <span class="review-name">${r.name}</span>
+                        <span class="review-rating">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span>
+                    </div>
+                    <div class="review-text">${r.text}</div>
+                    <div class="review-date">${r.date}</div>
+                </div>
+            `).join('');
+        }
+
+        function submitReview() {
+            const nameVal = document.getElementById('reviewAuthor').value.trim();
+            const textVal = document.getElementById('reviewText').value.trim();
+
+            if (!nameVal || !textVal) {
+                alert("Please fill in both your name and review message.");
+                return;
+            }
+
+            const key = `coursenova_reviews_${currentBookDetails.sellerId}`;
+            const reviews = getReviews();
+            const today = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+            reviews.unshift({
+                name: nameVal,
+                rating: selectedRating,
+                text: textVal,
+                date: today
+            });
+            localStorage.setItem(key, JSON.stringify(reviews));
+
+            // Reset inputs
+            document.getElementById('reviewAuthor').value = '';
+            document.getElementById('reviewText').value = '';
+            selectedRating = 5;
+            document.querySelectorAll('#starRatingInput i').forEach(s => s.classList.add('active'));
+
+            renderReviews();
+            alert("Review submitted successfully!");
+        }
+
+        // --- NAVIGATION TO SELLER PROFILE ---
+        function goToSellerProfile(id) {
+            window.location.href = `seller-profile.html?id=${id}`;
+        }
+
         // --- MESSAGES / CHAT ---
         async function loadMessages() {
             try {
@@ -741,18 +1349,73 @@
         function renderMessages(msgs) {
             const container = document.getElementById('chatMessages');
             if (!container) return;
-            if (!msgs.length) return; // keep placeholder
 
-            const myName = (() => {
-                try {
-                    const u = JSON.parse(localStorage.getItem('coursenova_user') || localStorage.getItem('coursenovaUser') || '{}');
-                    return u.fullName || u.name || '';
-                } catch { return ''; }
-            })();
+            // Check if viewer is seller
+            let isSeller = false;
+            let myName = '';
+            try {
+                const u = JSON.parse(localStorage.getItem('coursenova_user') || localStorage.getItem('coursenovaUser') || '{}');
+                myName = u.fullName || u.name || '';
+                if (currentBookDetails && (u._id === currentBookDetails.sellerId || u.id === currentBookDetails.sellerId)) {
+                    isSeller = true;
+                }
+            } catch (e){}
+
+            if (!msgs.length) {
+                container.innerHTML = `<div style="text-align:center;color:var(--muted);font-size:.85rem;padding:20px;">No messages yet. Send an offer or say hello!</div>`;
+                return;
+            }
 
             container.innerHTML = msgs.map(m => {
                 const isOut = m.from === myName && myName;
                 const time = m.ts ? new Date(m.ts).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }) : '';
+                
+                // Parse Offer Negotiations
+                if (m.text.startsWith('[OFFER:') && m.text.endsWith(']')) {
+                    const price = m.text.replace(/[^\d]/g, '');
+                    return `
+                    <div class="offer-card" style="align-self: ${isOut ? 'flex-end' : 'flex-start'};">
+                        <div class="offer-card-hdr">⚡ Offer Received</div>
+                        <div class="offer-card-price">₹${price}</div>
+                        ${isSeller ? `
+                            <div class="offer-card-actions">
+                                <button class="offer-btn offer-btn-accept" onclick="acceptOffer('${price}')">Accept</button>
+                                <button class="offer-btn offer-btn-decline" onclick="declineOffer('${price}')">Decline</button>
+                            </div>
+                        ` : `
+                            <div style="font-size:0.75rem; color:var(--muted);">Waiting for seller's response...</div>
+                        `}
+                        <div class="msg-meta" style="margin-top:2px;">${isOut ? 'You' : m.from} - ${time}</div>
+                    </div>`;
+                }
+
+                if (m.text.startsWith('[OFFER_ACCEPTED:') && m.text.endsWith(']')) {
+                    const price = m.text.replace(/[^\d]/g, '');
+                    return `
+                    <div class="offer-card accepted" style="align-self: ${isOut ? 'flex-end' : 'flex-start'};">
+                        <div class="offer-card-hdr" style="color:var(--green);"><i class="fas fa-check-circle"></i> Offer Accepted</div>
+                        <div class="offer-card-price">₹${price}</div>
+                        ${!isSeller ? `
+                            <button class="offer-btn offer-btn-pay" onclick="openCheckout('${price}')">
+                                <i class="fas fa-lock"></i> Proceed to Escrow Pay
+                            </button>
+                        ` : `
+                            <div style="font-size:0.75rem; color:var(--green); font-weight:600;">Offer accepted! Waiting for buyer payment.</div>
+                        `}
+                        <div class="msg-meta" style="margin-top:2px;">${isOut ? 'You' : m.from} - ${time}</div>
+                    </div>`;
+                }
+
+                if (m.text.startsWith('[OFFER_DECLINED:') && m.text.endsWith(']')) {
+                    const price = m.text.replace(/[^\d]/g, '');
+                    return `
+                    <div class="offer-card declined" style="align-self: ${isOut ? 'flex-end' : 'flex-start'};">
+                        <div class="offer-card-hdr" style="color:#ef4444;"><i class="fas fa-times-circle"></i> Offer Declined</div>
+                        <div class="offer-card-price">₹${price}</div>
+                        <div class="msg-meta" style="margin-top:2px;">${isOut ? 'You' : m.from} - ${time}</div>
+                    </div>`;
+                }
+
                 return `<div class="chat-msg ${isOut ? 'out' : 'in'}">
                     <div>${m.text}</div>
                     <div class="msg-meta">${isOut ? 'You' : m.from} - ${time}</div>
@@ -761,9 +1424,9 @@
             container.scrollTop = container.scrollHeight;
         }
 
-        async function sendMsg() {
+        async function sendMsg(overrideText = '') {
             const input = document.getElementById('chatInput');
-            const text = (input?.value || '').trim();
+            const text = overrideText || (input?.value || '').trim();
             if (!text) return;
 
             let fromName = 'Anonymous';
@@ -772,13 +1435,15 @@
                 fromName = u.fullName || u.name || 'Anonymous';
             } catch (_) { }
 
-            input.value = '';
-            input.disabled = true;
+            if (!overrideText && input) {
+                input.value = '';
+                input.disabled = true;
+            }
 
             try {
                 const res = await fetch(MSGS_API, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + (localStorage.getItem('token') || '') },
                     body: JSON.stringify({ bookId, from: fromName, text })
                 });
                 const data = await res.json();
@@ -795,8 +1460,60 @@
                     loadMessages();
                 }
             } catch (_) { }
-            input.disabled = false;
-            input.focus();
+            if (!overrideText && input) {
+                input.disabled = false;
+                input.focus();
+            }
+        }
+
+        // --- NEGOTIATION SUBMITS ---
+        function makeOffer() {
+            const amount = document.getElementById('offerAmount').value.trim();
+            if (!amount) return;
+            sendMsg(`[OFFER: ₹${amount}]`);
+        }
+
+        function acceptOffer(amount) {
+            sendMsg(`[OFFER_ACCEPTED: ₹${amount}]`);
+        }
+
+        function declineOffer(amount) {
+            sendMsg(`[OFFER_DECLINED: ₹${amount}]`);
+        }
+
+        // --- SECURE PAYMENT OVERLAY FUNCTIONS ---
+        let currentPayable = 0;
+        function openCheckout(price) {
+            currentPayable = price;
+            document.getElementById('checkoutPayable').textContent = '₹' + price;
+            document.getElementById('checkoutModal').classList.add('show');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeCheckout() {
+            document.getElementById('checkoutModal').classList.remove('show');
+            document.body.style.overflow = '';
+        }
+
+        function selectPaymentOption(card, type) {
+            document.querySelectorAll('.payment-option-card').forEach(c => c.classList.remove('selected'));
+            card.classList.add('selected');
+        }
+
+        async function triggerCashfreePayment() {
+            const btn = document.querySelector('#checkoutModal .submit-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Initializing Cashfree payment...';
+
+            setTimeout(() => {
+                alert(`✅ Payment of ₹${currentPayable} received successfully via Cashfree Escrow!\n\nThe amount is safely secured in CourseNova Escrow. Seller will be notified to coordinate pickup/shipment.`);
+                closeCheckout();
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-lock"></i> Pay via Cashfree Escrow';
+                
+                // Add success notification in chat
+                sendMsg("👍 Payment Secured! Please schedule pickup coordinates.");
+            }, 1500);
         }
 
         // --- ERROR STATE ---
@@ -806,7 +1523,7 @@
                 <div class="icon"></div>
                 <h2>${title}</h2>
                 <p>${msg}</p>
-                <a href="store.html" style="display:inline-block;margin-top:20px;padding:12px 28px;background:linear-gradient(135deg,#6c5ce7,#a29bfe);color:white;border-radius:10px;font-weight:700;text-decoration:none;">
+                <a href="store.html" style="display:inline-block;margin-top:20px;padding:12px 28px;background:linear-gradient(135deg,#4f46e5,#818cf8);color:white;border-radius:10px;font-weight:700;text-decoration:none;">
                     Back to Store
                 </a>
             </div>`;

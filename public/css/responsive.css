@@ -912,4 +912,20 @@ input, select, textarea {
   .board-card h3 {
     font-size: 0.9rem !important;
   }
+
+  /* Compact Question Palette on Mobile (Testbook Style) */
+  .nav-sidebar {
+    height: auto !important;
+    position: relative !important;
+    top: 0 !important;
+    padding: 15px !important;
+    margin-top: 20px !important;
+    max-height: 220px !important;
+    overflow-y: auto !important;
+    border-radius: 12px !important;
+  }
+  .num-grid {
+    grid-template-columns: repeat(8, 1fr) !important;
+    gap: 8px !important;
+  }
 }

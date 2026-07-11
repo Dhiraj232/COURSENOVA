@@ -506,6 +506,7 @@ const publicPages = [
   'about',
   'family',
   'book-detail',
+  'seller-profile',
   'quiz-engine',
   'quiz-results',
   'test-player',

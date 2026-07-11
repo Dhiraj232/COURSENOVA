@@ -639,3 +639,66 @@ body.no-scroll {
         opacity: 1;
     }
 }
+
+/* ==================== PREMIUM MOBILE BOTTOM NAVIGATION ==================== */
+.mobile-bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100vw;
+    height: 60px;
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-top: 1px solid rgba(226, 232, 240, 0.8);
+    display: none; /* Hidden on desktop */
+    justify-content: space-around;
+    align-items: center;
+    z-index: 2500;
+    box-shadow: 0 -4px 16px rgba(15, 23, 42, 0.04);
+    box-sizing: border-box;
+}
+
+.mobile-nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    color: #64748b; /* slate-500 */
+    font-size: 0.72rem;
+    font-weight: 600;
+    font-family: 'Outfit', sans-serif;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    flex: 1;
+    height: 100%;
+    gap: 2px;
+}
+
+.mobile-nav-item i {
+    font-size: 1.2rem;
+    transition: transform 0.2s ease;
+}
+
+.mobile-nav-item:hover i {
+    transform: translateY(-2px);
+}
+
+.mobile-nav-item.active {
+    color: #4f46e5; /* Premium Indigo */
+}
+
+.mobile-nav-item.active i {
+    color: #4f46e5;
+    transform: scale(1.1);
+}
+
+/* Spacer offset when mobile bottom nav is active */
+@media (max-width: 768px) {
+    .mobile-bottom-nav {
+        display: flex;
+    }
+    body {
+        padding-bottom: 60px !important;
+    }
+}

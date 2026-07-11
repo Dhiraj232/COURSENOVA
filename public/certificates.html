@@ -1136,21 +1136,65 @@
             );
         }
 
+        // Get list of wishlisted courses from local storage
+        function getWishlist() {
+            try {
+                return JSON.parse(localStorage.getItem('course_wishlist') || '[]');
+            } catch(e) {
+                return [];
+            }
+        }
+
+        // Toggle course in wishlist
+        function toggleWishlist(courseId, event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            let list = getWishlist();
+            const index = list.indexOf(courseId);
+            let added = false;
+            
+            if (index === -1) {
+                list.push(courseId);
+                added = true;
+                showToast('Added to Wishlist 💖', 'success');
+            } else {
+                list.splice(index, 1);
+                showToast('Removed from Wishlist', 'info');
+            }
+            localStorage.setItem('course_wishlist', JSON.stringify(list));
+            
+            // Toggle visual state of the heart icon
+            const btn = document.querySelector(`.wishlist-btn[data-id="${courseId}"]`);
+            if (btn) {
+                btn.classList.toggle('active', added);
+                const icon = btn.querySelector('i');
+                if (icon) {
+                    icon.className = added ? 'fas fa-heart' : 'far fa-heart';
+                }
+            }
+        }
+        window.toggleWishlist = toggleWishlist;
+
         function buildCard(c) {
             const enrolled = isEnrolled(c.id, c._mongodb_id);
             const completed = !!completedMap[c.id];
             const progress = progressMap[c.id] || 0;
             const headerCls = c.level.toLowerCase();
 
+            // Check if wishlisted
+            const wishlisted = getWishlist().includes(c.id);
+
             let badge = '';
             if (completed) {
-                badge = `<span class="status-badge badge-completed"><i class="fas fa-check-circle"></i> Completed</span>`;
+                badge = `<span class="status-badge badge-completed" style="top:15px; right:15px;"><i class="fas fa-check-circle"></i> Completed</span>`;
             } else if (enrolled) {
-                badge = `<span class="status-badge" style="background:#10b981; color:white;"><i class="fas fa-graduation-cap"></i> Enrolled</span>`;
+                badge = `<span class="status-badge" style="background:#10b981; color:white; top:15px; right:15px;"><i class="fas fa-graduation-cap"></i> Enrolled</span>`;
             } else {
                 badge = c.isFree 
-                    ? `<span class="status-badge badge-free" style="background:#0f172a80; color:white;">🆓 FREE</span>` 
-                    : `<span class="status-badge" style="background:#7c3aed; color:white;">💎 PREMIUM</span>`;
+                    ? `<span class="status-badge badge-free" style="background:#0f172a80; color:white; top:15px; right:15px;">🆓 FREE</span>` 
+                    : `<span class="status-badge" style="background:#7c3aed; color:white; top:15px; right:15px;">💎 PREMIUM</span>`;
             }
 
             const progressHTML = (enrolled && !completed && progress > 0)
@@ -1163,16 +1207,41 @@
             let btnHTML = '';
             if (completed) {
                 const cert = completedMap[c.id];
-                btnHTML = `<a href="course-content.html?course=${encodeURIComponent(c.id)}" class="btn-action btn-completed">Review Topics</a>` +
-                        (cert?.certId ? `<a href="/api/certificates/generate/${cert.certId}" class="btn-cert" style="margin-top:10px" download><i class="fas fa-download"></i> Get Certificate</a>` : '');
+                btnHTML = `<a href="course-content.html?course=${encodeURIComponent(c.id)}" class="btn-action btn-completed" style="border-radius:30px; font-weight:800; font-family: 'Outfit', sans-serif;">Review Topics</a>` +
+                        (cert?.certId ? `<a href="/api/certificates/generate/${cert.certId}" class="btn-cert" style="margin-top:10px; border-radius:30px;" download><i class="fas fa-download"></i> Get Certificate</a>` : '');
             } else if (enrolled) {
-                btnHTML = `<a href="course-content.html?course=${encodeURIComponent(c.id)}" class="btn-action btn-continue">Continue Learning</a>`;
+                btnHTML = `<a href="course-content.html?course=${encodeURIComponent(c.id)}" class="btn-action btn-continue" style="border-radius:30px; font-weight:800; font-family: 'Outfit', sans-serif;">Continue Learning</a>`;
             } else {
                 if (c.isFree) {
-                    btnHTML = `<a href="course-content.html?course=${encodeURIComponent(c.id)}" class="btn-action btn-free">Start for FREE</a>`;
+                    btnHTML = `<a href="course-content.html?course=${encodeURIComponent(c.id)}" class="btn-action btn-free" style="border-radius:30px; font-weight:800; font-family: 'Outfit', sans-serif;">Start for FREE</a>`;
                 } else {
-                    btnHTML = `<button onclick="initiateCoursePurchase('${c.id}')" class="btn-action" style="background: #1e293b; color: white;">Enroll for ₹${c.price}</button>`;
+                    btnHTML = `<button onclick="initiateCoursePurchase('${c.id}')" class="btn-action" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); color: white; border-radius:30px; font-weight:800; font-family: 'Outfit', sans-serif;">Enroll for ₹${c.price}</button>`;
                 }
+            }
+
+            // Generate deterministic rating based on title string length and character codes
+            const charSum = c.title.split('').reduce((sum, ch) => sum + ch.charCodeAt(0), 0);
+            const ratingVal = (4.5 + (charSum % 5) * 0.1).toFixed(1);
+            const ratingCount = 200 + (charSum % 800);
+
+            // Price Section HTML
+            let priceHTML = '';
+            if (c.isFree) {
+                priceHTML = `
+                    <div class="course-price-wrap" style="display:flex; align-items:baseline; gap:8px; margin-bottom:15px;">
+                        <span class="price-current" style="font-size:1.35rem; font-weight:800; color:#10b981;">FREE</span>
+                    </div>
+                `;
+            } else {
+                const originalPrice = Math.round(c.price * 2.5);
+                const discountPercent = 60;
+                priceHTML = `
+                    <div class="course-price-wrap" style="display:flex; align-items:baseline; gap:8px; margin-bottom:15px;">
+                        <span class="price-current" style="font-size:1.35rem; font-weight:800; color:#0f172a;">₹${c.price}</span>
+                        <span class="price-original" style="font-size:0.95rem; text-decoration:line-through; color:#94a3b8; font-weight:500;">₹${originalPrice}</span>
+                        <span class="price-discount-badge" style="font-size:0.75rem; font-weight:700; color:#10b981; background:#ecfdf5; padding:2px 8px; border-radius:99px;">${discountPercent}% OFF</span>
+                    </div>
+                `;
             }
 
             // Ensure we have some default highlights if none provided
@@ -1181,13 +1250,19 @@
                 : ['Expert Training', 'Verified Certification', 'Practical Skills Enhancement'];
  
             return `
-            <div class="course-card">
-                <div class="card-header ${headerCls}">
+            <div class="course-card" style="position:relative;">
+                <button class="wishlist-btn ${wishlisted ? 'active' : ''}" data-id="${c.id}" onclick="toggleWishlist('${c.id}', event)" style="position:absolute; top:15px; left:15px; width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,0.25); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.3); display:flex; align-items:center; justify-content:center; color:${wishlisted ? '#ef4444' : 'white'}; cursor:pointer; z-index:10; transition:all 0.2s ease;">
+                    <i class="${wishlisted ? 'fas fa-heart' : 'far fa-heart'}"></i>
+                </button>
+                <div class="card-header ${headerCls}" style="padding-top: 45px;">
                     ${badge}
                     <div class="course-icon">${c.icon}</div>
                     <div class="course-title">${c.title}</div>
                 </div>
                 <div class="card-body">
+                    <div class="course-rating" style="display:flex; align-items:center; gap:6px; font-size:0.85rem; color:#f59e0b; font-weight:700; margin-bottom:12px;">
+                        <i class="fas fa-star"></i> ${ratingVal} <span style="color:#64748b; font-weight:500;">(${ratingCount} reviews)</span>
+                    </div>
                     <p class="course-desc">${c.description}</p>
                     <div class="course-meta">
                         <span class="meta-tag"><i class="fas fa-clock"></i> ${c.duration}</span>
@@ -1198,6 +1273,7 @@
                         ${highlights.slice(0, 3).map(h => `<li>${h}</li>`).join('')}
                     </ul>
                     ${progressHTML}
+                    ${priceHTML}
                     ${btnHTML}
                 </div>
             </div>`;

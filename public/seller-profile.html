@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Seller Profile | COURSENOVA Store</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        :root {
+            --brand: #4f46e5;
+            --brand2: #818cf8;
+            --green: #10b981;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #0f172a;
+            --muted: #64748b;
+            --border: #e2e8f0;
+        }
+
+        body {
+            background: var(--bg);
+            font-family: 'Outfit', 'Inter', sans-serif;
+            color: var(--text);
+        }
+
+        .profile-container {
+            max-width: 1200px;
+            margin: 40px auto 60px;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 30px;
+        }
+
+        @media(max-width: 850px) {
+            .profile-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* -- Sidebar card -- */
+        .profile-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 30px 24px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.03);
+            height: fit-content;
+        }
+
+        .profile-avatar {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--brand), var(--brand2));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2.6rem;
+            font-weight: 800;
+            margin: 0 auto 18px;
+            box-shadow: 0 10px 20px rgba(79, 70, 229, 0.2);
+        }
+
+        .profile-name {
+            font-size: 1.35rem;
+            font-weight: 800;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+
+        .profile-college {
+            font-size: 0.9rem;
+            color: var(--muted);
+            margin-bottom: 20px;
+        }
+
+        .profile-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            padding: 16px 0;
+            margin-bottom: 20px;
+        }
+
+        .stat-val {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: var(--brand);
+        }
+
+        .stat-lbl {
+            font-size: 0.72rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            font-weight: 600;
+            margin-top: 2px;
+        }
+
+        .profile-details {
+            text-align: left;
+            font-size: 0.88rem;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            color: var(--text);
+        }
+
+        .details-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .details-item i {
+            color: var(--brand);
+            width: 16px;
+            text-align: center;
+        }
+
+        /* -- Main Content -- */
+        .profile-content {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+        }
+
+        .section-box {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.03);
+        }
+
+        .section-box h2 {
+            font-size: 1.25rem;
+            font-weight: 800;
+            margin-bottom: 24px;
+            border-left: 4px solid var(--brand);
+            padding-left: 12px;
+        }
+
+        /* -- Listings grid -- */
+        .books-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+            gap: 20px;
+        }
+
+        .book-card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .book-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(79, 70, 229, 0.12);
+        }
+
+        .book-img {
+            height: 160px;
+            background: #f1f5f9;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .book-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .book-body {
+            padding: 14px;
+        }
+
+        .book-title {
+            font-weight: 700;
+            font-size: 0.92rem;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .book-price {
+            font-weight: 800;
+            color: var(--green);
+            font-size: 1.1rem;
+        }
+
+        .cond-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 20px;
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        /* -- Back button -- */
+        .back-bar {
+            max-width: 1200px;
+            margin: 20px auto 0;
+            padding: 0 20px;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--brand);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: .9rem;
+        }
+    </style>
+    <link rel="stylesheet" href="css/navigation.css">
+    <script src="js/navigation.js"></script>
+</head>
+
+<body>
+    <!-- --------------- NAVBAR --------------- -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="index.html" class="logo"><img src="images/coursenova-logo.png" alt="COURSENOVA"> <span>COURSENOVA</span></a>
+            <ul class="nav-menu" id="navMenu"></ul>
+            <div class="nav-buttons" id="navButtons"></div>
+            <button class="menu-toggle" id="menuToggle"><i class="fas fa-bars"></i></button>
+        </div>
+    </nav>
+
+    <div class="back-bar">
+        <a href="store.html" class="back-link">
+            <i class="fas fa-arrow-left"></i> Back to Store
+        </a>
+    </div>
+
+    <!-- --------------- PROFILE LAYOUT --------------- -->
+    <div class="profile-container">
+        <!-- Sidebar -->
+        <aside class="profile-card">
+            <div class="profile-avatar" id="pAvatar">S</div>
+            <h1 class="profile-name" id="pName">Loading...</h1>
+            <div class="profile-college" id="pCollege">University Student</div>
+
+            <div class="profile-stats">
+                <div>
+                    <div class="stat-val" id="statSold">4</div>
+                    <div class="stat-lbl">Books Sold</div>
+                </div>
+                <div>
+                    <div class="stat-val" id="statListed">2</div>
+                    <div class="stat-lbl">Active Listings</div>
+                </div>
+            </div>
+
+            <div class="profile-details">
+                <div class="details-item">
+                    <i class="fas fa-check-circle"></i>
+                    <span>Verified Student Seller</span>
+                </div>
+                <div class="details-item">
+                    <i class="fas fa-bolt"></i>
+                    <span>⚡ Under 15m response rate</span>
+                </div>
+                <div class="details-item">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>Member since May 2026</span>
+                </div>
+            </div>
+            
+            <button class="apply-btn" style="margin-top:25px; width:100%;" onclick="toggleFollow(this)">
+                <i class="fas fa-plus"></i> Follow Seller
+            </button>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="profile-content">
+            <!-- Active listings -->
+            <section class="section-box">
+                <h2>📚 Active Listings</h2>
+                <div class="books-grid" id="sellerBooksGrid">
+                    <p style="color:var(--muted); font-style:italic;">No active listings found.</p>
+                </div>
+            </section>
+
+            <!-- Reviews -->
+            <section class="section-box">
+                <h2>⭐ Seller Feedback &amp; Reviews</h2>
+                <div id="sellerReviewsList">
+                    <!-- Loaded dynamically -->
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- --------------- SCRIPTS --------------- -->
+    <script>
+        const API = '/api/used-books';
+        const IMG_BASE = '/uploads/books/';
+        const sellerId = new URLSearchParams(window.location.search).get('id');
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (!sellerId) {
+                alert("No seller selected");
+                window.location.href = 'store';
+                return;
+            }
+            loadSellerDetails();
+        });
+
+        async function loadSellerDetails() {
+            try {
+                // Fetch all books to extract seller info and render their catalog
+                const res = await fetch(API);
+                const data = await res.json();
+                if (!data.ok) throw new Error(data.message);
+
+                const books = data.books || [];
+                const sellerBooks = books.filter(b => b.sellerId === sellerId);
+
+                if (sellerBooks.length > 0) {
+                    const primary = sellerBooks[0];
+                    document.getElementById('pName').innerHTML = `${primary.sellerName || 'Student Seller'} <i class="fas fa-check-circle" style="color:#3b82f6;" title="Verified Student"></i>`;
+                    document.getElementById('pAvatar').textContent = (primary.sellerName || 'S').charAt(0).toUpperCase();
+                    document.getElementById('pCollege').textContent = primary.college || 'General Bookstore';
+                    document.getElementById('statListed').textContent = sellerBooks.length;
+                    
+                    // Render Grid
+                    const grid = document.getElementById('sellerBooksGrid');
+                    grid.innerHTML = sellerBooks.map(b => {
+                        const imgSrc = b.image ? `${IMG_BASE}${b.image}` : '';
+                        return `
+                        <div class="book-card" onclick="window.location.href='book-detail?id=${b._id}'">
+                            <div class="book-img">
+                                ${imgSrc ? `<img src="${imgSrc}" alt="${b.title}">` : '<i class="fas fa-book" style="font-size:2rem; color:var(--brand2);"></i>'}
+                                <span class="cond-badge">${b.condition || 'Used'}</span>
+                            </div>
+                            <div class="book-body">
+                                <div class="book-title">${b.title}</div>
+                                <div class="book-price">₹${b.price}</div>
+                            </div>
+                        </div>`;
+                    }).join('');
+
+                    loadReviews(primary.sellerId);
+                } else {
+                    document.getElementById('pName').textContent = "Anonymous Seller";
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function loadReviews(sId) {
+            const key = `coursenova_reviews_${sId}`;
+            let reviews = [];
+            try {
+                reviews = JSON.parse(localStorage.getItem(key)) || [
+                    { name: "Saurabh Sharma", rating: 5, text: "Excellent book condition. The seller was very prompt to deliver.", date: "10-Jun-2026" },
+                    { name: "Neha Gupta", rating: 4, text: "Good deal. A few page folds but overall highly readable and clean.", date: "02-Jul-2026" }
+                ];
+            } catch(e){}
+
+            const container = document.getElementById('sellerReviewsList');
+            if (reviews.length === 0) {
+                container.innerHTML = '<p style="color:var(--muted); font-style:italic;">No reviews yet.</p>';
+                return;
+            }
+
+            container.innerHTML = reviews.map(r => `
+                <div style="border-bottom:1px solid var(--border); padding: 15px 0;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                        <span style="font-weight:700; font-size:0.9rem;">${r.name}</span>
+                        <span style="color:#fbbf24; font-size:0.8rem;">${'★'.repeat(r.rating)}${'☆'.repeat(5 - r.rating)}</span>
+                    </div>
+                    <div style="font-size:0.88rem; color:var(--text);">${r.text}</div>
+                    <div style="font-size:0.72rem; color:var(--muted); margin-top:4px;">${r.date}</div>
+                </div>
+            `).join('');
+        }
+
+        function toggleFollow(btn) {
+            if (btn.classList.contains('following')) {
+                btn.classList.remove('following');
+                btn.innerHTML = '<i class="fas fa-plus"></i> Follow Seller';
+                btn.style.background = 'var(--brand)';
+            } else {
+                btn.classList.add('following');
+                btn.innerHTML = '<i class="fas fa-check"></i> Following';
+                btn.style.background = 'var(--green)';
+            }
+        }
+    </script>
+</body>
+
+</html>

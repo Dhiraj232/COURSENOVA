@@ -76,6 +76,7 @@ document.addEventListener('DOMContentLoaded', function () {
     setupScrollEffects();
     setupHashNavigation();
     setupUserDropdown(); // Fixed function name
+    setupMobileBottomNav(); // Injects premium mobile bottom navigation
 
     // ── Auto-load Notification Center (injects bell icon + panel on all pages) ──
     loadNotificationSystem();
@@ -853,3 +854,61 @@ window.addEventListener('appinstalled', (event) => {
     console.log('[PWA] CourseNova was successfully installed!');
     window.deferredPrompt = null;
 });
+
+/**
+ * Dynamically injects and sets up the premium Mobile Bottom Navigation bar.
+ */
+function setupMobileBottomNav() {
+    // Skip injecting bottom nav on admin dashboard or test player screen to keep layout focused
+    const currentPage = getCurrentPage();
+    if (currentPage.includes('admin') || currentPage === 'test-player' || currentPage === 'daily-challenge-taker') return;
+
+    if (document.getElementById('mobileBottomNav')) return;
+
+    const nav = document.createElement('nav');
+    nav.id = 'mobileBottomNav';
+    nav.className = 'mobile-bottom-nav';
+    nav.innerHTML = `
+        <a href="/" class="mobile-nav-item" id="mob-nav-home">
+            <i class="fas fa-home"></i>
+            <span>Home</span>
+        </a>
+        <a href="certificates" class="mobile-nav-item" id="mob-nav-courses">
+            <i class="fas fa-book-open"></i>
+            <span>Courses</span>
+        </a>
+        <a href="mock-tests" class="mobile-nav-item" id="mob-nav-tests">
+            <i class="fas fa-file-alt"></i>
+            <span>Tests</span>
+        </a>
+        <a href="community" class="mobile-nav-item" id="mob-nav-community">
+            <i class="fas fa-users"></i>
+            <span>Community</span>
+        </a>
+        <a href="dashboard" class="mobile-nav-item" id="mob-nav-profile">
+            <i class="fas fa-user"></i>
+            <span>Profile</span>
+        </a>
+    `;
+    document.body.appendChild(nav);
+
+    // Apply active class based on the current page context
+    if (currentPage === 'index' || currentPage === '') {
+        const item = document.getElementById('mob-nav-home');
+        if (item) item.classList.add('active');
+    } else if (currentPage === 'certificates' || currentPage.includes('course-content') || currentPage.includes('my-courses') || currentPage.includes('book-detail') || currentPage.includes('store') || currentPage.includes('cart') || currentPage.includes('checkout') || currentPage.includes('payment') || currentPage.includes('orders')) {
+        const item = document.getElementById('mob-nav-courses');
+        if (item) item.classList.add('active');
+    } else if (currentPage === 'mock-tests' || currentPage === 'mock-test-hub' || currentPage.includes('quiz-engine') || currentPage.includes('quiz-results') || currentPage.includes('mock-test-result') || currentPage === 'daily-challenge' || currentPage === 'daily-challenge-history') {
+        const item = document.getElementById('mob-nav-tests');
+        if (item) item.classList.add('active');
+    } else if (currentPage === 'community') {
+        const item = document.getElementById('mob-nav-community');
+        if (item) item.classList.add('active');
+    } else if (currentPage === 'dashboard' || currentPage === 'profile' || currentPage === 'my-certificates') {
+        const item = document.getElementById('mob-nav-profile');
+        if (item) item.classList.add('active');
+    }
+}
+window.setupMobileBottomNav = setupMobileBottomNav;
+
