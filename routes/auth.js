@@ -138,7 +138,11 @@ router.get('/google/callback',
         // pattern for SPA + server-side OAuth.
         const userStr = encodeURIComponent(JSON.stringify(userSafe));
         // ✅ PRODUCTION UNIFICATION: Always redirect to our own static frontend
-        const REDIRECT_URL = (process.env.FRONTEND_URL || 'https://www.coursenova.in') + '/auth-callback.html';
+        let frontendUrl = process.env.FRONTEND_URL || 'https://www.coursenova.in';
+        if (frontendUrl.includes('coursenova.in') && !frontendUrl.includes('www.coursenova.in')) {
+            frontendUrl = frontendUrl.replace('coursenova.in', 'www.coursenova.in');
+        }
+        const REDIRECT_URL = frontendUrl.replace(/\/$/, '') + '/auth-callback.html';
         res.redirect(`${REDIRECT_URL}?token=${token}&user=${userStr}`);
     })
 );

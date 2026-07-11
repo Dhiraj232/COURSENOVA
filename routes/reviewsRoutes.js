@@ -8,16 +8,12 @@ const router = express.Router();
 const Review = require('../models/Review');
 const Book = require('../models/Book');
 
-// Middleware to check authentication
-const authMiddleware = (req, res, next) => {
-    if (!req.user) return res.status(401).json({ ok: false, message: 'Not authenticated' });
-    next();
-};
+const { requireAuth } = require('../middleware/auth');
 
 // ─────────────────────────────────────────────────────────
 // POST /api/reviews - Create review (verified buyers only)
 // ─────────────────────────────────────────────────────────
-router.post('/', authMiddleware, async (req, res) => {
+router.post('/', requireAuth, async (req, res) => {
     try {
         const { bookId, rating, title, comment } = req.body;
 
@@ -90,7 +86,7 @@ router.get('/book/:bookId', async (req, res) => {
 // ─────────────────────────────────────────────────────────
 // PUT /api/reviews/:reviewId - Edit own review
 // ─────────────────────────────────────────────────────────
-router.put('/:reviewId', authMiddleware, async (req, res) => {
+router.put('/:reviewId', requireAuth, async (req, res) => {
     try {
         const review = await Review.findById(req.params.reviewId);
 
@@ -120,7 +116,7 @@ router.put('/:reviewId', authMiddleware, async (req, res) => {
 // ─────────────────────────────────────────────────────────
 // DELETE /api/reviews/:reviewId - Delete own review
 // ─────────────────────────────────────────────────────────
-router.delete('/:reviewId', authMiddleware, async (req, res) => {
+router.delete('/:reviewId', requireAuth, async (req, res) => {
     try {
         const review = await Review.findById(req.params.reviewId);
 

@@ -31,7 +31,14 @@ const pdfParse = typeof pdfParseModule === 'function'
         }
         throw new Error('pdf-parse module is not a function and does not export PDFParse');
     };
-const upload = multer({ storage: multer.memoryStorage() });
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 15 * 1024 * 1024 }, // 15 MB
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype === 'application/pdf') cb(null, true);
+        else cb(new Error('Only PDF files are allowed'), false);
+    }
+});
 
 // Map subject names to align with existing CourseNova SSC/Test subjects
 function mapSubject(subjectName) {

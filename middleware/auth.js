@@ -19,6 +19,12 @@ function requireAuth(req, res, next) {
         const payload = jwt.verify(token, JWT_SECRET);
         req.userId = payload.userId || payload.id;
         req.user = payload;
+        if (req.user) {
+            req.user.id = req.userId;
+            req.userEmail = payload.email || '';
+            req.userName = payload.name || '';
+            req.userRole = payload.role || '';
+        }
         next();
     } catch (err) {
         if (err.name === 'TokenExpiredError') {
@@ -41,6 +47,12 @@ function optionalAuth(req, res, next) {
             const payload = jwt.verify(token, JWT_SECRET);
             req.userId = payload.userId || payload.id;
             req.user = payload;
+            if (req.user) {
+                req.user.id = req.userId;
+                req.userEmail = payload.email || '';
+                req.userName = payload.name || '';
+                req.userRole = payload.role || '';
+            }
         } catch {
             // Token invalid — just skip, treat as unauthenticated
         }

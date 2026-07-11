@@ -6,7 +6,7 @@ const { extractQuestionsFromPdf } = require('../services/aiService');
 const PDFDocument = require('pdfkit');
 const DailyChallenge = require('../models/DailyChallenge');
 const PdfJob = require('../models/PdfJob');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireAdmin } = require('../middleware/auth');
 
 async function createJob(type, params) {
     const jobId = `job_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
@@ -94,10 +94,17 @@ async function failJob(jobId, errorMsg) {
     }
 }
 
-const upload = multer({ storage: multer.memoryStorage() });
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 15 * 1024 * 1024 }, // 15 MB
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype === 'application/pdf') cb(null, true);
+        else cb(new Error('Only PDF files are allowed'), false);
+    }
+});
 
 // GET /api/admin/daily-challenge/pdf-questions/:date
-router.get('/pdf-questions/:date', async (req, res) => {
+router.get('/pdf-questions/:date', requireAuth, async (req, res) => {
     try {
         const challenge = await DailyChallenge.findOne({ date: req.params.date });
         if (!challenge) return res.status(404).send('Challenge not found');
@@ -133,7 +140,7 @@ router.get('/pdf-questions/:date', async (req, res) => {
 });
 
 // GET /api/admin/daily-challenge/pdf-solutions/:date
-router.get('/pdf-solutions/:date', async (req, res) => {
+router.get('/pdf-solutions/:date', requireAuth, async (req, res) => {
     try {
         const challenge = await DailyChallenge.findOne({ date: req.params.date });
         if (!challenge) return res.status(404).send('Challenge not found');
@@ -209,7 +216,7 @@ router.post('/upload', (req, res, next) => {
     req.startTime = Date.now();
     console.log('[1] Upload started');
     next();
-}, requireAuth, upload.single('pdf'), async (req, res) => {
+}, requireAdmin, upload.single('pdf'), async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ ok: false, error: 'No PDF uploaded' });
         const uploadDuration = Date.now() - req.startTime;
@@ -239,7 +246,7 @@ router.post('/upload', (req, res, next) => {
 });
 
 // POST /api/admin/daily-challenge/save
-router.post('/save', async (req, res) => {
+router.post('/save', requireAdmin, async (req, res) => {
     try {
         const { date, title, questions, examType } = req.body;
         

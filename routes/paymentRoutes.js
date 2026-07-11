@@ -3,13 +3,10 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const jwt = require('jsonwebtoken');
 const Payment = require('../models/Payment');
 const Enrollment = require('../models/Enrollment');
 const User = require('../models/User');
-const CourseProgress = require('../models/CourseProgress');
-const { generateCertificate } = require('../controllers/certificateController');
-const { sendCertificateEmail } = require('../controllers/emailController');
+const { requireAuth, requireAdmin } = require('../middleware/auth');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'Dhiraj@2026_secure_key!';
 
@@ -21,26 +18,20 @@ const storage = multer.diskStorage({
     destination: (req, file, cb) => cb(null, uploadDir),
     filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`)
 });
-const upload = multer({ storage });
-
-// Helper: extract userId from Bearer token
-function extractUserId(req) {
-    const auth = req.headers.authorization || '';
-    const token = auth.startsWith('Bearer ') ? auth.slice(7) : '';
-    if (!token) return null;
-    try {
-        const payload = jwt.verify(token, JWT_SECRET);
-        return payload.userId || payload.id || null;
-    } catch {
-        return null;
+const upload = multer({
+    storage,
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype.startsWith('image/')) cb(null, true);
+        else cb(new Error('Only image files are allowed'), false);
     }
-}
+});
 
-// ── POST /api/payments/submit ─────────────────────────────────────────────────
+// extractUserId removed (using req.userId directly from requireAuth)
+
 // User submits UPI payment with screenshot
-router.post('/submit', upload.single('screenshot'), async (req, res) => {
-    const userId = extractUserId(req);
-    if (!userId) return res.status(401).json({ ok: false, message: 'Login required' });
+router.post('/submit', requireAuth, upload.single('screenshot'), async (req, res) => {
+    const userId = req.userId;
 
     try {
         const { name, email, courseId, courseName, utr } = req.body;
@@ -71,9 +62,8 @@ router.post('/submit', upload.single('screenshot'), async (req, res) => {
     }
 });
 
-// ── GET /api/payments ─────────────────────────────────────────────────────────
 // Admin: get all payments (sorted newest first)
-router.get('/', async (req, res) => {
+router.get('/', requireAdmin, async (req, res) => {
     try {
         const payments = await Payment.find().sort({ createdAt: -1 });
         res.json({ ok: true, data: payments });
@@ -82,11 +72,9 @@ router.get('/', async (req, res) => {
     }
 });
 
-// ── GET /api/payments/my ──────────────────────────────────────────────────────
 // User: get their own payments
-router.get('/my', async (req, res) => {
-    const userId = extractUserId(req);
-    if (!userId) return res.status(401).json({ ok: false, message: 'Login required' });
+router.get('/my', requireAuth, async (req, res) => {
+    const userId = req.userId;
     try {
         const payments = await Payment.find({ userId }).sort({ createdAt: -1 });
         res.json({ ok: true, data: payments });
@@ -95,9 +83,8 @@ router.get('/my', async (req, res) => {
     }
 });
 
-// ── POST /api/payments/:id/approve ────────────────────────────────────────────
 // Admin: approve payment → auto-enroll user and create Enrollment record
-router.post('/:id/approve', async (req, res) => {
+router.post('/:id/approve', requireAdmin, async (req, res) => {
     try {
         const payment = await Payment.findById(req.params.id);
         if (!payment) return res.status(404).json({ ok: false, message: 'Payment not found' });
@@ -138,9 +125,8 @@ router.post('/:id/approve', async (req, res) => {
     }
 });
 
-// ── POST /api/payments/:id/reject ─────────────────────────────────────────────
 // Admin: reject payment
-router.post('/:id/reject', async (req, res) => {
+router.post('/:id/reject', requireAdmin, async (req, res) => {
     try {
         const payment = await Payment.findById(req.params.id);
         if (!payment) return res.status(404).json({ ok: false, message: 'Payment not found' });

@@ -38,20 +38,26 @@ async function requireStoreAuth(req, res, next) {
 
         // ── Case 2: main-site JWT ─────────────────────────────────
         if (payload.userId) {
-            const mainUsers = readMainUsers();
-            const mainUser = mainUsers.find(u => String(u.id) === String(payload.userId));
-            if (!mainUser) return res.status(401).json({ ok: false, message: 'User not found' });
-
-            // Auto-create StoreUser from main user if not yet exists
-            let storeUser = await StoreUser.findOne({ email: mainUser.email });
+            let storeUser = await StoreUser.findById(payload.userId);
             if (!storeUser) {
-                storeUser = await StoreUser.create({
-                    googleId: 'main_' + mainUser.id,   // synthetic — not a real Google ID
-                    name: mainUser.fullName || 'User',
-                    email: mainUser.email || '',
-                    picture: mainUser.picture || ''
-                });
+                // Fallback: check mainUsers (users.json) for backwards compatibility/migration
+                const mainUsers = readMainUsers();
+                const mainUser = mainUsers.find(u => String(u.id) === String(payload.userId) || String(u._id) === String(payload.userId));
+                if (mainUser) {
+                    storeUser = await StoreUser.findOne({ email: mainUser.email });
+                    if (!storeUser) {
+                        storeUser = await StoreUser.create({
+                            googleId: 'main_' + mainUser.id,   // synthetic — not a real Google ID
+                            name: mainUser.fullName || 'User',
+                            email: mainUser.email || '',
+                            picture: mainUser.picture || ''
+                        });
+                    }
+                }
             }
+
+            if (!storeUser) return res.status(401).json({ ok: false, message: 'User not found' });
+            
             req.storeUser = storeUser;
             return next();
         }

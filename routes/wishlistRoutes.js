@@ -7,16 +7,12 @@ const express = require('express');
 const router = express.Router();
 const Wishlist = require('../models/Wishlist');
 
-// Middleware to check authentication
-const authMiddleware = (req, res, next) => {
-    if (!req.user) return res.status(401).json({ ok: false, message: 'Not authenticated' });
-    next();
-};
+const { requireAuth } = require('../middleware/auth');
 
 // ─────────────────────────────────────────────────────────
 // GET /api/wishlist - Get user's wishlist
 // ─────────────────────────────────────────────────────────
-router.get('/', authMiddleware, async (req, res) => {
+router.get('/', requireAuth, async (req, res) => {
     try {
         let wishlist = await Wishlist.findOne({ userId: req.user.id })
             .populate('items.bookId', 'title author price images reviews');
@@ -34,7 +30,7 @@ router.get('/', authMiddleware, async (req, res) => {
 // ─────────────────────────────────────────────────────────
 // POST /api/wishlist/:bookId - Add to wishlist
 // ─────────────────────────────────────────────────────────
-router.post('/:bookId', authMiddleware, async (req, res) => {
+router.post('/:bookId', requireAuth, async (req, res) => {
     try {
         let wishlist = await Wishlist.findOne({ userId: req.user.id });
 
@@ -64,7 +60,7 @@ router.post('/:bookId', authMiddleware, async (req, res) => {
 // ─────────────────────────────────────────────────────────
 // DELETE /api/wishlist/:bookId - Remove from wishlist
 // ─────────────────────────────────────────────────────────
-router.delete('/:bookId', authMiddleware, async (req, res) => {
+router.delete('/:bookId', requireAuth, async (req, res) => {
     try {
         const wishlist = await Wishlist.findOne({ userId: req.user.id });
 
@@ -86,7 +82,7 @@ router.delete('/:bookId', authMiddleware, async (req, res) => {
 // ─────────────────────────────────────────────────────────
 // POST /api/wishlist/:bookId/notify - Enable price drop notifications
 // ─────────────────────────────────────────────────────────
-router.post('/:bookId/notify', authMiddleware, async (req, res) => {
+router.post('/:bookId/notify', requireAuth, async (req, res) => {
     try {
         const wishlist = await Wishlist.findOne({ userId: req.user.id });
 

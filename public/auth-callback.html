@@ -92,6 +92,15 @@
          */
         (function () {
             try {
+                // ── Enforce canonical domain (www.coursenova.in) first to ensure session persistence ──
+                const hostname = window.location.hostname;
+                const isProduction = hostname.includes('coursenova.in');
+                if (isProduction && hostname === 'coursenova.in') {
+                    console.warn('🔄 Redirecting to canonical domain (www.coursenova.in) for session persistence...');
+                    window.location.replace('https://www.coursenova.in' + window.location.pathname + window.location.search + window.location.hash);
+                    return;
+                }
+
                 const params = new URLSearchParams(window.location.search);
                 const token = params.get('token');
                 const userRaw = params.get('user');
@@ -105,6 +114,9 @@
                 if (!user || !user.id) {
                     throw new Error('Invalid user data received');
                 }
+
+                // ── Read saved redirect BEFORE clearing localStorage ──
+                const savedRedirect = localStorage.getItem('cn_redirect_after_login');
 
                 // ── Clear old data before saving new session ──
                 localStorage.clear();
@@ -135,10 +147,8 @@
                     redirectTo = '/admin-dashboard';
                 } else {
                     // Check if we saved a "return to" page before login
-                    const savedRedirect = localStorage.getItem('cn_redirect_after_login');
                     if (savedRedirect && savedRedirect !== '/' && !savedRedirect.includes('signup') && !savedRedirect.includes('auth-callback')) {
                         redirectTo = savedRedirect;
-                        localStorage.removeItem('cn_redirect_after_login'); // clean up
                     }
                 }
 

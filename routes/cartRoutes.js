@@ -8,16 +8,12 @@ const router = express.Router();
 const Cart = require('../models/Cart');
 const Book = require('../models/Book');
 
-// Middleware to check authentication
-const authMiddleware = (req, res, next) => {
-    if (!req.user) return res.status(401).json({ ok: false, message: 'Not authenticated' });
-    next();
-};
+const { requireAuth } = require('../middleware/auth');
 
 // ─────────────────────────────────────────────────────────
 // GET /api/cart - Get user's cart
 // ─────────────────────────────────────────────────────────
-router.get('/', authMiddleware, async (req, res) => {
+router.get('/', requireAuth, async (req, res) => {
     try {
         let cart = await Cart.findOne({ userId: req.user.id }).populate('items.bookId');
 
@@ -34,7 +30,7 @@ router.get('/', authMiddleware, async (req, res) => {
 // ─────────────────────────────────────────────────────────
 // POST /api/cart - Add book to cart
 // ─────────────────────────────────────────────────────────
-router.post('/', authMiddleware, async (req, res) => {
+router.post('/', requireAuth, async (req, res) => {
     try {
         const { bookId, quantity = 1 } = req.body;
 
@@ -88,7 +84,7 @@ router.post('/', authMiddleware, async (req, res) => {
 // ─────────────────────────────────────────────────────────
 // PUT /api/cart/:bookId - Update quantity in cart
 // ─────────────────────────────────────────────────────────
-router.put('/:bookId', authMiddleware, async (req, res) => {
+router.put('/:bookId', requireAuth, async (req, res) => {
     try {
         const { quantity } = req.body;
 
@@ -134,7 +130,7 @@ router.put('/:bookId', authMiddleware, async (req, res) => {
 // ─────────────────────────────────────────────────────────
 // DELETE /api/cart/:bookId - Remove from cart
 // ─────────────────────────────────────────────────────────
-router.delete('/:bookId', authMiddleware, async (req, res) => {
+router.delete('/:bookId', requireAuth, async (req, res) => {
     try {
         const cart = await Cart.findOne({ userId: req.user.id });
         if (!cart) {
@@ -164,7 +160,7 @@ router.delete('/:bookId', authMiddleware, async (req, res) => {
 // ─────────────────────────────────────────────────────────
 // DELETE /api/cart - Clear entire cart
 // ─────────────────────────────────────────────────────────
-router.delete('/', authMiddleware, async (req, res) => {
+router.delete('/', requireAuth, async (req, res) => {
     try {
         await Cart.findOneAndDelete({ userId: req.user.id });
 

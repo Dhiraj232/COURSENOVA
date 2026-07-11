@@ -8,16 +8,12 @@ const router = express.Router();
 const Chat = require('../models/Chat');
 const Seller = require('../models/Seller');
 
-// Middleware to check authentication
-const authMiddleware = (req, res, next) => {
-    if (!req.user) return res.status(401).json({ ok: false, message: 'Not authenticated' });
-    next();
-};
+const { requireAuth } = require('../middleware/auth');
 
 // ─────────────────────────────────────────────────────────
 // GET /api/chats - Get all conversations for user
 // ─────────────────────────────────────────────────────────
-router.get('/', authMiddleware, async (req, res) => {
+router.get('/', requireAuth, async (req, res) => {
     try {
         const chats = await Chat.find({
             $or: [
@@ -52,10 +48,15 @@ router.post('/', authMiddleware, async (req, res) => {
             return res.status(404).json({ ok: false, message: 'Seller not found' });
         }
 
+        // Prevent self-chat
+        if (seller.userId.toString() === req.user.id.toString()) {
+            return res.status(400).json({ ok: false, message: 'You cannot chat with yourself' });
+        }
+
         // Check if conversation already exists
         let chat = await Chat.findOne({
             'participants.buyer': req.user.id,
-            'participants.seller': sellerId
+            'participants.seller': seller._id
         });
 
         if (!chat) {
@@ -65,7 +66,7 @@ router.post('/', authMiddleware, async (req, res) => {
                 conversationId,
                 participants: {
                     buyer: req.user.id,
-                    seller: sellerId,
+                    seller: seller._id,
                     bookId: bookId || null
                 },
                 messages: [],
@@ -100,9 +101,7 @@ router.post('/', authMiddleware, async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────
-// GET /api/chats/:conversationId - Get chat messages
-// ─────────────────────────────────────────────────────────
-router.get('/:conversationId', authMiddleware, async (req, res) => {
+router.get('/:conversationId', requireAuth, async (req, res) => {
     try {
         const chat = await Chat.findById(req.params.conversationId)
             .populate('participants.buyer', 'name picture')
@@ -113,8 +112,11 @@ router.get('/:conversationId', authMiddleware, async (req, res) => {
         }
 
         // Check if user is part of conversation
-        if (chat.participants.buyer.toString() !== req.user.id.toString() &&
-            chat.participants.seller._id.toString() !== req.user.id.toString()) {
+        const sellerDoc = await Seller.findOne({ userId: req.user.id });
+        const isBuyer = chat.participants.buyer && chat.participants.buyer._id ? (chat.participants.buyer._id.toString() === req.user.id.toString()) : (chat.participants.buyer && chat.participants.buyer.toString() === req.user.id.toString());
+        const isSeller = sellerDoc && chat.participants.seller && chat.participants.seller._id ? (chat.participants.seller._id.toString() === sellerDoc._id.toString()) : (chat.participants.seller && chat.participants.seller.toString() === sellerDoc._id.toString());
+
+        if (!isBuyer && !isSeller) {
             return res.status(403).json({ ok: false, message: 'Unauthorized' });
         }
 
@@ -136,7 +138,7 @@ router.get('/:conversationId', authMiddleware, async (req, res) => {
 // ─────────────────────────────────────────────────────────
 // POST /api/chats/:conversationId/message - Send message
 // ─────────────────────────────────────────────────────────
-router.post('/:conversationId/message', authMiddleware, async (req, res) => {
+router.post('/:conversationId/message', requireAuth, async (req, res) => {
     try {
         const { message } = req.body;
 
@@ -155,8 +157,9 @@ router.post('/:conversationId/message', authMiddleware, async (req, res) => {
         }
 
         // Determine sender type
+        const sellerDoc = await Seller.findOne({ userId: req.user.id });
         const isBuyer = chat.participants.buyer.toString() === req.user.id.toString();
-        const isSeller = chat.participants.seller._id.toString() === req.user.id.toString();
+        const isSeller = sellerDoc && chat.participants.seller.toString() === sellerDoc._id.toString();
 
         if (!isBuyer && !isSeller) {
             return res.status(403).json({ ok: false, message: 'Unauthorized' });
@@ -184,7 +187,7 @@ router.post('/:conversationId/message', authMiddleware, async (req, res) => {
 // ─────────────────────────────────────────────────────────
 // PUT /api/chats/:conversationId - Mark as read
 // ─────────────────────────────────────────────────────────
-router.put('/:conversationId', authMiddleware, async (req, res) => {
+router.put('/:conversationId', requireAuth, async (req, res) => {
     try {
         const chat = await Chat.findById(req.params.conversationId);
 
@@ -210,7 +213,7 @@ router.put('/:conversationId', authMiddleware, async (req, res) => {
 // ─────────────────────────────────────────────────────────
 // DELETE /api/chats/:conversationId - Close conversation
 // ─────────────────────────────────────────────────────────
-router.delete('/:conversationId', authMiddleware, async (req, res) => {
+router.delete('/:conversationId', requireAuth, async (req, res) => {
     try {
         const { reason } = req.body;
 

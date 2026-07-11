@@ -9,16 +9,13 @@ const Order = require('../models/Order');
 const Cart = require('../models/Cart');
 const Book = require('../models/Book');
 
-// Middleware to check authentication
-const authMiddleware = (req, res, next) => {
-    if (!req.user) return res.status(401).json({ ok: false, message: 'Not authenticated' });
-    next();
-};
+const { requireAuth } = require('../middleware/auth');
+const Seller = require('../models/Seller');
 
 // ─────────────────────────────────────────────────────────
 // POST /api/orders - Create order from cart (buyer)
 // ─────────────────────────────────────────────────────────
-router.post('/', authMiddleware, async (req, res) => {
+router.post('/', requireAuth, async (req, res) => {
     try {
         const { items, delivery, paymentMethod } = req.body;
 
@@ -155,7 +152,7 @@ router.post('/', authMiddleware, async (req, res) => {
 // ─────────────────────────────────────────────────────────
 // GET /api/orders - Get user's orders (buyer)
 // ─────────────────────────────────────────────────────────
-router.get('/', authMiddleware, async (req, res) => {
+router.get('/', requireAuth, async (req, res) => {
     try {
         const orders = await Order.find({ 'buyer.buyerId': req.user.id })
             .sort({ createdAt: -1 })
@@ -171,7 +168,7 @@ router.get('/', authMiddleware, async (req, res) => {
 // ─────────────────────────────────────────────────────────
 // GET /api/orders/:orderId - Get order details
 // ─────────────────────────────────────────────────────────
-router.get('/:orderId', authMiddleware, async (req, res) => {
+router.get('/:orderId', requireAuth, async (req, res) => {
     try {
         const order = await Order.findById(req.params.orderId)
             .populate('items.bookId', 'title price images')
@@ -195,7 +192,7 @@ router.get('/:orderId', authMiddleware, async (req, res) => {
 // ─────────────────────────────────────────────────────────
 // PUT /api/orders/:orderId/status - Update order status (seller only)
 // ─────────────────────────────────────────────────────────
-router.put('/:orderId/status', authMiddleware, async (req, res) => {
+router.put('/:orderId/status', requireAuth, async (req, res) => {
     try {
         const { status, note } = req.body;
 
@@ -205,11 +202,14 @@ router.put('/:orderId/status', authMiddleware, async (req, res) => {
         }
 
         // Verify seller owns at least one item in order
+        const seller = await Seller.findOne({ userId: req.user.id });
+        const sellerIdStr = seller ? seller._id.toString() : '';
+
         const sellerItems = order.items.filter(item => 
-            item.seller.sellerId.toString() === req.user.id.toString()
+            item.seller && item.seller.sellerId && item.seller.sellerId.toString() === sellerIdStr
         );
 
-        if (sellerItems.length === 0 && order.buyer.buyerId.toString() !== req.user.id) {
+        if (sellerItems.length === 0 && order.buyer.buyerId.toString() !== req.user.id.toString()) {
             return res.status(403).json({ ok: false, message: 'Unauthorized' });
         }
 
@@ -250,7 +250,7 @@ router.put('/:orderId/status', authMiddleware, async (req, res) => {
 // ─────────────────────────────────────────────────────────
 // POST /api/orders/:orderId/return - Request return (buyer)
 // ─────────────────────────────────────────────────────────
-router.post('/:orderId/return', authMiddleware, async (req, res) => {
+router.post('/:orderId/return', requireAuth, async (req, res) => {
     try {
         const { reason } = req.body;
 

@@ -8,16 +8,12 @@ const router = express.Router();
 const Seller = require('../models/Seller');
 const Book = require('../models/Book');
 
-// Middleware to check authentication
-const authMiddleware = (req, res, next) => {
-    if (!req.user) return res.status(401).json({ ok: false, message: 'Not authenticated' });
-    next();
-};
+const { requireAuth } = require('../middleware/auth');
 
 // ─────────────────────────────────────────────────────────
 // POST /api/sellers - Register as seller
 // ─────────────────────────────────────────────────────────
-router.post('/', authMiddleware, async (req, res) => {
+router.post('/', requireAuth, async (req, res) => {
     try {
         const {
             sellerType,
@@ -98,7 +94,7 @@ router.get('/:sellerId', async (req, res) => {
 // ─────────────────────────────────────────────────────────
 // PUT /api/sellers/:sellerId - Update seller profile (own only)
 // ─────────────────────────────────────────────────────────
-router.put('/:sellerId', authMiddleware, async (req, res) => {
+router.put('/:sellerId', requireAuth, async (req, res) => {
     try {
         const seller = await Seller.findById(req.params.sellerId);
 
@@ -146,7 +142,7 @@ router.get('/:sellerId/books', async (req, res) => {
 // ─────────────────────────────────────────────────────────
 // POST /api/sellers/verify - Upload verification documents
 // ─────────────────────────────────────────────────────────
-router.post('/verify', authMiddleware, async (req, res) => {
+router.post('/verify', requireAuth, async (req, res) => {
     try {
         const { documents } = req.body;
 
@@ -170,7 +166,7 @@ router.post('/verify', authMiddleware, async (req, res) => {
 // ─────────────────────────────────────────────────────────
 // GET /api/sellers/metrics - Get seller analytics (own only)
 // ─────────────────────────────────────────────────────────
-router.get('/:sellerId/metrics', authMiddleware, async (req, res) => {
+router.get('/:sellerId/metrics', requireAuth, async (req, res) => {
     try {
         const seller = await Seller.findById(req.params.sellerId);
 
