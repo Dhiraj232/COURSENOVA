@@ -1770,6 +1770,8 @@ function updateUsersListLive(users) {
             updateDetailsModalLive(activeUser);
         }
     }
+}
+
 window.deleteUser = async function(userId, userEmail) {
     if (userEmail === 'coursenova.in@gmail.com') {
         alert("Cannot delete master admin account.");
