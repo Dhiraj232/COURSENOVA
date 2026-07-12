@@ -655,6 +655,100 @@ function validateQuestion(q) {
     return { valid: true };
 }
 
+// Helper to run promises with a concurrency limit
+async function runWithConcurrency(tasks, limit) {
+    const results = [];
+    const executing = [];
+    for (const task of tasks) {
+        const p = Promise.resolve().then(() => task());
+        results.push(p);
+        if (limit <= tasks.length) {
+            const e = p.then(() => executing.splice(executing.indexOf(e), 1));
+            executing.push(e);
+            if (executing.length >= limit) {
+                await Promise.race(executing);
+            }
+        }
+    }
+    return Promise.all(results);
+}
+
+// Helper to auto-translate English questions and options to Hindi using Gemini or public Google Translate fallback
+async function autoTranslateToHindi(qText, qOptions) {
+    async function translateText(text) {
+        if (!text || typeof text !== 'string') return '';
+        try {
+            const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=hi&dt=t&q=${encodeURIComponent(text)}`;
+            const response = await fetch(url);
+            const data = await response.json();
+            if (data && data[0]) {
+                return data[0].map(item => item[0]).join('');
+            }
+            return text;
+        } catch (err) {
+            console.error('[autoTranslateToHindi fallback] Error:', err.message);
+            return text;
+        }
+    }
+
+    try {
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) {
+            throw new Error('Gemini API key is not configured');
+        }
+
+        const { GoogleGenerativeAI } = require('@google/generative-ai');
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({ model: 'gemini-flash-latest' });
+
+        const prompt = `You are a professional Hindi translator for educational exams.
+Translate the following English exam question and options into natural, grammatically correct, and standard academic Hindi.
+For options, translate each option in the list. Ensure the translated options list has the exact same number of items and order as the English options.
+For mathematical formulas or terms, keep them in LaTeX (e.g. $x^2$ or \\frac{a}{b}) if they are in LaTeX, or write them naturally.
+
+Input Data:
+- Question: "${qText.replace(/"/g, '\\"')}"
+- Options: ${JSON.stringify(qOptions || [])}
+
+Return the translation ONLY as a valid JSON object with these exact fields:
+- question_hi: (string) The Hindi translated question text
+- options_hi: (array of strings) The Hindi translated options in the same order
+
+Do NOT include any markdown code block formatting (like \`\`\`json). Return only the raw JSON.`;
+
+        const response = await model.generateContent(prompt);
+        const text = response.response.text().trim();
+        
+        let cleanText = text;
+        if (cleanText.startsWith('```')) {
+            cleanText = cleanText.replace(/^```(?:json)?\n?/, '');
+            cleanText = cleanText.replace(/\n?```$/, '');
+            cleanText = cleanText.trim();
+        }
+
+        const result = JSON.parse(cleanText);
+        return {
+            question_hi: result.question_hi || '',
+            options_hi: result.options_hi || []
+        };
+    } catch (err) {
+        console.warn('Auto translation via Gemini failed, falling back to public Google Translate:', err.message || err);
+        try {
+            const question_hi = await translateText(qText);
+            const options_hi = [];
+            if (Array.isArray(qOptions)) {
+                for (const opt of qOptions) {
+                    options_hi.push(opt ? await translateText(opt) : '');
+                }
+            }
+            return { question_hi, options_hi };
+        } catch (fallbackErr) {
+            console.error('All translations failed:', fallbackErr);
+            return { question_hi: '', options_hi: [] };
+        }
+    }
+}
+
 // Bulk save questions with bulkWrite + ordered: false fallback
 async function saveQuestionsBulk(questionsArray, replaceDuplicates, defaultCategory, defaultSubject, packId, testId) {
     const validQuestions = [];
@@ -676,6 +770,25 @@ async function saveQuestionsBulk(questionsArray, replaceDuplicates, defaultCateg
     if (validQuestions.length === 0) {
         return { finalQuestions: [], duplicateCount, failedCount, skippedQuestions };
     }
+
+    // Automatically translate questions from English to Hindi if Hindi translations are missing
+    const tasks = validQuestions.map(q => async () => {
+        const hasEn = q.question || q.question_en;
+        const hasHi = q.question_hi;
+        const hasHiOpts = q.options_hi && q.options_hi.length > 0;
+
+        if (hasEn && (!hasHi || !hasHiOpts)) {
+            const opts = q.options || [q.optionA || '', q.optionB || '', q.optionC || '', q.optionD || ''].filter(Boolean);
+            const trans = await autoTranslateToHindi(q.question || q.question_en, opts);
+            if (trans.question_hi) {
+                q.question_hi = trans.question_hi;
+                q.options_hi = trans.options_hi;
+            }
+        }
+    });
+    
+    // Execute translations with concurrency limit of 8 to avoid rate limits
+    await runWithConcurrency(tasks, 8);
 
     // Pre-calculate hashes for valid questions
     validQuestions.forEach(q => {
@@ -1442,6 +1555,20 @@ router.post('/questions', requireAdmin, catchAsync(async (req, res) => {
     } else {
         console.log(`[PDF Upload] Database save started for a single question.`);
         const q = req.body;
+        
+        // Auto-translate single question to Hindi if missing
+        const hasEn = q.question || q.question_en;
+        const hasHi = q.question_hi;
+        const hasHiOpts = q.options_hi && q.options_hi.length > 0;
+
+        if (hasEn && (!hasHi || !hasHiOpts)) {
+            const opts = q.options || [q.optionA || '', q.optionB || '', q.optionC || '', q.optionD || ''].filter(Boolean);
+            const trans = await autoTranslateToHindi(q.question || q.question_en, opts);
+            if (trans.question_hi) {
+                q.question_hi = trans.question_hi;
+                q.options_hi = trans.options_hi;
+            }
+        }
         
         q.questionHash = getNormalizedHash(q.question || q.question_en || '');
         const existing = await PracticeQuestion.findOne({
