@@ -115,19 +115,22 @@ function renderPacks(packs) {
     const techFreeGrid = document.getElementById('techFreeTestsGrid');
     const govtGrid     = document.getElementById('govtTestsGrid');
     const nationalGrid = document.getElementById('nationalTestsGrid');
-    const biharBoardGrid = document.getElementById('biharBoardTestsGrid');
+    const stateBoardGrid = document.getElementById('stateBoardTestsGrid');
+    const collegeEntranceGrid = document.getElementById('collegeEntranceTestsGrid');
     
     const techFreeSection = document.getElementById('techFreeTestsSection');
     const govtSection     = document.getElementById('govtTestsSection');
     const nationalSection = document.getElementById('nationalTestsSection');
-    const biharBoardSection = document.getElementById('biharBoardTestsSection');
+    const stateBoardSection = document.getElementById('stateBoardTestsSection');
+    const collegeEntranceSection = document.getElementById('collegeEntranceTestsSection');
 
     if (techFreeGrid) techFreeGrid.innerHTML = '';
     if (govtGrid) govtGrid.innerHTML = '';
     if (nationalGrid) nationalGrid.innerHTML = '';
-    if (biharBoardGrid) biharBoardGrid.innerHTML = '';
+    if (stateBoardGrid) stateBoardGrid.innerHTML = '';
+    if (collegeEntranceGrid) collegeEntranceGrid.innerHTML = '';
 
-    let techFreeCount = 0, govtCount = 0, nationalCount = 0, biharBoardCount = 0;
+    let techFreeCount = 0, govtCount = 0, nationalCount = 0, stateBoardCount = 0, collegeEntranceCount = 0;
 
     packs.forEach(pack => {
         const d        = getDiff(pack);
@@ -192,13 +195,34 @@ function renderPacks(packs) {
             </div>
         </div>`;
 
-        const nationalTitles = [
-            "NEET",
-            "JEE Main",
-            "CUET UG",
-            "CUET PG",
-            "NDA"
-        ];
+        const titleLower = pack.title.toLowerCase();
+        const categoryLower = (pack.category || '').toLowerCase();
+
+        const isTech = categoryLower.includes('tech') || 
+                       categoryLower.includes('coding') ||
+                       titleLower.includes('coding') ||
+                       titleLower.includes('ielts') ||
+                       titleLower.includes('typing') ||
+                       titleLower.includes('communication') ||
+                       titleLower.includes('aptitude') ||
+                       pack.id.includes('coding') ||
+                       pack.id.includes('english-ielts') ||
+                       pack.id.includes('aptitude') ||
+                       pack.id.includes('typing') ||
+                       pack.id.includes('communication');
+
+        const isStateBoard = categoryLower.includes('board') || 
+                             titleLower.includes('board') || 
+                             titleLower.includes('icse') ||
+                             pack.id.includes('board') ||
+                             pack.id.includes('cbse') ||
+                             pack.id.includes('icse') ||
+                             pack.id.includes('bihar-10') ||
+                             pack.id.includes('bihar-12') ||
+                             pack.id.includes('up-10') ||
+                             pack.id.includes('up-12') ||
+                             pack.id.includes('punjab-10') ||
+                             pack.id.includes('punjab-12');
 
         const collegeTitles = [
             "BITSAT",
@@ -206,22 +230,39 @@ function renderPacks(packs) {
             "LPUNEST",
             "MET (Manipal)",
             "BHU Entrance",
-            "AMU Entrance"
+            "AMU Entrance",
+            "MET"
         ];
+        const isCollegeEntrance = collegeTitles.some(t => titleLower.includes(t.toLowerCase())) || 
+                                  categoryLower.includes('college');
 
-        const isBiharBoard = pack.id.startsWith('bihar-') || 
-                             (pack.title || '').toLowerCase().includes('bihar') ||
-                             (pack.title || '').toLowerCase().includes('bseb');
+        const nationalTitles = [
+            "NEET",
+            "JEE Main",
+            "CUET",
+            "NDA",
+            "CA Foundation",
+            "UPSC"
+        ];
+        const isNational = nationalTitles.some(t => titleLower.includes(t.toLowerCase())) || 
+                           categoryLower.includes('upsc') ||
+                           categoryLower.includes('cuet') ||
+                           categoryLower.includes('neet') ||
+                           categoryLower.includes('jee') ||
+                           categoryLower.includes('national');
 
-        if (isBiharBoard) {
-            if (biharBoardGrid) biharBoardGrid.innerHTML += cardHTML;
-            biharBoardCount++;
-        } else if (nationalTitles.some(t => pack.title.toLowerCase().includes(t.toLowerCase()))) {
-            if (nationalGrid) nationalGrid.innerHTML += cardHTML;
-            nationalCount++;
-        } else if (collegeTitles.some(t => pack.title.toLowerCase().includes(t.toLowerCase()))) {
+        if (isTech) {
             if (techFreeGrid) techFreeGrid.innerHTML += cardHTML;
             techFreeCount++;
+        } else if (isStateBoard) {
+            if (stateBoardGrid) stateBoardGrid.innerHTML += cardHTML;
+            stateBoardCount++;
+        } else if (isCollegeEntrance) {
+            if (collegeEntranceGrid) collegeEntranceGrid.innerHTML += cardHTML;
+            collegeEntranceCount++;
+        } else if (isNational) {
+            if (nationalGrid) nationalGrid.innerHTML += cardHTML;
+            nationalCount++;
         } else {
             if (govtGrid) govtGrid.innerHTML += cardHTML;
             govtCount++;
@@ -231,7 +272,8 @@ function renderPacks(packs) {
     if (techFreeSection) techFreeSection.style.display = techFreeCount > 0 ? 'block' : 'none';
     if (govtSection) govtSection.style.display = govtCount > 0 ? 'block' : 'none';
     if (nationalSection) nationalSection.style.display = nationalCount > 0 ? 'block' : 'none';
-    if (biharBoardSection) biharBoardSection.style.display = biharBoardCount > 0 ? 'block' : 'none';
+    if (stateBoardSection) stateBoardSection.style.display = stateBoardCount > 0 ? 'block' : 'none';
+    if (collegeEntranceSection) collegeEntranceSection.style.display = collegeEntranceCount > 0 ? 'block' : 'none';
 }
 
 // ─── Filter Setup ────────────────────────────────────────────────────────────
