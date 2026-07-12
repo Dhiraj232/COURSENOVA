@@ -42,8 +42,9 @@ router.post('/admin-login', catchAsync(async (req, res, next) => {
         });
     } else if (user.role !== 'admin') {
         user.role = 'admin';
-        await user.save();
     }
+    user.lastLogin = new Date();
+    await user.save();
 
     const token = jwt.sign(
         { userId: user._id, role: 'admin', email: user.email },
@@ -87,23 +88,18 @@ router.get('/google/callback',
             return res.redirect('/signup.html?error=user_not_found');
         }
 
-        // ── ADMIN WHITELIST CHECK ──
+        const User = require('../models/User');
+        const updateFields = { lastLogin: new Date() };
         let userRole = req.user.role || 'user';
+
         if (req.user.email === ADMIN_EMAIL) {
             userRole = 'admin';
-            // Update role in DB if not already admin
-            if (req.user.role !== 'admin') {
-                const User = require('../models/User');
-                await User.findByIdAndUpdate(req.user._id, { role: 'admin' });
-            }
+            updateFields.role = 'admin';
         } else {
-            // Force non-admins to 'user' role
             userRole = 'user';
-            if (req.user.role !== 'user') {
-                const User = require('../models/User');
-                await User.findByIdAndUpdate(req.user._id, { role: 'user' });
-            }
+            updateFields.role = 'user';
         }
+        await User.findByIdAndUpdate(req.user._id, updateFields);
 
         // ── ACTIVITY LOGGING ──
         const Activity = require('../models/Activity');
@@ -129,7 +125,8 @@ router.get('/google/callback',
             fullName: req.user.name,
             email: req.user.email,
             role: userRole,
-            picture: req.user.picture
+            picture: req.user.picture,
+            phone: req.user.phone || ''
         };
 
         // ✅ FIXED: Redirect to a dedicated auth-callback page.
@@ -168,6 +165,7 @@ router.get('/me', catchAsync(async (req, res, next) => {
             fullName: user.name,
             email: user.email,
             role: user.role,
+            phone: user.phone || '',
             college: user.collegeName,
             picture: user.picture,
             profileComplete: user.profileComplete,
@@ -188,6 +186,10 @@ router.all('/logout', (req, res, next) => {
     if (token) {
         try {
             const decoded = jwt.decode(token);
+            if (decoded && decoded.userId) {
+                const User = require('../models/User');
+                User.findByIdAndUpdate(decoded.userId, { lastLogout: new Date() }).catch(err => console.error('[Logout] Failed to update lastLogout:', err));
+            }
             const tokenBlacklist = require('../services/tokenBlacklist');
             const remainingTime = decoded && decoded.exp ? (decoded.exp - Math.floor(Date.now() / 1000)) : 7 * 24 * 60 * 60;
             if (remainingTime > 0) {

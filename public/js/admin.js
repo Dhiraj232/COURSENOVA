@@ -89,6 +89,12 @@ async function loadView(view) {
     const title = document.getElementById('view-title');
     if (!contentArea) return;
 
+    // Clean up any existing live users polling interval
+    if (window.adminUsersPollInterval) {
+        clearInterval(window.adminUsersPollInterval);
+        window.adminUsersPollInterval = null;
+    }
+
     contentArea.innerHTML = `<div class="loading-state"><div class="spinner"></div><p>Fetching ${view} data...</p></div>`;
 
     try {
@@ -116,6 +122,23 @@ async function loadView(view) {
                 title.textContent = 'User Management';
                 const usersData = await fetchData(`${API_BASE}/users`);
                 renderUsers(usersData.users);
+                
+                // Set interval to poll live changes every 10 seconds
+                window.adminUsersPollInterval = setInterval(async () => {
+                    try {
+                        const activeItem = document.querySelector('.sidebar-nav .nav-item.active');
+                        const currentView = activeItem ? activeItem.getAttribute('data-view') : '';
+                        if (currentView === 'users') {
+                            const polledData = await fetchData(`${API_BASE}/users`);
+                            updateUsersListLive(polledData.users);
+                        } else {
+                            clearInterval(window.adminUsersPollInterval);
+                            window.adminUsersPollInterval = null;
+                        }
+                    } catch (err) {
+                        console.warn('Silent live users refresh skipped:', err);
+                    }
+                }, 10000);
                 break;
 
             case 'certificates':
@@ -1464,6 +1487,7 @@ function addMockTestRow() { const div = document.createElement('div'); div.inner
 // (Old functions like renderUsers, renderPayments, etc. remain similar but upgraded for style)
 
 function renderUsers(users) {
+    window.currentUsersList = users;
     const content = document.getElementById('content-area');
     
     const formatDate = (dateStr) => {
@@ -1471,6 +1495,50 @@ function renderUsers(users) {
         const d = new Date(dateStr);
         return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
     };
+
+    const formatTime = (dateStr) => {
+        if (!dateStr) return '---';
+        const d = new Date(dateStr);
+        return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+    };
+
+    // Inject CSS for online indicators and live status
+    if (!document.getElementById('live-status-styles')) {
+        const style = document.createElement('style');
+        style.id = 'live-status-styles';
+        style.textContent = `
+            .live-status-container {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                background: rgba(15, 23, 42, 0.05);
+                padding: 4px 8px;
+                border-radius: 20px;
+                width: fit-content;
+                border: 1px solid rgba(0, 0, 0, 0.05);
+            }
+            .status-indicator {
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+                display: inline-block;
+            }
+            .status-indicator.online {
+                background-color: #22c55e;
+                box-shadow: 0 0 8px #22c55e;
+                animation: pulse-status-green 2s infinite;
+            }
+            .status-indicator.offline {
+                background-color: #64748b;
+            }
+            @keyframes pulse-status-green {
+                0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+                70% { transform: scale(1); box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
+                100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+            }
+        `;
+        document.head.appendChild(style);
+    }
 
     content.innerHTML = `
         <div class="admin-card">
@@ -1483,9 +1551,11 @@ function renderUsers(users) {
             <table class="admin-table">
                 <thead>
                     <tr>
+                        <th>Status</th>
                         <th>User Profile</th>
                         <th>Phone</th>
-                        <th>Joined On</th>
+                        <th>Current Page</th>
+                        <th>Last Activity</th>
                         <th>Account Role</th>
                         <th>Actions</th>
                     </tr>
@@ -1494,9 +1564,16 @@ function renderUsers(users) {
                     ${users.map(u => {
                         const roleColor = u.role === 'admin' ? '#ef4444' : (u.role === 'STUDENT' ? '#3b82f6' : '#64748b');
                         const roleBg = u.role === 'admin' ? '#fef2f2' : (u.role === 'STUDENT' ? '#eff6ff' : '#f8fafc');
+                        const isOnline = u.lastActive && (new Date() - new Date(u.lastActive)) < 45000;
                         
                         return `
                         <tr>
+                            <td>
+                                <div class="live-status-container">
+                                    <span class="status-indicator ${isOnline ? 'online' : 'offline'}" title="${isOnline ? 'Online now' : 'Offline'}"></span>
+                                    <span style="font-size:0.8rem; font-weight:600; color:${isOnline ? '#22c55e' : '#64748b'};">${isOnline ? 'LIVE' : 'OFF'}</span>
+                                </div>
+                            </td>
                             <td>
                                 <div style="display:flex; align-items:center; gap:12px;">
                                     <div style="width:36px; height:36px; border-radius:50%; background:#e2e8f0; display:flex; align-items:center; justify-content:center; color:#475569; font-weight:700;">
@@ -1512,7 +1589,15 @@ function renderUsers(users) {
                                 <div style="font-size:0.9rem; color:#475569;">${u.phone || '---'}</div>
                             </td>
                             <td>
-                                <div style="font-size:0.9rem; color:#475569;">${formatDate(u.createdAt)}</div>
+                                <div style="font-size:0.85rem; font-family:monospace; color:#475569; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${u.currentPath || 'None'}">
+                                    ${u.currentPath || 'None'}
+                                </div>
+                            </td>
+                            <td>
+                                <div style="font-size:0.8rem; color:#475569;">
+                                    <div>Login: ${formatTime(u.lastLogin)}</div>
+                                    <div style="color:#64748b;">Logout: ${formatTime(u.lastLogout)}</div>
+                                </div>
                             </td>
                             <td>
                                 <span class="admin-badge" style="background:${roleBg}; color:${roleColor}; border:1px solid ${roleColor}44; border-radius:12px; padding:2px 10px; font-size:0.7rem;">
@@ -1521,6 +1606,9 @@ function renderUsers(users) {
                             </td>
                             <td>
                                 <div style="display:flex; gap:8px;">
+                                    <button class="btn btn-sm btn-outline" style="color:#6366f1; border-color:#c7d2fe;" onclick="showUserDetails('${u._id}')">
+                                        <i class="fas fa-eye"></i> Details
+                                    </button>
                                     <button class="btn btn-sm btn-outline" style="color:#ef4444; border-color:#fecaca;" onclick="toggleUserBlock('${u._id}', '${u.role}')">
                                         <i class="fas fa-ban"></i> ${u.isBlocked ? 'Unblock' : 'Block'}
                                     </button>
@@ -1533,6 +1621,220 @@ function renderUsers(users) {
             ${users.length === 0 ? '<div style="padding:40px; text-align:center; color:#64748b;">No users registered yet.</div>' : ''}
         </div>
     `;
+}
+
+function updateUsersListLive(users) {
+    window.currentUsersList = users;
+    
+    // Update total count
+    const totalCountEl = document.querySelector('.card-header div');
+    if (totalCountEl) {
+        totalCountEl.textContent = `Total Members: ${users.length}`;
+    }
+    
+    // Update table rows
+    const tbody = document.querySelector('.admin-table tbody');
+    if (tbody) {
+        const formatDate = (dateStr) => {
+            if (!dateStr) return 'N/A';
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+        };
+        const formatTime = (dateStr) => {
+            if (!dateStr) return '---';
+            const d = new Date(dateStr);
+            return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+        };
+        
+        tbody.innerHTML = users.map(u => {
+            const roleColor = u.role === 'admin' ? '#ef4444' : (u.role === 'STUDENT' ? '#3b82f6' : '#64748b');
+            const roleBg = u.role === 'admin' ? '#fef2f2' : (u.role === 'STUDENT' ? '#eff6ff' : '#f8fafc');
+            const isOnline = u.lastActive && (new Date() - new Date(u.lastActive)) < 45000;
+            
+            return `
+            <tr>
+                <td>
+                    <div class="live-status-container">
+                        <span class="status-indicator ${isOnline ? 'online' : 'offline'}" title="${isOnline ? 'Online now' : 'Offline'}"></span>
+                        <span style="font-size:0.8rem; font-weight:600; color:${isOnline ? '#22c55e' : '#64748b'};">${isOnline ? 'LIVE' : 'OFF'}</span>
+                    </div>
+                </td>
+                <td>
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <div style="width:36px; height:36px; border-radius:50%; background:#e2e8f0; display:flex; align-items:center; justify-content:center; color:#475569; font-weight:700;">
+                            ${(u.name || 'U').charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                            <div style="font-weight:600; color:#0f172a;">${u.name || 'No Name'}</div>
+                            <div style="font-size:0.75rem; color:#64748b;">${u.email}</div>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <div style="font-size:0.9rem; color:#475569;">${u.phone || '---'}</div>
+                </td>
+                <td>
+                    <div style="font-size:0.85rem; font-family:monospace; color:#475569; max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="${u.currentPath || 'None'}">
+                        ${u.currentPath || 'None'}
+                    </div>
+                </td>
+                <td>
+                    <div style="font-size:0.8rem; color:#475569;">
+                        <div>Login: ${formatTime(u.lastLogin)}</div>
+                        <div style="color:#64748b;">Logout: ${formatTime(u.lastLogout)}</div>
+                    </div>
+                </td>
+                <td>
+                    <span class="admin-badge" style="background:${roleBg}; color:${roleColor}; border:1px solid ${roleColor}44; border-radius:12px; padding:2px 10px; font-size:0.7rem;">
+                        ${(u.role || 'USER').toUpperCase()}
+                    </span>
+                </td>
+                <td>
+                    <div style="display:flex; gap:8px;">
+                        <button class="btn btn-sm btn-outline" style="color:#6366f1; border-color:#c7d2fe;" onclick="showUserDetails('${u._id}')">
+                            <i class="fas fa-eye"></i> Details
+                        </button>
+                        <button class="btn btn-sm btn-outline" style="color:#ef4444; border-color:#fecaca;" onclick="toggleUserBlock('${u._id}', '${u.role}')">
+                            <i class="fas fa-ban"></i> ${u.isBlocked ? 'Unblock' : 'Block'}
+                        </button>
+                    </div>
+                </td>
+            </tr>`;
+        }).join('');
+    }
+
+    // Also update detail modal content if it is currently open
+    const openModalCard = document.querySelector('#modal-container.active .modal-card');
+    if (openModalCard && window.activeDetailsUserId) {
+        const activeUser = users.find(u => u._id === window.activeDetailsUserId);
+        if (activeUser) {
+            updateDetailsModalLive(activeUser);
+        }
+    }
+}
+
+window.showUserDetails = function(userId) {
+    window.activeDetailsUserId = userId;
+    const u = window.currentUsersList.find(user => user._id === userId);
+    if (!u) return;
+
+    const modalContainer = document.getElementById('modal-container');
+    
+    const formatDate = (dateStr) => {
+        if (!dateStr) return 'N/A';
+        const d = new Date(dateStr);
+        return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+    };
+
+    const isOnline = u.lastActive && (new Date() - new Date(u.lastActive)) < 45000;
+
+    let historyHtml = '';
+    if (u.pageHistory && u.pageHistory.length > 0) {
+        const reversedHistory = [...u.pageHistory].reverse();
+        historyHtml = reversedHistory.map(h => `
+            <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:0.85rem;">
+                <span style="color:#cbd5e1; font-family:monospace; word-break:break-all;">${h.path}</span>
+                <span style="color:#64748b; flex-shrink:0;">${formatDate(h.timestamp)}</span>
+            </div>
+        `).join('');
+    } else {
+        historyHtml = '<div style="color:#64748b; font-size:0.85rem; text-align:center; padding:10px 0;">No navigation logs recorded yet.</div>';
+    }
+
+    modalContainer.innerHTML = `
+        <div class="modal-card" style="max-width: 600px; width: 90%; background: #1e293b; border: 1px solid rgba(255,255,255,0.1); border-radius: 16px; padding: 24px; color: #f1f5f9; position: relative;">
+            <button onclick="closeModal()" style="position: absolute; right: 16px; top: 16px; background: none; border: none; color: #94a3b8; font-size: 1.25rem; cursor: pointer;">&times;</button>
+            
+            <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 24px;">
+                <div style="width: 60px; height: 60px; border-radius: 50%; background: #3b82f6; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 1.5rem;">
+                    ${(u.name || 'U').charAt(0).toUpperCase()}
+                </div>
+                <div>
+                    <h3 style="margin: 0; font-size: 1.4rem; font-weight: 700;">${u.name || 'No Name'}</h3>
+                    <div style="color: #94a3b8; font-size: 0.9rem;">${u.email}</div>
+                    <div style="margin-top: 6px; display: flex; align-items: center; gap: 8px;">
+                        <span class="status-indicator ${isOnline ? 'online' : 'offline'}" style="width: 8px; height: 8px;"></span>
+                        <span style="font-size: 0.8rem; font-weight: 600; color: ${isOnline ? '#22c55e' : '#94a3b8'}">${isOnline ? 'ONLINE NOW' : 'OFFLINE'}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px;">
+                <div style="background: rgba(15,23,42,0.4); padding: 12px; border-radius: 8px;">
+                    <div style="font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">Phone</div>
+                    <div style="font-weight: 600; font-size: 0.95rem;">${u.phone || '---'}</div>
+                </div>
+                <div style="background: rgba(15,23,42,0.4); padding: 12px; border-radius: 8px;">
+                    <div style="font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">Joined On</div>
+                    <div style="font-weight: 600; font-size: 0.95rem;">${formatDate(u.createdAt)}</div>
+                </div>
+                <div style="background: rgba(15,23,42,0.4); padding: 12px; border-radius: 8px;">
+                    <div style="font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">Last Login</div>
+                    <div style="font-weight: 600; font-size: 0.95rem;">${formatDate(u.lastLogin)}</div>
+                </div>
+                <div style="background: rgba(15,23,42,0.4); padding: 12px; border-radius: 8px;">
+                    <div style="font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">Last Logout</div>
+                    <div style="font-weight: 600; font-size: 0.95rem;">${formatDate(u.lastLogout)}</div>
+                </div>
+                <div style="background: rgba(15,23,42,0.4); padding: 12px; border-radius: 8px; grid-column: span 2;">
+                    <div style="font-size: 0.75rem; color: #64748b; text-transform: uppercase; font-weight: 700; margin-bottom: 4px;">Current / Last Active Page</div>
+                    <div style="font-weight: 600; font-size: 0.95rem; font-family: monospace; word-break: break-all;" id="modalCurrentPath">${u.currentPath || 'None'}</div>
+                </div>
+            </div>
+
+            <div>
+                <h4 style="margin: 0 0 10px 0; font-size: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 6px;">Navigation History (What user checked)</h4>
+                <div style="max-height: 200px; overflow-y: auto; padding-right: 6px;" id="modalHistoryContainer">
+                    ${historyHtml}
+                </div>
+            </div>
+        </div>
+    `;
+    modalContainer.classList.add('active');
+};
+
+function updateDetailsModalLive(u) {
+    const isOnline = u.lastActive && (new Date() - new Date(u.lastActive)) < 45000;
+    
+    // Update online indicator inside modal
+    const indicator = document.querySelector('#modal-container.active .status-indicator');
+    const label = indicator ? indicator.nextElementSibling : null;
+    if (indicator && label) {
+        indicator.className = `status-indicator ${isOnline ? 'online' : 'offline'}`;
+        label.style.color = isOnline ? '#22c55e' : '#94a3b8';
+        label.textContent = isOnline ? 'ONLINE NOW' : 'OFFLINE';
+    }
+    
+    // Update path
+    const pathEl = document.getElementById('modalCurrentPath');
+    if (pathEl) {
+        pathEl.textContent = u.currentPath || 'None';
+    }
+    
+    // Update history list
+    const historyContainer = document.getElementById('modalHistoryContainer');
+    if (historyContainer) {
+        const formatDate = (dateStr) => {
+            if (!dateStr) return 'N/A';
+            const d = new Date(dateStr);
+            return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+        };
+        
+        let historyHtml = '';
+        if (u.pageHistory && u.pageHistory.length > 0) {
+            const reversedHistory = [...u.pageHistory].reverse();
+            historyHtml = reversedHistory.map(h => `
+                <div style="display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid rgba(255,255,255,0.05); font-size:0.85rem;">
+                    <span style="color:#cbd5e1; font-family:monospace; word-break:break-all;">${h.path}</span>
+                    <span style="color:#64748b; flex-shrink:0;">${formatDate(h.timestamp)}</span>
+                </div>
+            `).join('');
+        } else {
+            historyHtml = '<div style="color:#64748b; font-size:0.85rem; text-align:center; padding:10px 0;">No navigation logs recorded yet.</div>';
+        }
+        
+        historyContainer.innerHTML = historyHtml;
+    }
 }
 
 function renderPayments(payments) {

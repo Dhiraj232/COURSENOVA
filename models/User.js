@@ -63,6 +63,13 @@ const UserSchema = new mongoose.Schema({
     },
 
     lastLogin: { type: Date, default: Date.now },
+    lastLogout: { type: Date },
+    lastActive: { type: Date },
+    currentPath: { type: String, default: '' },
+    pageHistory: [{
+        path: { type: String },
+        timestamp: { type: Date, default: Date.now }
+    }],
     createdAt: { type: Date, default: Date.now }
 });
 

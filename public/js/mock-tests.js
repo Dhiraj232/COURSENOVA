@@ -115,16 +115,19 @@ function renderPacks(packs) {
     const techFreeGrid = document.getElementById('techFreeTestsGrid');
     const govtGrid     = document.getElementById('govtTestsGrid');
     const nationalGrid = document.getElementById('nationalTestsGrid');
+    const biharBoardGrid = document.getElementById('biharBoardTestsGrid');
     
     const techFreeSection = document.getElementById('techFreeTestsSection');
     const govtSection     = document.getElementById('govtTestsSection');
     const nationalSection = document.getElementById('nationalTestsSection');
+    const biharBoardSection = document.getElementById('biharBoardTestsSection');
 
     if (techFreeGrid) techFreeGrid.innerHTML = '';
     if (govtGrid) govtGrid.innerHTML = '';
     if (nationalGrid) nationalGrid.innerHTML = '';
+    if (biharBoardGrid) biharBoardGrid.innerHTML = '';
 
-    let techFreeCount = 0, govtCount = 0, nationalCount = 0;
+    let techFreeCount = 0, govtCount = 0, nationalCount = 0, biharBoardCount = 0;
 
     packs.forEach(pack => {
         const d        = getDiff(pack);
@@ -206,7 +209,14 @@ function renderPacks(packs) {
             "AMU Entrance"
         ];
 
-        if (nationalTitles.some(t => pack.title.toLowerCase().includes(t.toLowerCase()))) {
+        const isBiharBoard = pack.id.startsWith('bihar-') || 
+                             (pack.title || '').toLowerCase().includes('bihar') ||
+                             (pack.title || '').toLowerCase().includes('bseb');
+
+        if (isBiharBoard) {
+            if (biharBoardGrid) biharBoardGrid.innerHTML += cardHTML;
+            biharBoardCount++;
+        } else if (nationalTitles.some(t => pack.title.toLowerCase().includes(t.toLowerCase()))) {
             if (nationalGrid) nationalGrid.innerHTML += cardHTML;
             nationalCount++;
         } else if (collegeTitles.some(t => pack.title.toLowerCase().includes(t.toLowerCase()))) {
@@ -221,6 +231,7 @@ function renderPacks(packs) {
     if (techFreeSection) techFreeSection.style.display = techFreeCount > 0 ? 'block' : 'none';
     if (govtSection) govtSection.style.display = govtCount > 0 ? 'block' : 'none';
     if (nationalSection) nationalSection.style.display = nationalCount > 0 ? 'block' : 'none';
+    if (biharBoardSection) biharBoardSection.style.display = biharBoardCount > 0 ? 'block' : 'none';
 }
 
 // ─── Filter Setup ────────────────────────────────────────────────────────────

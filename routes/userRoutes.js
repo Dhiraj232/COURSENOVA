@@ -174,4 +174,45 @@ router.get('/dashboard-stats', requireAuth, async (req, res) => {
     }
 });
 
+// ── POST /api/user/heartbeat ─────────────────────────────────────────
+router.post('/heartbeat', requireAuth, async (req, res) => {
+    try {
+        const { path } = req.body;
+        const user = await StoreUser.findById(req.userId);
+        if (!user) return res.status(404).json({ ok: false, message: 'User not found' });
+
+        const now = new Date();
+        user.lastActive = now;
+        
+        if (path) {
+            const cleanPath = String(path).trim();
+            user.currentPath = cleanPath;
+
+            // Initialize pageHistory if undefined
+            if (!user.pageHistory) {
+                user.pageHistory = [];
+            }
+
+            const historyLength = user.pageHistory.length;
+            const lastEntry = historyLength > 0 ? user.pageHistory[historyLength - 1] : null;
+
+            // Only push to history if different from the last page visited
+            if (!lastEntry || lastEntry.path !== cleanPath) {
+                user.pageHistory.push({ path: cleanPath, timestamp: now });
+                
+                // Cap the history at 15 items
+                if (user.pageHistory.length > 15) {
+                    user.pageHistory.shift();
+                }
+            }
+        }
+
+        await user.save();
+        res.json({ ok: true });
+    } catch (err) {
+        console.error('Heartbeat log error:', err.message);
+        res.status(500).json({ ok: false, message: 'Heartbeat log error' });
+    }
+});
+
 module.exports = router;

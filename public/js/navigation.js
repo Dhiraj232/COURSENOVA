@@ -80,6 +80,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // ── Auto-load Notification Center (injects bell icon + panel on all pages) ──
     loadNotificationSystem();
+
+    // Start live tracking heartbeat reporting
+    startHeartbeat();
+
+    // Check if logged-in user needs to provide mobile number
+    setTimeout(checkAndPromptPhone, 1200);
 });
 
 // ==================== 2. DETECT CURRENT PAGE ====================
@@ -911,4 +917,275 @@ function setupMobileBottomNav() {
     }
 }
 window.setupMobileBottomNav = setupMobileBottomNav;
+
+// ==================== 14. SESSION HEARTBEAT AND PHONE PROMPT SYSTEM ====================
+function startHeartbeat() {
+    const user = getAuthUser();
+    const token = getAuthToken();
+    if (!user || !token) return;
+
+    const reportHeartbeat = () => {
+        const currentPath = window.location.pathname + window.location.search;
+        fetch('/api/user/heartbeat', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ path: currentPath })
+        })
+        .then(res => res.json())
+        .then(data => {
+            // Heartbeat registered successfully
+        })
+        .catch(err => console.warn('Heartbeat reporting skipped:', err));
+    };
+
+    // Send immediately on page load
+    reportHeartbeat();
+
+    // Send every 20 seconds
+    setInterval(reportHeartbeat, 20000);
+}
+
+function checkAndPromptPhone() {
+    const user = getAuthUser();
+    const token = getAuthToken();
+    if (!user || !token) return;
+    
+    // Skip phone prompt for admin roles
+    if (user.role === 'admin') return;
+
+    // Check if phone already set
+    if (user.phone && user.phone.trim() !== '') return;
+
+    // Prevent prompting multiple times in the same session
+    if (sessionStorage.getItem('phone_prompt_shown')) return;
+    sessionStorage.setItem('phone_prompt_shown', 'true');
+
+    // Inject CSS for the modern glassmorphic prompt modal
+    if (!document.getElementById('phone-prompt-styles')) {
+        const style = document.createElement('style');
+        style.id = 'phone-prompt-styles';
+        style.textContent = `
+            .phone-modal-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: rgba(15, 23, 42, 0.7);
+                backdrop-filter: blur(8px);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 100000;
+                opacity: 0;
+                transition: opacity 0.3s ease;
+            }
+            .phone-modal-overlay.active {
+                opacity: 1;
+            }
+            .phone-modal-card {
+                background: rgba(30, 41, 59, 0.85);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+                backdrop-filter: blur(16px);
+                border-radius: 20px;
+                padding: 32px;
+                width: 92%;
+                max-width: 420px;
+                text-align: center;
+                transform: scale(0.9);
+                transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+                color: #f1f5f9;
+                font-family: 'Outfit', 'Inter', sans-serif;
+            }
+            .phone-modal-overlay.active .phone-modal-card {
+                transform: scale(1);
+            }
+            .phone-modal-icon {
+                width: 64px;
+                height: 64px;
+                margin: 0 auto 20px;
+                background: linear-gradient(135deg, #6366f1, #3b82f6);
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 10px 15px -3px rgba(99, 102, 241, 0.4);
+            }
+            .phone-modal-icon i {
+                font-size: 26px;
+                color: white;
+            }
+            .phone-modal-title {
+                font-size: 1.6rem;
+                font-weight: 700;
+                margin-bottom: 12px;
+                background: linear-gradient(135deg, #ffffff, #94a3b8);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+            }
+            .phone-modal-desc {
+                font-size: 0.95rem;
+                color: #94a3b8;
+                margin-bottom: 24px;
+                line-height: 1.6;
+            }
+            .phone-input-group {
+                position: relative;
+                margin-bottom: 20px;
+            }
+            .phone-input-group i {
+                position: absolute;
+                left: 16px;
+                top: 50%;
+                transform: translateY(-50%);
+                color: #64748b;
+                font-size: 1.15rem;
+            }
+            .phone-modal-input {
+                width: 100%;
+                padding: 14px 16px 14px 48px;
+                background: rgba(15, 23, 42, 0.6);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 12px;
+                color: white;
+                font-size: 1.05rem;
+                font-family: inherit;
+                outline: none;
+                transition: all 0.25s ease;
+            }
+            .phone-modal-input:focus {
+                border-color: #6366f1;
+                box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.25);
+                background: rgba(15, 23, 42, 0.75);
+            }
+            .phone-modal-btn {
+                width: 100%;
+                padding: 14px;
+                background: linear-gradient(135deg, #6366f1, #4f46e5);
+                border: none;
+                border-radius: 12px;
+                color: white;
+                font-size: 1.05rem;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.25s ease;
+                box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+            }
+            .phone-modal-btn:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+                background: linear-gradient(135deg, #4f46e5, #4338ca);
+            }
+            .phone-modal-skip {
+                margin-top: 16px;
+                background: none;
+                border: none;
+                color: #64748b;
+                font-size: 0.88rem;
+                cursor: pointer;
+                transition: color 0.2s ease;
+                text-decoration: underline;
+                display: inline-block;
+            }
+            .phone-modal-skip:hover {
+                color: #cbd5e1;
+            }
+            .phone-modal-err-msg {
+                color: #f87171;
+                font-size: 0.82rem;
+                margin-top: -14px;
+                margin-bottom: 14px;
+                text-align: left;
+                display: none;
+            }
+        `;
+        document.head.appendChild(style);
+    }
+
+    const overlay = document.createElement('div');
+    overlay.className = 'phone-modal-overlay';
+    overlay.innerHTML = `
+        <div class="phone-modal-card">
+            <div class="phone-modal-icon">
+                <i class="fas fa-mobile-alt"></i>
+            </div>
+            <div class="phone-modal-title">Enter Phone Number</div>
+            <div class="phone-modal-desc">Please add your 10-digit mobile number to verify your profile and get live support.</div>
+            <div class="phone-input-group">
+                <i class="fas fa-phone-alt"></i>
+                <input type="tel" class="phone-modal-input" placeholder="Mobile Number" maxlength="10" pattern="[6-9][0-9]{9}" required>
+            </div>
+            <div class="phone-modal-err-msg" id="phonePromptError">Please enter a valid 10-digit Indian mobile number (starts with 6-9)</div>
+            <button class="phone-modal-btn" id="phonePromptSubmit">Submit & Continue</button>
+            <button class="phone-modal-skip" id="phonePromptSkip">Skip for now</button>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    setTimeout(() => overlay.classList.add('active'), 50);
+
+    const input = overlay.querySelector('.phone-modal-input');
+    const submitBtn = overlay.querySelector('#phonePromptSubmit');
+    const skipBtn = overlay.querySelector('#phonePromptSkip');
+    const errorDiv = overlay.querySelector('#phonePromptError');
+
+    input.addEventListener('input', function() {
+        this.value = this.value.replace(/[^0-9]/g, '');
+        errorDiv.style.display = 'none';
+    });
+
+    const closeModal = () => {
+        overlay.classList.remove('active');
+        setTimeout(() => overlay.remove(), 300);
+    };
+
+    skipBtn.addEventListener('click', closeModal);
+
+    submitBtn.addEventListener('click', async () => {
+        const phone = input.value.trim();
+        if (!/^[6-9]\d{9}$/.test(phone)) {
+            errorDiv.style.display = 'block';
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Saving...';
+
+        try {
+            const res = await fetch('/api/user/update-phone', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ phone })
+            });
+
+            const data = await res.json();
+            if (data.ok) {
+                user.phone = phone;
+                localStorage.setItem('user', JSON.stringify(user));
+                localStorage.setItem('coursenovaUser', JSON.stringify(user));
+                localStorage.setItem('coursenova_user', JSON.stringify(user));
+                closeModal();
+            } else {
+                errorDiv.textContent = data.message || 'Failed to update phone number';
+                errorDiv.style.display = 'block';
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit & Continue';
+            }
+        } catch (err) {
+            console.error('[Phone Prompt] Network error:', err);
+            errorDiv.textContent = 'Connection error. Please try again.';
+            errorDiv.style.display = 'block';
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Submit & Continue';
+        }
+    });
+}
 
