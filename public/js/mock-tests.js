@@ -334,7 +334,12 @@ async function handleStart(packId, isFree) {
 
         if (data.ok && !data.locked) {
             // Already unlocked
-            window.location.href = `quiz-engine.html?packId=${encodeURIComponent(packId)}&mode=mock`;
+            const pack = data.pack;
+            if (pack && (pack.totalTests > 1 || (pack.category || '').includes('Board'))) {
+                window.location.href = `board-selector.html?board=${encodeURIComponent(pack.title)}&packId=${encodeURIComponent(packId)}`;
+            } else {
+                window.location.href = `quiz-engine.html?packId=${encodeURIComponent(packId)}&mode=mock`;
+            }
         } else {
             // Need to pay
             initiateMockPayment(packId);
