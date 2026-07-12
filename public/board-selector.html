@@ -9,29 +9,28 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body {
-            background: #0f172a;
-            color: #e2e8f0;
+            background: #f8fafc;
+            color: #1e293b;
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
             margin: 0;
             padding: 0;
             min-height: 100vh;
         }
         .selector-header {
-            padding: 80px 5% 40px;
-            background: radial-gradient(circle at top, rgba(99, 102, 241, 0.15), transparent);
+            padding: 60px 5% 30px;
+            background: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
             text-align: center;
         }
         .selector-header h1 {
-            font-size: 2.5rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, #a5b4fc, #6366f1);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 12px;
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 8px;
         }
         .selector-header p {
-            color: #94a3b8;
-            font-size: 1.1rem;
+            color: #64748b;
+            font-size: 1.05rem;
             max-width: 600px;
             margin: 0 auto;
         }
@@ -39,74 +38,64 @@
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 25px;
-            padding: 30px 5% 80px;
+            padding: 40px 5% 80px;
             max-width: 1200px;
             margin: 0 auto;
         }
         .grid-card {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            background: #ffffff;
+            border: 2px solid #e2e8f0;
             padding: 30px;
             border-radius: 16px;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.25s ease;
             display: flex;
             flex-direction: column;
             align-items: center;
             text-align: center;
             position: relative;
             overflow: hidden;
-        }
-        .grid-card::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), transparent);
-            opacity: 0;
-            transition: opacity 0.3s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
         .grid-card:hover {
-            transform: translateY(-5px);
-            border-color: rgba(99, 102, 241, 0.3);
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(99, 102, 241, 0.1);
-        }
-        .grid-card:hover::before {
-            opacity: 1;
+            transform: translateY(-3px);
+            border-color: #3b82f6;
+            background: #f0f7ff;
+            box-shadow: 0 10px 20px -5px rgba(59, 130, 246, 0.1);
         }
         .grid-card i {
             font-size: 2.2rem;
-            margin-bottom: 20px;
-            z-index: 1;
+            margin-bottom: 18px;
         }
         .grid-card h3 {
-            font-size: 1.3rem;
+            font-size: 1.25rem;
             font-weight: 700;
-            margin: 0 0 10px;
-            color: #f8fafc;
-            z-index: 1;
+            margin: 0 0 8px;
+            color: #1e293b;
         }
         .grid-card p {
-            color: #94a3b8;
+            color: #64748b;
             font-size: 0.9rem;
             margin: 0;
-            z-index: 1;
         }
         .grid-card.disabled {
-            opacity: 0.4;
+            opacity: 0.55;
             cursor: not-allowed;
+            background: #f1f5f9;
+            border-color: #e2e8f0;
         }
         .grid-card.disabled:hover {
             transform: none;
-            border-color: rgba(255, 255, 255, 0.08);
+            border-color: #e2e8f0;
+            background: #f1f5f9;
             box-shadow: none;
         }
         .badge-coming-soon {
             position: absolute;
             top: 12px; right: 12px;
-            background: rgba(245, 158, 11, 0.15);
-            color: #f59e0b;
-            border: 1px solid rgba(245, 158, 11, 0.3);
+            background: #fef3c7;
+            color: #d97706;
+            border: 1px solid #fde68a;
             padding: 2px 8px;
             border-radius: 20px;
             font-size: 0.7rem;
@@ -114,9 +103,9 @@
             text-transform: uppercase;
         }
         .btn-back {
-            background: rgba(255, 255, 255, 0.05);
-            color: #f1f5f9;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: #ffffff;
+            color: #334155;
+            border: 1px solid #cbd5e1;
             padding: 10px 20px;
             border-radius: 8px;
             cursor: pointer;
@@ -124,12 +113,14 @@
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            margin: 20px 5% 0;
-            transition: 0.3s;
+            margin: 30px 5% 0;
+            transition: 0.2s;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
         }
         .btn-back:hover {
-            background: rgba(255, 255, 255, 0.1);
-            border-color: rgba(255, 255, 255, 0.2);
+            background: #f8fafc;
+            border-color: #94a3b8;
+            color: #0f172a;
         }
 
         /* Modal / Pop-over for Language Selection */
@@ -137,31 +128,31 @@
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(15, 23, 42, 0.8);
-            backdrop-filter: blur(8px);
+            background: rgba(15, 23, 42, 0.45);
+            backdrop-filter: blur(4px);
             z-index: 1000;
             justify-content: center;
             align-items: center;
         }
         .modal-content {
-            background: #1e293b;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
             padding: 40px;
             border-radius: 20px;
             text-align: center;
-            max-width: 420px;
+            max-width: 400px;
             width: 90%;
             position: relative;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
         }
         .modal-content h2 {
             margin-top: 0;
-            font-size: 1.8rem;
-            font-weight: 800;
-            color: #f8fafc;
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #0f172a;
         }
         .modal-content p {
-            color: #94a3b8;
+            color: #64748b;
             margin-bottom: 25px;
         }
         .lang-options {
@@ -171,18 +162,18 @@
             margin-top: 25px;
         }
         .lang-btn {
-            padding: 15px 30px;
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            background: rgba(255, 255, 255, 0.02);
-            color: #e2e8f0;
+            padding: 14px 28px;
+            border: 2px solid #e2e8f0;
+            background: #ffffff;
+            color: #475569;
             border-radius: 12px;
             cursor: pointer;
             font-weight: 600;
             flex: 1;
-            transition: 0.3s;
+            transition: 0.25s;
         }
-        .lang-btn:hover { border-color: #6366f1; color: #a5b4fc; }
-        .lang-btn.active { background: #6366f1; color: white; border-color: #6366f1; }
+        .lang-btn:hover { border-color: #3b82f6; color: #3b82f6; }
+        .lang-btn.active { background: #3b82f6; color: white; border-color: #3b82f6; }
         
         .close-btn {
             position: absolute;
@@ -193,7 +184,7 @@
             font-size: 1.5rem;
             cursor: pointer;
         }
-        .close-btn:hover { color: #f8fafc; }
+        .close-btn:hover { color: #475569; }
     </style>
 
     <!-- Favicon -->
@@ -226,7 +217,7 @@
                 <div class="lang-btn active" id="btn-lang-en" onclick="selectLang('en')">English</div>
                 <div class="lang-btn" id="btn-lang-hi" onclick="selectLang('hi')">Hindi</div>
             </div>
-            <button class="btn-primary" style="margin-top: 35px; width: 100%; padding: 14px 28px; font-weight: 700; border-radius: 10px; background: #6366f1; border: none; color: white; cursor: pointer;" id="startBtn">Start Test</button>
+            <button class="btn-primary" style="margin-top: 35px; width: 100%; padding: 14px 28px; font-weight: 700; border-radius: 10px; background: #3b82f6; border: none; color: white; cursor: pointer; transition: background 0.2s;" id="startBtn" onmouseover="this.style.background='#2563eb'" onmouseout="this.style.background='#3b82f6'">Start Test</button>
         </div>
     </div>
 
@@ -296,7 +287,7 @@
             
             grid.innerHTML = sets.map(num => {
                 const active = hasSet(num) || (num === 1 && tests.length > 0);
-                const colorClass = num === 1 ? '#60a5fa' : (num === 2 ? '#34d399' : (num === 3 ? '#fb7185' : '#f59e0b'));
+                const colorClass = num === 1 ? '#3b82f6' : (num === 2 ? '#10b981' : (num === 3 ? '#ef4444' : '#f59e0b'));
                 
                 return `
                     <div class="grid-card ${active ? '' : 'disabled'}" onclick="${active ? `selectSet(${num})` : ''}">
@@ -326,11 +317,11 @@
             const tests = packData.pack.tests || [];
             
             const subjectsList = [
-                { name: 'Physics', icon: 'fa-atom', color: '#60a5fa' },
-                { name: 'Chemistry', icon: 'fa-flask', color: '#c084fc' },
-                { name: 'Mathematics', icon: 'fa-calculator', color: '#34d399' },
-                { name: 'Biology', icon: 'fa-dna', color: '#4ade80' },
-                { name: 'English', icon: 'fa-book-open', color: '#fb7185' }
+                { name: 'Physics', icon: 'fa-atom', color: '#3b82f6' },
+                { name: 'Chemistry', icon: 'fa-flask', color: '#8b5cf6' },
+                { name: 'Mathematics', icon: 'fa-calculator', color: '#10b981' },
+                { name: 'Biology', icon: 'fa-dna', color: '#059669' },
+                { name: 'English', icon: 'fa-book-open', color: '#ec4899' }
             ];
 
             const isSubjectAvailable = (subName) => {
@@ -363,7 +354,7 @@
             const grid = document.getElementById('subjectGrid');
             grid.innerHTML = subjects.map(s => `
                 <div class="grid-card" onclick="openLangModal('${s}')">
-                    <i class="fas fa-book" style="color: #6366f1;"></i>
+                    <i class="fas fa-book" style="color: #3b82f6;"></i>
                     <h3>${s}</h3>
                     <p>Start practice test</p>
                 </div>
@@ -374,6 +365,14 @@
             selectedSubject = subject;
             document.getElementById('langModal').style.display = 'flex';
         }
+
+        document.addEventListener('mousedown', function(e) {
+            const modal = document.getElementById('langModal');
+            const content = document.querySelector('.modal-content');
+            if (modal.style.display === 'flex' && !content.contains(e.target)) {
+                closeModal();
+            }
+        });
 
         function closeModal() {
             document.getElementById('langModal').style.display = 'none';
