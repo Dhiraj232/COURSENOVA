@@ -1609,8 +1609,8 @@ function renderUsers(users) {
                                     <button class="btn btn-sm btn-outline" style="color:#6366f1; border-color:#c7d2fe;" onclick="showUserDetails('${u._id}')">
                                         <i class="fas fa-eye"></i> Details
                                     </button>
-                                    <button class="btn btn-sm btn-outline" style="color:#ef4444; border-color:#fecaca;" onclick="toggleUserBlock('${u._id}', '${u.role}')">
-                                        <i class="fas fa-ban"></i> ${u.isBlocked ? 'Unblock' : 'Block'}
+                                    <button class="btn btn-sm btn-outline" style="color:#dc2626; border-color:#fca5a5;" onclick="deleteUser('${u._id}', '${u.email}')">
+                                        <i class="fas fa-trash-alt"></i> Delete
                                     </button>
                                 </div>
                             </td>
@@ -1694,8 +1694,8 @@ function updateUsersListLive(users) {
                         <button class="btn btn-sm btn-outline" style="color:#6366f1; border-color:#c7d2fe;" onclick="showUserDetails('${u._id}')">
                             <i class="fas fa-eye"></i> Details
                         </button>
-                        <button class="btn btn-sm btn-outline" style="color:#ef4444; border-color:#fecaca;" onclick="toggleUserBlock('${u._id}', '${u.role}')">
-                            <i class="fas fa-ban"></i> ${u.isBlocked ? 'Unblock' : 'Block'}
+                        <button class="btn btn-sm btn-outline" style="color:#dc2626; border-color:#fca5a5;" onclick="deleteUser('${u._id}', '${u.email}')">
+                            <i class="fas fa-trash-alt"></i> Delete
                         </button>
                     </div>
                 </td>
@@ -1711,7 +1711,34 @@ function updateUsersListLive(users) {
             updateDetailsModalLive(activeUser);
         }
     }
-}
+window.deleteUser = async function(userId, userEmail) {
+    if (userEmail === 'coursenova.in@gmail.com') {
+        alert("Cannot delete master admin account.");
+        return;
+    }
+    if (!confirm(`Are you sure you want to permanently delete user "${userEmail}" and all their data? This action cannot be undone.`)) {
+        return;
+    }
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`/api/admin/users/${userId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        const data = await res.json();
+        if (data.ok) {
+            alert('User deleted successfully.');
+            loadView('users');
+        } else {
+            alert('Failed to delete user: ' + (data.message || 'Unknown error'));
+        }
+    } catch (err) {
+        console.error('Error deleting user:', err);
+        alert('Failed to delete user: ' + err.message);
+    }
+};
 
 window.showUserDetails = function(userId) {
     window.activeDetailsUserId = userId;
