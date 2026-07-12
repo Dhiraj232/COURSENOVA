@@ -8,48 +8,161 @@
     <link rel="stylesheet" href="css/navigation.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        body {
+            background: #0f172a;
+            color: #e2e8f0;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
         .selector-header {
-            padding: 60px 5%;
-            background: #f8fafc;
+            padding: 80px 5% 40px;
+            background: radial-gradient(circle at top, rgba(99, 102, 241, 0.15), transparent);
             text-align: center;
+        }
+        .selector-header h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #a5b4fc, #6366f1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 12px;
+        }
+        .selector-header p {
+            color: #94a3b8;
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto;
         }
         .subject-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 25px;
-            padding: 40px 5%;
+            padding: 30px 5% 80px;
+            max-width: 1200px;
+            margin: 0 auto;
         }
-        .subject-card {
-            background: white;
-            padding: 25px;
-            border-radius: 12px;
-            border: 2px solid #e2e8f0;
+        .grid-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 30px;
+            border-radius: 16px;
             cursor: pointer;
-            transition: 0.3s;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
+            flex-direction: column;
             align-items: center;
-            gap: 15px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
         }
-        .subject-card:hover { border-color: #3b82f6; background: #eff6ff; }
-        .subject-card i { font-size: 1.5rem; color: #3b82f6; }
+        .grid-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.08), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .grid-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(99, 102, 241, 0.3);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(99, 102, 241, 0.1);
+        }
+        .grid-card:hover::before {
+            opacity: 1;
+        }
+        .grid-card i {
+            font-size: 2.2rem;
+            margin-bottom: 20px;
+            z-index: 1;
+        }
+        .grid-card h3 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin: 0 0 10px;
+            color: #f8fafc;
+            z-index: 1;
+        }
+        .grid-card p {
+            color: #94a3b8;
+            font-size: 0.9rem;
+            margin: 0;
+            z-index: 1;
+        }
+        .grid-card.disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .grid-card.disabled:hover {
+            transform: none;
+            border-color: rgba(255, 255, 255, 0.08);
+            box-shadow: none;
+        }
+        .badge-coming-soon {
+            position: absolute;
+            top: 12px; right: 12px;
+            background: rgba(245, 158, 11, 0.15);
+            color: #f59e0b;
+            border: 1px solid rgba(245, 158, 11, 0.3);
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .btn-back {
+            background: rgba(255, 255, 255, 0.05);
+            color: #f1f5f9;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin: 20px 5% 0;
+            transition: 0.3s;
+        }
+        .btn-back:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
 
         /* Modal / Pop-over for Language Selection */
         .language-modal {
             display: none;
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5);
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(8px);
             z-index: 1000;
             justify-content: center;
             align-items: center;
         }
         .modal-content {
-            background: white;
+            background: #1e293b;
+            border: 1px solid rgba(255, 255, 255, 0.1);
             padding: 40px;
             border-radius: 20px;
             text-align: center;
-            max-width: 400px;
+            max-width: 420px;
             width: 90%;
+            position: relative;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        .modal-content h2 {
+            margin-top: 0;
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: #f8fafc;
+        }
+        .modal-content p {
+            color: #94a3b8;
+            margin-bottom: 25px;
         }
         .lang-options {
             display: flex;
@@ -59,45 +172,61 @@
         }
         .lang-btn {
             padding: 15px 30px;
-            border: 2px solid #e2e8f0;
-            border-radius: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.02);
+            color: #e2e8f0;
+            border-radius: 12px;
             cursor: pointer;
             font-weight: 600;
             flex: 1;
             transition: 0.3s;
         }
-        .lang-btn:hover { border-color: #3b82f6; color: #3b82f6; }
-        .lang-btn.active { background: #3b82f6; color: white; border-color: #3b82f6; }
+        .lang-btn:hover { border-color: #6366f1; color: #a5b4fc; }
+        .lang-btn.active { background: #6366f1; color: white; border-color: #6366f1; }
+        
+        .close-btn {
+            position: absolute;
+            top: 16px; right: 16px;
+            background: none;
+            border: none;
+            color: #94a3b8;
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        .close-btn:hover { color: #f8fafc; }
     </style>
 
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="/images/coursenova-logo.png">
-<link rel="stylesheet" href="css/responsive.css">
+    <link rel="stylesheet" href="css/responsive.css">
 </head>
 <body>
     <nav class="navbar" id="navbar"></nav>
 
+    <div id="backContainer"></div>
+
     <header class="selector-header">
         <h1 id="boardTitle">State Board Mock Tests</h1>
-        <p>Choose a subject to begin your 30-minute practice session.</p>
+        <p id="stepInstructions">Choose a Practice Set to begin.</p>
     </header>
 
     <main class="container">
         <div class="subject-grid" id="subjectGrid">
-            <!-- Subjects injected by JS -->
+            <!-- Dynamic sets/subjects injected by JS -->
         </div>
     </main>
 
     <!-- Language Selection Modal -->
     <div class="language-modal" id="langModal">
         <div class="modal-content">
+            <button class="close-btn" onclick="closeModal()">&times;</button>
             <h2>Choose Your Language</h2>
             <p>Select the language you want the questions to appear in.</p>
             <div class="lang-options">
-                <div class="lang-btn" onclick="selectLang('en')">English</div>
-                <div class="lang-btn" onclick="selectLang('hi')">Hindi</div>
+                <div class="lang-btn active" id="btn-lang-en" onclick="selectLang('en')">English</div>
+                <div class="lang-btn" id="btn-lang-hi" onclick="selectLang('hi')">Hindi</div>
             </div>
-            <button class="btn-primary" style="margin-top: 30px; width: 100%;" id="startBtn">Start Test</button>
+            <button class="btn-primary" style="margin-top: 35px; width: 100%; padding: 14px 28px; font-weight: 700; border-radius: 10px; background: #6366f1; border: none; color: white; cursor: pointer;" id="startBtn">Start Test</button>
         </div>
     </div>
 
@@ -106,8 +235,11 @@
         const urlParams = new URLSearchParams(window.location.search);
         const selectedBoard = urlParams.get('board') || 'State Board';
         const urlPackId = urlParams.get('packId');
+        let selectedSetNum = null;
         let selectedSubject = null;
         let selectedLanguage = 'en';
+        let packData = null;
+        let isBoardExam = false;
 
         document.getElementById('boardTitle').innerText = selectedBoard;
 
@@ -116,31 +248,124 @@
             if (!token) { window.location.href = 'signup.html'; return; }
 
             try {
-                let subjects = [];
                 if (urlPackId) {
                     const res = await fetch(`/api/mocktest/packs/${urlPackId}`, {
                         headers: { 'Authorization': `Bearer ${token}` }
                     });
-                    const data = await res.json();
-                    if (data.ok && data.pack) {
-                        subjects = data.pack.tests.map(t => t.testTitle);
+                    packData = await res.json();
+                    
+                    if (packData.ok && packData.pack) {
+                        const cat = packData.pack.category || '';
+                        isBoardExam = cat.toLowerCase().includes('board') || selectedBoard.toLowerCase().includes('board') || selectedBoard.toLowerCase().includes('class');
+                        
+                        if (isBoardExam) {
+                            renderSetsScreen();
+                        } else {
+                            // Non-board exam: display flat list of tests directly
+                            const subjects = packData.pack.tests.map(t => t.testTitle);
+                            renderSubjects(subjects);
+                        }
+                        return;
                     }
-                } else {
-                    const res = await fetch('/api/mocktest/categories');
-                    const data = await res.json();
-                    subjects = data.subjects['defaultBoard'] || [];
                 }
                 
+                // Fallback
+                const res = await fetch('/api/mocktest/categories');
+                const data = await res.json();
+                const subjects = data.subjects['defaultBoard'] || [];
                 renderSubjects(subjects);
-            } catch (e) { console.error(e); }
+            } catch (e) { 
+                console.error(e); 
+                document.getElementById('subjectGrid').innerHTML = '<div style="color: #ef4444; padding: 20px; font-weight:600; text-align:center; width:100%;">Failed to load tests. Please try again.</div>';
+            }
+        }
+
+        function renderSetsScreen() {
+            document.getElementById('backContainer').innerHTML = '';
+            document.getElementById('stepInstructions').innerText = 'Choose a Practice Set to begin.';
+            
+            const grid = document.getElementById('subjectGrid');
+            const tests = packData.pack.tests || [];
+            
+            // Check if set has any uploaded tests
+            const hasSet = (num) => {
+                return tests.some(t => t.testTitle.toLowerCase().includes('set ' + num));
+            };
+
+            const sets = [1, 2, 3, 4];
+            
+            grid.innerHTML = sets.map(num => {
+                const active = hasSet(num) || (num === 1 && tests.length > 0);
+                const colorClass = num === 1 ? '#60a5fa' : (num === 2 ? '#34d399' : (num === 3 ? '#fb7185' : '#f59e0b'));
+                
+                return `
+                    <div class="grid-card ${active ? '' : 'disabled'}" onclick="${active ? `selectSet(${num})` : ''}">
+                        ${!active ? '<span class="badge-coming-soon">Coming Soon</span>' : ''}
+                        <i class="fas fa-layer-group" style="color: ${colorClass};"></i>
+                        <h3>Set ${num}</h3>
+                        <p>${active ? 'Full multi-subject practice set' : 'Additional practice questions coming soon'}</p>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function selectSet(num) {
+            selectedSetNum = num;
+            renderSubjectsScreen();
+        }
+
+        function renderSubjectsScreen() {
+            document.getElementById('backContainer').innerHTML = `
+                <button class="btn-back" onclick="renderSetsScreen()">
+                    <i class="fas fa-arrow-left"></i> Back to Sets
+                </button>
+            `;
+            document.getElementById('stepInstructions').innerText = `Set ${selectedSetNum} - Select a subject to start your practice session.`;
+            
+            const grid = document.getElementById('subjectGrid');
+            const tests = packData.pack.tests || [];
+            
+            const subjectsList = [
+                { name: 'Physics', icon: 'fa-atom', color: '#60a5fa' },
+                { name: 'Chemistry', icon: 'fa-flask', color: '#c084fc' },
+                { name: 'Mathematics', icon: 'fa-calculator', color: '#34d399' },
+                { name: 'Biology', icon: 'fa-dna', color: '#4ade80' },
+                { name: 'English', icon: 'fa-book-open', color: '#fb7185' }
+            ];
+
+            const isSubjectAvailable = (subName) => {
+                const specificMatch = tests.some(t => t.testTitle.toLowerCase().includes('set ' + selectedSetNum) && t.testTitle.toLowerCase().includes(subName.toLowerCase()));
+                if (specificMatch) return true;
+                
+                const generalTest = tests.find(t => t.testTitle.toLowerCase().includes('set ' + selectedSetNum) || (selectedSetNum === 1 && tests.length === 1));
+                if (generalTest && generalTest.questions && Array.isArray(generalTest.questions)) {
+                    return generalTest.questions.some(q => q.subject && q.subject.toLowerCase() === subName.toLowerCase());
+                }
+                return false;
+            };
+
+            grid.innerHTML = subjectsList.map(s => {
+                const active = isSubjectAvailable(s.name);
+                return `
+                    <div class="grid-card ${active ? '' : 'disabled'}" onclick="${active ? `openLangModal('${s.name}')` : ''}">
+                        ${!active ? '<span class="badge-coming-soon">Coming Soon</span>' : ''}
+                        <i class="fas ${s.icon}" style="color: ${s.color};"></i>
+                        <h3>${s.name}</h3>
+                        <p>${active ? `Practice questions for ${s.name}` : `Not uploaded yet for Set ${selectedSetNum}`}</p>
+                    </div>
+                `;
+            }).join('');
         }
 
         function renderSubjects(subjects) {
+            document.getElementById('backContainer').innerHTML = '';
+            document.getElementById('stepInstructions').innerText = 'Choose a subject to begin your practice session.';
             const grid = document.getElementById('subjectGrid');
             grid.innerHTML = subjects.map(s => `
-                <div class="subject-card" onclick="openLangModal('${s}')">
-                    <i class="fas fa-book"></i>
+                <div class="grid-card" onclick="openLangModal('${s}')">
+                    <i class="fas fa-book" style="color: #6366f1;"></i>
                     <h3>${s}</h3>
+                    <p>Start practice test</p>
                 </div>
             `).join('');
         }
@@ -150,19 +375,37 @@
             document.getElementById('langModal').style.display = 'flex';
         }
 
+        function closeModal() {
+            document.getElementById('langModal').style.display = 'none';
+        }
+
         function selectLang(lang) {
             selectedLanguage = lang;
-            document.querySelectorAll('.lang-btn').forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.innerText.toLowerCase() === (lang === 'en' ? 'english' : 'hindi')) {
-                    btn.classList.add('active');
-                }
-            });
+            document.getElementById('btn-lang-en').classList.remove('active');
+            document.getElementById('btn-lang-hi').classList.remove('active');
+            if (lang === 'en') {
+                document.getElementById('btn-lang-en').classList.add('active');
+            } else {
+                document.getElementById('btn-lang-hi').classList.add('active');
+            }
         }
 
         document.getElementById('startBtn').onclick = () => {
+            const tests = packData.pack.tests || [];
+            
+            let targetTest = tests.find(t => t.testTitle.toLowerCase().includes('set ' + selectedSetNum) && t.testTitle.toLowerCase().includes(selectedSubject.toLowerCase()));
+            if (!targetTest) {
+                targetTest = tests.find(t => t.testTitle.toLowerCase().includes('set ' + selectedSetNum)) || tests[0];
+            }
+            
+            const testTitleParam = targetTest ? targetTest.testTitle : `Set ${selectedSetNum} Full Test`;
             const finalPackId = urlPackId || selectedBoard.toLowerCase().replace(/\s+/g, '-');
-            window.location.href = `quiz-engine.html?mode=mock&board=${encodeURIComponent(selectedBoard)}&subject=${encodeURIComponent(selectedSubject)}&lang=${selectedLanguage}&packId=${encodeURIComponent(finalPackId)}`;
+            
+            let url = `quiz-engine.html?mode=mock&board=${encodeURIComponent(selectedBoard)}&subject=${encodeURIComponent(testTitleParam)}&lang=${selectedLanguage}&packId=${encodeURIComponent(finalPackId)}`;
+            if (isBoardExam && selectedSubject) {
+                url += `&sub=${encodeURIComponent(selectedSubject)}`;
+            }
+            window.location.href = url;
         };
 
         init();

@@ -1115,6 +1115,22 @@ function renderMockTestRow(t = {}, i) {
     const hasHindi = t.questions && t.questions.length > 0 && t.questions[0] && t.questions[0].question_hi;
     const qIds = t.questions ? (Array.isArray(t.questions) && typeof t.questions[0] === 'object' ? t.questions.map(q => q._id).join(', ') : t.questions.join(', ')) : '';
 
+    // Detect Set and Subject from existing title if editing
+    let defaultSet = "1";
+    let defaultSub = "General";
+    if (t.testTitle) {
+        const setMatch = t.testTitle.match(/Set\s*(\d+)/i);
+        if (setMatch) defaultSet = setMatch[1];
+        
+        const subjects = ['Physics', 'Chemistry', 'Mathematics', 'Biology', 'English', 'Hindi'];
+        for (const sub of subjects) {
+            if (t.testTitle.toLowerCase().includes(sub.toLowerCase())) {
+                defaultSub = sub;
+                break;
+            }
+        }
+    }
+
     return `
         <div class="item-row mt-row" data-index="${i}">
             <div class="item-info">
@@ -1122,6 +1138,32 @@ function renderMockTestRow(t = {}, i) {
                     <input type="text" placeholder="Test Title" class="admin-input mt-t-title" value="${t.testTitle || ''}" style="padding:8px;">
                     <input type="number" placeholder="Duration (min)" class="admin-input mt-t-dur" value="${t.durationMinutes || 60}" style="padding:8px;">
                     <input type="text" placeholder="ID (slug)" class="admin-input mt-t-id" value="${t.testId || ''}" style="padding:8px;">
+                </div>
+                
+                <!-- Board Set/Subject Quick Config Helper -->
+                <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; padding: 6px 12px; margin-bottom: 10px; font-size: 0.8rem; display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+                    <span style="font-weight: 700; color: #166534;"><i class="fas fa-magic"></i> Board Quick Config:</span>
+                    <div style="display:flex; gap:6px; align-items:center;">
+                        <label style="font-weight:600; color:#1e293b;">Set:</label>
+                        <select class="admin-input mt-helper-set" style="padding:2px 6px; font-size:0.75rem; width:80px; height:auto; min-height:0; border-color:#bbf7d0;" onchange="updateTitleFromHelper(this)">
+                            <option value="1" ${defaultSet === "1" ? "selected" : ""}>Set 1</option>
+                            <option value="2" ${defaultSet === "2" ? "selected" : ""}>Set 2</option>
+                            <option value="3" ${defaultSet === "3" ? "selected" : ""}>Set 3</option>
+                            <option value="4" ${defaultSet === "4" ? "selected" : ""}>Set 4</option>
+                        </select>
+                    </div>
+                    <div style="display:flex; gap:6px; align-items:center;">
+                        <label style="font-weight:600; color:#1e293b;">Subject:</label>
+                        <select class="admin-input mt-helper-sub" style="padding:2px 6px; font-size:0.75rem; width:130px; height:auto; min-height:0; border-color:#bbf7d0;" onchange="updateTitleFromHelper(this)">
+                            <option value="General" ${defaultSub === "General" ? "selected" : ""}>General / Mixed</option>
+                            <option value="Physics" ${defaultSub === "Physics" ? "selected" : ""}>Physics</option>
+                            <option value="Chemistry" ${defaultSub === "Chemistry" ? "selected" : ""}>Chemistry</option>
+                            <option value="Mathematics" ${defaultSub === "Mathematics" ? "selected" : ""}>Mathematics</option>
+                            <option value="Biology" ${defaultSub === "Biology" ? "selected" : ""}>Biology</option>
+                            <option value="English" ${defaultSub === "English" ? "selected" : ""}>English</option>
+                            <option value="Hindi" ${defaultSub === "Hindi" ? "selected" : ""}>Hindi</option>
+                        </select>
+                    </div>
                 </div>
                 <div style="background: var(--bg-light); padding:12px; border-radius:8px; border: 1px dashed var(--border);">
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
@@ -1477,6 +1519,23 @@ window.closePreviewModal = function() {
     if (previewContainer) {
         previewContainer.classList.remove('active');
         previewContainer.innerHTML = '';
+    }
+};
+
+window.updateTitleFromHelper = function(select) {
+    const row = select.closest('.mt-row');
+    const setVal = row.querySelector('.mt-helper-set').value;
+    const subVal = row.querySelector('.mt-helper-sub').value;
+    
+    const titleInput = row.querySelector('.mt-t-title');
+    const idInput = row.querySelector('.mt-t-id');
+    
+    if (subVal === 'General') {
+        titleInput.value = `Set ${setVal} Full Test`;
+        idInput.value = `set-${setVal}-full`;
+    } else {
+        titleInput.value = `Set ${setVal} - ${subVal}`;
+        idInput.value = `set-${setVal}-${subVal.toLowerCase()}`;
     }
 };
 

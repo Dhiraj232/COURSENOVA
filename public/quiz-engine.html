@@ -342,13 +342,26 @@
                             return;
                         }
                         const targetSub = urlParams.get('subject');
-                        const subtest = data.pack.tests.find(t => t.testTitle === targetSub) || data.pack.tests[0];
+                        const subtest = data.pack.tests.find(t => t.testTitle === targetSub) || data.pack.tests.find(t => t.testTitle.toLowerCase().includes(targetSub.toLowerCase())) || data.pack.tests[0];
                         if (!subtest) {
                             document.getElementById('questionText').innerText = "No test found in this pack.";
                             return;
                         }
-                        questions = subtest.questions || [];
-                        document.getElementById('quizTitle').innerText = `${data.pack.title} - ${subtest.testTitle}`;
+                        
+                        // Check if a sub-subject filter is provided (e.g., sub=Physics)
+                        const subParam = urlParams.get('sub');
+                        let finalQuestions = subtest.questions || [];
+                        if (subParam) {
+                            const matched = (subtest.questions || []).filter(q => q.subject && q.subject.toLowerCase() === subParam.toLowerCase());
+                            if (matched.length > 0) {
+                                finalQuestions = matched;
+                            }
+                        }
+                        
+                        questions = finalQuestions;
+                        document.getElementById('quizTitle').innerText = subParam 
+                            ? `${data.pack.title} - ${subtest.testTitle} (${subParam})`
+                            : `${data.pack.title} - ${subtest.testTitle}`;
                         timerSeconds = (subtest.durationMinutes || 30) * 60;
                     } else {
                         questions = data.questions || [];
