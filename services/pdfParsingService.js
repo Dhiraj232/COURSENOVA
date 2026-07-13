@@ -656,14 +656,14 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
                         const pageImageFilename = `page_${parseSessionId}_p${pNum}.png`;
                         const pageImageFilepath = path.join(pageImagesDir, pageImageFilename);
                         fs.writeFileSync(pageImageFilepath, pngBuf);
-                        result = { pageNum: pNum, imagePath: pageImageFilepath, type: 'vision' };
+                        result = { pageNum: pNum, imagePath: pageImageFilepath, text: ocrText || '', type: 'vision' };
                     }
                 } catch (ocrErr) {
                     logs.push(`[Parser Warning] Page ${pNum} OCR failed: ${ocrErr.message}`);
                     const pageImageFilename = `page_${parseSessionId}_p${pNum}.png`;
                     const pageImageFilepath = path.join(pageImagesDir, pageImageFilename);
                     fs.writeFileSync(pageImageFilepath, pngBuf);
-                    result = { pageNum: pNum, imagePath: pageImageFilepath, type: 'vision' };
+                    result = { pageNum: pNum, imagePath: pageImageFilepath, text: '', type: 'vision' };
                 }
             }
 
@@ -743,6 +743,30 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
 
     // Run batch tasks with concurrency of 8 to prevent Gemini rate limit (429) errors.
     await runConcurrentTasks(batchTasks, 8);
+
+    // Fallback if no questions were extracted via Gemini (e.g. because of expired/invalid API key)
+    if (questions.length === 0) {
+        logs.push('[Parser Fallback] Gemini AI parser yielded 0 questions (possibly due to invalid or expired credentials). Falling back to offline heuristic rule parser...');
+        
+        let fullText = '';
+        extractedPages.forEach(p => {
+            if (p.text) {
+                fullText += `[PAGE_MARKER_${p.pageNum}]\n` + p.text + '\n\n';
+            }
+        });
+        
+        if (fullText.trim().length > 0) {
+            try {
+                const heuristicQuestions = parseQuestionsHeuristically(fullText, defaultCategory, defaultSubject);
+                logs.push(`[Parser Fallback] Local heuristic rule engine successfully extracted ${heuristicQuestions.length} questions.`);
+                questions.push(...heuristicQuestions);
+            } catch (fallbackErr) {
+                logs.push(`[Parser Fallback Error] Local heuristic parser failed: ${fallbackErr.message}`);
+            }
+        } else {
+            logs.push('[Parser Fallback Error] No selectable text or OCR output was found in the document to run heuristic parser.');
+        }
+    }
 
     // Save inline images to local questions public upload folder
     if (onProgress) onProgress(85, 'Saving Images', 'Mapping diagrams and graphics to questions...');
