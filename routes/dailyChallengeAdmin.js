@@ -123,10 +123,66 @@ async function failJob(jobId, errorMsg) {
 
 const upload = multer({
     storage: multer.memoryStorage(),
-    limits: { fileSize: 15 * 1024 * 1024 }, // 15 MB
+    limits: { fileSize: 500 * 1024 * 1024 }, // 500 MB
     fileFilter: (req, file, cb) => {
         if (file.mimetype === 'application/pdf') cb(null, true);
         else cb(new Error('Only PDF files are allowed'), false);
+    }
+});
+
+const fs = require('fs');
+const path = require('path');
+
+// POST /api/admin/daily-challenge/merge-chunks
+router.post('/daily-challenge/merge-chunks', requireAdmin, async (req, res) => {
+    try {
+        const { uploadId, fileName, examType, expectedCount } = req.body;
+        if (!uploadId || !fileName) {
+            return res.status(400).json({ ok: false, error: 'Missing uploadId or fileName.' });
+        }
+        
+        const uploadChunkDir = path.join(__dirname, '..', 'tmp', 'uploads');
+        const chunkDir = path.join(uploadChunkDir, uploadId);
+        if (!fs.existsSync(chunkDir)) {
+            return res.status(404).json({ ok: false, error: 'Upload session not found or expired.' });
+        }
+        
+        const files = fs.readdirSync(chunkDir).sort((a, b) => {
+            const idxA = parseInt(a.split('_')[1], 10);
+            const idxB = parseInt(b.split('_')[1], 10);
+            return idxA - idxB;
+        });
+        
+        const buffers = [];
+        for (const file of files) {
+            const filePath = path.join(chunkDir, file);
+            buffers.push(fs.readFileSync(filePath));
+        }
+        const finalBuffer = Buffer.concat(buffers);
+        
+        // Clean up chunks
+        setTimeout(() => {
+            try {
+                fs.rmSync(chunkDir, { recursive: true, force: true });
+            } catch (err) {}
+        }, 15000);
+        
+        const expected = parseInt(expectedCount || 100, 10);
+        const jobId = await createJob('daily-challenge-pdf', {
+            name: fileName,
+            size: finalBuffer.length,
+            examType
+        });
+        
+        setImmediate(() => {
+            runDailyChallengePDFJob(jobId, finalBuffer, examType, expected, Date.now())
+                .catch(err => console.error(`[PDF Job ${jobId}] error:`, err));
+        });
+        
+        res.json({ ok: true, jobId });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ ok: false, error: 'Failed to merge chunks: ' + err.message });
     }
 });
 
@@ -264,7 +320,7 @@ async function runDailyChallengePDFJob(jobId, pdfBuffer, examType, expectedCount
             );
         }
 
-        const warningCount = questions.stats ? questions.stats.warning : 0;
+        const warningsCount = questions.stats ? questions.stats.warning : 0;
         const errorsCount = questions.stats ? (questions.stats.encodingErrors + questions.stats.missingOptions + questions.stats.missingAnswers) : 0;
 
         await PdfJob.updateOne(

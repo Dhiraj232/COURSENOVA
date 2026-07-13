@@ -2419,36 +2419,95 @@ async function handlePdfUpload() {
         return alert('Please select the specific test to import questions into');
     }
 
-    const formData = new FormData();
-    formData.append('pdf', fileInp.files[0]);
-    formData.append('category', categoryInp.value.trim());
-    formData.append('subject', subjectInp.value.trim());
-    formData.append('packId', packSelect.value);
-    formData.append('testId', testSelect.value);
+    const file = fileInp.files[0];
+    const category = categoryInp.value.trim();
+    const subject = subjectInp.value.trim();
+    const packId = packSelect.value;
+    const testId = testSelect.value;
 
     btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading PDF...';
-    status.innerHTML = '<div style="color:var(--primary); font-weight:500;"><i class="fas fa-spinner fa-spin"></i> Uploading PDF and queueing import...</div>';
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Slicing...';
+    status.innerHTML = '<div style="color:var(--primary); font-weight:500;"><i class="fas fa-spinner fa-spin"></i> Preparing chunked upload...</div>';
 
     try {
         const token = localStorage.getItem('token');
-        const res = await fetch(`${API_BASE}/generate-questions-from-pdf`, {
+        const chunkSize = 5 * 1024 * 1024; // 5 MB chunks
+        const totalChunks = Math.ceil(file.size / chunkSize);
+        const uploadId = `upload_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
+        for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+            const start = chunkIndex * chunkSize;
+            const end = Math.min(start + chunkSize, file.size);
+            const chunk = file.slice(start, end);
+
+            const chunkFormData = new FormData();
+            chunkFormData.append('chunk', chunk);
+            chunkFormData.append('uploadId', uploadId);
+            chunkFormData.append('chunkIndex', chunkIndex);
+            chunkFormData.append('totalChunks', totalChunks);
+
+            const uploadPct = Math.round((chunkIndex / totalChunks) * 100);
+            status.innerHTML = `
+                <div style="color:var(--primary); font-weight:500;">
+                    <i class="fas fa-spinner fa-spin"></i> Uploading chunk ${chunkIndex + 1}/${totalChunks} (${uploadPct}%)...
+                </div>
+            `;
+            btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Uploading... ${uploadPct}%`;
+
+            let retries = 3;
+            let success = false;
+            while (retries > 0 && !success) {
+                try {
+                    const res = await fetch(`${API_BASE}/upload-chunk`, {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${token}` },
+                        body: chunkFormData
+                    });
+                    if (!res.ok) throw new Error(await res.clone().text());
+                    success = true;
+                } catch (err) {
+                    retries--;
+                    if (retries === 0) throw new Error(`Chunk ${chunkIndex + 1} upload failed: ${err.message}`);
+                    await new Promise(r => setTimeout(r, 2000));
+                }
+            }
+        }
+
+        status.innerHTML = '<div style="color:var(--primary); font-weight:500;"><i class="fas fa-spinner fa-spin"></i> Merging chunks on server...</div>';
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Merging...';
+
+        const isImportDirect = packId ? true : false;
+        const mergeEndpoint = isImportDirect ? `${API_BASE}/merge-chunks-import` : `${API_BASE}/merge-chunks`;
+
+        const mergeRes = await fetch(mergeEndpoint, {
             method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` },
-            body: formData
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                uploadId,
+                fileName: file.name,
+                category,
+                subject,
+                packId,
+                testId,
+                expectedCount: 100,
+                replaceDuplicates: false
+            })
         });
 
-        if (!res.ok) {
-            const errorMsg = await getFetchErrorMessage(res);
-            status.innerHTML = `<span style="color:var(--danger)">Error: ${errorMsg}</span>`;
+        if (!mergeRes.ok) {
+            const errorMsg = await getFetchErrorMessage(mergeRes);
+            status.innerHTML = `<span style="color:var(--danger)">Merge failed: ${errorMsg}</span>`;
             btn.disabled = false;
             btn.textContent = 'Try Again';
             return;
         }
 
-        const data = await res.json();
+        const data = await mergeRes.json();
         if (!data.ok || !data.jobId) {
-            throw new Error(data.message || 'No job ID received.');
+            throw new Error(data.message || 'No job ID received from merge.');
         }
 
         status.innerHTML = `

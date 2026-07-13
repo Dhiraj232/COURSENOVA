@@ -33,7 +33,7 @@ const pdfParse = typeof pdfParseModule === 'function'
     };
 const upload = multer({
     storage: multer.memoryStorage(),
-    limits: { fileSize: 15 * 1024 * 1024 }, // 15 MB
+    limits: { fileSize: 500 * 1024 * 1024 }, // 500 MB
     fileFilter: (req, file, cb) => {
         if (file.mimetype === 'application/pdf') cb(null, true);
         else cb(new Error('Only PDF files are allowed'), false);
@@ -229,6 +229,143 @@ router.post('/pdf-jobs/:jobId/cancel', requireAdmin, catchAsync(async (req, res)
     } else {
         res.json({ ok: true, message: `Job is already in status: ${job.status}` });
     }
+}));
+
+// ── Chunked PDF Upload System ──────────────────────────────────────────
+const uploadChunkDir = path.join(__dirname, '..', 'tmp', 'uploads');
+if (!fs.existsSync(uploadChunkDir)) {
+    fs.mkdirSync(uploadChunkDir, { recursive: true });
+}
+
+const uploadChunk = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 } // 10 MB chunks maximum
+});
+
+router.post('/upload-chunk', requireAdmin, uploadChunk.single('chunk'), catchAsync(async (req, res) => {
+    const { uploadId, chunkIndex, totalChunks } = req.body;
+    if (!uploadId || chunkIndex === undefined || !req.file) {
+        throw new AppError('Invalid chunk upload request parameters.', 400);
+    }
+    
+    const chunkDir = path.join(uploadChunkDir, uploadId);
+    if (!fs.existsSync(chunkDir)) {
+        fs.mkdirSync(chunkDir, { recursive: true });
+    }
+    
+    const chunkPath = path.join(chunkDir, `chunk_${chunkIndex}`);
+    fs.writeFileSync(chunkPath, req.file.buffer);
+    
+    res.json({ ok: true, message: `Chunk ${chunkIndex} uploaded successfully.` });
+}));
+
+router.post('/merge-chunks', requireAdmin, catchAsync(async (req, res) => {
+    const { uploadId, fileName, category, subject, expectedCount } = req.body;
+    if (!uploadId || !fileName) {
+        throw new AppError('Missing uploadId or fileName.', 400);
+    }
+    
+    const chunkDir = path.join(uploadChunkDir, uploadId);
+    if (!fs.existsSync(chunkDir)) {
+        throw new AppError('Upload session not found or expired.', 404);
+    }
+    
+    const files = fs.readdirSync(chunkDir).sort((a, b) => {
+        const idxA = parseInt(a.split('_')[1], 10);
+        const idxB = parseInt(b.split('_')[1], 10);
+        return idxA - idxB;
+    });
+    
+    const buffers = [];
+    for (const file of files) {
+        const filePath = path.join(chunkDir, file);
+        buffers.push(fs.readFileSync(filePath));
+    }
+    const finalBuffer = Buffer.concat(buffers);
+    
+    // Clean up chunk files in background
+    setTimeout(() => {
+        try {
+            fs.rmSync(chunkDir, { recursive: true, force: true });
+        } catch (err) {
+            console.error('Failed to clean up chunks:', err);
+        }
+    }, 15000);
+    
+    const expected = parseInt(expectedCount || 100, 10);
+    const jobId = await createJob('preview-pdf', {
+        name: fileName,
+        size: finalBuffer.length,
+        category,
+        subject
+    });
+    
+    setImmediate(() => {
+        runPreviewPDFJob(jobId, finalBuffer, category, subject, expected, Date.now())
+            .catch(err => console.error(`[PDF Job ${jobId}] error:`, err));
+    });
+    
+    res.json({ ok: true, jobId });
+}));
+
+router.post('/merge-chunks-import', requireAdmin, catchAsync(async (req, res) => {
+    const { uploadId, fileName, category, subject, packId, testId, expectedCount, replaceDuplicates } = req.body;
+    if (!uploadId || !fileName) {
+        throw new AppError('Missing uploadId or fileName.', 400);
+    }
+    
+    const chunkDir = path.join(uploadChunkDir, uploadId);
+    if (!fs.existsSync(chunkDir)) {
+        throw new AppError('Upload session not found or expired.', 404);
+    }
+    
+    const files = fs.readdirSync(chunkDir).sort((a, b) => {
+        const idxA = parseInt(a.split('_')[1], 10);
+        const idxB = parseInt(b.split('_')[1], 10);
+        return idxA - idxB;
+    });
+    
+    const buffers = [];
+    for (const file of files) {
+        const filePath = path.join(chunkDir, file);
+        buffers.push(fs.readFileSync(filePath));
+    }
+    const finalBuffer = Buffer.concat(buffers);
+    
+    // Clean up chunk files in background
+    setTimeout(() => {
+        try {
+            fs.rmSync(chunkDir, { recursive: true, force: true });
+        } catch (err) {
+            console.error('Failed to clean up chunks:', err);
+        }
+    }, 15000);
+    
+    const expected = parseInt(expectedCount || 100, 10);
+    const isReplace = replaceDuplicates === 'true' || replaceDuplicates === true;
+    
+    const jobId = await createJob('import-pdf', {
+        name: fileName,
+        size: finalBuffer.length,
+        category,
+        subject,
+        packId,
+        testId,
+        expectedCount: expected,
+        replaceDuplicates: isReplace
+    });
+    
+    const reqUser = {
+        userId: req.userId,
+        user: req.user
+    };
+    
+    setImmediate(() => {
+        runImportPDFJob(jobId, finalBuffer, category, subject, packId, testId, reqUser, expected, isReplace, Date.now())
+            .catch(err => console.error(`[PDF Job ${jobId}] error:`, err));
+    });
+    
+    res.json({ ok: true, jobId });
 }));
 
 // ── Parse MCQ questions from raw PDF text ────────────────────────────
@@ -1116,7 +1253,7 @@ async function runPreviewPDFJob(jobId, buffer, defaultCategory, defaultSubject, 
 
         const elapsedSec = ((Date.now() - startTime) / 1000).toFixed(2);
         
-        const warningCount = questions.stats ? questions.stats.warning : 0;
+        const warningsCount = questions.stats ? questions.stats.warning : 0;
         const errorsCount = questions.stats ? (questions.stats.encodingErrors + questions.stats.missingOptions + questions.stats.missingAnswers) : 0;
 
         await PdfJob.updateOne(
@@ -1137,7 +1274,7 @@ async function runPreviewPDFJob(jobId, buffer, defaultCategory, defaultSubject, 
             stats: questions.stats || {
                 total: markedQuestions.length,
                 valid: markedQuestions.filter(q => q.isValid).length,
-                warning: warningCount,
+                warning: warningsCount,
                 duplicate: markedQuestions.filter(q => q.isDuplicate).length,
                 ocr: 0,
                 vision: 0,
@@ -1267,7 +1404,7 @@ async function runImportPDFJob(jobId, buffer, defaultCategory, defaultSubject, p
             }
         });
 
-        const warningCount = (parsedQuestions.stats ? parsedQuestions.stats.warning : 0) + saveRes.skippedQuestions.length;
+        const warningsCount = (parsedQuestions.stats ? parsedQuestions.stats.warning : 0) + saveRes.skippedQuestions.length;
         const errorsCount = (parsedQuestions.stats ? (parsedQuestions.stats.encodingErrors + parsedQuestions.stats.missingOptions + parsedQuestions.stats.missingAnswers) : 0) + saveRes.failedCount;
 
         await PdfJob.updateOne(

@@ -169,36 +169,83 @@
 
         document.getElementById('uploadForm').onsubmit = async (e) => {
             e.preventDefault();
-            const formData = new FormData();
-            formData.append('pdf', document.getElementById('pdfFile').files[0]);
-            formData.append('date', document.getElementById('testDate').value);
-            formData.append('title', document.getElementById('testTitle').value);
-            formData.append('examType', document.getElementById('examType').value);
+            const file = document.getElementById('pdfFile').files[0];
+            const date = document.getElementById('testDate').value;
+            const title = document.getElementById('testTitle').value;
+            const examType = document.getElementById('examType').value;
+
+            if (!file) return alert('Please select a PDF file');
 
             const loadingMsg = document.getElementById('loadingMsg');
-            loadingMsg.innerHTML = '<i class="fas fa-spinner fa-spin fa-2x"></i><br><br><span id="loadingStage">Uploading PDF...</span> <span id="loadingPct">0%</span>';
+            loadingMsg.innerHTML = '<i class="fas fa-spinner fa-spin fa-2x"></i><br><br><span id="loadingStage">Slicing file...</span> <span id="loadingPct">0%</span>';
             loadingMsg.style.display = 'block';
             document.getElementById('previewArea').style.display = 'none';
 
-            const expectedCount = extractedQuestions.length;
-
             try {
-                const res = await fetch(`/api/admin/daily-challenge/upload?expectedCount=${expectedCount}`, {
+                const token = localStorage.getItem('token');
+                const chunkSize = 5 * 1024 * 1024; // 5 MB chunks
+                const totalChunks = Math.ceil(file.size / chunkSize);
+                const uploadId = `upload_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
+                for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+                    const start = chunkIndex * chunkSize;
+                    const end = Math.min(start + chunkSize, file.size);
+                    const chunk = file.slice(start, end);
+
+                    const chunkFormData = new FormData();
+                    chunkFormData.append('chunk', chunk);
+                    chunkFormData.append('uploadId', uploadId);
+                    chunkFormData.append('chunkIndex', chunkIndex);
+                    chunkFormData.append('totalChunks', totalChunks);
+
+                    const uploadPct = Math.round((chunkIndex / totalChunks) * 100);
+                    document.getElementById('loadingStage').textContent = `Uploading chunk ${chunkIndex + 1}/${totalChunks}...`;
+                    document.getElementById('loadingPct').textContent = `${uploadPct}%`;
+
+                    let retries = 3;
+                    let success = false;
+                    while (retries > 0 && !success) {
+                        try {
+                            const res = await fetch(`/api/admin/upload-chunk`, {
+                                method: 'POST',
+                                headers: { 'Authorization': `Bearer ${token}` },
+                                body: chunkFormData
+                            });
+                            if (!res.ok) throw new Error(await res.clone().text());
+                            success = true;
+                        } catch (err) {
+                            retries--;
+                            if (retries === 0) throw new Error(`Chunk ${chunkIndex + 1} upload failed: ${err.message}`);
+                            await new Promise(r => setTimeout(r, 2000));
+                        }
+                    }
+                }
+
+                document.getElementById('loadingStage').textContent = 'Merging chunks on server...';
+                document.getElementById('loadingPct').textContent = '';
+
+                const mergeRes = await fetch(`/api/admin/daily-challenge/merge-chunks`, {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
                     },
-                    body: formData
+                    body: JSON.stringify({
+                        uploadId,
+                        fileName: file.name,
+                        examType,
+                        expectedCount: 100
+                    })
                 });
 
-                if (!res.ok) {
-                    const errorMsg = await getFetchErrorMessage(res);
-                    alert('Upload failed: ' + errorMsg);
+                if (!mergeRes.ok) {
+                    const errorMsg = await getFetchErrorMessage(mergeRes);
+                    alert('Upload/Merge failed: ' + errorMsg);
                     loadingMsg.style.display = 'none';
                     return;
                 }
 
-                const data = await res.json();
+                const data = await mergeRes.json();
                 
                 if (data.ok && data.jobId) {
                     pollJob(data.jobId, 

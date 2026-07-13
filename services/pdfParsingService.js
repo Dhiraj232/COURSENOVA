@@ -597,6 +597,15 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
     // Phase 1: Concurrently extract text, check quality, and run local/API OCR where necessary.
     if (onProgress) onProgress(10, 'Extracting Pages', `Processing ${totalPages} pages in parallel...`);
     
+    const parseSessionId = `session_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    const pageImagesDir = path.join(__dirname, '..', 'tmp', 'uploads', 'pages');
+    if (!fs.existsSync(pageImagesDir)) {
+        fs.mkdirSync(pageImagesDir, { recursive: true });
+    }
+
+    // Phase 1: Concurrently extract text, check quality, and run local/API OCR where necessary.
+    if (onProgress) onProgress(10, 'Extracting Pages', `Processing ${totalPages} pages in parallel...`);
+    
     let completedPages = 0;
     const pageProcessors = Array.from({ length: totalPages }, (_, idx) => async () => {
         const pNum = idx + 1;
@@ -620,17 +629,23 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
             } else {
                 // Low quality text -> Render and run preprocessor + OCR
                 logs.push(`[Parser] Page ${pNum} has low text quality (${quality.toFixed(2)}). Rendering to canvas...`);
-                const viewport = page.getViewport({ scale: 1.5 });
-                const canvas = createCanvas(viewport.width, viewport.height);
-                const context = canvas.getContext('2d');
+                const rotation = page.rotate || 0;
+                const viewport = page.getViewport({ scale: 1.5, rotation });
+                let canvas = createCanvas(viewport.width, viewport.height);
+                let context = canvas.getContext('2d');
                 
                 await page.render({
                     canvasContext: context,
                     viewport: viewport
                 }).promise;
 
-                const preprocessedCanvas = preprocessPageCanvas(canvas);
+                let preprocessedCanvas = preprocessPageCanvas(canvas);
                 const pngBuf = preprocessedCanvas.toBuffer('image/png');
+
+                // Help Garbage Collection clean up large canvas buffers immediately
+                canvas = null;
+                context = null;
+                preprocessedCanvas = null;
 
                 try {
                     const ocrText = await runOCR(pngBuf, logs);
@@ -638,11 +653,17 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
                         result = { pageNum: pNum, text: ocrText, type: 'ocr' };
                     } else {
                         logs.push(`[Parser Info] Page ${pNum} fallback to vision due to short OCR text.`);
-                        result = { pageNum: pNum, image: pngBuf, type: 'vision' };
+                        const pageImageFilename = `page_${parseSessionId}_p${pNum}.png`;
+                        const pageImageFilepath = path.join(pageImagesDir, pageImageFilename);
+                        fs.writeFileSync(pageImageFilepath, pngBuf);
+                        result = { pageNum: pNum, imagePath: pageImageFilepath, type: 'vision' };
                     }
                 } catch (ocrErr) {
                     logs.push(`[Parser Warning] Page ${pNum} OCR failed: ${ocrErr.message}`);
-                    result = { pageNum: pNum, image: pngBuf, type: 'vision' };
+                    const pageImageFilename = `page_${parseSessionId}_p${pNum}.png`;
+                    const pageImageFilepath = path.join(pageImagesDir, pageImageFilename);
+                    fs.writeFileSync(pageImageFilepath, pngBuf);
+                    result = { pageNum: pNum, imagePath: pageImageFilepath, type: 'vision' };
                 }
             }
 
@@ -665,8 +686,8 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
         }
     });
 
-    // Run page extraction with limit of 6 concurrent pages to balance CPU/Memory/API limits.
-    const extractedPages = await runConcurrentTasks(pageProcessors, 6);
+    // Run page extraction with limit of 4 concurrent pages to prevent CPU/RAM starvation.
+    const extractedPages = await runConcurrentTasks(pageProcessors, 4);
     logs.push(`[Parser] Page analysis complete. Extracted text & graphics for all ${totalPages} pages.`);
 
     // Phase 2: Group pages into batches and run Gemini batch parser concurrently.
@@ -684,13 +705,23 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
         const parts = [];
         batch.forEach(p => {
             if (p.type === 'vision') {
+                const imgBuf = fs.readFileSync(p.imagePath);
                 parts.push({
                     inlineData: {
-                        data: p.image.toString('base64'),
+                        data: imgBuf.toString('base64'),
                         mimeType: 'image/png'
                     }
                 });
                 parts.push({ text: `[Page ${p.pageNum} rendered image above]` });
+                
+                // Clean up page slice image file immediately after generating part
+                setTimeout(() => {
+                    try {
+                        if (fs.existsSync(p.imagePath)) {
+                            fs.unlinkSync(p.imagePath);
+                        }
+                    } catch (err) {}
+                }, 30000);
             } else {
                 parts.push({ text: `[Page ${p.pageNum} Text content]:\n${p.text}` });
             }

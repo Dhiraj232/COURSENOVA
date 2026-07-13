@@ -317,12 +317,12 @@ app.get('/sitemap.xml', (req, res) => {
 
 // ─── 2. Body Parsers ─────────────────────────────────────────────────────────
 app.use(express.json({ 
-  limit: '10mb',
+  limit: '500mb',
   verify: (req, res, buf) => {
     req.rawBody = buf; // Specifically required for Cashfree Webhook Signature validation
   }
 }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '500mb' }));
 
 // ─── 3. Security Middlewares ──────────────────────────────────────────────────
 
