@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
+const path = require('path');
+const fs = require('fs');
 const User = require('../models/User');
 const Course = require('../models/Course');
 const TestResult = require('../models/TestResult');
@@ -2160,8 +2162,6 @@ router.delete('/marketplace/books/:id', requireAdmin, catchAsync(async (req, res
     if (!book) throw new AppError('Book not found', 404);
 
     if (book.image) {
-        const path = require('path');
-        const fs = require('fs');
         const imgPath = path.join(__dirname, '..', 'uploads', 'books', book.image);
         if (fs.existsSync(imgPath)) {
             try {
@@ -2199,7 +2199,6 @@ router.get('/audit-logs', requireAdmin, catchAsync(async (req, res) => {
 }));
 
 // ── 11. SLIDESHOW BANNER MANAGEMENT ─────────────────────────────────
-const path = require('path');
 const Slide = require('../models/Slide');
 
 // Multer storage setup for slide images
@@ -2224,7 +2223,6 @@ const uploadSlide = multer({
 });
 
 // Ensure slide uploads directory exists
-const fs = require('fs');
 const slideUploadDir = path.join(__dirname, '..', 'uploads', 'slides');
 if (!fs.existsSync(slideUploadDir)) {
     fs.mkdirSync(slideUploadDir, { recursive: true });
