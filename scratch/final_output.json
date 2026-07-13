@@ -1,0 +1,1337 @@
+{
+  "success": true,
+  "subject": "Physics",
+  "chapter": "Model Paper 1",
+  "questions": [
+    {
+      "questionNo": 1,
+      "question": "Capacity of any condenser does not depend upon:",
+      "optionA": "shape of plates",
+      "optionB": "size of plates",
+      "optionC": "charges on plates",
+      "optionD": "distance between plates",
+      "correctAnswer": "charges on plates",
+      "difficulty": "Medium",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "The capacitance of a condenser depends only on its geometrical configuration (shape, size, and separation of plates) and the medium between them. It is independent of the charge on the plates.",
+      "tags": [
+        "Electrostatics",
+        "Capacitance"
+      ]
+    },
+    {
+      "questionNo": 2,
+      "question": "The device which works of both modulation and demodulation is called:",
+      "optionA": "Laser",
+      "optionB": "Radar",
+      "optionC": "Modem",
+      "optionD": "Fax",
+      "correctAnswer": "Modem",
+      "difficulty": "Easy",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "A modem (modulator-demodulator) is a device that converts digital signals into analog signals (modulation) for transmission and vice-versa (demodulation).",
+      "tags": [
+        "Communication Systems",
+        "Modem"
+      ]
+    },
+    {
+      "questionNo": 3,
+      "question": "A magnet is situated near a closed conductor. Current can be produced in the conductor, if:",
+      "optionA": "only magnet is in motion",
+      "optionB": "only conductor is in motion",
+      "optionC": "both magnet and conductor are in motion",
+      "optionD": "there is relative motion between magnet and conductor",
+      "correctAnswer": "there is relative motion between magnet and conductor",
+      "difficulty": "Medium",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "According to Faraday's law of electromagnetic induction, an induced current is produced in a closed circuit whenever there is a relative motion between the magnet and the conductor, causing a change in magnetic flux.",
+      "tags": [
+        "Electromagnetic Induction",
+        "Faraday's Law"
+      ]
+    },
+    {
+      "questionNo": 4,
+      "question": "Picofarad is the unit of:",
+      "optionA": "electric charge",
+      "optionB": "intensity of electric field",
+      "optionC": "electric capacity",
+      "optionD": "electric flux",
+      "correctAnswer": "electric capacity",
+      "difficulty": "Easy",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "Picofarad ($1\\text{ pF} = 10^{-12}\\text{ F}$) is a unit of capacitance (electric capacity).",
+      "tags": [
+        "Electrostatics",
+        "Units and Dimensions"
+      ]
+    },
+    {
+      "questionNo": 5,
+      "question": "To convert a galvanometer into an ammeter, one needs to connect a:",
+      "optionA": "low resistance in parallel",
+      "optionB": "low resistance in series",
+      "optionC": "high resistance in parallel",
+      "optionD": "high resistance in series",
+      "correctAnswer": "low resistance in parallel",
+      "difficulty": "Medium",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "A galvanometer is converted into an ammeter by connecting a low resistance (called a shunt) in parallel with it to allow most of the current to bypass the galvanometer.",
+      "tags": [
+        "Magnetic Effects of Current",
+        "Measuring Instruments"
+      ]
+    },
+    {
+      "questionNo": 6,
+      "question": "An electron of charge e moves parallel to uniform lines of force in magnetic field B with velocity v. Force acting on electron is:",
+      "optionA": "evB",
+      "optionB": "evB",
+      "optionC": "zero",
+      "optionD": "Bv/e",
+      "correctAnswer": "zero",
+      "difficulty": "Medium",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "The magnetic force on a moving charge is given by $F = q(\\vec{v} \\times \\vec{B}) = qvB\\sin\\theta$. Since the electron moves parallel to the magnetic field, the angle $\theta = 0^\\circ$ or $180^\\circ$, hence $sin\\theta = 0$, and the force is zero.",
+      "tags": [
+        "Magnetic Effects of Current",
+        "Magnetic Force"
+      ]
+    },
+    {
+      "questionNo": 7,
+      "question": "The nature of electron beams moving with uniform velocity in the same direction will be:",
+      "optionA": "converging",
+      "optionB": "diverging",
+      "optionC": "parallel",
+      "optionD": "none of these",
+      "correctAnswer": "parallel",
+      "difficulty": "Medium",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "Since the electrons move with uniform velocity in the same direction, the electrostatic repulsive forces are balanced by the magnetic attractive forces between parallel moving charges, keeping them moving along parallel paths.",
+      "tags": [
+        "Magnetic Effects of Current",
+        "Cathode Rays"
+      ]
+    },
+    {
+      "questionNo": 8,
+      "question": "The fringe width in interference of light due to two coherent sources is:",
+      "optionA": "proportional to wavelength",
+      "optionB": "inversely proportional to wavelength",
+      "optionC": "proportional to square of wavelength",
+      "optionD": "inversely proportional to square of wavelength",
+      "correctAnswer": "proportional to wavelength",
+      "difficulty": "Medium",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "The fringe width $\\beta$ is given by $\\beta = \\frac{\\lambda D}{d}$, where $\\lambda$ is the wavelength, $D$ is the distance from the slits to the screen, and $d$ is the distance between the slits. Thus, the fringe width is directly proportional to the wavelength.",
+      "tags": [
+        "Wave Optics",
+        "Interference"
+      ]
+    },
+    {
+      "questionNo": 9,
+      "question": "Photocell is based on:",
+      "optionA": "chemical effect of current",
+      "optionB": "photo-electric effect",
+      "optionC": "magnetic effect of current",
+      "optionD": "electro-magnetic induction",
+      "correctAnswer": "photo-electric effect",
+      "difficulty": "Easy",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "A photoelectric cell (photocell) is a device that converts light energy into electrical energy based on the principle of the photoelectric effect.",
+      "tags": [
+        "Modern Physics",
+        "Photoelectric Effect"
+      ]
+    },
+    {
+      "questionNo": 10,
+      "question": "If in a logic gate output (Y) is obtained by the product of its both inputs (A.B), then the gate is:",
+      "optionA": "AND",
+      "optionB": "OR",
+      "optionC": "NOR",
+      "optionD": "NOT",
+      "correctAnswer": "AND",
+      "difficulty": "Easy",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "The Boolean expression for the output of an AND gate is $Y = A \\cdot B$, which is the product of its inputs.",
+      "tags": [
+        "Semiconductor Electronics",
+        "Logic Gates"
+      ]
+    },
+    {
+      "questionNo": 11,
+      "question": "The motion of electron inside the conductor is:",
+      "optionA": "Uniform",
+      "optionB": "Accelerated",
+      "optionC": "Drifting",
+      "optionD": "Decelerated",
+      "correctAnswer": "Drifting",
+      "difficulty": "Medium",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "Inside a conductor in the presence of an electric field, electrons experience collisions with ions and acquire a small average velocity called the drift velocity. Thus, their motion is characterized as drifting.",
+      "tags": [
+        "Current Electricity",
+        "Drift Velocity"
+      ]
+    },
+    {
+      "questionNo": 12,
+      "question": "If any ammeter is shunted, then the total resistance of the circuit:",
+      "optionA": "increases",
+      "optionB": "decreases",
+      "optionC": "remains same",
+      "optionD": "none of these",
+      "correctAnswer": "decreases",
+      "difficulty": "Medium",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "Shunting an ammeter involves connecting a low resistance in parallel with it. The parallel combination of resistors always results in an equivalent resistance that is smaller than the smallest individual resistance, thereby decreasing the total resistance of the circuit.",
+      "tags": [
+        "Current Electricity",
+        "Measuring Instruments"
+      ]
+    },
+    {
+      "questionNo": 13,
+      "question": "In visible spectrum, which colour has larger wavelength?",
+      "optionA": "Red",
+      "optionB": "Yellow",
+      "optionC": "Blue",
+      "optionD": "Violet",
+      "correctAnswer": "Red",
+      "difficulty": "Easy",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "In the visible spectrum, red light has the longest wavelength (approximately $700\\text{ nm}$) and violet light has the shortest wavelength (approximately $400\\text{ nm}$).",
+      "tags": [
+        "Electromagnetic Waves",
+        "Visible Spectrum"
+      ]
+    },
+    {
+      "questionNo": 14,
+      "question": "Which one of the following electromagnetic radiations has minimum wavelength?",
+      "optionA": "Ultraviolet",
+      "optionB": "X-rays",
+      "optionC": "Microwaves",
+      "optionD": "γ-rays",
+      "correctAnswer": "γ-rays",
+      "difficulty": "Medium",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "Gamma rays ($\\gamma$-rays) have the highest frequency and the shortest (minimum) wavelength in the electromagnetic spectrum.",
+      "tags": [
+        "Electromagnetic Waves",
+        "Electromagnetic Spectrum"
+      ]
+    },
+    {
+      "questionNo": 15,
+      "question": "The concept of secondary wavelets was given by:",
+      "optionA": "Fresnel",
+      "optionB": "Maxwell",
+      "optionC": "Huygens",
+      "optionD": "Newton",
+      "correctAnswer": "Huygens",
+      "difficulty": "Easy",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "Christiaan Huygens proposed the principle of secondary wavelets to explain the propagation of light waves through a medium.",
+      "tags": [
+        "Wave Optics",
+        "Huygens' Principle"
+      ]
+    },
+    {
+      "questionNo": 16,
+      "question": "Quantisation of charge indicates that:",
+      "optionA": "Charge, which is a fraction of charge on an electron, is not possible",
+      "optionB": "A charge cannot be destroyed",
+      "optionC": "Charge exists on particles",
+      "optionD": "There exists a minimum permissible charge on a particle",
+      "correctAnswer": "Charge, which is a fraction of charge on an electron, is not possible",
+      "difficulty": "Medium",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "Quantization of charge means that the net charge on an object is always an integral multiple of the elementary charge $e$, i.e. $q = ne$, where $n = \\pm 1, \\pm 2...$. Thus, fractional charges of $e$ cannot exist independently.",
+      "tags": [
+        "Electrostatics",
+        "Electric Charge"
+      ]
+    },
+    {
+      "questionNo": 17,
+      "question": "X-rays are:",
+      "optionA": "moving electron",
+      "optionB": "moving positive ion",
+      "optionC": "moving negative ion",
+      "optionD": "electromagnetic waves",
+      "correctAnswer": "electromagnetic waves",
+      "difficulty": "Easy",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "X-rays are high-energy electromagnetic waves with wavelengths shorter than UV light.",
+      "tags": [
+        "Modern Physics",
+        "Electromagnetic Waves"
+      ]
+    },
+    {
+      "questionNo": 18,
+      "question": "Surface density of charge is:",
+      "optionA": "$\\sigma = \\frac{q}{A}$",
+      "optionB": "$\\sigma = q$",
+      "optionC": "$\\sigma = \\frac{q}{V}$",
+      "optionD": "$\\sigma = q \\cdot A$",
+      "correctAnswer": "$\\sigma = \\frac{q}{A}$",
+      "difficulty": "Easy",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "Surface charge density $\\sigma$ is defined as the charge $q$ per unit surface area $A$.",
+      "tags": [
+        "Electrostatics",
+        "Surface Charge Density"
+      ]
+    },
+    {
+      "questionNo": 19,
+      "question": "Colour code of carbon resistance for blue colour is:",
+      "optionA": "3",
+      "optionB": "4",
+      "optionC": "5",
+      "optionD": "6",
+      "correctAnswer": "6",
+      "difficulty": "Medium",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "According to the resistor color code (BBROYGBVGW), Black=0, Brown=1, Red=2, Orange=3, Yellow=4, Green=5, Blue=6.",
+      "tags": [
+        "Current Electricity",
+        "Resistor Color Code"
+      ]
+    },
+    {
+      "questionNo": 20,
+      "question": "Ampere-hour is the unit of:",
+      "optionA": "power",
+      "optionB": "charge",
+      "optionC": "energy",
+      "optionD": "potential difference",
+      "correctAnswer": "charge",
+      "difficulty": "Easy",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "Since $\\text{Current} = \\frac{\\text{Charge}}{\\text{Time}}$, we have $\\text{Charge} = \\text{Current} \\times \\text{Time}$. The unit Ampere-hour is therefore a unit of electric charge ($1\\text{ Ah} = 3600\\text{ C}$).",
+      "tags": [
+        "Current Electricity",
+        "Units and Dimensions"
+      ]
+    },
+    {
+      "questionNo": 21,
+      "question": "Energy of photon is equal to:",
+      "optionA": "$h\\nu$",
+      "optionB": "$\\frac{h}{\\nu}$",
+      "optionC": "$\\sqrt{h\\nu}$",
+      "optionD": "$\\sqrt{\\frac{h}{\\nu}}$",
+      "correctAnswer": "$h\\nu$",
+      "difficulty": "Easy",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "The energy of a photon of frequency $\\nu$ is given by Planck's equation $E = h\\nu$.",
+      "tags": [
+        "Modern Physics",
+        "Dual Nature of Matter"
+      ]
+    },
+    {
+      "questionNo": 22,
+      "question": "1 V equals to:",
+      "optionA": "1 J",
+      "optionB": "$1\\text{ JC}^{-1}$",
+      "optionC": "$1\\text{ CJ}^{-1}$",
+      "optionD": "1 JC",
+      "correctAnswer": "$1\\text{ JC}^{-1}$",
+      "difficulty": "Easy",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "Potential difference $V = \\frac{Work}{Charge}$. Thus, $1\\text{ Volt} = 1\\text{ Joule/Coulomb} = 1\\text{ JC}^{-1}$.",
+      "tags": [
+        "Electrostatics",
+        "Electric Potential"
+      ]
+    },
+    {
+      "questionNo": 23,
+      "question": "Potential energy of a charged conductor is:",
+      "optionA": "$\\text{CV}^2$",
+      "optionB": "$\\frac{1}{2}\\text{CV}^2$",
+      "optionC": "$\\frac{1}{3}\\text{CV}^2$",
+      "optionD": "$\\frac{1}{4}\\text{CV}^2$",
+      "correctAnswer": "$\\frac{1}{2}\\text{CV}^2$",
+      "difficulty": "Easy",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "The electrostatic potential energy stored in a charged conductor (or capacitor) is given by $U = \\frac{1}{2}CV^2$.",
+      "tags": [
+        "Electrostatics",
+        "Potential Energy"
+      ]
+    },
+    {
+      "questionNo": 24,
+      "question": "The resistance of Ammeter is:",
+      "optionA": "small",
+      "optionB": "large",
+      "optionC": "very small",
+      "optionD": "very large",
+      "correctAnswer": "very small",
+      "difficulty": "Medium",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "An ideal ammeter has zero resistance. A practical ammeter has a very small resistance so that it does not significantly change the current in the circuit when connected in series.",
+      "tags": [
+        "Current Electricity",
+        "Measuring Instruments"
+      ]
+    },
+    {
+      "questionNo": 25,
+      "question": "Source of solar energy is:",
+      "optionA": "nuclear fission",
+      "optionB": "nuclear fusion",
+      "optionC": "Both 'A' and 'B'",
+      "optionD": "None of these",
+      "correctAnswer": "nuclear fusion",
+      "difficulty": "Easy",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "The primary source of energy in the Sun is nuclear fusion, where hydrogen nuclei fuse to form helium under extremely high temperature and pressure.",
+      "tags": [
+        "Modern Physics",
+        "Nuclear Physics"
+      ]
+    },
+    {
+      "questionNo": 26,
+      "question": "The electrical resistance of a conductor depends upon:",
+      "optionA": "size of conductor",
+      "optionB": "temperature of conductor",
+      "optionC": "geometry of conductor",
+      "optionD": "all of above",
+      "correctAnswer": "all of above",
+      "difficulty": "Easy",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "Resistance $R = \\rho \\frac{l}{A}$. It depends on the size (length $l$), geometry (cross-sectional area $A$), material properties (resistivity $\\rho$), and temperature.",
+      "tags": [
+        "Current Electricity",
+        "Resistance"
+      ]
+    },
+    {
+      "questionNo": 27,
+      "question": "Ohm's law is valid when the temperature of conductor is:",
+      "optionA": "very low",
+      "optionB": "very high",
+      "optionC": "varying",
+      "optionD": "constant",
+      "correctAnswer": "constant",
+      "difficulty": "Easy",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "Ohm's law states that current is directly proportional to potential difference provided physical conditions like temperature remain constant.",
+      "tags": [
+        "Current Electricity",
+        "Ohm's Law"
+      ]
+    },
+    {
+      "questionNo": 28,
+      "question": "The specific resistance of a conductor increases with:",
+      "optionA": "increase in temperature",
+      "optionB": "increase in cross-sectional area",
+      "optionC": "decrease in length",
+      "optionD": "decrease in cross-sectional area",
+      "correctAnswer": "increase in temperature",
+      "difficulty": "Medium",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "Specific resistance (resistivity $\\rho$) is a material property that is independent of length and cross-sectional area. It increases with temperature for conductors due to increased scattering of charge carriers.",
+      "tags": [
+        "Current Electricity",
+        "Resistivity"
+      ]
+    },
+    {
+      "questionNo": 29,
+      "question": "EMF of a cell is measured by",
+      "optionA": "Voltmeter",
+      "optionB": "Ammeter",
+      "optionC": "Galvanometer",
+      "optionD": "Potentiometer",
+      "correctAnswer": "Potentiometer",
+      "difficulty": "Medium",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "A potentiometer is used to measure the electromotive force (EMF) of a cell because it operates on a null-deflection method and draws no current from the cell at balance, unlike a voltmeter.",
+      "tags": [
+        "Current Electricity",
+        "Measuring Instruments"
+      ]
+    },
+    {
+      "questionNo": 30,
+      "question": "The angle of magnetic dip at magnetic equator is:",
+      "optionA": "$0^\\circ$",
+      "optionB": "$90^\\circ$",
+      "optionC": "$45^\\circ$",
+      "optionD": "$60^\\circ$",
+      "correctAnswer": "$0^\\circ$",
+      "difficulty": "Easy",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "At the magnetic equator, the Earth's magnetic field lines are completely horizontal, making the angle of dip (inclination) equal to $0^\\circ$.",
+      "tags": [
+        "Magnetism",
+        "Earth's Magnetism"
+      ]
+    },
+    {
+      "questionNo": 31,
+      "question": "The working of dynamo is based on the principle of:",
+      "optionA": "heating effect of current",
+      "optionB": "electromagnetic induction",
+      "optionC": "magnetic induction",
+      "optionD": "electric induction",
+      "correctAnswer": "electromagnetic induction",
+      "difficulty": "Easy",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "A dynamo (electric generator) converts mechanical energy into electrical energy based on the principle of electromagnetic induction.",
+      "tags": [
+        "Electromagnetic Induction",
+        "AC Generator"
+      ]
+    },
+    {
+      "questionNo": 32,
+      "question": "Dimension of permeability is:",
+      "optionA": "$\\text{MLT}^{-2}\\text{I}^{-2}$",
+      "optionB": "$\\text{MLT}^{2}\\text{I}^{-2}$",
+      "optionC": "$\\text{MLT}^{2}\\text{I}^{2}$",
+      "optionD": "$\\text{MLT}^{-2}\\text{I}$",
+      "correctAnswer": "$\\text{MLT}^{-2}\\text{I}^{-2}$",
+      "difficulty": "Hard",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "The dimension of magnetic permeability ($\\mu_0$) is derived from the magnetic force equation between two currents: $[\\mu_0] = \\text{MLT}^{-2}\\text{I}^{-2}$. Note: The ticked option is A, which matches this formula.",
+      "tags": [
+        "Electrostatics",
+        "Units and Dimensions"
+      ]
+    },
+    {
+      "questionNo": 33,
+      "question": "What is the angle of dip at the magnetic poles?",
+      "optionA": "$30^\\circ$",
+      "optionB": "$0^\\circ$",
+      "optionC": "$45^\\circ$",
+      "optionD": "None of these",
+      "correctAnswer": "None of these",
+      "difficulty": "Easy",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "At the magnetic poles, the Earth's magnetic field lines are completely vertical, making the angle of dip equal to $90^\\circ$. Since $90^\\circ$ is not listed, the answer is 'None of these'.",
+      "tags": [
+        "Magnetism",
+        "Earth's Magnetism"
+      ]
+    },
+    {
+      "questionNo": 34,
+      "question": "Earth's magnetism was discovered by:",
+      "optionA": "Gauss",
+      "optionB": "Oersted",
+      "optionC": "Ampere",
+      "optionD": "Gilbert",
+      "correctAnswer": "Gilbert",
+      "difficulty": "Medium",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "William Gilbert first proposed in 1600 that the Earth itself behaves as a giant magnet.",
+      "tags": [
+        "Magnetism",
+        "Earth's Magnetism"
+      ]
+    },
+    {
+      "questionNo": 35,
+      "question": "Which of the following has a low value in ferrites?",
+      "optionA": "Conductivity",
+      "optionB": "Permeability",
+      "optionC": "Magnetic susceptibility",
+      "optionD": "All the above",
+      "correctAnswer": "Conductivity",
+      "difficulty": "Hard",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "Ferrites are ceramic-like magnetic materials that have high magnetic permeability but very low electrical conductivity, which helps in reducing eddy current losses.",
+      "tags": [
+        "Magnetism",
+        "Magnetic Materials"
+      ]
+    },
+    {
+      "questionNo": 36,
+      "question": "Energy density of a magnetic field B is:",
+      "optionA": "$\\frac{B^2}{\\mu_0}$",
+      "optionB": "$\\frac{B^2}{2\\mu_0}$",
+      "optionC": "$\\frac{B^2}{3\\mu_0}$",
+      "optionD": "$\\frac{B^2}{4\\mu_0}$",
+      "correctAnswer": "$\\frac{B^2}{2\\mu_0}$",
+      "difficulty": "Medium",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "The energy stored per unit volume (energy density) in a magnetic field $B$ is given by $u = \\frac{B^2}{2\\mu_0}$.",
+      "tags": [
+        "Electromagnetic Induction",
+        "Energy Density"
+      ]
+    },
+    {
+      "questionNo": 37,
+      "question": "Which quantity decreases in step-down transformer?",
+      "optionA": "Current",
+      "optionB": "Voltage",
+      "optionC": "Power",
+      "optionD": "Frequency",
+      "correctAnswer": "Voltage",
+      "difficulty": "Easy",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "A step-down transformer reduces the voltage from the primary to the secondary winding, while increasing the current (ignoring losses).",
+      "tags": [
+        "Electromagnetic Induction",
+        "Transformer"
+      ]
+    },
+    {
+      "questionNo": 38,
+      "question": "Lenz's law is a consequence of the law of conservation of:",
+      "optionA": "charge",
+      "optionB": "energy",
+      "optionC": "induced emf",
+      "optionD": "induced current",
+      "correctAnswer": "energy",
+      "difficulty": "Easy",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "Lenz's law is based on the law of conservation of energy. It states that the direction of induced current is such that it opposes the change that produces it, requiring mechanical work to be done to produce electrical energy.",
+      "tags": [
+        "Electromagnetic Induction",
+        "Lenz's Law"
+      ]
+    },
+    {
+      "questionNo": 39,
+      "question": "The unit of reactance is:",
+      "optionA": "Farad",
+      "optionB": "Mho",
+      "optionC": "Ohm",
+      "optionD": "ampere",
+      "correctAnswer": "Ohm",
+      "difficulty": "Easy",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "Reactance (inductive or capacitive) opposes the flow of AC current, and like resistance, its SI unit is the Ohm ($\\Omega$).",
+      "tags": [
+        "Alternating Current",
+        "Reactance"
+      ]
+    },
+    {
+      "questionNo": 40,
+      "question": "A choke is used as a resistance in:",
+      "optionA": "dc circuits",
+      "optionB": "ac circuits",
+      "optionC": "both ac and dc circuits",
+      "optionD": "neither 'A' nor 'B'",
+      "correctAnswer": "ac circuits",
+      "difficulty": "Medium",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "A choke coil (an inductor with high inductance and negligible resistance) is used to control current in AC circuits with minimal power loss, as the phase angle between voltage and current is nearly $90^\\circ$. It is ineffective in DC circuits.",
+      "tags": [
+        "Alternating Current",
+        "Choke Coil"
+      ]
+    },
+    {
+      "questionNo": 41,
+      "question": "In a step-up transformer, no. of turns in primary and secondary coils are $N_1$ and $N_2$ then:",
+      "optionA": "$N_1 > N_2$",
+      "optionB": "$N_2 > N_1$",
+      "optionC": "$N_1 = N_2$",
+      "optionD": "$N_1 = 0$",
+      "correctAnswer": "$N_2 > N_1$",
+      "difficulty": "Easy",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "In a step-up transformer, the number of turns in the secondary winding ($N_2$) is greater than the number of turns in the primary winding ($N_1$) to increase the output voltage.",
+      "tags": [
+        "Electromagnetic Induction",
+        "Transformer"
+      ]
+    },
+    {
+      "questionNo": 42,
+      "question": "If $N_1$ and $N_2$ are numbers of primary and secondary coils of a step-up transformer, then:",
+      "optionA": "$N_1 > N_2$",
+      "optionB": "$N_2 > N_1$",
+      "optionC": "$N_1 = N_2$",
+      "optionD": "$N_1 = 0$",
+      "correctAnswer": "$N_2 > N_1$",
+      "difficulty": "Easy",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "In a step-up transformer, the secondary turns ($N_2$) always exceed the primary turns ($N_1$).",
+      "tags": [
+        "Electromagnetic Induction",
+        "Transformer"
+      ]
+    },
+    {
+      "questionNo": 43,
+      "question": "The convert a galvanometer into voltmeter requirement is of:",
+      "optionA": "high resistance",
+      "optionB": "low resistance",
+      "optionC": "condenser",
+      "optionD": "inductor",
+      "correctAnswer": "high resistance",
+      "difficulty": "Medium",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "A galvanometer is converted into a voltmeter by connecting a high resistance in series with it, so that very little current passes through it and it can measure voltage without loading the circuit.",
+      "tags": [
+        "Magnetic Effects of Current",
+        "Measuring Instruments"
+      ]
+    },
+    {
+      "questionNo": 44,
+      "question": "Electromagentic waves can be deflected by:",
+      "optionA": "Electric field only",
+      "optionB": "Magnetic field only",
+      "optionC": "Both 'A' and 'B'",
+      "optionD": "None of these",
+      "correctAnswer": "None of these",
+      "difficulty": "Medium",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "Electromagnetic waves consist of oscillating electric and magnetic fields, but they carry no net electric charge. Therefore, they are not deflected by external electric or magnetic fields.",
+      "tags": [
+        "Electromagnetic Waves",
+        "Wave Properties"
+      ]
+    },
+    {
+      "questionNo": 45,
+      "question": "EMW are produced by:",
+      "optionA": "charge in uniform motion only",
+      "optionB": "charge at rest only",
+      "optionC": "accelerated or deccelerated charge only",
+      "optionD": "all of the above",
+      "correctAnswer": "accelerated or deccelerated charge only",
+      "difficulty": "Medium",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "Electromagnetic waves are produced by accelerating or decelerating electric charges, which create time-varying electric and magnetic fields that propagate through space.",
+      "tags": [
+        "Electromagnetic Waves",
+        "Wave Production"
+      ]
+    },
+    {
+      "questionNo": 46,
+      "question": "The unit of Poynting vector is:",
+      "optionA": "$\\text{W/m}^2$",
+      "optionB": "$\\text{J/m}^2$",
+      "optionC": "T/m",
+      "optionD": "Hertz",
+      "correctAnswer": "$\\text{W/m}^2$",
+      "difficulty": "Hard",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "The Poynting vector represents the directional energy flux density (rate of energy transfer per unit area) of an electromagnetic field. Its SI unit is Watts per square meter ($\\text{W/m}^2$).",
+      "tags": [
+        "Electromagnetic Waves",
+        "Poynting Vector"
+      ]
+    },
+    {
+      "questionNo": 47,
+      "question": "The unit of ratio of magnetic field Band electrical field E(B/E) is :",
+      "optionA": "$\\text{ms}^{-1}$",
+      "optionB": "$\\text{sm}^{-1}$",
+      "optionC": "ms",
+      "optionD": "$\\text{ms}^{-2}$",
+      "correctAnswer": "$\\text{ms}^{-1}$",
+      "difficulty": "Hard",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "The ratio of electric field to magnetic field is $E/B = v$ (speed of light). Thus, the ratio $B/E = 1/v$, which has the unit $\\text{s/m}$ or $\\text{sm}^{-1}$. However, based on the marked answer key and markings in the text, Option A is selected.",
+      "tags": [
+        "Electromagnetic Waves",
+        "Wave Properties"
+      ]
+    },
+    {
+      "questionNo": 48,
+      "question": "When we see an object, then the image formed on retina is:",
+      "optionA": "real and erect",
+      "optionB": "real and inverted",
+      "optionC": "virtual and erect",
+      "optionD": "virtual and inverted",
+      "correctAnswer": "real and erect",
+      "difficulty": "Medium",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "The crystalline lens of the human eye forms a real and inverted image on the retina. However, based on the handwritten markings and printed answer key, Option A is explicitly marked.",
+      "tags": [
+        "Ray Optics",
+        "Human Eye"
+      ]
+    },
+    {
+      "questionNo": 49,
+      "question": "A biconvex lens (\\mu = 1.5) has equal curvature each of 20 cm. The power of the lense is :",
+      "optionA": "5D",
+      "optionB": "10D",
+      "optionC": "2.5D",
+      "optionD": "20D",
+      "correctAnswer": "5D",
+      "difficulty": "Medium",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "Using Lens Maker's Formula: $\\frac{1}{f} = (\\mu - 1)\\left(\\frac{1}{R_1} - \\frac{1}{R_2}\\right)$. For a biconvex lens, $R_1 = 20\\text{ cm}$ and $R_2 = -20\\text{ cm}$. With $\\mu = 1.5$, $\\frac{1}{f} = (1.5 - 1)\\left(\\frac{1}{20} - \\left(-\\frac{1}{20}\\right)\\right) = 0.5 \\times \\frac{2}{20} = \\frac{1}{20}\\text{ cm}^{-1}$. Thus, focal length $f = 20\\text{ cm} = 0.2\\text{ m}$. Power $P = \\frac{1}{f(\\text{in m})} = \\frac{1}{0.2} = 5\\text{ D}$.",
+      "tags": [
+        "Ray Optics",
+        "Lenses"
+      ]
+    },
+    {
+      "questionNo": 50,
+      "question": "Which of the following is correct for refractive index of mean colour (yellow colour)?",
+      "optionA": "$\\mu = \\frac{\\mu_r + \\mu_v}{2}$",
+      "optionB": "$\\mu = \\frac{\\mu_r - \\mu_v}{2}$",
+      "optionC": "$\\mu = \\frac{\\mu_r}{2}$",
+      "optionD": "$\\mu = \\frac{\\mu_v}{2}$",
+      "correctAnswer": "$\\mu = \\frac{\\mu_r + \\mu_v}{2}$",
+      "difficulty": "Easy",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "Yellow light is considered the mean color in the visible spectrum. Its refractive index is approximately the arithmetic mean of the refractive indices of the red and violet colors, i.e. $\\mu_y = \\frac{\\mu_r + \\mu_v}{2}$.",
+      "tags": [
+        "Ray Optics",
+        "Dispersion"
+      ]
+    },
+    {
+      "questionNo": 51,
+      "question": "The minimum orbital angular momentum of an electron in a hydrogen atom is:",
+      "optionA": "$h$",
+      "optionB": "$\\frac{h}{2}$",
+      "optionC": "$\\frac{h}{2\\pi}$",
+      "optionD": "$\\frac{h}{\\lambda}$",
+      "correctAnswer": "$\\frac{h}{2\\pi}$",
+      "difficulty": "Medium",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "According to Bohr's second postulate, the orbital angular momentum $L$ of an electron is quantized as $L = \\frac{nh}{2\\pi}$. For the ground state of hydrogen ($n = 1$), the minimum angular momentum is $L_{\\text{min}} = \\frac{h}{2\\pi}$.",
+      "tags": [
+        "Modern Physics",
+        "Bohr's Model"
+      ]
+    },
+    {
+      "questionNo": 52,
+      "question": "The atomic number and mass number for a specimen are Z and A respectively. The number of neutrons in the atom will be:",
+      "optionA": "A",
+      "optionB": "Z",
+      "optionC": "A + Z",
+      "optionD": "A - Z",
+      "correctAnswer": "A - Z",
+      "difficulty": "Easy",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "The mass number ($A$) is the sum of protons ($Z$) and neutrons ($N$). Thus, the number of neutrons is $N = A - Z$.",
+      "tags": [
+        "Modern Physics",
+        "Nuclear Physics"
+      ]
+    },
+    {
+      "questionNo": 53,
+      "question": "Which of the relations is correct for radioactive atom?",
+      "optionA": "Half-life = Average life",
+      "optionB": "Half-life = 2 x Average life",
+      "optionC": "Half-life = 1.6931 x Average life",
+      "optionD": "Half-life = 0.6931 x Average life",
+      "correctAnswer": "Half-life = 0.6931 x Average life",
+      "difficulty": "Medium",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "The half-life $T_{1/2}$ and average life $\\tau$ are related by $T_{1/2} = \\tau \\ln(2) \\approx 0.6931 \\times \\tau$.",
+      "tags": [
+        "Modern Physics",
+        "Radioactivity"
+      ]
+    },
+    {
+      "questionNo": 54,
+      "question": "Which one of the following has maximum penetrating power:",
+      "optionA": "X-rays",
+      "optionB": "cathode rays",
+      "optionC": "$\\alpha$-rays",
+      "optionD": "$\\gamma$-rays",
+      "correctAnswer": "$\\gamma$-rays",
+      "difficulty": "Easy",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "Gamma rays ($\\gamma$-rays) have the highest frequency, shortest wavelength, and carry no charge, giving them the highest penetrating power compared to alpha, beta, cathode, and X-rays.",
+      "tags": [
+        "Modern Physics",
+        "Radioactivity"
+      ]
+    },
+    {
+      "questionNo": 55,
+      "question": "In full wave rectification, if input frequency is 50 Hz, then output frequency will be:",
+      "optionA": "50 Hz",
+      "optionB": "100 Hz",
+      "optionC": "25 Hz",
+      "optionD": "200 Hz",
+      "correctAnswer": "100 Hz",
+      "difficulty": "Medium",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "In a full-wave rectifier, both halves of the AC input cycle are converted to DC. Thus, the output ripple frequency is twice the input AC frequency: $f_{\\text{out}} = 2 \\times f_{\\text{in}} = 2 \\times 50\\text{ Hz} = 100\\text{ Hz}$.",
+      "tags": [
+        "Semiconductor Electronics",
+        "Rectifier"
+      ]
+    },
+    {
+      "questionNo": 56,
+      "question": "The given symbol represent the Gate :",
+      "optionA": "AND",
+      "optionB": "OR",
+      "optionC": "NAND",
+      "optionD": "NOR",
+      "correctAnswer": "NAND",
+      "difficulty": "Easy",
+      "marks": 1,
+      "language": "English",
+      "hasImage": true,
+      "imageDescription": "A logic gate diagram representing a NAND gate. It consists of two inputs A and B leading to a D-shaped AND gate body with a small inversion bubble at the output, producing output Y.",
+      "explanation": "The diagram shows an AND gate with an inversion bubble at the output, which represents a NAND gate.",
+      "tags": [
+        "Semiconductor Electronics",
+        "Logic Gates"
+      ]
+    },
+    {
+      "questionNo": 57,
+      "question": "The decimal number of binary number $(1001)_2$ is :",
+      "optionA": "$(12)_{10}$",
+      "optionB": "$(18)_{10}$",
+      "optionC": "$(9)_{10}$",
+      "optionD": "$(25)_{10}$",
+      "correctAnswer": "$(9)_{10}$",
+      "difficulty": "Easy",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "Converting $(1001)_2$ to decimal: $1 \\times 2^3 + 0 \\times 2^2 + 0 \\times 2^1 + 1 \\times 2^0 = 8 + 0 + 0 + 1 = 9$. Thus, the value in base-10 is $(9)_{10}$.",
+      "tags": [
+        "Semiconductor Electronics",
+        "Number Systems"
+      ]
+    },
+    {
+      "questionNo": 58,
+      "question": "With the increases of temperature the resistivity of semiconductor:",
+      "optionA": "increases",
+      "optionB": "decreases",
+      "optionC": "remains constant.",
+      "optionD": "becomes zero",
+      "correctAnswer": "decreases",
+      "difficulty": "Medium",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "Semiconductors have a negative temperature coefficient of resistance. As temperature increases, more covalent bonds break, creating more charge carriers (electrons and holes), which causes resistivity to decrease.",
+      "tags": [
+        "Semiconductor Electronics",
+        "Band Theory"
+      ]
+    },
+    {
+      "questionNo": 59,
+      "question": "Boolean expression for NAND gate is :",
+      "optionA": "$\\overline{\\text{A}\\cdot\\text{B}} = \\text{Y}$",
+      "optionB": "$\\text{A}+\\text{B} = \\text{Y}$",
+      "optionC": "$\\text{A}\\cdot\\text{B} = \\text{Y}$",
+      "optionD": "$\\overline{\\text{A}+\\text{B}} = \\text{Y}$",
+      "correctAnswer": "$\\overline{\\text{A}\\cdot\\text{B}} = \\text{Y}$",
+      "difficulty": "Easy",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "A NAND gate is an AND gate followed by a NOT gate. Its output is represented by the Boolean expression $Y = \\overline{A \\cdot B}$.",
+      "tags": [
+        "Semiconductor Electronics",
+        "Logic Gates"
+      ]
+    },
+    {
+      "questionNo": 60,
+      "question": "Sky wave communication is based upon:",
+      "optionA": "reflection by ionosphere",
+      "optionB": "absorption by ionosphere",
+      "optionC": "transmission through ionosphere",
+      "optionD": "None of these",
+      "correctAnswer": "reflection by ionosphere",
+      "difficulty": "Easy",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "Sky wave propagation (ionospheric propagation) relies on the reflection of radio waves (in the HF band) back toward the Earth by the ionized layers of the ionosphere.",
+      "tags": [
+        "Communication Systems",
+        "Wave Propagation"
+      ]
+    },
+    {
+      "questionNo": 61,
+      "question": "Which of the following eye defects is removed by convex lens?",
+      "optionA": "Nearsightedness",
+      "optionB": "Farsightedness",
+      "optionC": "Presbyopia",
+      "optionD": "Astigmatism",
+      "correctAnswer": "Farsightedness",
+      "difficulty": "Easy",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "Farsightedness (hypermetropia) is corrected using a convex lens, which helps converge incoming light rays so that the image is formed on the retina rather than behind it.",
+      "tags": [
+        "Ray Optics",
+        "Human Eye"
+      ]
+    },
+    {
+      "questionNo": 62,
+      "question": "Focal length of eye-lens of a healthy man is about:",
+      "optionA": "1 mm",
+      "optionB": "2 cm",
+      "optionC": "25 cm",
+      "optionD": "1 m",
+      "correctAnswer": "2 cm",
+      "difficulty": "Medium",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "The focal length of a healthy human eye lens when focused at infinity is approximately the diameter of the eyeball, which is about $2\\text{ cm}$ (or $20\\text{ mm}$).",
+      "tags": [
+        "Ray Optics",
+        "Human Eye"
+      ]
+    },
+    {
+      "questionNo": 63,
+      "question": "Rainbow is formed due to combination of:",
+      "optionA": "refraction and absorption",
+      "optionB": "dispersion and focusing",
+      "optionC": "refraction and scattering",
+      "optionD": "dispersion and total internal reflection",
+      "correctAnswer": "dispersion and total internal reflection",
+      "difficulty": "Medium",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "A rainbow is formed due to dispersion, refraction, and total internal reflection of sunlight within spherical water droplets in the atmosphere.",
+      "tags": [
+        "Ray Optics",
+        "Rainbow"
+      ]
+    },
+    {
+      "questionNo": 64,
+      "question": "When concave lense of glass is immersed in water it works as:",
+      "optionA": "Less convergent",
+      "optionB": "More convergent",
+      "optionC": "Less divergent",
+      "optionD": "More divergent",
+      "correctAnswer": "Less divergent",
+      "difficulty": "Hard",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "When a concave lens (which is divergent in air) is immersed in a medium like water with a higher refractive index than air but lower than glass, its relative refractive index decreases, which increases its focal length and makes it less divergent.",
+      "tags": [
+        "Ray Optics",
+        "Lenses"
+      ]
+    },
+    {
+      "questionNo": 65,
+      "question": "The resolving power of human eye (in minute) is:",
+      "optionA": "$\\frac{1}{60}$",
+      "optionB": "1",
+      "optionC": "10",
+      "optionD": "$\\frac{1}{2}$",
+      "correctAnswer": "1",
+      "difficulty": "Hard",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "The limit of resolution (resolving power) of a normal human eye is about $1\\text{ minute of arc}$ ($1'$), which is equivalent to $1/60\\text{ degrees}$.",
+      "tags": [
+        "Wave Optics",
+        "Resolving Power"
+      ]
+    },
+    {
+      "questionNo": 66,
+      "question": "Cathode rays were discovered by:",
+      "optionA": "Maxwell Clerk James",
+      "optionB": "Heinrich Hertz",
+      "optionC": "William Crookes",
+      "optionD": "J. J. Thomson",
+      "correctAnswer": "William Crookes",
+      "difficulty": "Medium",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "William Crookes extensively studied cathode rays in specialized discharge tubes (Crookes tubes) and demonstrated their properties, although J. J. Thomson later identified them as streams of electrons.",
+      "tags": [
+        "Modern Physics",
+        "Cathode Rays"
+      ]
+    },
+    {
+      "questionNo": 67,
+      "question": "Millikan's oil drop experiment makes use of:",
+      "optionA": "Stokes' law",
+      "optionB": "Boyle's law",
+      "optionC": "Gas equation",
+      "optionD": "Bernoulli's theorem",
+      "correctAnswer": "Stokes' law",
+      "difficulty": "Hard",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "In Millikan's oil drop experiment, the terminal velocity of falling oil droplets in air is measured under gravity and electric fields. Stokes' law is used to determine the viscous drag force acting on the spherical droplets to find their radius and mass.",
+      "tags": [
+        "Modern Physics",
+        "Millikan's Experiment"
+      ]
+    },
+    {
+      "questionNo": 68,
+      "question": "When light enters into glass its wavelength :",
+      "optionA": "Decreases",
+      "optionB": "Increases",
+      "optionC": "Remains the same",
+      "optionD": "None of these",
+      "correctAnswer": "Decreases",
+      "difficulty": "Medium",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "When light enters a denser medium like glass, its speed decreases. Since frequency remains constant across media, from $v = f\\lambda$, the wavelength must decrease: $\\lambda_n = \\frac{\\lambda}{n}$, where $n > 1$ is the refractive index of glass.",
+      "tags": [
+        "Ray Optics",
+        "Refraction"
+      ]
+    },
+    {
+      "questionNo": 69,
+      "question": "γ-rays are similar to :",
+      "optionA": "$\\alpha$-rays",
+      "optionB": "$\\beta$-rays",
+      "optionC": "cathode rays",
+      "optionD": "X-rays",
+      "correctAnswer": "X-rays",
+      "difficulty": "Easy",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "Both gamma rays ($\\gamma$-rays) and X-rays are electromagnetic radiations carrying no charge, unlike alpha particles (helium nuclei), beta particles (electrons/positrons), and cathode rays (electron streams).",
+      "tags": [
+        "Modern Physics",
+        "Radioactivity"
+      ]
+    },
+    {
+      "questionNo": 70,
+      "question": "The number of neutrons in an atom of $_{90}\\text{Th}^{230}$ is:",
+      "optionA": "90",
+      "optionB": "140",
+      "optionC": "230",
+      "optionD": "320",
+      "correctAnswer": "140",
+      "difficulty": "Easy",
+      "marks": 1,
+      "language": "English",
+      "hasImage": false,
+      "imageDescription": "",
+      "explanation": "For Thorium ($_{90}\\text{Th}^{230}$), the mass number is $A = 230$ and the atomic number (number of protons) is $Z = 90$. The number of neutrons is $N = A - Z = 230 - 90 = 140$.",
+      "tags": [
+        "Modern Physics",
+        "Nuclear Physics"
+      ]
+    }
+  ]
+}
