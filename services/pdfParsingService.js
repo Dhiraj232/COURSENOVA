@@ -5,14 +5,18 @@ const Tesseract = require('tesseract.js');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const https = require('https');
 
-let createCanvas;
-try {
-    createCanvas = require('canvas').createCanvas;
-} catch (err) {
-    console.warn('⚠️ WARNING: Failed to load native "canvas" library. Scanned PDF parsing will not work.', err.message);
-    createCanvas = function() {
-        throw new Error('Native canvas library is not available. Please ensure system dependencies for node-canvas are installed.');
-    };
+let cachedCreateCanvas = null;
+function getCreateCanvas() {
+    if (cachedCreateCanvas) return cachedCreateCanvas;
+    try {
+        cachedCreateCanvas = require('canvas').createCanvas;
+    } catch (err) {
+        console.warn('⚠️ WARNING: Failed to load native "canvas" library. Scanned PDF parsing will not work.', err.message);
+        cachedCreateCanvas = function() {
+            throw new Error('Native canvas library is not available. Please ensure system dependencies for node-canvas are installed.');
+        };
+    }
+    return cachedCreateCanvas;
 }
 
 const { preprocessPageCanvas } = require('../utils/imagePreprocessor');
@@ -265,7 +269,7 @@ async function extractImagesFromPage(page, pageNum) {
             ]);
             
             if (img && img.width > 20 && img.height > 20) {
-                const canvas = createCanvas(img.width, img.height);
+                const canvas = getCreateCanvas()(img.width, img.height);
                 const ctx = canvas.getContext('2d');
                 const imgData = ctx.createImageData(img.width, img.height);
                 const data = imgData.data;
@@ -631,7 +635,7 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
                 logs.push(`[Parser] Page ${pNum} has low text quality (${quality.toFixed(2)}). Rendering to canvas...`);
                 const rotation = page.rotate || 0;
                 const viewport = page.getViewport({ scale: 1.5, rotation });
-                let canvas = createCanvas(viewport.width, viewport.height);
+                let canvas = getCreateCanvas()(viewport.width, viewport.height);
                 let context = canvas.getContext('2d');
                 
                 await page.render({

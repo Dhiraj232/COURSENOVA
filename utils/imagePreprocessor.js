@@ -1,4 +1,4 @@
-const { createCanvas } = require('canvas');
+// canvas is lazy loaded within functions to prevent startup native crashes
 
 /**
  * Visual preprocessor utility for enhancing scanned PDF pages before OCR/Vision.
@@ -168,6 +168,7 @@ function cropBlankMargins(canvas) {
         return canvas;
     }
 
+    const { createCanvas } = require('canvas');
     const croppedCanvas = createCanvas(croppedWidth, croppedHeight);
     const croppedCtx = croppedCanvas.getContext('2d');
     croppedCtx.drawImage(canvas, minX, minY, croppedWidth, croppedHeight, 0, 0, croppedWidth, croppedHeight);

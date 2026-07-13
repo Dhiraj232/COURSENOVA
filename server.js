@@ -35,8 +35,25 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const xss = require('xss-clean');
 const mongoSanitize = require('express-mongo-sanitize');
-const { logSuspiciousActivity, paymentLimiter, preventInjection } = require('./middleware/security');
-const notificationService = require('./services/notificationService');
+let logSuspiciousActivity, paymentLimiter, preventInjection;
+try {
+  const security = require('./middleware/security');
+  logSuspiciousActivity = security.logSuspiciousActivity;
+  paymentLimiter = security.paymentLimiter;
+  preventInjection = security.preventInjection;
+} catch (err) {
+  console.error('❌ Failed to load security middleware:', err.message);
+  logSuspiciousActivity = (req, res, next) => next();
+  paymentLimiter = (req, res, next) => next();
+  preventInjection = (req, res, next) => next();
+}
+
+let notificationService;
+try {
+  notificationService = require('./services/notificationService');
+} catch (err) {
+  console.error('❌ Failed to load notification service:', err.message);
+}
 
 const mongoose = require('mongoose');
 const session = require('express-session');
@@ -45,27 +62,25 @@ const GoogleStrategy = require('passport-google-oauth20').Strategy;
 
 console.log("Loading Routes...");
 // ─── Store & Marketplace Routers (MongoDB-backed) ──────────────
-const storeRouter = require('./routes/store');
-const booksRoutes = require('./routes/booksRoutes');
-const ordersRoutes = require('./routes/ordersRoutes');
-const cartRoutes = require('./routes/cartRoutes');
-const sellersRoutes = require('./routes/sellersRoutes');
-const reviewsRoutes = require('./routes/reviewsRoutes');
-const wishlistRoutes = require('./routes/wishlistRoutes');
-const chatsRoutes = require('./routes/chatsRoutes');
-// ─── Used Books Marketplace (simple, no Seller model needed) ─────
-const usedBooksRoutes = require('./routes/usedBooksRoutes');
+let storeRouter, booksRoutes, ordersRoutes, cartRoutes, sellersRoutes, reviewsRoutes, wishlistRoutes, chatsRoutes, usedBooksRoutes;
+let paymentRoutes, enrollmentRoutes, certificateRoutes, courseRoutes, coursesRoutes, communityRoutes, dashboardRoutes;
 
-// ─── Course Platform Routers ──────────────────────────────────────
-const paymentRoutes = require('./routes/paymentRoutes');
-const enrollmentRoutes = require('./routes/enrollmentRoutes');
-const certificateRoutes = require('./routes/certificateRoutes');
-const courseRoutes = require('./routes/courseRoutes');
-const coursesRoutes = require('./routes/courses');
-
-// ─── Community Routers (New) ──────────────────────────────────────
-const communityRoutes = require('./routes/community');
-const dashboardRoutes = require('./routes/dashboardRoutes');
+try { storeRouter = require('./routes/store'); } catch (err) { console.error('❌ Failed to load store routes:', err.message); }
+try { booksRoutes = require('./routes/booksRoutes'); } catch (err) { console.error('❌ Failed to load books routes:', err.message); }
+try { ordersRoutes = require('./routes/ordersRoutes'); } catch (err) { console.error('❌ Failed to load orders routes:', err.message); }
+try { cartRoutes = require('./routes/cartRoutes'); } catch (err) { console.error('❌ Failed to load cart routes:', err.message); }
+try { sellersRoutes = require('./routes/sellersRoutes'); } catch (err) { console.error('❌ Failed to load sellers routes:', err.message); }
+try { reviewsRoutes = require('./routes/reviewsRoutes'); } catch (err) { console.error('❌ Failed to load reviews routes:', err.message); }
+try { wishlistRoutes = require('./routes/wishlistRoutes'); } catch (err) { console.error('❌ Failed to load wishlist routes:', err.message); }
+try { chatsRoutes = require('./routes/chatsRoutes'); } catch (err) { console.error('❌ Failed to load chats routes:', err.message); }
+try { usedBooksRoutes = require('./routes/usedBooksRoutes'); } catch (err) { console.error('❌ Failed to load usedBooks routes:', err.message); }
+try { paymentRoutes = require('./routes/paymentRoutes'); } catch (err) { console.error('❌ Failed to load payment routes:', err.message); }
+try { enrollmentRoutes = require('./routes/enrollmentRoutes'); } catch (err) { console.error('❌ Failed to load enrollment routes:', err.message); }
+try { certificateRoutes = require('./routes/certificateRoutes'); } catch (err) { console.error('❌ Failed to load certificate routes:', err.message); }
+try { courseRoutes = require('./routes/courseRoutes'); } catch (err) { console.error('❌ Failed to load course routes:', err.message); }
+try { coursesRoutes = require('./routes/courses'); } catch (err) { console.error('❌ Failed to load courses routes:', err.message); }
+try { communityRoutes = require('./routes/community'); } catch (err) { console.error('❌ Failed to load community routes:', err.message); }
+try { dashboardRoutes = require('./routes/dashboardRoutes'); } catch (err) { console.error('❌ Failed to load dashboard routes:', err.message); }
 
 // ─── Environment Configuration Setup ────────────────────────────
 const isProduction = process.env.NODE_ENV === 'production';
@@ -588,20 +603,20 @@ app.use((req, res, next) => {
 
 // ─── Professional Book Store Routes ──────────────────────────────
 // Register all marketplace API routes
-app.use('/api/books', booksRoutes);
-app.use('/api/orders', ordersRoutes);
-app.use('/api/cart', cartRoutes);
-app.use('/api/feedback', require('./routes/feedbackRoutes'));
-app.use('/api/sellers', sellersRoutes);
-app.use('/api/reviews', reviewsRoutes);
-app.use('/api/wishlist', wishlistRoutes);
-app.use('/api/chats', chatsRoutes);
+if (booksRoutes) app.use('/api/books', booksRoutes);
+if (ordersRoutes) app.use('/api/orders', ordersRoutes);
+if (cartRoutes) app.use('/api/cart', cartRoutes);
+try { app.use('/api/feedback', require('./routes/feedbackRoutes')); } catch (err) { console.error('❌ Feedback routes mount failed:', err.message); }
+if (sellersRoutes) app.use('/api/sellers', sellersRoutes);
+if (reviewsRoutes) app.use('/api/reviews', reviewsRoutes);
+if (wishlistRoutes) app.use('/api/wishlist', wishlistRoutes);
+if (chatsRoutes) app.use('/api/chats', chatsRoutes);
 
 // ─── Store Routes (Private Book Exchange) ────────────────────
-app.use('/api/store', storeRouter);
+if (storeRouter) app.use('/api/store', storeRouter);
 
 // ─── Used Books Marketplace Routes ───────────────────────────
-app.use('/api/used-books', usedBooksRoutes);
+if (usedBooksRoutes) app.use('/api/used-books', usedBooksRoutes);
 app.use('/uploads/books', express.static(require('path').join(__dirname, 'uploads', 'books'), {
   maxAge: '7d',
   setHeaders: (res, filePath) => {
@@ -621,54 +636,59 @@ app.use((err, req, res, next) => {
 });
 
 // ─── Premium Course Routes ─────────────────────────────────────
-const premiumCourseRoutes = require('./routes/premiumCourseRoutes');
-app.use('/api/premium', premiumCourseRoutes);
-app.use('/api/courses', coursesRoutes);
-app.use('/api/payments', paymentRoutes);
-app.use('/api/enrollments', enrollmentRoutes);
-app.use('/api/certificates', certificateRoutes);
-app.use('/api/course', courseRoutes);     // progress, access-check, submit-test, details
-app.use('/api/enroll', enrollmentRoutes);    // Aligned with frontend expectation
-app.use('/api/enrollments', enrollmentRoutes); // Standard plural alias
-app.use('/api/my-courses', enrollmentRoutes); // Udemy-style alias
-app.use('/api/test', require('./routes/testRoutes')); // New test endpoint
+let premiumCourseRoutes;
+try { premiumCourseRoutes = require('./routes/premiumCourseRoutes'); } catch (err) { console.error('❌ Failed to load premiumCourseRoutes:', err.message); }
+if (premiumCourseRoutes) app.use('/api/premium', premiumCourseRoutes);
+if (coursesRoutes) app.use('/api/courses', coursesRoutes);
+if (paymentRoutes) app.use('/api/payments', paymentRoutes);
+if (enrollmentRoutes) app.use('/api/enrollments', enrollmentRoutes);
+if (certificateRoutes) app.use('/api/certificates', certificateRoutes);
+if (courseRoutes) app.use('/api/course', courseRoutes);     // progress, access-check, submit-test, details
+if (enrollmentRoutes) app.use('/api/enroll', enrollmentRoutes);    // Aligned with frontend expectation
+if (enrollmentRoutes) app.use('/api/enrollments', enrollmentRoutes); // Standard plural alias
+if (enrollmentRoutes) app.use('/api/my-courses', enrollmentRoutes); // Udemy-style alias
+try { app.use('/api/test', require('./routes/testRoutes')); } catch (err) { console.error('❌ Test routes mount failed:', err.message); }
 
-
-app.use('/api/mocktest', require('./routes/mockTestRoutes'));
-app.use('/api/ai', require('./routes/ai'));
+try { app.use('/api/mocktest', require('./routes/mockTestRoutes')); } catch (err) { console.error('❌ Mocktest routes mount failed:', err.message); }
+try { app.use('/api/ai', require('./routes/ai')); } catch (err) { console.error('❌ AI routes mount failed:', err.message); }
 
 // ─── Authentication Routes ───────────────────────────────────────────────────
-// ✅ FIXED: All auth routes now under /api/auth — matches Google OAuth callbackURL
 //   GET /api/auth/google          → triggers Google OAuth
 //   GET /api/auth/google/callback → Google redirects here after login
 //   GET /api/auth/me              → returns current authenticated user
 //   GET /api/auth/logout          → logs out user
-const authRoutes = require('./routes/auth');
-app.use('/api/auth', authRoutes);
-// Legacy aliases — keep /auth/google working for any existing links
-app.use('/auth', authRoutes);
+let authRoutes;
+try { authRoutes = require('./routes/auth'); } catch (err) { console.error('❌ Failed to load authRoutes:', err.message); }
+if (authRoutes) {
+  app.use('/api/auth', authRoutes);
+  app.use('/auth', authRoutes);
+}
 
-const userRoutes = require('./routes/userRoutes');
-app.use('/api/user', userRoutes);
-app.use('/api/profile', require('./routes/userRoutes')); // fulfilling legacy endpoint requirements
+let userRoutes;
+try { userRoutes = require('./routes/userRoutes'); } catch (err) { console.error('❌ Failed to load userRoutes:', err.message); }
+if (userRoutes) {
+  app.use('/api/user', userRoutes);
+  try { app.use('/api/profile', require('./routes/userRoutes')); } catch (err) {}
+}
 
 // ─── Community Routes ───────────────────────────────────────
-app.use('/api/community', communityRoutes);
-app.use('/api/community-ai', require('./routes/ai'));
+if (communityRoutes) app.use('/api/community', communityRoutes);
+try { app.use('/api/community-ai', require('./routes/ai')); } catch (err) { console.error('❌ Community AI routes mount failed:', err.message); }
 
 // ─── Admin Panel Routes ───────────────────────────────────────
-const adminRoutes = require('./routes/adminRoutes');
-const analyticsRoutes = require('./routes/analyticsRoutes');
-app.use('/api/admin', adminRoutes);
-app.use('/api/admin/daily-challenge', require('./routes/dailyChallengeAdmin'));
-app.use('/api/analytics', analyticsRoutes);
-app.use('/api/dashboard', dashboardRoutes);
+let adminRoutes, analyticsRoutes;
+try { adminRoutes = require('./routes/adminRoutes'); } catch (err) { console.error('❌ Failed to load adminRoutes:', err.message); }
+try { analyticsRoutes = require('./routes/analyticsRoutes'); } catch (err) { console.error('❌ Failed to load analyticsRoutes:', err.message); }
+if (adminRoutes) app.use('/api/admin', adminRoutes);
+try { app.use('/api/admin/daily-challenge', require('./routes/dailyChallengeAdmin')); } catch (err) { console.error('❌ Daily challenge admin routes mount failed:', err.message); }
+if (analyticsRoutes) app.use('/api/analytics', analyticsRoutes);
+if (dashboardRoutes) app.use('/api/dashboard', dashboardRoutes);
 
 // ─── Notification Routes ───────────────────────────────────────
-app.use('/api/notifications', require('./routes/notificationRoutes'));
+try { app.use('/api/notifications', require('./routes/notificationRoutes')); } catch (err) { console.error('❌ Notification routes mount failed:', err.message); }
 
 // ─── Referral Routes ───────────────────────────────────────────
-app.use('/api/referral', require('./routes/referralRoutes'));
+try { app.use('/api/referral', require('./routes/referralRoutes')); } catch (err) { console.error('❌ Referral routes mount failed:', err.message); }
 
 
 
@@ -684,7 +704,11 @@ app.use('/uploads/slides', express.static(path.join(__dirname, 'uploads', 'slide
 app.use('/certificates', express.static(path.join(__dirname, 'certificates'), staticCacheOptions));
 
 // ─── Cashfree API Routes (Payment-rate-limited) ──────────────────────────────
-app.use('/api/cashfree', paymentLimiter, require('./routes/cashfree'));
+try {
+  app.use('/api/cashfree', paymentLimiter, require('./routes/cashfree'));
+} catch (err) {
+  console.error('❌ Cashfree routes mount failed:', err.message);
+}
 
 
 // ────────────────────────────────────────────────────────────
