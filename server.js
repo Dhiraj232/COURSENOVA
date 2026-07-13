@@ -861,6 +861,16 @@ const server = app.listen(PORT, "0.0.0.0", () => {
     // Set server timeout to 5 minutes to accommodate large PDF uploads and background saves
     server.timeout = 300000;
 
+    // ─── Asynchronous Seeding Tasks (Non-blocking) ─────────────────────────────
+    (async () => {
+        try {
+            await seedDailyChallenges();
+            console.log("Daily Challenges seeded successfully.");
+        } catch (err) {
+            console.error("Daily Challenge seed failed:", err);
+        }
+    })();
+
     // ─── Initialize Notification Schedulers after DB connection settles ────────
     setTimeout(() => {
         try {
@@ -892,16 +902,6 @@ const server = app.listen(PORT, "0.0.0.0", () => {
         console.log(`[Keep-Alive] Self-ping enabled every 13 min → ${KEEP_ALIVE_URL}`);
     }
 });
-
-// ─── Asynchronous Seeding Tasks (Non-blocking) ─────────────────────────────
-(async () => {
-    try {
-        await seedDailyChallenges();
-        console.log("Daily Challenges seeded successfully.");
-    } catch (err) {
-        console.error("Daily Challenge seed failed:", err);
-    }
-})();
 
 const io = require('socket.io')(server, {
   cors: {
