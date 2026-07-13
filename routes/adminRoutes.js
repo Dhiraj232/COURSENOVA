@@ -72,6 +72,15 @@ async function createJob(type, params) {
         type,
         status: 'processing',
         progress: 0,
+        uploadProgress: 100,
+        ocrProgress: 0,
+        aiProgress: 0,
+        validationProgress: 0,
+        importProgress: 0,
+        estimatedTime: 'Estimating...',
+        warningsCount: 0,
+        errorsCount: 0,
+        validationErrors: [],
         stage: 'Uploading PDF',
         logs: [`[Job Started] ID: ${jobId}, Type: ${type}`],
         result: null,
@@ -84,22 +93,35 @@ async function createJob(type, params) {
     return jobId;
 }
 
-async function updateJob(jobId, progress, stage, logMessage) {
+async function updateJob(jobId, updates, stage, logMessage) {
     try {
-        const update = {};
-        if (progress !== undefined) update.progress = progress;
-        if (stage !== undefined) update.stage = stage;
-        
-        const push = {};
-        if (logMessage) {
-            const timestamp = new Date().toISOString();
-            push.logs = `[${timestamp}] ${logMessage}`;
-            console.log(`[PDF Job ${jobId}] ${logMessage}`);
+        const setObj = {};
+        const pushObj = {};
+
+        if (typeof updates === 'number') {
+            setObj.progress = updates;
+            if (stage) setObj.stage = stage;
+            if (logMessage) {
+                const timestamp = new Date().toISOString();
+                pushObj.logs = `[${timestamp}] ${logMessage}`;
+                console.log(`[PDF Job ${jobId}] ${logMessage}`);
+            }
+        } else if (typeof updates === 'object' && updates !== null) {
+            for (let key in updates) {
+                setObj[key] = updates[key];
+            }
+            // If the third parameter or second parameter is a string, treat it as log message
+            const msg = typeof stage === 'string' ? stage : logMessage;
+            if (msg) {
+                const timestamp = new Date().toISOString();
+                pushObj.logs = `[${timestamp}] ${msg}`;
+                console.log(`[PDF Job ${jobId}] ${msg}`);
+            }
         }
-        
+
         const updateObj = {};
-        if (Object.keys(update).length > 0) updateObj.$set = update;
-        if (Object.keys(push).length > 0) updateObj.$push = push;
+        if (Object.keys(setObj).length > 0) updateObj.$set = setObj;
+        if (Object.keys(pushObj).length > 0) updateObj.$push = pushObj;
         
         await PdfJob.updateOne({ jobId }, updateObj);
     } catch (err) {
@@ -113,6 +135,12 @@ async function completeJob(jobId, result, logMessage = 'Job completed successful
         const updateObj = {
             status: 'completed',
             progress: 100,
+            uploadProgress: 100,
+            ocrProgress: 100,
+            aiProgress: 100,
+            validationProgress: 100,
+            importProgress: 100,
+            estimatedTime: '0s',
             stage: 'Completed',
             result,
             totalQuestions: result.totalQuestions || result.count || 0,
@@ -164,6 +192,15 @@ router.get('/pdf-jobs/:jobId', requireAdmin, catchAsync(async (req, res) => {
         ok: true,
         status: job.status,
         progress: job.progress,
+        uploadProgress: job.uploadProgress || 0,
+        ocrProgress: job.ocrProgress || 0,
+        aiProgress: job.aiProgress || 0,
+        validationProgress: job.validationProgress || 0,
+        importProgress: job.importProgress || 0,
+        estimatedTime: job.estimatedTime || null,
+        warningsCount: job.warningsCount || 0,
+        errorsCount: job.errorsCount || 0,
+        validationErrors: job.validationErrors || [],
         stage: job.stage,
         result: job.result,
         error: job.error,
@@ -771,25 +808,6 @@ async function saveQuestionsBulk(questionsArray, replaceDuplicates, defaultCateg
         return { finalQuestions: [], duplicateCount, failedCount, skippedQuestions };
     }
 
-    // Automatically translate questions from English to Hindi if Hindi translations are missing
-    const tasks = validQuestions.map(q => async () => {
-        const hasEn = q.question || q.question_en;
-        const hasHi = q.question_hi;
-        const hasHiOpts = q.options_hi && q.options_hi.length > 0;
-
-        if (hasEn && (!hasHi || !hasHiOpts)) {
-            const opts = q.options || [q.optionA || '', q.optionB || '', q.optionC || '', q.optionD || ''].filter(Boolean);
-            const trans = await autoTranslateToHindi(q.question || q.question_en, opts);
-            if (trans.question_hi) {
-                q.question_hi = trans.question_hi;
-                q.options_hi = trans.options_hi;
-            }
-        }
-    });
-    
-    // Execute translations with concurrency limit of 8 to avoid rate limits
-    await runWithConcurrency(tasks, 8);
-
     // Pre-calculate hashes for valid questions
     validQuestions.forEach(q => {
         const qText = q.question || q.question_en || '';
@@ -894,9 +912,29 @@ async function saveQuestionsBulk(questionsArray, replaceDuplicates, defaultCateg
     }
 
     if (bulkOps.length > 0) {
+        const session = await mongoose.startSession();
+        let transactionActive = false;
         try {
-            await PracticeQuestion.bulkWrite(bulkOps, { ordered: false });
+            const client = mongoose.connection.client;
+            const isReplica = client && client.topology && client.topology.description && client.topology.description.type !== 'Single';
+            
+            if (isReplica) {
+                session.startTransaction();
+                transactionActive = true;
+            }
+
+            await PracticeQuestion.bulkWrite(bulkOps, { 
+                ordered: false, 
+                session: transactionActive ? session : undefined 
+            });
+
+            if (transactionActive) {
+                await session.commitTransaction();
+            }
         } catch (bulkErr) {
+            if (transactionActive) {
+                await session.abortTransaction();
+            }
             console.error('Some bulkWrite operations failed:', bulkErr.message);
             const writeErrorsCount = bulkErr.writeErrors ? bulkErr.writeErrors.length : 0;
             failedCount += writeErrorsCount;
@@ -915,6 +953,8 @@ async function saveQuestionsBulk(questionsArray, replaceDuplicates, defaultCateg
                     }
                 });
             }
+        } finally {
+            session.endSession();
         }
     }
 
@@ -943,20 +983,76 @@ async function saveQuestionsBulk(questionsArray, replaceDuplicates, defaultCateg
 }
 
 // ── BACKGROUND WORKERS ───────────────────────────────────────────────
-// ── BACKGROUND WORKERS ───────────────────────────────────────────────
+function calculateETA(startTime, progressPercent) {
+    if (progressPercent <= 5) return 'Estimating...';
+    const elapsedMs = Date.now() - startTime;
+    const totalEstMs = (elapsedMs / progressPercent) * 100;
+    const remainingMs = Math.max(0, totalEstMs - elapsedMs);
+    const remainingSec = Math.round(remainingMs / 1000);
+    if (remainingSec < 60) {
+        return `${remainingSec}s`;
+    }
+    const min = Math.floor(remainingSec / 60);
+    const sec = remainingSec % 60;
+    return `${min}m ${sec}s`;
+}
+
 async function runPreviewPDFJob(jobId, buffer, defaultCategory, defaultSubject, expectedCount, startTime = Date.now()) {
     try {
-        await updateJob(jobId, 5, 'Extracting text', 'Received PDF buffer. Starting text extraction...');
+        await updateJob(jobId, {
+            progress: 5,
+            uploadProgress: 100,
+            ocrProgress: 0,
+            aiProgress: 0,
+            validationProgress: 0,
+            importProgress: 0,
+            estimatedTime: 'Estimating...',
+            stage: 'Loading PDF'
+        }, 'Received PDF buffer. Starting text extraction...');
+
         const questions = await parseQuestionsFromPDFBuffer(
             buffer,
             defaultCategory,
             defaultSubject,
             expectedCount,
-            (progress, stage, log) => { updateJob(jobId, progress, stage, log); },
+            async (progress, stage, log) => {
+                let ocrProgress = 0;
+                let aiProgress = 0;
+
+                if (progress <= 10) {
+                    ocrProgress = 0;
+                } else if (progress > 10 && progress <= 50) {
+                    ocrProgress = Math.round((progress - 10) / 40 * 100);
+                } else {
+                    ocrProgress = 100;
+                }
+
+                if (progress <= 50) {
+                    aiProgress = 0;
+                } else if (progress > 50 && progress <= 85) {
+                    aiProgress = Math.round((progress - 50) / 35 * 100);
+                } else {
+                    aiProgress = 100;
+                }
+
+                const eta = calculateETA(startTime, progress);
+
+                await updateJob(jobId, {
+                    progress,
+                    ocrProgress,
+                    aiProgress,
+                    estimatedTime: eta,
+                    stage
+                }, log);
+            },
             startTime
         );
 
-        await updateJob(jobId, 85, 'Checking duplicates', `Checking database duplicates for ${questions.length} questions...`);
+        await updateJob(jobId, {
+            progress: 88,
+            validationProgress: 50,
+            stage: 'Checking duplicates'
+        }, `Checking database duplicates for ${questions.length} questions...`);
         
         // Pre-calculate hashes for preview questions
         questions.forEach(q => {
@@ -1007,78 +1103,51 @@ async function runPreviewPDFJob(jobId, buffer, defaultCategory, defaultSubject, 
             return q;
         });
 
-        // Forward parser logs to background job logger
+        // Batch upload parser logs
         const parserLogs = questions.parserLogs || [];
-        const ocrQuestionsCount = questions.ocrQuestionsCount || 0;
-        for (let log of parserLogs) {
-            await updateJob(jobId, undefined, undefined, log);
+        if (parserLogs.length > 0) {
+            const timestamp = new Date().toISOString();
+            const formattedLogs = parserLogs.map(l => `[${timestamp}] ${l}`);
+            await PdfJob.updateOne(
+                { jobId },
+                { $push: { logs: { $each: formattedLogs } } }
+            );
         }
 
         const elapsedSec = ((Date.now() - startTime) / 1000).toFixed(2);
         
-        let validCount = 0;
-        let warningCount = 0;
-        let missingOptionsCount = 0;
-        let missingAnswersCount = 0;
-        let encodingErrorsCount = 0;
+        const warningCount = questions.stats ? questions.stats.warning : 0;
+        const errorsCount = questions.stats ? (questions.stats.encodingErrors + questions.stats.missingOptions + questions.stats.missingAnswers) : 0;
 
-        const validatedQuestions = markedQuestions.map((q, idx) => {
-            const errors = [];
-            if (!q.question || q.question.trim().length <= 15) {
-                errors.push('Question text is missing, invalid, or too short (length <= 15).');
+        await PdfJob.updateOne(
+            { jobId },
+            {
+                $set: {
+                    warningsCount,
+                    errorsCount,
+                    validationErrors: questions.validationErrors || [],
+                    validationProgress: 100
+                }
             }
-            
-            if (q.questionNumber === undefined || q.questionNumber === null) {
-                errors.push('Question number is missing.');
-            }
-
-            const validOpts = q.options.filter(o => o && o.trim() !== '');
-            if (validOpts.length < 4) {
-                errors.push(`Missing valid options (found only ${validOpts.length}, minimum 4 required).`);
-                missingOptionsCount++;
-            }
-            
-            if (!q.correctAnswer || !q.correctAnswer.trim() || q.correctIndex === -1) {
-                errors.push('Correct answer is missing or invalid.');
-                missingAnswersCount++;
-            }
-
-            if ((q.question && q.question.includes('\uFFFD')) || (q.options && q.options.some(o => o && o.includes('\uFFFD')))) {
-                errors.push('Question has corrupted encoding characters (\uFFFD).');
-                encodingErrorsCount++;
-            }
-
-            const isValid = errors.length === 0;
-            if (isValid) {
-                validCount++;
-            } else {
-                warningCount++;
-            }
-
-            return {
-                ...q,
-                isValid,
-                validationWarning: errors.length > 0,
-                validationErrors: errors
-            };
-        });
+        );
 
         const previewResult = {
-            questions: validatedQuestions,
-            count: validatedQuestions.length,
-            stats: {
-                total: validatedQuestions.length,
-                valid: validCount,
+            questions: markedQuestions,
+            count: markedQuestions.length,
+            stats: questions.stats || {
+                total: markedQuestions.length,
+                valid: markedQuestions.filter(q => q.isValid).length,
                 warning: warningCount,
                 duplicate: markedQuestions.filter(q => q.isDuplicate).length,
-                ocr: ocrQuestionsCount,
-                encodingErrors: encodingErrorsCount,
-                missingOptions: missingOptionsCount,
-                missingAnswers: missingAnswersCount
+                ocr: 0,
+                vision: 0,
+                encodingErrors: 0,
+                missingOptions: 0,
+                missingAnswers: 0
             }
         };
 
-        await completeJob(jobId, previewResult, `Preview questions extracted successfully in ${elapsedSec}s. Count: ${validatedQuestions.length}`);
+        await completeJob(jobId, previewResult, `Preview questions extracted successfully in ${elapsedSec}s. Count: ${markedQuestions.length}`);
     } catch (err) {
         if (err.message === 'AbortJobError') {
             console.log(`[PDF Job ${jobId}] Preview job stopped because of user cancellation.`);
@@ -1089,15 +1158,53 @@ async function runPreviewPDFJob(jobId, buffer, defaultCategory, defaultSubject, 
 }
 
 async function runImportPDFJob(jobId, buffer, defaultCategory, defaultSubject, packId, testId, reqUser, expectedCount = 100, replaceDuplicates = false, startTime = Date.now()) {
-    await updateJob(jobId, 5, 'Extracting text', 'Received PDF buffer. Starting text extraction...');
-    
     try {
+        await updateJob(jobId, {
+            progress: 5,
+            uploadProgress: 100,
+            ocrProgress: 0,
+            aiProgress: 0,
+            validationProgress: 0,
+            importProgress: 0,
+            estimatedTime: 'Estimating...',
+            stage: 'Loading PDF'
+        }, 'Received PDF buffer. Starting text extraction...');
+
         const parsedQuestions = await parseQuestionsFromPDFBuffer(
             buffer,
             defaultCategory,
             defaultSubject,
             expectedCount,
-            (progress, stage, log) => { updateJob(jobId, progress, stage, log); },
+            async (progress, stage, log) => {
+                let ocrProgress = 0;
+                let aiProgress = 0;
+
+                if (progress <= 10) {
+                    ocrProgress = 0;
+                } else if (progress > 10 && progress <= 50) {
+                    ocrProgress = Math.round((progress - 10) / 40 * 100);
+                } else {
+                    ocrProgress = 100;
+                }
+
+                if (progress <= 50) {
+                    aiProgress = 0;
+                } else if (progress > 50 && progress <= 85) {
+                    aiProgress = Math.round((progress - 50) / 35 * 100);
+                } else {
+                    aiProgress = 100;
+                }
+
+                const eta = calculateETA(startTime, progress);
+
+                await updateJob(jobId, {
+                    progress,
+                    ocrProgress,
+                    aiProgress,
+                    estimatedTime: eta,
+                    stage
+                }, log);
+            },
             startTime
         );
 
@@ -1113,12 +1220,22 @@ async function runImportPDFJob(jobId, buffer, defaultCategory, defaultSubject, p
             return;
         }
 
+        // Batch upload parser logs
         const parserLogs = parsedQuestions.parserLogs || [];
-        for (let log of parserLogs) {
-            await updateJob(jobId, undefined, undefined, log);
+        if (parserLogs.length > 0) {
+            const timestamp = new Date().toISOString();
+            const formattedLogs = parserLogs.map(l => `[${timestamp}] ${l}`);
+            await PdfJob.updateOne(
+                { jobId },
+                { $push: { logs: { $each: formattedLogs } } }
+            );
         }
 
-        await updateJob(jobId, 65, 'Saving questions', `Importing and validating ${parsedQuestions.length} parsed questions...`);
+        await updateJob(jobId, {
+            progress: 90,
+            validationProgress: 100,
+            stage: 'Saving questions'
+        }, `Importing and validating ${parsedQuestions.length} parsed questions...`);
 
         const saveRes = await saveQuestionsBulk(
             parsedQuestions,
@@ -1150,6 +1267,21 @@ async function runImportPDFJob(jobId, buffer, defaultCategory, defaultSubject, p
             }
         });
 
+        const warningCount = (parsedQuestions.stats ? parsedQuestions.stats.warning : 0) + saveRes.skippedQuestions.length;
+        const errorsCount = (parsedQuestions.stats ? (parsedQuestions.stats.encodingErrors + parsedQuestions.stats.missingOptions + parsedQuestions.stats.missingAnswers) : 0) + saveRes.failedCount;
+
+        await PdfJob.updateOne(
+            { jobId },
+            {
+                $set: {
+                    warningsCount,
+                    errorsCount,
+                    validationErrors: parsedQuestions.validationErrors || [],
+                    importProgress: 100
+                }
+            }
+        );
+
         await completeJob(jobId, {
             totalQuestions: parsedQuestions.length,
             detectedQuestions: parsedQuestions.length,
@@ -1162,7 +1294,7 @@ async function runImportPDFJob(jobId, buffer, defaultCategory, defaultSubject, p
                 text: (s.q.question || s.q.question_en || '').substring(0, 40) + '...',
                 reason: s.reason
             })),
-            ocrUsedCount: parsedQuestions.ocrQuestionsCount || 0,
+            ocrUsedCount: (parsedQuestions.stats ? parsedQuestions.stats.ocr : 0) + (parsedQuestions.stats ? parsedQuestions.stats.vision : 0),
             importTimeSec: elapsedSec
         }, `PDF Import job completed successfully in ${elapsedSec}s.`);
 

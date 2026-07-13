@@ -786,7 +786,7 @@ function pollJob(jobId, onProgress, onSuccess, onError) {
                 clearInterval(interval);
                 onError(new Error(data.error || 'Job failed'));
             } else {
-                onProgress(data.progress, data.stage, data.logs);
+                onProgress(data.progress, data.stage, data.logs, data);
             }
         } catch (err) {
             clearInterval(interval);
@@ -2453,31 +2453,81 @@ async function handlePdfUpload() {
 
         status.innerHTML = `
             <div class="pdf-progress-container" style="border-top:1px solid var(--border-color); margin-top:20px; padding-top:20px; display:flex; flex-direction:column; gap:15px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.85rem; font-weight:600;">
+                <!-- ETA remaining -->
+                <div style="display:flex; justify-content:space-between; align-items:center; font-size:0.85rem; font-weight:700;">
                     <span class="pdf-job-stage" style="color:var(--primary);"><i class="fas fa-spinner fa-spin"></i> Processing PDF...</span>
-                    <span class="pdf-job-pct" style="color:var(--text-main);">0%</span>
+                    <span class="pdf-job-eta" style="background:#ede9fe; color:#6366f1; padding:3px 10px; border-radius:20px; font-size:0.72rem; font-weight:700;">ETA: Estimating...</span>
                 </div>
-                <div style="width:100%; height:8px; background:#e2e8f0; border-radius:4px; overflow:hidden;">
-                    <div class="pdf-job-progress-bar" style="width:0%; height:100%; background:linear-gradient(90deg, #4f46e5, #06b6d4); transition:width 0.3s;"></div>
+
+                <!-- Total Progress Bar -->
+                <div>
+                    <div style="display:flex; justify-content:space-between; font-size:0.75rem; font-weight:600; margin-bottom:4px;">
+                        <span style="color:var(--text-main);">Total Progress</span>
+                        <span class="pdf-job-pct" style="color:var(--primary);">0%</span>
+                    </div>
+                    <div style="width:100%; height:8px; background:#e2e8f0; border-radius:4px; overflow:hidden;">
+                        <div class="pdf-job-progress-bar" style="width:0%; height:100%; background:linear-gradient(90deg, #4f46e5, #06b6d4); transition:width 0.3s;"></div>
+                    </div>
                 </div>
-                
-                <div class="pdf-job-stats-grid" style="display:none; grid-template-columns: repeat(4, 1fr); gap: 10px; font-size:0.8rem; text-align:center;">
-                    <div style="background:#f1f5f9; padding:8px; border-radius:6px; border:1px solid var(--border-color);">
-                        <div style="color:var(--text-muted); font-size:0.7rem; font-weight:500;">Total</div>
-                        <strong class="stat-total" style="font-size:1.1rem; color:var(--text-main);">0</strong>
+
+                <!-- Detailed Stages Progress -->
+                <div style="display:grid; grid-template-columns:1fr; gap:10px; background:#f8fafc; padding:15px; border-radius:10px; border:1.5px solid #e2e8f0;">
+                    <!-- Upload -->
+                    <div>
+                        <div style="display:flex; justify-content:space-between; font-size:0.7rem; font-weight:600; color:var(--text-muted);">
+                            <span>1. Upload PDF</span>
+                            <span class="progress-pct-upload">100%</span>
+                        </div>
+                        <div style="width:100%; height:4px; background:#e2e8f0; border-radius:2px; overflow:hidden; margin-top:2px;">
+                            <div class="progress-bar-upload" style="width:100%; height:100%; background:#10b981; transition:width 0.3s;"></div>
+                        </div>
                     </div>
-                    <div style="background:rgba(16, 185, 129, 0.05); padding:8px; border-radius:6px; border:1px solid rgba(16, 185, 129, 0.1);">
-                        <div style="color:#10b981; font-size:0.7rem; font-weight:500;">Valid</div>
-                        <strong class="stat-valid" style="font-size:1.1rem; color:#10b981;">0</strong>
+                    <!-- OCR -->
+                    <div>
+                        <div style="display:flex; justify-content:space-between; font-size:0.7rem; font-weight:600; color:var(--text-muted);">
+                            <span>2. OCR & Text Scan</span>
+                            <span class="progress-pct-ocr">0%</span>
+                        </div>
+                        <div style="width:100%; height:4px; background:#e2e8f0; border-radius:2px; overflow:hidden; margin-top:2px;">
+                            <div class="progress-bar-ocr" style="width:0%; height:100%; background:#6366f1; transition:width 0.3s;"></div>
+                        </div>
                     </div>
-                    <div style="background:rgba(245, 158, 11, 0.05); padding:8px; border-radius:6px; border:1px solid rgba(245, 158, 11, 0.1);">
-                        <div style="color:#f59e0b; font-size:0.7rem; font-weight:500;">Duplicates</div>
-                        <strong class="stat-dup" style="font-size:1.1rem; color:#f59e0b;">0</strong>
+                    <!-- AI Parsing -->
+                    <div>
+                        <div style="display:flex; justify-content:space-between; font-size:0.7rem; font-weight:600; color:var(--text-muted);">
+                            <span>3. Gemini AI Extraction</span>
+                            <span class="progress-pct-ai">0%</span>
+                        </div>
+                        <div style="width:100%; height:4px; background:#e2e8f0; border-radius:2px; overflow:hidden; margin-top:2px;">
+                            <div class="progress-bar-ai" style="width:0%; height:100%; background:#6366f1; transition:width 0.3s;"></div>
+                        </div>
                     </div>
-                    <div style="background:rgba(239, 68, 68, 0.05); padding:8px; border-radius:6px; border:1px solid rgba(239, 68, 68, 0.1);">
-                        <div style="color:#ef4444; font-size:0.7rem; font-weight:500;">Warnings</div>
-                        <strong class="stat-warn" style="font-size:1.1rem; color:#ef4444;">0</strong>
+                    <!-- Validation -->
+                    <div>
+                        <div style="display:flex; justify-content:space-between; font-size:0.7rem; font-weight:600; color:var(--text-muted);">
+                            <span>4. Schema & Math Validation</span>
+                            <span class="progress-pct-validation">0%</span>
+                        </div>
+                        <div style="width:100%; height:4px; background:#e2e8f0; border-radius:2px; overflow:hidden; margin-top:2px;">
+                            <div class="progress-bar-validation" style="width:0%; height:100%; background:#6366f1; transition:width 0.3s;"></div>
+                        </div>
                     </div>
+                    <!-- Import -->
+                    <div>
+                        <div style="display:flex; justify-content:space-between; font-size:0.7rem; font-weight:600; color:var(--text-muted);">
+                            <span>5. MongoDB Import</span>
+                            <span class="progress-pct-import">0%</span>
+                        </div>
+                        <div style="width:100%; height:4px; background:#e2e8f0; border-radius:2px; overflow:hidden; margin-top:2px;">
+                            <div class="progress-bar-import" style="width:0%; height:100%; background:#6366f1; transition:width 0.3s;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats indicator -->
+                <div class="pdf-job-stats-badge" style="display:none; align-items:center; gap:10px; font-size:0.75rem;">
+                    <span style="background:#fee2e2; color:#ef4444; padding:3px 10px; border-radius:12px; font-weight:700;" class="stats-errors-badge">Errors: 0</span>
+                    <span style="background:#fff3cd; color:#856404; padding:3px 10px; border-radius:12px; font-weight:700;" class="stats-warnings-badge">Warnings: 0</span>
                 </div>
                 
                 <div style="font-size:0.75rem; font-weight:600; color:var(--text-muted);">Execution Logs:</div>
@@ -2486,7 +2536,7 @@ async function handlePdfUpload() {
                 </div>
                 
                 <div style="display:flex; justify-content:flex-end;">
-                    <button class="btn btn-sm btn-outline danger" id="pdfCancelBtn" style="border-color:#ef4444; color:#ef4444;">
+                    <button class="btn btn-sm btn-outline danger" id="pdfCancelBtn" style="border-color:#ef4444; color:#ef4444;" onclick="window.cancelActivePdfJob('${data.jobId}')">
                         <i class="fas fa-times"></i> Cancel Job
                     </button>
                 </div>
@@ -2494,15 +2544,68 @@ async function handlePdfUpload() {
         `;
 
         pollJob(data.jobId,
-            (progress, stage, logs) => {
+            (progress, stage, logs, rawData) => {
                 const stageEl = status.querySelector('.pdf-job-stage');
                 const pctEl = status.querySelector('.pdf-job-pct');
                 const barEl = status.querySelector('.pdf-job-progress-bar');
+                const etaEl = status.querySelector('.pdf-job-eta');
+                
+                const uploadPctEl = status.querySelector('.progress-pct-upload');
+                const uploadBarEl = status.querySelector('.progress-bar-upload');
+                const ocrPctEl = status.querySelector('.progress-pct-ocr');
+                const ocrBarEl = status.querySelector('.progress-bar-ocr');
+                const aiPctEl = status.querySelector('.progress-pct-ai');
+                const aiBarEl = status.querySelector('.progress-bar-ai');
+                const valPctEl = status.querySelector('.progress-pct-validation');
+                const valBarEl = status.querySelector('.progress-bar-validation');
+                const impPctEl = status.querySelector('.progress-pct-import');
+                const impBarEl = status.querySelector('.progress-bar-import');
+
+                const statsBadgeEl = status.querySelector('.pdf-job-stats-badge');
+                const statsErrorsEl = status.querySelector('.stats-errors-badge');
+                const statsWarningsEl = status.querySelector('.stats-warnings-badge');
                 const terminalEl = status.querySelector('.pdf-job-logs-terminal');
                 
                 if (stageEl) stageEl.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${stage}`;
                 if (pctEl) pctEl.textContent = `${progress}%`;
                 if (barEl) barEl.style.width = `${progress}%`;
+
+                if (rawData) {
+                    if (etaEl) etaEl.textContent = `ETA: ${rawData.estimatedTime || 'Estimating...'}`;
+                    
+                    if (uploadPctEl) uploadPctEl.textContent = `${rawData.uploadProgress || 100}%`;
+                    if (uploadBarEl) uploadBarEl.style.width = `${rawData.uploadProgress || 100}%`;
+
+                    if (ocrPctEl) ocrPctEl.textContent = `${rawData.ocrProgress || 0}%`;
+                    if (ocrBarEl) {
+                        ocrBarEl.style.width = `${rawData.ocrProgress || 0}%`;
+                        ocrBarEl.style.background = rawData.ocrProgress === 100 ? '#10b981' : '#6366f1';
+                    }
+
+                    if (aiPctEl) aiPctEl.textContent = `${rawData.aiProgress || 0}%`;
+                    if (aiBarEl) {
+                        aiBarEl.style.width = `${rawData.aiProgress || 0}%`;
+                        aiBarEl.style.background = rawData.aiProgress === 100 ? '#10b981' : '#6366f1';
+                    }
+
+                    if (valPctEl) valPctEl.textContent = `${rawData.validationProgress || 0}%`;
+                    if (valBarEl) {
+                        valBarEl.style.width = `${rawData.validationProgress || 0}%`;
+                        valBarEl.style.background = rawData.validationProgress === 100 ? '#10b981' : '#6366f1';
+                    }
+
+                    if (impPctEl) impPctEl.textContent = `${rawData.importProgress || 0}%`;
+                    if (impBarEl) {
+                        impBarEl.style.width = `${rawData.importProgress || 0}%`;
+                        impBarEl.style.background = rawData.importProgress === 100 ? '#10b981' : '#6366f1';
+                    }
+
+                    if (rawData.warningsCount > 0 || rawData.errorsCount > 0) {
+                        if (statsBadgeEl) statsBadgeEl.style.display = 'flex';
+                        if (statsErrorsEl) statsErrorsEl.textContent = `Errors: ${rawData.errorsCount}`;
+                        if (statsWarningsEl) statsWarningsEl.textContent = `Warnings: ${rawData.warningsCount}`;
+                    }
+                }
                 
                 if (terminalEl && Array.isArray(logs)) {
                     terminalEl.innerHTML = logs.map(l => `<div style="line-height:1.4;">${escapeHtml(l)}</div>`).join('');
@@ -3327,7 +3430,7 @@ async function deleteAdminNotification(id) {
     if (!confirm('Delete this notification?')) return;
     const token = localStorage.getItem('token');
     try {
-        const res = await fetch(`/api/admin/notifications/${id}`, {
+        const res = await fetch(`${API_BASE}/notifications/${id}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -3359,7 +3462,7 @@ window.showQuestionsPreviewModal = function(questions, stats, onConfirm) {
     previewContainer.classList.add('active');
 
     previewContainer.innerHTML = `
-        <div class="modal-content admin-card" style="max-width: 1000px; width: 95%; max-height: 90vh; display: flex; flex-direction: column; padding: 0;">
+        <div class="modal-content admin-card" style="max-width: 1200px; width: 95%; max-height: 90vh; display: flex; flex-direction: column; padding: 0;">
             <div class="card-header" style="padding: 20px 24px; border-bottom: 1px solid var(--border-color); display:flex; justify-content:space-between; align-items:center; background:#fafafa; text-align:left;">
                 <div>
                     <h3 style="margin:0;"><i class="fas fa-eye" style="color:var(--primary);"></i> Preview Extracted Questions</h3>
@@ -3423,8 +3526,13 @@ window.showQuestionsPreviewModal = function(questions, stats, onConfirm) {
                 </div>
             </div>
             
-            <div id="preview-questions-list" style="flex: 1; overflow-y: auto; padding: 24px; display:flex; flex-direction:column; gap:20px; background:#f1f5f9;">
-                <!-- Cards injected by renderPreviewList -->
+            <div style="display:flex; flex: 1; overflow:hidden; min-height:0;">
+                <div id="preview-questions-list" style="flex: 2; overflow-y: auto; padding: 24px; display:flex; flex-direction:column; gap:20px; background:#f1f5f9;">
+                    <!-- Cards injected by renderPreviewList -->
+                </div>
+                <div id="validation-dashboard-sidebar" style="flex: 0 0 320px; width: 320px; border-left: 1px solid var(--border-color); background:white; display:flex; flex-direction:column; overflow:hidden;">
+                    <!-- Sidebar validation summaries -->
+                </div>
             </div>
         </div>
     `;
@@ -3464,7 +3572,12 @@ window.renderPreviewList = function() {
     } else {
         warningBadge.style.display = 'none';
     }
+
+    if (window.renderValidationSidebar) {
+        window.renderValidationSidebar();
+    }
 };
+
 
 window.scrollToFirstError = function() {
     const errorCards = Array.from(document.querySelectorAll('.preview-q-card')).filter(card => {
@@ -3717,6 +3830,105 @@ window.updateCardValidationUI = function(idx) {
         warningCountEl.textContent = warningCount;
     } else {
         warningBadge.style.display = 'none';
+    }
+
+    if (window.renderValidationSidebar) {
+        window.renderValidationSidebar();
+    }
+};
+
+window.renderValidationSidebar = function() {
+    const sidebar = document.getElementById('validation-dashboard-sidebar');
+    if (!sidebar) return;
+
+    const invalidQuestions = window.currentPreviewQuestions.filter(q => !q.isValid);
+    
+    let listHtml = '';
+    if (invalidQuestions.length === 0) {
+        listHtml = `
+            <div style="text-align:center; padding:40px 20px; color:#10b981;">
+                <div style="font-size:3rem; margin-bottom:15px;"><i class="fas fa-check-double"></i></div>
+                <h4 style="margin:0; font-weight:700;">All Clear!</h4>
+                <p style="font-size:0.8rem; color:var(--text-muted); margin-top:8px;">Zero warnings or validation errors detected. Ready to import to database!</p>
+            </div>
+        `;
+    } else {
+        listHtml = invalidQuestions.map(q => {
+            const index = window.currentPreviewQuestions.indexOf(q);
+            const errs = q.validationErrors || [];
+            
+            // Generate fix suggestions
+            const suggestions = errs.map(err => {
+                if (err.includes('options')) {
+                    return 'Please enter 4 valid options.';
+                }
+                if (err.includes('Correct answer')) {
+                    return 'Select the correct answer from the dropdown.';
+                }
+                if (err.includes('Question text')) {
+                    return 'Add question description text.';
+                }
+                if (err.includes('corrupted')) {
+                    return 'Fix replacement characters manually.';
+                }
+                return 'Verify fields.';
+            });
+
+            return `
+                <div onclick="window.scrollToQuestion(${index})" class="fix-suggest-card" style="padding:12px; border-bottom:1.5px solid #f1f5f9; cursor:pointer; transition:background 0.2s; border-left:3px solid #ef4444;" onmouseover="this.style.background='#fef2f2'" onmouseout="this.style.background='white'">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                        <strong style="font-size:0.8rem; color:#1e293b;">Q#${q.questionNumber} (Page ${q.pageNum || 1})</strong>
+                        <span style="background:#fee2e2; color:#ef4444; font-size:0.65rem; font-weight:700; padding:2px 6px; border-radius:10px;">Fix Needed</span>
+                    </div>
+                    <div style="font-size:0.75rem; color:#ef4444; display:flex; flex-direction:column; gap:2px; margin-top:4px;">
+                        ${errs.map((err, i) => `<div>• ${escapeHtml(err)} <span style="color:#64748b; font-style:italic;">(Fix: ${suggestions[i]})</span></div>`).join('')}
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    sidebar.innerHTML = `
+        <div style="padding:15px 20px; border-bottom:1px solid var(--border-color); background:#f8fafc; display:flex; justify-content:space-between; align-items:center;">
+            <span style="font-weight:700; font-size:0.85rem; color:var(--text-main); display:flex; align-items:center; gap:8px;">
+                <i class="fas fa-shield-alt" style="color:#ef4444;"></i> Fix Suggestions (${invalidQuestions.length})
+            </span>
+        </div>
+        <div style="flex:1; overflow-y:auto;">
+            ${listHtml}
+        </div>
+    `;
+};
+
+window.scrollToQuestion = function(index) {
+    const card = document.getElementById(`q-card-${index}`);
+    if (card) {
+        card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const origBorder = card.style.borderColor;
+        card.style.borderColor = '#ef4444';
+        card.style.boxShadow = '0 0 15px rgba(239, 68, 68, 0.2)';
+        setTimeout(() => {
+            card.style.borderColor = origBorder;
+            card.style.boxShadow = '0 4px 6px -1px rgba(0,0,0,0.05)';
+        }, 1200);
+    }
+};
+
+window.cancelActivePdfJob = async function(jobId) {
+    if (!confirm('Are you sure you want to cancel this PDF parsing job?')) return;
+    try {
+        const token = localStorage.getItem('token');
+        const res = await fetch(`${API_BASE}/pdf-jobs/${jobId}/cancel`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+            alert('Job cancellation requested successfully.');
+        } else {
+            alert('Failed to cancel job.');
+        }
+    } catch (err) {
+        console.error(err);
     }
 };
 

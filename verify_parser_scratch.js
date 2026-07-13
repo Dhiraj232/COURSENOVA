@@ -34,6 +34,14 @@ async function main() {
         writeLog(`Parser complete! Total questions extracted: ${questions.length}`);
         writeLog('=======================================');
         
+        // Print parser logs summary
+        writeLog(`\nParser Logs Summary (first 20 items):`);
+        const logs = questions.parserLogs || [];
+        logs.slice(0, 20).forEach(l => writeLog('  ' + l));
+        if (logs.length > 20) {
+            writeLog(`  ... and ${logs.length - 20} more log entries.`);
+        }
+
         if (questions.length > 0) {
             writeLog('\n--- Sample Question 1 ---');
             writeLog(JSON.stringify(questions[0], null, 2));
@@ -61,14 +69,6 @@ async function main() {
                 return hasQ || hasOpt;
             });
             writeLog(`Questions with corrupted unicode (\\uFFFD): ${corrupted.length}`);
-            
-            // Print parser logs summary
-            writeLog(`\nParser Logs Summary (first 20 items):`);
-            const logs = questions.parserLogs || [];
-            logs.slice(0, 20).forEach(l => writeLog('  ' + l));
-            if (logs.length > 20) {
-                writeLog(`  ... and ${logs.length - 20} more log entries.`);
-            }
         }
     } catch (err) {
         writeLog(`[CRITICAL ERROR] Parser crashed: ${err.stack}`);

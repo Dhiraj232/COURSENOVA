@@ -15,6 +15,15 @@ async function createJob(type, params) {
         type,
         status: 'processing',
         progress: 0,
+        uploadProgress: 100,
+        ocrProgress: 0,
+        aiProgress: 0,
+        validationProgress: 0,
+        importProgress: 0,
+        estimatedTime: 'Estimating...',
+        warningsCount: 0,
+        errorsCount: 0,
+        validationErrors: [],
         stage: 'Uploading PDF',
         logs: [`[Job Started] ID: ${jobId}, Type: ${type}`],
         result: null,
@@ -27,22 +36,34 @@ async function createJob(type, params) {
     return jobId;
 }
 
-async function updateJob(jobId, progress, stage, logMessage) {
+async function updateJob(jobId, updates, stage, logMessage) {
     try {
-        const update = {};
-        if (progress !== undefined) update.progress = progress;
-        if (stage !== undefined) update.stage = stage;
-        
-        const push = {};
-        if (logMessage) {
-            const timestamp = new Date().toISOString();
-            push.logs = `[${timestamp}] ${logMessage}`;
-            console.log(`[PDF Job ${jobId}] ${logMessage}`);
+        const setObj = {};
+        const pushObj = {};
+
+        if (typeof updates === 'number') {
+            setObj.progress = updates;
+            if (stage) setObj.stage = stage;
+            if (logMessage) {
+                const timestamp = new Date().toISOString();
+                pushObj.logs = `[${timestamp}] ${logMessage}`;
+                console.log(`[PDF Job ${jobId}] ${logMessage}`);
+            }
+        } else if (typeof updates === 'object' && updates !== null) {
+            for (let key in updates) {
+                setObj[key] = updates[key];
+            }
+            const msg = typeof stage === 'string' ? stage : logMessage;
+            if (msg) {
+                const timestamp = new Date().toISOString();
+                pushObj.logs = `[${timestamp}] ${msg}`;
+                console.log(`[PDF Job ${jobId}] ${msg}`);
+            }
         }
-        
+
         const updateObj = {};
-        if (Object.keys(update).length > 0) updateObj.$set = update;
-        if (Object.keys(push).length > 0) updateObj.$push = push;
+        if (Object.keys(setObj).length > 0) updateObj.$set = setObj;
+        if (Object.keys(pushObj).length > 0) updateObj.$push = pushObj;
         
         await PdfJob.updateOne({ jobId }, updateObj);
     } catch (err) {
@@ -56,6 +77,12 @@ async function completeJob(jobId, result, logMessage = 'Job completed successful
         const updateObj = {
             status: 'completed',
             progress: 100,
+            uploadProgress: 100,
+            ocrProgress: 100,
+            aiProgress: 100,
+            validationProgress: 100,
+            importProgress: 100,
+            estimatedTime: '0s',
             stage: 'Completed',
             result,
             totalQuestions: result.questions ? result.questions.length : 0
@@ -174,36 +201,84 @@ router.get('/pdf-solutions/:date', requireAuth, async (req, res) => {
 
 async function runDailyChallengePDFJob(jobId, pdfBuffer, examType, expectedCount, startTime = Date.now()) {
     try {
-        await updateJob(jobId, 5, 'Initializing Parser', 'Starting local PDF parsing engine...');
+        await updateJob(jobId, {
+            progress: 5,
+            uploadProgress: 100,
+            ocrProgress: 0,
+            aiProgress: 0,
+            validationProgress: 0,
+            importProgress: 0,
+            estimatedTime: 'Estimating...',
+            stage: 'Loading PDF'
+        }, 'Received PDF buffer. Starting text extraction...');
         
-        let questions = [];
-        try {
-            // Run standard offline parser first (matching mock test functionality)
-            questions = await parsePDF(pdfBuffer, { category: 'Daily Challenge', subject: examType || 'General' }, expectedCount, (progress, stage, log) => {
-                updateJob(jobId, progress, stage, log);
-            });
-            console.log(`[PDF Job ${jobId}] Offline parser completed. Questions extracted: ${questions.length}`);
-        } catch (parseErr) {
-            console.warn('[Warning] Offline parser failed:', parseErr.message);
-            await updateJob(jobId, undefined, undefined, `Offline parser warning: ${parseErr.message}`);
-        }
+        const questions = await parsePDF(
+            pdfBuffer, 
+            { category: 'Daily Challenge', subject: examType || 'General' }, 
+            expectedCount, 
+            async (progress, stage, log) => {
+                let ocrProgress = 0;
+                let aiProgress = 0;
 
-        // If offline parser fails to find any questions, try Gemini AI as a robust fallback
-        if (questions.length === 0) {
-            try {
-                await updateJob(jobId, 45, 'Gemini AI Fallback', 'Offline parser found 0 questions. Trying Gemini AI fallback parser...');
-                const aiQuestions = await extractQuestionsFromPdf(pdfBuffer, { category: 'Daily Challenge', subject: examType || 'General' });
-                await updateJob(jobId, 80, 'Normalizing Questions', 'Standardizing Gemini AI questions schema...');
-                questions = normalizeAIQuestions(aiQuestions, 'Daily Challenge', examType || 'General');
-            } catch (aiErr) {
-                console.error('[Error] Gemini AI fallback also failed:', aiErr.message);
-                await updateJob(jobId, undefined, undefined, `Gemini AI error: ${aiErr.message}`);
+                if (progress <= 10) {
+                    ocrProgress = 0;
+                } else if (progress > 10 && progress <= 50) {
+                    ocrProgress = Math.round((progress - 10) / 40 * 100);
+                } else {
+                    ocrProgress = 100;
+                }
+
+                if (progress <= 50) {
+                    aiProgress = 0;
+                } else if (progress > 50 && progress <= 85) {
+                    aiProgress = Math.round((progress - 50) / 35 * 100);
+                } else {
+                    aiProgress = 100;
+                }
+
+                const elapsed = Date.now() - startTime;
+                const eta = progress > 5 ? `${Math.round(((elapsed / progress) * (100 - progress)) / 1000)}s` : 'Estimating...';
+
+                await updateJob(jobId, {
+                    progress,
+                    ocrProgress,
+                    aiProgress,
+                    estimatedTime: eta,
+                    stage
+                }, log);
             }
-        }
+        );
 
-        if (questions.length === 0) {
+        if (!questions || questions.length === 0) {
             throw new Error('No MCQ questions detected. Format your PDF with standard MCQ numbering and option blocks (A, B, C, D).');
         }
+
+        // Batch upload parser logs
+        const parserLogs = questions.parserLogs || [];
+        if (parserLogs.length > 0) {
+            const timestamp = new Date().toISOString();
+            const formattedLogs = parserLogs.map(l => `[${timestamp}] ${l}`);
+            await PdfJob.updateOne(
+                { jobId },
+                { $push: { logs: { $each: formattedLogs } } }
+            );
+        }
+
+        const warningCount = questions.stats ? questions.stats.warning : 0;
+        const errorsCount = questions.stats ? (questions.stats.encodingErrors + questions.stats.missingOptions + questions.stats.missingAnswers) : 0;
+
+        await PdfJob.updateOne(
+            { jobId },
+            {
+                $set: {
+                    warningsCount,
+                    errorsCount,
+                    validationErrors: questions.validationErrors || [],
+                    validationProgress: 100,
+                    importProgress: 100
+                }
+            }
+        );
 
         await completeJob(jobId, { questions }, `Job complete. Extracted ${questions.length} questions.`);
     } catch (err) {
