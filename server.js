@@ -893,6 +893,16 @@ const server = app.listen(PORT, "0.0.0.0", () => {
     }
 });
 
+// ─── Asynchronous Seeding Tasks (Non-blocking) ─────────────────────────────
+(async () => {
+    try {
+        await seedDailyChallenges();
+        console.log("Daily Challenges seeded successfully.");
+    } catch (err) {
+        console.error("Daily Challenge seed failed:", err);
+    }
+})();
+
 const io = require('socket.io')(server, {
   cors: {
     origin: [
