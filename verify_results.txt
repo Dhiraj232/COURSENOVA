@@ -25,5 +25,146 @@ PDF loaded. Starting parser...
 [Progress 48%] Stage: Extracting Pages | Log: Processed page 21/22 (95%)...
 [Progress 50%] Stage: Extracting Pages | Log: Processed page 22/22 (100%)...
 [Progress 50%] Stage: AI Question Parsing | Log: Running Gemini AI parsing on 7 concurrent page batches...
+[Progress 54%] Stage: AI Question Parsing | Log: Processed batch 1/7...
+[Progress 57%] Stage: AI Question Parsing | Log: Processed batch 2/7...
+[Progress 61%] Stage: AI Question Parsing | Log: Processed batch 3/7...
+[Progress 64%] Stage: AI Question Parsing | Log: Processed batch 4/7...
+[Progress 68%] Stage: AI Question Parsing | Log: Processed batch 5/7...
+[Progress 71%] Stage: AI Question Parsing | Log: Processed batch 6/7...
 [Progress 75%] Stage: AI Question Parsing | Log: Processed batch 7/7...
 [Progress 75%] Stage: AI Answer Key Parsing | Log: Extracting answers and detailed solutions...
+[Progress 85%] Stage: Saving Images | Log: Mapping diagrams and graphics to questions...
+[Progress 90%] Stage: Validating Questions | Log: Validating questions schema structures...
+
+=======================================
+Parser complete! Total questions extracted: 81
+=======================================
+
+Parser Logs Summary (first 20 items):
+  [Parser] Loaded PDF document. Total pages: 22
+  [Parser Section] Detected Answer Key/Solutions section starting on Page 20
+  [Parser Analyzer] Detected PDF Type: Native Text, Language: English
+  [Parser] Page 22 has low text quality (0.00). Rendering to image...
+  [OCR] Running Gemini Vision OCR...
+  [OCR Warning] Gemini Vision OCR failed: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent: [401 Unauthorized] Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project. [{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"ACCESS_TOKEN_TYPE_UNSUPPORTED","metadata":{"method":"google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent","service":"generativelanguage.googleapis.com"}}]
+  [OCR] Running local Tesseract.js OCR...
+  [OCR] Tesseract.js OCR complete.
+  [Parser] Page analysis complete. Extracted text & graphics for all 22 pages.
+  [Parser] Running Gemini batch parser on 7 parallel batches.
+  [Gemini Auth Error] Invalid or expired credentials: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent: [401 Unauthorized] Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project. [{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"ACCESS_TOKEN_TYPE_UNSUPPORTED","metadata":{"method":"google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent","service":"generativelanguage.googleapis.com"}}]. Skipping retries.
+  [Parser Error] Page batch 1 failed: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent: [401 Unauthorized] Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project. [{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"ACCESS_TOKEN_TYPE_UNSUPPORTED","metadata":{"method":"google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent","service":"generativelanguage.googleapis.com"}}]
+  [Gemini Auth Error] Invalid or expired credentials: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent: [401 Unauthorized] Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project. [{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"ACCESS_TOKEN_TYPE_UNSUPPORTED","metadata":{"method":"google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent","service":"generativelanguage.googleapis.com"}}]. Skipping retries.
+  [Parser Error] Page batch 7 failed: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent: [401 Unauthorized] Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project. [{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"ACCESS_TOKEN_TYPE_UNSUPPORTED","metadata":{"method":"google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent","service":"generativelanguage.googleapis.com"}}]
+  [Gemini Auth Error] Invalid or expired credentials: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent: [401 Unauthorized] Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project. [{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"ACCESS_TOKEN_TYPE_UNSUPPORTED","metadata":{"method":"google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent","service":"generativelanguage.googleapis.com"}}]. Skipping retries.
+  [Parser Error] Page batch 5 failed: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent: [401 Unauthorized] Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project. [{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"ACCESS_TOKEN_TYPE_UNSUPPORTED","metadata":{"method":"google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent","service":"generativelanguage.googleapis.com"}}]
+  [Gemini Auth Error] Invalid or expired credentials: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent: [401 Unauthorized] Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project. [{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"ACCESS_TOKEN_TYPE_UNSUPPORTED","metadata":{"service":"generativelanguage.googleapis.com","method":"google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent"}}]. Skipping retries.
+  [Parser Error] Page batch 3 failed: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent: [401 Unauthorized] Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project. [{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"ACCESS_TOKEN_TYPE_UNSUPPORTED","metadata":{"service":"generativelanguage.googleapis.com","method":"google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent"}}]
+  [Gemini Auth Error] Invalid or expired credentials: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent: [401 Unauthorized] Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project. [{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"ACCESS_TOKEN_TYPE_UNSUPPORTED","metadata":{"method":"google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent","service":"generativelanguage.googleapis.com"}}]. Skipping retries.
+  [Parser Error] Page batch 6 failed: [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent: [401 Unauthorized] Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project. [{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"ACCESS_TOKEN_TYPE_UNSUPPORTED","metadata":{"method":"google.ai.generativelanguage.v1beta.GenerativeService.GenerateContent","service":"generativelanguage.googleapis.com"}}]
+  ... and 11 more log entries.
+
+--- Sample Question 1 ---
+{
+  "questionNumber": 1,
+  "pageNum": 2,
+  "question": "Select the option that is related to the fth word in ihe same way as the fourth word is related to the third word and the second word is related to the rst word. BIHAR : PATNA :: JHARKHAND : RANCHI :: RAJASTHAN : ?",
+  "question_en": "Select the option that is related to the fth word in ihe same way as the fourth word is related to the third word and the second word is related to the rst word. BIHAR : PATNA :: JHARKHAND : RANCHI :: RAJASTHAN : ?",
+  "question_hi": "",
+  "optionA": "UDAIPUR",
+  "optionB": "JAIPUR",
+  "optionC": "JODHPUR",
+  "optionD": "MANIPUR",
+  "optionE": "",
+  "optionF": "",
+  "options": [
+    "UDAIPUR",
+    "JAIPUR",
+    "JODHPUR",
+    "MANIPUR"
+  ],
+  "options_en": [
+    "UDAIPUR",
+    "JAIPUR",
+    "JODHPUR",
+    "MANIPUR"
+  ],
+  "options_hi": [],
+  "answer": "A",
+  "correctAnswer": "UDAIPUR",
+  "correctIndex": 0,
+  "explanation": "",
+  "explanation_hi": "",
+  "language": "English",
+  "image": "",
+  "type": "MCQ",
+  "category": "SSC GD",
+  "subject": "General",
+  "questionEnglish": "Select the option that is related to the fth word in ihe same way as the fourth word is related to the third word and the second word is related to the rst word. BIHAR : PATNA :: JHARKHAND : RANCHI :: RAJASTHAN : ?",
+  "questionHindi": "",
+  "solution": "",
+  "images": [],
+  "page": 2,
+  "chapter": "SSC GD",
+  "topic": "",
+  "difficulty": "Medium",
+  "marks": 1,
+  "negativeMarks": -0.25,
+  "isValid": true,
+  "validationWarning": false,
+  "validationErrors": []
+}
+
+--- Sample Question 2 ---
+{
+  "questionNumber": 2,
+  "pageNum": 2,
+  "question": "Which of the following numbers will replace the question mark (?) in the given series? 12, 24, 48, 96, 192, ?",
+  "question_en": "Which of the following numbers will replace the question mark (?) in the given series? 12, 24, 48, 96, 192, ?",
+  "question_hi": "",
+  "optionA": "222",
+  "optionB": "384",
+  "optionC": "318",
+  "optionD": "280",
+  "optionE": "",
+  "optionF": "",
+  "options": [
+    "222",
+    "384",
+    "318",
+    "280"
+  ],
+  "options_en": [
+    "222",
+    "384",
+    "318",
+    "280"
+  ],
+  "options_hi": [],
+  "answer": "A",
+  "correctAnswer": "222",
+  "correctIndex": 0,
+  "explanation": "",
+  "explanation_hi": "",
+  "language": "English",
+  "image": "",
+  "type": "MCQ",
+  "category": "SSC GD",
+  "subject": "General",
+  "questionEnglish": "Which of the following numbers will replace the question mark (?) in the given series? 12, 24, 48, 96, 192, ?",
+  "questionHindi": "",
+  "solution": "",
+  "images": [],
+  "page": 2,
+  "chapter": "SSC GD",
+  "topic": "",
+  "difficulty": "Medium",
+  "marks": 1,
+  "negativeMarks": -0.25,
+  "isValid": true,
+  "validationWarning": false,
+  "validationErrors": []
+}
+
+Languages distribution: {"English":81}
+Questions with correct answers detected: 81 / 81
+Questions with corrupted unicode (\uFFFD): 0

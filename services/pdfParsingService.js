@@ -156,6 +156,12 @@ Guidelines:
             }
             throw new Error('Gemini response is not a JSON array.');
         } catch (err) {
+            const msg = err.message || '';
+            const isAuthError = msg.includes('401') || msg.includes('Unauthorized') || msg.includes('API key') || msg.includes('invalid credentials');
+            if (isAuthError) {
+                logs.push(`[Gemini Auth Error] Invalid or expired credentials: ${err.message}. Skipping retries.`);
+                throw err;
+            }
             retries--;
             logs.push(`[Gemini Warning] API call failed (retries left: ${retries}): ${err.message}`);
             if (retries === 0) throw err;
@@ -223,6 +229,12 @@ Output a valid JSON object matching the required schema. Output nothing else.`;
             }
             throw new Error('Gemini Answer Key response is not a valid object schema.');
         } catch (err) {
+            const msg = err.message || '';
+            const isAuthError = msg.includes('401') || msg.includes('Unauthorized') || msg.includes('API key') || msg.includes('invalid credentials');
+            if (isAuthError) {
+                logs.push(`[Gemini Auth Error] Invalid or expired credentials: ${err.message}. Skipping retries.`);
+                throw err;
+            }
             retries--;
             logs.push(`[Answer Key Parser Warning] Retries left: ${retries}, error: ${err.message}`);
             if (retries === 0) throw err;
