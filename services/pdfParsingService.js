@@ -880,6 +880,16 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
     const cleanRes = cleanExtractedText(text);
     const lines = cleanRes.text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
     
+    // Scan if the text contains strong question prefixes
+    const strongPrefixRegex = /^\s*(?:QUESTION\s+NO\s*\.?|Question|QUESTION|Que|Q|प्र[.]?|प्रश्न\s+संख्या|प्रश्न)\s*[-.:]?\s*[0-9]+/i;
+    let usesStrongPrefix = false;
+    for (let line of lines) {
+        if (strongPrefixRegex.test(line)) {
+            usesStrongPrefix = true;
+            break;
+        }
+    }
+    
     const questions = [];
     let currentQ = null;
     let currentPageNum = 1;
@@ -892,7 +902,7 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
             continue;
         }
 
-        const match = questionDetector.detectQuestionPrefix(line);
+        const match = questionDetector.detectQuestionPrefix(line, usesStrongPrefix);
         if (match) {
             if (currentQ) questions.push(currentQ);
             

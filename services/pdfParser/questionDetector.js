@@ -17,7 +17,7 @@ const qPrefixPatterns = [
 /**
  * Checks if a line contains a question prefix and returns the question details
  */
-function detectQuestionPrefix(line) {
+function detectQuestionPrefix(line, ignoreWeakPrefix = false) {
     if (!line) return null;
     const trimmed = line.trim();
 
@@ -26,7 +26,11 @@ function detectQuestionPrefix(line) {
         return null;
     }
 
-    for (let regex of qPrefixPatterns) {
+    const patterns = ignoreWeakPrefix 
+        ? qPrefixPatterns.slice(0, 3) 
+        : qPrefixPatterns;
+
+    for (let regex of patterns) {
         const match = trimmed.match(regex);
         if (match) {
             // Extracted raw number matching group
