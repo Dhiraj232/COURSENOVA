@@ -21,6 +21,11 @@ function detectQuestionPrefix(line) {
     if (!line) return null;
     const trimmed = line.trim();
 
+    // Safeguard: Ignore lines that represent solution headings, explanations, or answers
+    if (/^\s*(?:(?:QUESTION\s+NO\s*\.?|Question|QUESTION|Que|Q|प्र[.]?|प्रश्न\s+संख्या|प्रश्न)?\s*[-.:]?\s*[0-9१२३४५६७८९०A-F①-⑩❶-❿a-f]+\s*[-.:)\]]\s*)?(?:(?:text\s+)?(?:solution|explanation|व्याख्या|हल)\b|answer\s*[-:]|उत्तर\s*[-:])/i.test(trimmed)) {
+        return null;
+    }
+
     for (let regex of qPrefixPatterns) {
         const match = trimmed.match(regex);
         if (match) {

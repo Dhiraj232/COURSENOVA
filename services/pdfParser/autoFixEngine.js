@@ -88,7 +88,40 @@ function autoFixQuestion(q) {
         }
     }
 
-    // 2. Repair split paragraphs
+    // 2. Split side-by-side options (e.g. Option A contains (B) label, Option C contains (D) label)
+    const splitSideBySide = (optionsArray) => {
+        if (!Array.isArray(optionsArray)) return optionsArray;
+        
+        let newOpts = [...optionsArray];
+        // Ensure at least 4 items
+        while (newOpts.length < 4) newOpts.push('');
+        
+        // Check A contains B
+        if (newOpts[0]) {
+            const matchB = newOpts[0].match(/(.+?)\s+[(]?(?:B|b|ख|2)[)]?[-.:)]\s*(.+)$/i);
+            if (matchB) {
+                newOpts[0] = matchB[1].trim();
+                newOpts[1] = matchB[2].trim();
+            }
+        }
+        
+        // Check C contains D
+        if (newOpts[2]) {
+            const matchD = newOpts[2].match(/(.+?)\s+[(]?(?:D|d|घ|4)[)]?[-.:)]\s*(.+)$/i);
+            if (matchD) {
+                newOpts[2] = matchD[1].trim();
+                newOpts[3] = matchD[2].trim();
+            }
+        }
+        
+        return newOpts;
+    };
+
+    if (q.options) q.options = splitSideBySide(q.options);
+    if (q.options_en) q.options_en = splitSideBySide(q.options_en);
+    if (q.options_hi) q.options_hi = splitSideBySide(q.options_hi);
+
+    // 3. Repair split paragraphs
     if (q.question_en) {
         q.question_en = q.question_en
             .replace(/\s+/g, ' ')
@@ -102,7 +135,7 @@ function autoFixQuestion(q) {
         q.questionHindi = q.question_hi;
     }
 
-    // 3. Repair broken option labels
+    // 4. Repair broken option labels
     const repairOption = (opt) => {
         if (!opt) return '';
         return opt.replace(/^\s*(?:[(]?(?:[A-F]|[a-f]|[1-6]|[①②③④⑤⑥]|[❶❷❸❹❺❻])[)]?[-.:)]\s*|([①②③④⑤⑥]|[❶❷❸❹❺❻])\s*)/, '').trim();

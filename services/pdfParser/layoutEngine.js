@@ -4,9 +4,28 @@
  * Top-Left -> Bottom-Left -> Top-Right -> Bottom-Right.
  */
 function extractTextFromPageItems(items, pageWidth = 595, pageHeight = 842) {
-    if (items.length === 0) return '';
-    const textItems = items.filter(item => item.str && item.str.trim().length > 0);
-    if (textItems.length === 0) return '';
+    const defaultResult = { text: '', layoutType: 'Single Column', columnCount: 1 };
+    if (!items || items.length === 0) return defaultResult;
+    let textItems = items.filter(item => item.str && item.str.trim().length > 0);
+    if (textItems.length === 0) return defaultResult;
+
+    // Filter out duplicate overlapping text items (e.g. shadow/bold rendering in PDF)
+    const uniqueItems = [];
+    textItems.forEach(item => {
+        const x = item.transform[4];
+        const y = item.transform[5];
+        const str = item.str;
+        // Check if there is already an item with identical text at almost identical coordinates
+        const isDuplicate = uniqueItems.some(existing => {
+            const dx = Math.abs(existing.transform[4] - x);
+            const dy = Math.abs(existing.transform[5] - y);
+            return dx < 1.0 && dy < 1.0 && existing.str === str;
+        });
+        if (!isDuplicate) {
+            uniqueItems.push(item);
+        }
+    });
+    textItems = uniqueItems;
 
     const minX = Math.min(...textItems.map(item => item.transform[4]));
     const maxX = Math.max(...textItems.map(item => item.transform[4] + (item.width || 0)));

@@ -433,9 +433,18 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
     logs.push(`[Parser] Page analysis complete. Extracted text & graphics for all ${totalPages} pages.`);
 
     // Split pages into Question pages and Answer pages
-    const questionExtractedPages = answerKeyStartPage > 0 
+    let questionExtractedPages = answerKeyStartPage > 0 
         ? extractedPages.filter(p => p.pageNum < answerKeyStartPage) 
         : extractedPages;
+        
+    // Filter out cover/instruction pages from question pages
+    questionExtractedPages = questionExtractedPages.filter(p => {
+        if (pdfAnalyzer.isInstructionPage && pdfAnalyzer.isInstructionPage(p.text)) {
+            logs.push(`[Parser Section] Skipped Cover/Instruction Page ${p.pageNum}`);
+            return false;
+        }
+        return true;
+    });
         
     const answerKeyExtractedPages = answerKeyStartPage > 0 
         ? extractedPages.filter(p => p.pageNum >= answerKeyStartPage) 
@@ -705,35 +714,85 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
     return finalQuestions;
 }
 
+function isSimilarQuestion(q1, q2) {
+    if (!q1.question || !q2.question) return false;
+    const clean = (str) => str.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const s1 = clean(q1.question);
+    const s2 = clean(q2.question);
+    if (s1 === s2) return true;
+    
+    // Check if one is a long substring of another or word overlap
+    const words1 = new Set(q1.question.toLowerCase().split(/\s+/).filter(w => w.length > 2));
+    const words2 = new Set(q2.question.toLowerCase().split(/\s+/).filter(w => w.length > 2));
+    if (words1.size === 0 || words2.size === 0) return false;
+    
+    let intersection = 0;
+    words1.forEach(w => {
+        if (words2.has(w)) intersection++;
+    });
+    const overlap = intersection / Math.min(words1.size, words2.size);
+    return overlap > 0.70; // 70% word overlap means they are duplicate versions of the same question
+}
+
 /**
- * Question Deduplicator. Keeps best quality version.
+ * Question Deduplicator. Keeps best quality version of actual duplicates.
  */
 function verifyAndFilterFalsePositives(questions) {
     if (questions.length === 0) return { questions: [], duplicateCount: 0 };
 
     let duplicateCount = 0;
+    const uniqueQuestions = [];
     
-    const bestQuestionsMap = new Map();
     questions.forEach(q => {
         const num = q.questionNumber;
         if (num < 1) return;
         
-        if (!bestQuestionsMap.has(num)) {
-            bestQuestionsMap.set(num, q);
+        // Find if there is an existing question with the same number and similar text
+        const duplicateIdx = uniqueQuestions.findIndex(existing => 
+            existing.questionNumber === num && isSimilarQuestion(existing, q)
+        );
+        
+        if (duplicateIdx === -1) {
+            uniqueQuestions.push(q);
         } else {
             duplicateCount++;
-            const existing = bestQuestionsMap.get(num);
+            const existing = uniqueQuestions[duplicateIdx];
             const currentScore = (q.isValid ? 1000 : 0) + (q.question ? q.question.length : 0);
             const existingScore = (existing.isValid ? 1000 : 0) + (existing.question ? existing.question.length : 0);
             if (currentScore > existingScore) {
-                bestQuestionsMap.set(num, q);
+                uniqueQuestions[duplicateIdx] = q;
             }
         }
     });
     
-    let filtered = Array.from(bestQuestionsMap.values());
-    filtered.sort((a, b) => a.questionNumber - b.questionNumber);
-    return { questions: filtered, duplicateCount };
+    uniqueQuestions.sort((a, b) => {
+        if (a.pageNum !== b.pageNum) return a.pageNum - b.pageNum;
+        return a.questionNumber - b.questionNumber;
+    });
+    
+    return { questions: uniqueQuestions, duplicateCount };
+}
+
+/**
+ * Splits a bilingual text into separate English and Hindi components.
+ */
+function splitBilingualQuestion(text) {
+    if (!text) return { en: '', hi: '' };
+    
+    // Match English text followed by Hindi text (Devanagari range)
+    const transitionMatch = text.match(/^([a-zA-Z0-9\s.,()\-+*\/=?'"’‘“”$®™:#%;<>_\\{}]+)\s*([\u0900-\u097F].*)$/);
+    if (transitionMatch) {
+        return {
+            en: transitionMatch[1].trim(),
+            hi: transitionMatch[2].trim()
+        };
+    }
+    
+    if (/[\u0900-\u097F]/.test(text) && !/[a-zA-Z]/.test(text)) {
+        return { en: '', hi: text.trim() };
+    }
+    
+    return { en: text.trim(), hi: '' };
 }
 
 /**
@@ -744,7 +803,7 @@ function normalizeAIQuestions(aiQuestions, defaultCategory, defaultSubject) {
     
     return aiQuestions.map((q, idx) => {
         const opts = q.options || q.options_en || [];
-        const optsHi = q.options_hi || opts;
+        const optsHi = q.options_hi && q.options_hi.some(o => o) ? q.options_hi : opts;
 
         let correctIdx = q.correctIndex;
         if (correctIdx === undefined || correctIdx < 0 || correctIdx >= opts.length) {
@@ -762,8 +821,15 @@ function normalizeAIQuestions(aiQuestions, defaultCategory, defaultSubject) {
         const finalOptionsEn = optionDetector.normalizeOptionsList(q.options_en || opts);
         const finalOptionsHi = optionDetector.normalizeOptionsList(q.options_hi || optsHi);
 
-        const questionEn = q.question_en || q.question || '';
-        const questionHi = q.question_hi || '';
+        let questionEn = q.question_en || '';
+        let questionHi = q.question_hi || '';
+        if (!questionEn && !questionHi && q.question) {
+            const split = splitBilingualQuestion(q.question);
+            questionEn = split.en;
+            questionHi = split.hi;
+        } else if (!questionEn && q.question) {
+            questionEn = q.question;
+        }
 
         return {
             // Database-Compatible fields
@@ -846,7 +912,22 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
         if (currentQ) {
             const optMatch = optionDetector.detectOptionPrefix(line);
             if (optMatch) {
-                currentQ.options.push(optMatch.content || optMatch.label);
+                if (!Array.isArray(currentQ.options)) currentQ.options = [];
+                while (currentQ.options.length < 4) currentQ.options.push('');
+                if (!Array.isArray(currentQ.options_hi)) currentQ.options_hi = [];
+                while (currentQ.options_hi.length < 4) currentQ.options_hi.push('');
+                
+                const optIdx = answerKeyEngine.mapOptionToIndex(optMatch.label);
+                const contentText = optMatch.content || optMatch.label;
+                if (optIdx >= 0 && optIdx < 4) {
+                    if (!currentQ.options[optIdx]) {
+                        currentQ.options[optIdx] = contentText;
+                    } else {
+                        currentQ.options_hi[optIdx] = contentText;
+                    }
+                } else {
+                    currentQ.options.push(contentText);
+                }
             } else {
                 currentQ.question += ' ' + line;
             }

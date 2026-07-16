@@ -81,7 +81,32 @@ function analyzeDocument(pagesAnalysis) {
     };
 }
 
+function isInstructionPage(text) {
+    if (!text) return false;
+    const lower = text.toLowerCase();
+    const coverKeywords = [
+        /candidate\s+must\s+write/i,
+        /अभ्यर्थी\s+अपनी/i,
+        /परीक्षार्थी\s+अपनी/i,
+        /ओएमआर\s+उत्तर\s+पत्रक/i,
+        /omr\s+answer\s+sheet/i,
+        /general\s+instructions/i,
+        /सामान्य\s+निर्देश/i,
+        /time\s+allowed/i,
+        /maximum\s+marks/i,
+        /पूर्णांक/i,
+        /समय\s*:/i,
+        /कुल\s+प्रश्नों\s+की\s+संख्या/i,
+        /total\s+number\s+of\s+questions/i,
+        /roll\s+number/i,
+        /अनुक्रमांक/i
+    ];
+    const matches = coverKeywords.filter(kw => kw.test(lower)).length;
+    return matches >= 3;
+}
+
 module.exports = {
     analyzePage,
-    analyzeDocument
+    analyzeDocument,
+    isInstructionPage
 };
