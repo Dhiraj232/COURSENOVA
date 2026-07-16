@@ -785,7 +785,7 @@ function validateQuestion(q) {
     if (!q) return { valid: false, reason: 'Empty question object' };
     
     // 1. Question text exists and length > 15 characters
-    const questionText = q.question || q.question_en || '';
+    const questionText = q.question || q.question_en || q.question_hi || q.questionHindi || '';
     if (!questionText.trim()) {
         return { valid: false, reason: 'Empty question text' };
     }
@@ -957,8 +957,10 @@ async function saveQuestionsBulk(questionsArray, replaceDuplicates, defaultCateg
     const questionTexts = validQuestions.map(q => q.question).filter(Boolean);
     const questionEnTexts = validQuestions.map(q => q.question_en).filter(Boolean);
 
-    // Find existing questions by Hash or Text
+    // Find existing questions by Hash or Text, constrained strictly to current subject and category (Exam)
     const existingQuestions = await PracticeQuestion.find({
+        subject: defaultSubject || 'General',
+        category: defaultCategory || 'General',
         $or: [
             { questionHash: { $in: questionHashes } },
             { question: { $in: questionTexts } },
@@ -1100,14 +1102,41 @@ async function saveQuestionsBulk(questionsArray, replaceDuplicates, defaultCateg
     const linkedIds = finalQuestionIds.filter(Boolean);
     const validSavedQuestions = finalQuestions.filter(Boolean);
 
-    // Link to mock test pack
+    // Link to mock test pack with subject-aware append/update architecture
     if (packId && testId && linkedIds.length > 0) {
         const pack = await MockTestPack.findOne({ id: packId });
         if (pack) {
             const subtest = pack.tests.find(t => t.testId === testId);
             if (subtest) {
-                subtest.questions = linkedIds;
-                subtest.numQuestions = linkedIds.length;
+                const existingQIds = subtest.questions || [];
+                
+                // Keep questions from other subjects
+                const otherQuestions = await PracticeQuestion.find({
+                    _id: { $in: existingQIds },
+                    subject: { $ne: defaultSubject || 'General' }
+                });
+                const otherQIds = otherQuestions.map(q => q._id);
+                
+                // If replaceDuplicates is false, keep existing questions of the current subject as well, and append new ones
+                let currentSubjectQIds = [];
+                if (!replaceDuplicates) {
+                    const currentSubjectQuestions = await PracticeQuestion.find({
+                        _id: { $in: existingQIds },
+                        subject: defaultSubject || 'General'
+                    });
+                    currentSubjectQIds = currentSubjectQuestions.map(q => q._id);
+                }
+                
+                // Combine and deduplicate
+                const combinedQIds = [...new Set([
+                    ...otherQIds.map(id => id.toString()),
+                    ...currentSubjectQIds.map(id => id.toString()),
+                    ...linkedIds.map(id => id.toString())
+                ])].map(id => new mongoose.Types.ObjectId(id));
+                
+                subtest.questions = combinedQIds;
+                subtest.numQuestions = combinedQIds.length;
+                subtest.totalMarks = combinedQIds.length * 4;
                 await pack.save();
             }
         }

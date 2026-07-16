@@ -12,7 +12,7 @@ function validateQuestion(q) {
     }
 
     // 2. Question text exists and is of appropriate length
-    const qText = q.question || q.questionEnglish || q.question_en || '';
+    const qText = q.question || q.questionEnglish || q.question_en || q.questionHindi || q.question_hi || '';
     if (!qText.trim()) {
         errors.push('Question text is empty.');
     } else if (qText.trim().length <= 15) {

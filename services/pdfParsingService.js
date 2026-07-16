@@ -365,8 +365,14 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
             const quality = ocrEngine.assessTextQuality(pageText);
             let result;
             
-            // Native text clean switch: don't run OCR if native text is clean (>95%)
-            if (quality >= 0.95 && pageText.trim().length > 50) {
+            // Check if the subject or category is Math/Physics/Chemistry, or the text contains math indicators.
+            // If so, we FORCE page rendering to vision mode, passing the image to Gemini to reconstruct complex equations/graphics.
+            const isMathOrScience = /math|phys|chem|jee|neet|science/i.test(`${defaults.category || ''} ${defaults.subject || ''}`);
+            const hasMathSymbols = /[\u2200-\u22FF\u2190-\u21FF√∛∫∬∑πθ∞≤≥≈≠±×÷→]/.test(pageText) || /\b(vector|matrix|integral|fraction|limit|determinant|equation)\b/i.test(pageText);
+            const forceVision = isMathOrScience || hasMathSymbols;
+            
+            // Native text clean switch: don't run OCR if native text is clean (>95%) and not a math/science layout
+            if (quality >= 0.95 && pageText.trim().length > 50 && !forceVision) {
                 result = { pageNum: pNum, text: pageText, type: 'text', layoutType: layoutResult.layoutType };
             } else {
                 logs.push(`[Parser] Page ${pNum} has low text quality (${quality.toFixed(2)}). Rendering to image...`);

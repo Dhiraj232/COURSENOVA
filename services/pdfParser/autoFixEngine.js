@@ -3,6 +3,8 @@
  * Automatically repairs broken options, inline options, missing labels, Unicode, split paragraphs, spacing.
  */
 
+const { formatAndWrapLaTeX } = require('./formulaEngine');
+
 // Regex patterns to identify inline options merged in the question text
 const inlineOptionPatterns = [
     {
@@ -121,24 +123,27 @@ function autoFixQuestion(q) {
     if (q.options_en) q.options_en = splitSideBySide(q.options_en);
     if (q.options_hi) q.options_hi = splitSideBySide(q.options_hi);
 
-    // 3. Repair split paragraphs
+    // 3. Repair split paragraphs and format math notation
     if (q.question_en) {
-        q.question_en = q.question_en
-            .replace(/\s+/g, ' ')
-            .replace(/-\s+/g, '') // fix hyphenated words
-            .trim();
+        q.question_en = formatAndWrapLaTeX(
+            q.question_en
+                .replace(/\s+/g, ' ')
+                .replace(/-\s+/g, '') // fix hyphenated words
+                .trim()
+        );
         q.questionEnglish = q.question_en;
         q.question = q.question_en;
     }
     if (q.question_hi) {
-        q.question_hi = q.question_hi.replace(/\s+/g, ' ').trim();
+        q.question_hi = formatAndWrapLaTeX(q.question_hi.replace(/\s+/g, ' ').trim());
         q.questionHindi = q.question_hi;
     }
 
-    // 4. Repair broken option labels
+    // 4. Repair broken option labels and format options math notation
     const repairOption = (opt) => {
         if (!opt) return '';
-        return opt.replace(/^\s*(?:[(]?(?:[A-F]|[a-f]|[1-6]|[①②③④⑤⑥]|[❶❷❸❹❺❻])[)]?[-.:)]\s*|([①②③④⑤⑥]|[❶❷❸❹❺❻])\s*)/, '').trim();
+        const cleanedOpt = opt.replace(/^\s*(?:[(]?(?:[A-F]|[a-f]|[1-6]|[①②③④⑤⑥]|[❶❷❸❹❺❻])[)]?[-.:)]\s*|([①②③④⑤⑥]|[❶❷❸❹❺❻])\s*)/, '').trim();
+        return formatAndWrapLaTeX(cleanedOpt);
     };
 
     if (Array.isArray(q.options)) {
