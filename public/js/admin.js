@@ -859,30 +859,39 @@ window.previewPDFQuestions = async function(event, courseId) {
                 countEl.textContent = `Parsing: ${progress}%`;
             },
             (result) => {
-                const questions = result.questions || [];
-                if (questions.length === 0) {
+                const questions = result.questions || result.importedQuestions || [];
+                const totalQuestions = result.totalQuestions || result.importedCount || questions.length || 0;
+                
+                if (questions.length === 0 && totalQuestions === 0) {
                     previewList.innerHTML = `<div style="color:#ef4444;font-size:0.88rem;white-space:pre-wrap;background:#fef2f2;padding:14px;border-radius:8px;">❌ Import Failed: No questions found.</div>`;
                     countEl.textContent = 'Import Failed';
                     saveBtn.disabled = true;
                     return;
                 }
 
-                window._pdfParsedQ = questions;
-                countEl.textContent = `Import Successful: ${questions.length} questions found`;
-                saveBtn.disabled = false;
+                if (questions.length > 0) {
+                    window._pdfParsedQ = questions;
+                    countEl.textContent = `Import Successful: ${questions.length} questions found`;
+                    saveBtn.disabled = false;
 
-                previewList.innerHTML = `<div style="color:#10b981;font-weight:700;margin-bottom:12px;">✅ Import Successful!</div>` + questions.map((q, i) => `
-                    <div style="background:white;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:8px;">
-                        <div style="font-weight:700;font-size:0.88rem;color:#1e293b;margin-bottom:8px;">Q${i+1}. ${q.question}</div>
-                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
-                            ${q.options.map((opt, j) => `
-                                <div style="font-size:0.8rem;padding:4px 8px;border-radius:5px;background:${j === q.correctIndex ? '#dcfce7' : '#f8fafc'};color:${j === q.correctIndex ? '#166534' : '#475569'};">
-                                    ${['A','B','C','D'][j]}) ${opt} ${j === q.correctIndex ? '✓' : ''}
-                                </div>
-                            `).join('')}
+                    previewList.innerHTML = `<div style="color:#10b981;font-weight:700;margin-bottom:12px;">✅ Import Successful!</div>` + questions.map((q, i) => `
+                        <div style="background:white;border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:8px;">
+                            <div style="font-weight:700;font-size:0.88rem;color:#1e293b;margin-bottom:8px;">Q${i+1}. ${q.question}</div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
+                                ${q.options.map((opt, j) => `
+                                    <div style="font-size:0.8rem;padding:4px 8px;border-radius:5px;background:${j === q.correctIndex ? '#dcfce7' : '#f8fafc'};color:${j === q.correctIndex ? '#166534' : '#475569'};">
+                                        ${['A','B','C','D'][j]}) ${opt} ${j === q.correctIndex ? '✓' : ''}
+                                    </div>
+                                `).join('')}
+                            </div>
                         </div>
-                    </div>
-                `).join('');
+                    `).join('');
+                } else {
+                    countEl.textContent = `Import Successful: ${totalQuestions} questions imported`;
+                    saveBtn.disabled = true;
+                    previewList.innerHTML = `<div style="color:#10b981;font-weight:700;margin-bottom:12px;">✅ Direct Import Successful!</div>
+                        <div style="font-size:0.88rem;color:#475569;">Successfully imported ${totalQuestions} questions directly to the database.</div>`;
+                }
             },
             (err) => {
                 previewList.innerHTML = `<div style="color:#ef4444;font-size:0.88rem;white-space:pre-wrap;background:#fef2f2;padding:14px;border-radius:8px;">❌ Import Failed: ${err.message}</div>`;
@@ -1272,10 +1281,14 @@ async function handlePdfToTest(input, index, lang = 'en') {
                     activeStatus.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Parsing... <span class="pdf-job-pct">${progress}% (${stage})</span>`;
                 }
             },
+
             async (result) => {
                 try {
                     const data = result;
-                    if (!data.questions || data.questions.length === 0) {
+                    const questions = data.questions || data.importedQuestions || [];
+                    const totalQuestions = data.totalQuestions || data.importedCount || questions.length || 0;
+
+                    if (questions.length === 0 && totalQuestions === 0) {
                         activeStatus.innerHTML = `<span style="color:var(--danger)">❌ Import Failed: No questions found.</span>`;
                         btnEn.disabled = false;
                         btnHi.disabled = false;
@@ -1286,7 +1299,13 @@ async function handlePdfToTest(input, index, lang = 'en') {
                     btnEn.disabled = false;
                     btnHi.disabled = false;
 
-                    showQuestionsPreviewModal(data.questions, data.stats || {}, async (editedQuestions, replaceDuplicates) => {
+                    if (questions.length === 0 && totalQuestions > 0) {
+                        activeStatus.innerHTML = `<span style="color:var(--success)">✅ Direct Import Completed! Imported ${totalQuestions} questions.</span>`;
+                        alert(`Successfully imported ${totalQuestions} questions directly!`);
+                        return;
+                    }
+
+                    showQuestionsPreviewModal(questions, data.stats || {}, async (editedQuestions, replaceDuplicates) => {
                         // ── MERGE TRANSLATIONS IF QUESTIONS ALREADY EXIST ──
                         if (existingQIds.length > 0 && existingQIds.length === editedQuestions.length) {
                             activeStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Merging translations...';
@@ -2665,23 +2684,28 @@ async function handlePdfUpload() {
                         if (statsWarningsEl) statsWarningsEl.textContent = `Warnings: ${rawData.warningsCount}`;
                     }
                 }
-                
-                if (terminalEl && Array.isArray(logs)) {
-                    terminalEl.innerHTML = logs.map(l => `<div style="line-height:1.4;">${escapeHtml(l)}</div>`).join('');
-                    terminalEl.scrollTop = terminalEl.scrollHeight;
-                }
                 btn.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Parsing... ${progress}%`;
             },
             (result) => {
-                status.innerHTML = `<span style="color:var(--success)">✅ Processing completed! Loading preview...</span>`;
+                status.innerHTML = `<span style="color:var(--success)">✅ Processing completed!</span>`;
                 btn.disabled = false;
                 btn.textContent = 'Import PDF';
 
-                showQuestionsPreviewModal(result.questions, result.stats || {}, async (editedQuestions, replaceDuplicates) => {
-                    const saveRes = await fetch(`${API_BASE}/questions?replaceDuplicates=${replaceDuplicates}`, {
-                        method: 'POST',
-                        headers: { 
-                            'Authorization': `Bearer ${token}`,
+                const questions = result.questions || result.importedQuestions || [];
+                const totalQuestions = result.totalQuestions || result.importedCount || questions.length || 0;
+
+                if (questions.length === 0 && totalQuestions === 0) {
+                    status.innerHTML = `<span style="color:var(--danger)">❌ Import Failed: No questions found.</span>`;
+                    return;
+                }
+
+                if (questions.length > 0) {
+                    status.innerHTML = `<span style="color:var(--success)">✅ Processing completed! Loading preview...</span>`;
+                    showQuestionsPreviewModal(questions, result.stats || {}, async (editedQuestions, replaceDuplicates) => {
+                        const saveRes = await fetch(`${API_BASE}/questions?replaceDuplicates=${replaceDuplicates}`, {
+                            method: 'POST',
+                            headers: { 
+                                'Authorization': `Bearer ${token}`,
                             'Content-Type': 'application/json'
                         },
                         body: JSON.stringify({
@@ -2759,8 +2783,77 @@ async function handlePdfUpload() {
                         </div>
                     `;
                 });
-            },
-            (err) => {
+            } else {
+                // Show success stats modal directly for import-pdf
+                const modalContainer = document.getElementById('modal-container');
+                const activeModal = modalContainer || (() => {
+                    const container = document.createElement('div');
+                    container.id = 'modal-container';
+                    container.className = 'modal-overlay';
+                    document.body.appendChild(container);
+                    return container;
+                })();
+                activeModal.classList.add('active');
+
+                const skippedReasons = result.skippedReasons || [];
+                const skippedListHtml = skippedReasons.length > 0
+                    ? `<div style="margin-top: 15px;">
+                            <span style="font-weight:600; font-size:0.8rem; display:block; margin-bottom:6px; color:#b91c1c;">Skipped / Invalid Questions Details:</span>
+                            <div style="max-height:150px; overflow-y:auto; background:#fff5f5; border:1px solid #fee2e2; border-radius:6px; padding:10px; font-size:0.75rem; display:flex; flex-direction:column; gap:6px;">
+                                ${skippedReasons.map(s => `
+                                    <div style="border-bottom:1px solid #fee2e2; padding-bottom:4px; text-align:left;">
+                                        <strong>Q${s.qNum}:</strong> <span style="color:#ef4444; font-weight:600;">[${s.reason}]</span> - ${escapeHtml(s.text || '')}
+                                    </div>
+                                `).join('')}
+                            </div>
+                       </div>`
+                    : '';
+
+                activeModal.innerHTML = `
+                    <div class="modal-content admin-card" style="max-width: 700px; width: 90%; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);">
+                        <div class="card-header" style="margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; text-align:left;">
+                            <h3 style="color: #10b981; display: flex; align-items: center; gap: 10px; margin:0;">
+                                <i class="fas fa-check-circle"></i> Direct Import Completed!
+                            </h3>
+                            <p style="font-size:0.8rem; color:var(--text-muted); margin:4px 0 0 0;">Questions were successfully processed and written to MongoDB.</p>
+                        </div>
+                        <div class="stats-grid" style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px;">
+                            <div class="stat-card" style="padding: 15px; text-align: center; background: rgba(0,0,0,0.02); border: 1px solid var(--border-color); border-radius: 8px;">
+                                <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 500;">Total Found</span>
+                                <h2 style="margin: 5px 0 0 0; font-size: 1.5rem; font-weight: 700; color: var(--text-main);">${totalQuestions}</h2>
+                            </div>
+                            <div class="stat-card" style="padding: 15px; text-align: center; background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.1); border-radius: 8px;">
+                                <span style="font-size: 0.75rem; color: #10b981; font-weight: 500;">Imported</span>
+                                <h2 style="margin: 5px 0 0 0; font-size: 1.5rem; font-weight: 700; color: #10b981;">${result.importedCount !== undefined ? result.importedCount : totalQuestions}</h2>
+                            </div>
+                            <div class="stat-card" style="padding: 15px; text-align: center; background: rgba(245, 158, 11, 0.05); border: 1px solid rgba(245, 158, 11, 0.1); border-radius: 8px;">
+                                <span style="font-size: 0.75rem; color: #f59e0b; font-weight: 500;">Duplicates</span>
+                                <h2 style="margin: 5px 0 0 0; font-size: 1.5rem; font-weight: 700; color: #f59e0b;">${result.duplicateCount || 0}</h2>
+                            </div>
+                            <div class="stat-card" style="padding: 15px; text-align: center; background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.1); border-radius: 8px;">
+                                <span style="font-size: 0.75rem; color: #ef4444; font-weight: 500;">Skipped</span>
+                                <h2 style="margin: 5px 0 0 0; font-size: 1.5rem; font-weight: 700; color: #ef4444;">${result.skippedCount || 0}</h2>
+                            </div>
+                            <div class="stat-card" style="padding: 15px; text-align: center; background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.1); border-radius: 8px;">
+                                <span style="font-size: 0.75rem; color: #ef4444; font-weight: 500;">Failed</span>
+                                <h2 style="margin: 5px 0 0 0; font-size: 1.5rem; font-weight: 700; color: #ef4444;">${result.failedCount || 0}</h2>
+                            </div>
+                            <div class="stat-card" style="padding: 15px; text-align: center; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px;">
+                                <span style="font-size: 0.75rem; color: #1d4ed8; font-weight: 500;">Execution Time</span>
+                                <h2 style="margin: 5px 0 0 0; font-size: 1.5rem; font-weight: 700; color: var(--text-main);">${result.importTimeSec || 0}s</h2>
+                            </div>
+                        </div>
+                        
+                        ${skippedListHtml}
+                        
+                        <div style="display: flex; justify-content: flex-end; border-top: 1px solid var(--border-color); padding-top: 20px; margin-top:20px;">
+                            <button class="btn btn-primary" onclick="closeModal(); loadView('questions');">Done</button>
+                        </div>
+                    </div>
+                `;
+            }
+        },
+        (err) => {
                 status.innerHTML = `<span style="color:var(--danger)">Error: ${err.message}</span>`;
                 btn.disabled = false;
                 btn.textContent = 'Try Again';

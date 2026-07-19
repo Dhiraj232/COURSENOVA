@@ -158,6 +158,7 @@ async function completeJob(jobId, result, logMessage = 'Job completed successful
             }
         );
         console.log(`[PDF Job ${jobId}] ${logMessage}`);
+        console.log('[Stage 7: Response Sent]');
     } catch (err) {
         console.error(`Failed to complete job ${jobId}:`, err.message);
     }
@@ -179,6 +180,7 @@ async function failJob(jobId, errorMsg) {
             }
         );
         console.error(`[PDF Job ${jobId}] Failed: ${errorMsg}`);
+        console.log('[Stage 7: Response Sent]');
     } catch (err) {
         console.error(`Failed to fail job ${jobId}:`, err.message);
     }
@@ -938,12 +940,15 @@ async function saveQuestionsBulk(questionsArray, replaceDuplicates, defaultCateg
         if (valRes.valid) {
             validQuestions.push(q);
         } else {
+            console.log(`[Validation Skip] Question #${q.questionNumber || 'unknown'} on Page ${q.pageNum || 'unknown'} rejected. Reason: ${valRes.reason}`);
             skippedQuestions.push({ q, reason: valRes.reason });
             failedCount++;
         }
     }
 
     if (validQuestions.length === 0) {
+        console.log('Questions before DB: 0');
+        console.log('Questions after DB: 0');
         return { finalQuestions: [], duplicateCount, failedCount, skippedQuestions };
     }
 
@@ -1053,6 +1058,8 @@ async function saveQuestionsBulk(questionsArray, replaceDuplicates, defaultCateg
     }
 
     if (bulkOps.length > 0) {
+        console.log('MongoDB insertMany() called (via bulkWrite)');
+        console.log(`Questions before DB: ${validQuestions.length}`);
         const session = await mongoose.startSession();
         let transactionActive = false;
         try {
@@ -1101,6 +1108,7 @@ async function saveQuestionsBulk(questionsArray, replaceDuplicates, defaultCateg
 
     const linkedIds = finalQuestionIds.filter(Boolean);
     const validSavedQuestions = finalQuestions.filter(Boolean);
+    console.log(`Questions after DB: ${validSavedQuestions.length}`);
 
     // Link to mock test pack with subject-aware append/update architecture
     if (packId && testId && linkedIds.length > 0) {
@@ -1167,6 +1175,7 @@ function calculateETA(startTime, progressPercent) {
 
 async function runPreviewPDFJob(jobId, buffer, defaultCategory, defaultSubject, expectedCount, startTime = Date.now()) {
     try {
+        console.log('[Stage 1: PDF Loaded]');
         await updateJob(jobId, {
             progress: 5,
             uploadProgress: 100,
@@ -1327,6 +1336,7 @@ async function runPreviewPDFJob(jobId, buffer, defaultCategory, defaultSubject, 
 
 async function runImportPDFJob(jobId, buffer, defaultCategory, defaultSubject, packId, testId, reqUser, expectedCount = 100, replaceDuplicates = false, startTime = Date.now()) {
     try {
+        console.log('[Stage 1: PDF Loaded]');
         await updateJob(jobId, {
             progress: 5,
             uploadProgress: 100,
@@ -1413,6 +1423,7 @@ async function runImportPDFJob(jobId, buffer, defaultCategory, defaultSubject, p
             packId,
             testId
         );
+        console.log('[Stage 6: Questions Saved]');
 
         const elapsedSec = ((Date.now() - startTime) / 1000).toFixed(2);
         const importedCount = saveRes.finalQuestions.length - (replaceDuplicates ? 0 : saveRes.duplicateCount);

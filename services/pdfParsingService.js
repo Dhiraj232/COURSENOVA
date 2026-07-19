@@ -3,6 +3,15 @@ const path = require('path');
 const pdfjs = require('pdfjs-dist');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
+// Polyfill canvas globals for pdfjs-dist rendering on Node
+try {
+    const canvasLib = require('canvas');
+    global.DOMMatrix = canvasLib.DOMMatrix;
+    global.DOMPoint = canvasLib.DOMPoint;
+} catch (err) {
+    console.warn('⚠️ Failed to polyfill canvas globals for PDF parsing:', err.message);
+}
+
 // Import sub-modules
 const ocrEngine = require('./pdfParser/ocrEngine');
 const layoutEngine = require('./pdfParser/layoutEngine');
@@ -436,6 +445,7 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
     });
 
     const extractedPages = await runConcurrentTasks(pageProcessors, 4);
+    console.log('[Stage 2: OCR Complete]');
     logs.push(`[Parser] Page analysis complete. Extracted text & graphics for all ${totalPages} pages.`);
 
     // Split pages into Question pages and Answer pages
@@ -510,6 +520,7 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
     });
 
     await runConcurrentTasks(batchTasks, 6);
+    console.log('[Stage 3: AI Parsing Complete]');
 
     // Phase 2.5: Parse Answer Key / Solution Pages if available
     let parsedAnswers = [];
@@ -616,6 +627,7 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
 
     // Match page images sequentially and by visual hints to each page's questions
     questions = imageEngine.correlateImagesToQuestions(questions, savedImages, logs);
+    console.log('[Stage 4: Questions Parsed]');
 
     // Phase 3: Strict Normalization, Validation, Auto-Fix, and Deduplication
     if (onProgress) onProgress(90, 'Validating Questions', 'Validating questions schema structures...');
@@ -696,6 +708,7 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
         timeSec: elapsedSec
     };
     finalQuestions.validationErrors = validationErrors;
+    console.log('[Stage 5: Questions Validated]');
 
     // Run Import Report Generator
     const reportData = importReport.generateReport(
