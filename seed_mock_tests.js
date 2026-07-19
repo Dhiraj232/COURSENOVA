@@ -1047,7 +1047,7 @@ async function seed() {
     console.log(`   💰 Paid Test Packs: ${PAID_PACKS.length}`);
     console.log(`   📝 Total: ${allPacks.length} Test Packs`);
     console.log(`   ❓ Questions per pack: 35 MCQs`);
-    console.log(`   💳 Paid packs require Cashfree payment`);
+    console.log(`   💳 Paid packs require Razorpay payment`);
 
     process.exit(0);
   } catch (err) {

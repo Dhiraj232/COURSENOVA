@@ -44,7 +44,7 @@ async function run() {
     );
     console.log(`Updated ${resUsers.modifiedCount} user profiles (removed enrollment access).`);
 
-    console.log('Done! You can now test the purchase and Cashfree redirect for "MySQL Database Complete Course".');
+    console.log('Done! You can now test the purchase and Razorpay checkout for "MySQL Database Complete Course".');
     process.exit(0);
 }
 run();

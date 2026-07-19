@@ -1,6 +1,6 @@
 /**
  * mock-tests.js — CourseNova Mock Test Hub
- * Handles: Loading packs from API, Rendering cards, Payment (Cashfree), Quiz launch
+ * Handles: Loading packs from API, Rendering cards, Payment (Razorpay), Quiz launch
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -48,18 +48,16 @@ async function checkPaymentReturn() {
 
     showToast('Verifying your payment...', 'info');
     try {
-        const res = await fetch(`${API}/api/cashfree/verify`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
-            body: JSON.stringify({ orderId: params.get('order_id'), courseId: params.get('pack_id') || 'test' })
+        const res = await fetch(`${API}/api/razorpay/order-status/${params.get('order_id')}`, {
+            headers: { 'Authorization': `Bearer ${getToken()}` }
         });
         const data = await res.json();
-        if (data.ok) {
+        if (data.ok && data.status === 'paid') {
             showToast('✅ Payment successful! Test pack unlocked.', 'success');
             history.replaceState({}, '', window.location.pathname);
             setTimeout(() => loadMockPacks(), 1000);
         } else {
-            showToast('Payment verification failed: ' + (data.message || 'Try again'), 'error');
+            showToast('Payment verification pending or failed.', 'error');
         }
     } catch (e) {
         console.error('Verification error:', e);
@@ -350,7 +348,7 @@ async function handleStart(packId, isFree) {
     }
 }
 
-// ─── Cashfree Payment ────────────────────────────────────────────────────────
+// ─── Razorpay Payment ────────────────────────────────────────────────────────
 async function initiateMockPayment(packId) {
     if (!getToken()) {
         showToast('Please login first.', 'error');
@@ -360,19 +358,13 @@ async function initiateMockPayment(packId) {
     showToast('Initializing secure payment...', 'info');
 
     try {
-        // 1. Get Cashfree mode
-        const cfgRes  = await fetch(`${API}/api/cashfree/config`);
-        const cfgData = await cfgRes.json();
-        const sdkMode = cfgData.mode || 'sandbox';
-
-        if (typeof Cashfree === 'undefined') {
+        if (typeof Razorpay === 'undefined') {
             showToast('Payment SDK not loaded. Try refreshing.', 'error');
             return;
         }
-        const cashfree = Cashfree({ mode: sdkMode });
 
-        // 2. Create order — reuse /api/cashfree/create-order with courseId = packId
-        const orderRes = await fetch(`${API}/api/cashfree/create-order`, {
+        // 1. Create order
+        const orderRes = await fetch(`${API}/api/razorpay/create-order`, {
             method:  'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
             body:    JSON.stringify({ courseId: packId })
@@ -384,12 +376,51 @@ async function initiateMockPayment(packId) {
             return;
         }
 
-        // 3. Launch Cashfree checkout
-        const returnBase = window.location.href.split('?')[0];
-        cashfree.checkout({
-            paymentSessionId: orderData.payment_session_id,
-            returnUrl: `${returnBase}?payment=verify&order_id=${orderData.orderId}&pack_id=${packId}`
-        });
+        // 2. Launch Razorpay Checkout
+        const options = {
+            key: orderData.keyId,
+            amount: orderData.amount,
+            currency: orderData.currency || 'INR',
+            name: 'CourseNova',
+            description: `Purchase - ${orderData.courseTitle || 'Premium Mock Test Pack'}`,
+            image: 'images/coursenova-logo.png',
+            order_id: orderData.razorpay_order_id,
+            handler: async function (response) {
+                showToast('⏳ Verifying Payment...', 'info');
+                try {
+                    const verifyRes = await fetch(`${API}/api/razorpay/verify`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` },
+                        body: JSON.stringify({
+                            razorpay_order_id: response.razorpay_order_id,
+                            razorpay_payment_id: response.razorpay_payment_id,
+                            razorpay_signature: response.razorpay_signature
+                        })
+                    });
+                    const verifyData = await verifyRes.json();
+                    if (verifyData.ok) {
+                        showToast('✅ Payment successful! Test pack unlocked.', 'success');
+                        setTimeout(() => loadMockPacks(), 1000);
+                    } else {
+                        showToast('Verification failed: ' + verifyData.message, 'error');
+                    }
+                } catch (e) {
+                    console.error('Verification error:', e);
+                    showToast('Verification error.', 'error');
+                }
+            },
+            prefill: {
+                name: orderData.prefill?.name || '',
+                email: orderData.prefill?.email || '',
+                contact: orderData.prefill?.contact || ''
+            },
+            theme: {
+                color: '#1D4ED8'
+            }
+        };
+
+        const rzp = new Razorpay(options);
+        rzp.open();
 
     } catch (err) {
         console.error('Payment error:', err);

@@ -13,7 +13,7 @@ process.on("unhandledRejection",(err)=>{
 });
 
 // Required Environment Validation
-const requiredEnv = ['MONGO_URI', 'JWT_SECRET', 'CASHFREE_APP_ID', 'CASHFREE_SECRET_KEY'];
+const requiredEnv = ['MONGO_URI', 'JWT_SECRET', 'RAZORPAY_KEY_ID', 'RAZORPAY_KEY_SECRET', 'RAZORPAY_WEBHOOK_SECRET'];
 requiredEnv.forEach(envVar => {
   if (!process.env[envVar]) {
     console.warn(`⚠️ WARNING: Required environment variable ${envVar} is missing!`);
@@ -334,7 +334,7 @@ app.get('/sitemap.xml', (req, res) => {
 app.use(express.json({ 
   limit: '500mb',
   verify: (req, res, buf) => {
-    req.rawBody = buf; // Specifically required for Cashfree Webhook Signature validation
+    req.rawBody = buf; // Specifically required for Webhook Signature validation (Razorpay)
   }
 }));
 app.use(express.urlencoded({ extended: true, limit: '500mb' }));
@@ -346,15 +346,15 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       "default-src": ["'self'"],
-      "frame-src": ["'self'", "https://www.youtube.com", "https://youtube.com", "https://docs.google.com", "https://drive.google.com", "https://sdk.cashfree.com", "https://sandbox.cashfree.com", "https://api.cashfree.com", "https://www.google.com", "https://maps.google.com"],
+      "frame-src": ["'self'", "https://www.youtube.com", "https://youtube.com", "https://docs.google.com", "https://drive.google.com", "https://api.razorpay.com", "https://checkout.razorpay.com", "https://otpless.com", "https://www.google.com", "https://maps.google.com"],
       "img-src": ["'self'", "data:", "blob:", "https://res.cloudinary.com", "https://images.unsplash.com", "https://*.google.com", "https://*.googleusercontent.com", "https://i.ytimg.com", "https://yt3.ggpht.com", "https://ui-avatars.com", "https://cdni.iconscout.com", "https://*.clarity.ms", "https://c.bing.com", "https://*.bing.com"],
-      "script-src": ["'self'", "'unsafe-inline'", "https://www.googletagmanager.com", "https://*.google.com", "https://sdk.cashfree.com", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net", "https://cdn.socket.io", "https://www.clarity.ms", "https://*.clarity.ms"],
-      "script-src-elem": ["'self'", "'unsafe-inline'", "https://www.googletagmanager.com", "https://*.google.com", "https://sdk.cashfree.com", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net", "https://cdn.socket.io", "https://www.clarity.ms", "https://*.clarity.ms"],
+      "script-src": ["'self'", "'unsafe-inline'", "https://www.googletagmanager.com", "https://*.google.com", "https://checkout.razorpay.com", "https://api.razorpay.com", "https://*.razorpay.com", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net", "https://cdn.socket.io", "https://www.clarity.ms", "https://*.clarity.ms"],
+      "script-src-elem": ["'self'", "'unsafe-inline'", "https://www.googletagmanager.com", "https://*.google.com", "https://checkout.razorpay.com", "https://api.razorpay.com", "https://*.razorpay.com", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net", "https://cdn.socket.io", "https://www.clarity.ms", "https://*.clarity.ms"],
       "script-src-attr": ["'unsafe-inline'"],
       "style-src": ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdnjs.cloudflare.com"],
       "font-src": ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com"],
-      "connect-src": ["'self'", "https://*.google-analytics.com", "https://*.analytics.google.com", "https://*.googletagmanager.com", "https://sdk.cashfree.com", "https://sandbox.cashfree.com", "https://api.cashfree.com", "https://www.coursenova.in", "wss://www.coursenova.in", "ws://*", "wss://*", "https://cdn.socket.io", "https://*.clarity.ms", "https://c.bing.com", "https://*.bing.com"],
-      "form-action": ["'self'", "https://sdk.cashfree.com", "https://sandbox.cashfree.com", "https://api.cashfree.com"],
+      "connect-src": ["'self'", "https://*.google-analytics.com", "https://*.analytics.google.com", "https://*.googletagmanager.com", "https://api.razorpay.com", "https://*.razorpay.com", "https://www.coursenova.in", "wss://www.coursenova.in", "ws://*", "wss://*", "https://cdn.socket.io", "https://*.clarity.ms", "https://c.bing.com", "https://*.bing.com"],
+      "form-action": ["'self'", "https://api.razorpay.com", "https://checkout.razorpay.com", "https://*.razorpay.com"],
       "upgrade-insecure-requests": []
     },
   },
@@ -703,11 +703,11 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads'), staticCacheO
 app.use('/uploads/slides', express.static(path.join(__dirname, 'uploads', 'slides'), staticCacheOptions));
 app.use('/certificates', express.static(path.join(__dirname, 'certificates'), staticCacheOptions));
 
-// ─── Cashfree API Routes (Payment-rate-limited) ──────────────────────────────
+// ─── Razorpay API Routes (Payment-rate-limited) ──────────────────────────────
 try {
-  app.use('/api/cashfree', paymentLimiter, require('./routes/cashfree'));
+  app.use('/api/razorpay', paymentLimiter, require('./routes/razorpayRoutes'));
 } catch (err) {
-  console.error('❌ Cashfree routes mount failed:', err.message);
+  console.error('❌ Razorpay routes mount failed:', err.message);
 }
 
 

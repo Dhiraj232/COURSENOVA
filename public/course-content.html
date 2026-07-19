@@ -12,8 +12,8 @@
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/navigation.css">
     
-    <!-- Cashfree SDK -->
-    <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
+    <!-- Razorpay Checkout SDK -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
 
     <style>
         :root {
@@ -701,21 +701,20 @@
             if (paymentVerify && orderIdFromUrl) {
                 try {
                     console.log(`[Init] Verifying payment for order: ${orderIdFromUrl}`);
-                    const vRes = await fetch(`${API}/api/cashfree/verify`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-                        body: JSON.stringify({ orderId: orderIdFromUrl, courseId: courseId })
+                    const vRes = await fetch(`${API}/api/razorpay/order-status/${orderIdFromUrl}`, {
+                        method: 'GET',
+                        headers: { Authorization: 'Bearer ' + token }
                     });
                     const vData = await vRes.json();
                     
-                    if (vData.ok) {
+                    if (vData.ok && vData.status === 'paid') {
                         console.log('[Init] Payment verified! Removing gate and reloading...');
                         // Clean URL to prevent re-verification on refresh
                         const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + "?course=" + courseId;
                         window.history.replaceState({ path: cleanUrl }, '', cleanUrl);
                     } else {
-                        console.error('[Init] Verification failed:', vData.message);
-                        alert('Payment verification failed. If you paid, please contact support with Order ID: ' + orderIdFromUrl);
+                        console.error('[Init] Verification pending or failed');
+                        alert('Payment verification is pending or failed. If you paid, please contact support with Order ID: ' + orderIdFromUrl);
                     }
                 } catch (ve) {
                     console.error('[Init] Verification error:', ve);
@@ -1087,11 +1086,10 @@
             btn.textContent = '⏳ Creating order...';
 
             try {
-                // Use MongoId for maximum reliability; fallback to courseId if absolutely necessary
                 const targetId = courseMongoId || courseId;
                 console.log(`[gatePayNow] Initiating order for: ${targetId}`);
 
-                const orderRes = await fetch(`${API}/api/cashfree/create-order`, {
+                const orderRes = await fetch(`${API}/api/razorpay/create-order`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
                     body: JSON.stringify({ courseId: targetId })
@@ -1105,28 +1103,65 @@
                 }
                 if (!orderData.ok) throw new Error(orderData.message || 'Order failed');
                 
-                // Launch Cashfree SDK
-                if (typeof Cashfree === 'undefined') {
-                    throw new Error('Payment gateway not loaded. Please refresh the page.');
+                if (typeof Razorpay === 'undefined') {
+                    throw new Error('Payment gateway SDK not loaded. Please refresh the page.');
                 }
 
-                // Fetch correct mode (sandbox/production) from backend
-                let sdkMode = 'sandbox';
-                try {
-                    const configRes = await fetch(`${API}/api/cashfree/config`);
-                    const configData = await configRes.json();
-                    sdkMode = configData.mode || 'sandbox';
-                } catch (e) {
-                    console.warn('[gatePayNow] Config fetch failed, defaulting to sandbox');
-                }
+                const options = {
+                    key: orderData.keyId,
+                    amount: orderData.amount,
+                    currency: orderData.currency || 'INR',
+                    name: 'CourseNova',
+                    description: `Unlock Course - ${orderData.courseTitle || 'Premium Content'}`,
+                    image: 'images/coursenova-logo.png',
+                    order_id: orderData.razorpay_order_id,
+                    handler: async function (response) {
+                        btn.textContent = '⏳ Verifying Payment...';
+                        try {
+                            const verifyRes = await fetch(`${API}/api/razorpay/verify`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+                                body: JSON.stringify({
+                                    razorpay_order_id: response.razorpay_order_id,
+                                    razorpay_payment_id: response.razorpay_payment_id,
+                                    razorpay_signature: response.razorpay_signature
+                                })
+                            });
+                            const verifyData = await verifyRes.json();
+                            if (verifyData.ok) {
+                                alert('🎉 Payment successful! Content unlocked.');
+                                location.reload();
+                            } else {
+                                alert('Verification failed: ' + verifyData.message);
+                                btn.disabled = false;
+                                btn.textContent = '🔓 Unlock Now';
+                            }
+                        } catch (verr) {
+                            console.error(verr);
+                            alert('Verification error. Please contact support.');
+                            btn.disabled = false;
+                            btn.textContent = '🔓 Unlock Now';
+                        }
+                    },
+                    prefill: {
+                        name: orderData.prefill?.name || '',
+                        email: orderData.prefill?.email || '',
+                        contact: orderData.prefill?.contact || ''
+                    },
+                    theme: {
+                        color: '#1D4ED8'
+                    },
+                    modal: {
+                        ondismiss: function() {
+                            btn.disabled = false;
+                            btn.textContent = '🔓 Unlock Now';
+                        }
+                    }
+                };
 
-                console.log(`[gatePayNow] Handshake Complete | Mode: ${sdkMode}`);
-                const cashfree = Cashfree({ mode: sdkMode });
-                
-                cashfree.checkout({ 
-                    paymentSessionId: orderData.payment_session_id,
-                    returnUrl: window.location.href + "&payment=verify&order_id=" + orderData.orderId
-                });
+                const rzp = new Razorpay(options);
+                rzp.open();
+
             } catch (err) {
                 console.error(err);
                 alert(err.message || 'Payment failed.');

@@ -5,8 +5,8 @@ const mongoose = require('mongoose');
  *
  * Lifecycle:
  *  pending  → order created, user sent to checkout
- *  paid     → Cashfree webhook confirmed SUCCESS, user enrolled
- *  failed   → Cashfree reported failure / webhook rejection
+ *  paid     → Razorpay webhook confirmed SUCCESS, user enrolled
+ *  failed   → Razorpay reported failure / webhook rejection
  */
 const CourseOrderSchema = new mongoose.Schema(
     {
@@ -16,24 +16,13 @@ const CourseOrderSchema = new mongoose.Schema(
         courseId: { type: mongoose.Schema.Types.ObjectId, required: true },
         itemType: { type: String, enum: ['course', 'mock'], default: 'course' },
 
-        // ── Cashfree identifiers ─────────────────────────────────
-        /** The order_id we generate and pass to Cashfree (order_<userId>_<ts>) */
+        // ── Legacy identifiers (kept optional for backward compatibility) ──
         orderId: {
             type: String,
-            required: true,
-            unique: true,
             index: true,
         },
-        /** cf_payment_id returned by Cashfree on success */
         paymentId: { type: String, default: '' },
-        /** payment_session_id used to launch the Cashfree JS SDK */
         paymentSessionId: { type: String, default: '' },
-
-        // ── Monetary fields ──────────────────────────────────────
-        amount:   { type: Number, required: true },
-        currency: { type: String, default: 'INR' },
-
-        // ── Status ───────────────────────────────────────────────
         status: {
             type: String,
             enum: ['pending', 'paid', 'failed'],
@@ -41,13 +30,34 @@ const CourseOrderSchema = new mongoose.Schema(
             index: true,
         },
 
+        // ── Razorpay identifiers ─────────────────────────────────
+        razorpay_order_id: {
+            type: String,
+            unique: true,
+            sparse: true,
+            index: true,
+        },
+        razorpay_payment_id: { type: String, default: '' },
+        razorpay_signature: { type: String, default: '' },
+        paymentStatus: {
+            type: String,
+            enum: ['pending', 'paid', 'failed'],
+            default: 'pending',
+            index: true,
+        },
+        provider: { type: String, default: 'Razorpay' },
+
+        // ── Monetary fields ──────────────────────────────────────
+        amount:   { type: Number, required: true },
+        currency: { type: String, default: 'INR' },
+
         // ── Failure context ──────────────────────────────────────
         failureReason: { type: String, default: '' },
 
         // ── Webhook / verification metadata ─────────────────────
         /** Set to true once webhook or verifyPayment has processed this order */
         processed: { type: Boolean, default: false },
-        /** Raw event type received from Cashfree webhook */
+        /** Raw event type received from webhook */
         webhookEvent: { type: String, default: '' },
         /** ISO timestamp when webhook was received */
         webhookReceivedAt: { type: Date },

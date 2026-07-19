@@ -73,4 +73,8 @@ const UserSchema = new mongoose.Schema({
     createdAt: { type: Date, default: Date.now }
 });
 
-module.exports = mongoose.model('StoreUser', UserSchema);
+const StoreUser = mongoose.models.StoreUser || mongoose.model('StoreUser', UserSchema);
+if (!mongoose.models.User) {
+    mongoose.model('User', UserSchema, 'storeusers');
+}
+module.exports = StoreUser;

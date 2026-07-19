@@ -104,7 +104,8 @@
     </main>
 
     <script src="js/navigation.js"></script>
-    <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
+    <!-- Razorpay Checkout SDK -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <script>
         const boards = [
             "Bihar Board", "UP Board", "CBSE", "ICSE", "Rajasthan Board",
@@ -121,30 +122,25 @@
                 return;
             }
 
-            // 1. Verify Payment if coming back from Cashfree
+            // 1. Verify Payment if coming back from Razorpay
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('payment') === 'verify' && urlParams.get('order_id')) {
                 alert('Verifying your payment, please wait...');
                 try {
-                    const res = await fetch('/api/cashfree/verify', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                        body: JSON.stringify({ 
-                            orderId: urlParams.get('order_id'), 
-                            courseId: urlParams.get('course') || 'state-board-master' 
-                        })
+                    const res = await fetch(`/api/razorpay/order-status/${urlParams.get('order_id')}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
                     });
                     const data = await res.json();
-                    if (data.ok) {
+                    if (data.ok && data.status === 'paid') {
                         alert('🎉 Payment verified! Series unlocked.');
                         if (typeof window.refreshUserData === 'function') await window.refreshUserData();
+                        history.replaceState({}, '', window.location.pathname);
                     } else {
-                        alert(data.message || 'Payment not confirmed yet. It will unlock within minutes if paid.');
+                        alert('Payment verification is pending or failed. It will unlock within minutes once processed.');
                     }
                 } catch (e) {
                     console.error(e);
                 }
-                window.history.replaceState({}, document.title, window.location.pathname);
             }
 
             // 2. Fetch fresh user data to see if purchased
@@ -189,8 +185,12 @@
 
         document.getElementById('buyBtn').onclick = async () => {
             const token = typeof getAuthToken === 'function' ? getAuthToken() : (localStorage.getItem('token') || localStorage.getItem('coursenova_token') || localStorage.getItem('coursenovaToken'));
+            const btn = document.getElementById('buyBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Initializing...';
+
             try {
-                const res = await fetch('/api/cashfree/create-order', {
+                const res = await fetch('/api/razorpay/create-order', {
                     method: 'POST',
                     headers: { 
                         'Content-Type': 'application/json',
@@ -200,25 +200,79 @@
                 });
                 const data = await res.json();
                 if (data.ok) {
-                    let sdkMode = 'sandbox';
-                    try {
-                        const configRes = await fetch('/api/cashfree/config');
-                        const configData = await configRes.json();
-                        sdkMode = configData.mode || 'sandbox';
-                    } catch (e) {
-                        console.warn('[buyBtn] Config fetch failed, defaulting to sandbox');
+                    if (typeof Razorpay === 'undefined') {
+                        alert('Payment gateway SDK not loaded. Please refresh the page.');
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="fas fa-unlock-alt"></i> Unlock State Board Master Series';
+                        return;
                     }
 
-                    console.log(`[buyBtn] Handshake Complete | Mode: ${sdkMode}`);
-                    const cashfree = Cashfree({ mode: sdkMode }); 
-                    await cashfree.checkout({ 
-                        paymentSessionId: data.payment_session_id,
-                        returnUrl: window.location.origin + window.location.pathname + "?payment=verify&order_id=" + data.orderId + "&course=state-board-master"
-                    });
+                    const options = {
+                        key: data.keyId,
+                        amount: data.amount,
+                        currency: data.currency || 'INR',
+                        name: 'CourseNova',
+                        description: `Unlock - ${data.courseTitle || 'State Board Master Series'}`,
+                        image: 'images/coursenova-logo.png',
+                        order_id: data.razorpay_order_id,
+                        handler: async function (response) {
+                            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
+                            try {
+                                const verifyRes = await fetch('/api/razorpay/verify', {
+                                    method: 'POST',
+                                    headers: { 
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${token}`
+                                    },
+                                    body: JSON.stringify({
+                                        razorpay_order_id: response.razorpay_order_id,
+                                        razorpay_payment_id: response.razorpay_payment_id,
+                                        razorpay_signature: response.razorpay_signature
+                                    })
+                                });
+                                const verifyData = await verifyRes.json();
+                                if (verifyData.ok) {
+                                    alert('🎉 Payment verified! Series unlocked.');
+                                    location.reload();
+                                } else {
+                                    alert('Verification failed: ' + verifyData.message);
+                                    btn.disabled = false;
+                                    btn.innerHTML = '<i class="fas fa-unlock-alt"></i> Unlock State Board Master Series';
+                                }
+                            } catch (e) {
+                                alert('Verification failed. Please contact support.');
+                                btn.disabled = false;
+                                btn.innerHTML = '<i class="fas fa-unlock-alt"></i> Unlock State Board Master Series';
+                            }
+                        },
+                        prefill: {
+                            name: data.prefill?.name || '',
+                            email: data.prefill?.email || '',
+                            contact: data.prefill?.contact || ''
+                        },
+                        theme: {
+                            color: '#1D4ED8'
+                        },
+                        modal: {
+                            ondismiss: function() {
+                                btn.disabled = false;
+                                btn.innerHTML = '<i class="fas fa-unlock-alt"></i> Unlock State Board Master Series';
+                            }
+                        }
+                    };
+
+                    const rzp = new Razorpay(options);
+                    rzp.open();
                 } else {
                     alert(data.message);
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-unlock-alt"></i> Unlock State Board Master Series';
                 }
-            } catch (e) { alert('Checkout failed'); }
+            } catch (e) { 
+                alert('Checkout failed'); 
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-unlock-alt"></i> Unlock State Board Master Series';
+            }
         };
 
         init();

@@ -257,7 +257,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // Read URL queries if they are passed by standard payment gateway redirect (Cashfree context)
+            // Read URL queries if they are passed by standard payment gateway redirect (Razorpay/general context)
             const params = new URLSearchParams(window.location.search);
             const ordId = params.get('order_id') || params.get('orderId');
             const gatewayTx = params.get('transaction_id') || params.get('txId');

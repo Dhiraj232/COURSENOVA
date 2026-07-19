@@ -331,11 +331,11 @@
             </div>
 
             <div class="form-group">
-                <label><input type="radio" name="payment" value="Cashfree"> Cashfree (Credit/Debit Card, UPI)</label>
+                <label><input type="radio" name="payment" value="Razorpay"> Razorpay (Credit/Debit Card, UPI)</label>
             </div>
 
-            <div id="cashfree-info" class="hidden">
-                <p style="color: #6b7280; font-size: 13px;">You will be redirected to Cashfree payment gateway</p>
+            <div id="razorpay-info" class="hidden">
+                <p style="color: #6b7280; font-size: 13px;">You will complete checkout via Razorpay secure gateway</p>
             </div>
         </div>
 
@@ -379,11 +379,11 @@
             // Toggle payment method info
             document.querySelectorAll('input[name="payment"]').forEach(radio => {
                 radio.addEventListener('change', (e) => {
-                    const cashfreeInfo = document.getElementById('cashfree-info');
-                    if (e.target.value === 'Cashfree') {
-                        cashfreeInfo.classList.remove('hidden');
+                    const razorpayInfo = document.getElementById('razorpay-info');
+                    if (e.target.value === 'Razorpay') {
+                        razorpayInfo.classList.remove('hidden');
                     } else {
-                        cashfreeInfo.classList.add('hidden');
+                        razorpayInfo.classList.add('hidden');
                     }
                 });
             });

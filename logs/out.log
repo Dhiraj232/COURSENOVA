@@ -62,3 +62,27 @@
 2026-06-24 12:19:34 +05:30: ◇ injected env (14) from .env // tip: ⌘ enable debugging { debug: true }
 2026-06-24 12:19:35 +05:30: ◇ injected env (14) from .env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
 2026-06-24 12:19:35 +05:30: ◇ injected env (14) from .env // tip: ⌘ suppress logs { quiet: true }
+[2026-07-19T15:58:41.646Z] [INFO] 🚀 Razorpay: Service Initialized
+[2026-07-19T15:58:49.125Z] [INFO] [findItem] Searching for item with input: "6a5cf4317665c0b5f50c3c90"
+[2026-07-19T15:58:49.364Z] [INFO] [findItem] ✅ Found course by ObjectId: Premium Node.js Mastery
+[2026-07-19T15:58:49.365Z] [INFO] [createOrder] Found course: Premium Node.js Mastery (Price: ₹499)
+[2026-07-19T15:58:50.604Z] [INFO] [createOrder] Sanitized user info: Test Student | 9876543210 | teststudent@coursenova.in
+[2026-07-19T15:58:52.027Z] [INFO] [createOrder] ✅ Order order_TFQ2lFWk2zCJxa created — ₹499 | course: Premium Node.js Mastery
+[2026-07-19T15:58:52.108Z] [INFO] [findItem] Searching for item with input: "6a5cf4317665c0b5f50c3c90"
+[2026-07-19T15:58:52.196Z] [INFO] [findItem] ✅ Found course by ObjectId: Premium Node.js Mastery
+[2026-07-19T15:58:52.196Z] [INFO] [createOrder] Found course: Premium Node.js Mastery (Price: ₹499)
+[2026-07-19T15:58:52.584Z] [INFO] [findItem] Searching for item with input: "6a5cf4317665c0b5f50c3c91"
+[2026-07-19T15:58:52.769Z] [INFO] [findItem] ✅ Found mock pack by ObjectId: Premium Test Series
+[2026-07-19T15:58:52.770Z] [INFO] [createOrder] Found mock: Premium Test Series (Price: ₹199)
+[2026-07-19T15:58:52.917Z] [INFO] [createOrder] Sanitized user info: Test Student | 9876543210 | teststudent@coursenova.in
+[2026-07-19T15:58:53.245Z] [INFO] [createOrder] ✅ Order order_TFQ2ml4TzTdCB9 created — ₹199 | course: Premium Test Series
+[2026-07-19T15:58:54.063Z] [INFO] [enrollUser] Synchronizing access for User 6a5cf4317665c0b5f50c3c8f with IDs: | Meta: ["6a5cf4317665c0b5f50c3c90","Premium Node.js Mastery","premium-nodejs-mastery"]
+[2026-07-19T15:58:54.301Z] [INFO] [enrollUser] ✅ Purchase email sent to teststudent@coursenova.in for Premium Node.js Mastery
+[2026-07-19T15:58:54.700Z] [INFO] ✅ [enrollUser] User 6a5cf4317665c0b5f50c3c8f enrolled in course 6a5cf4317665c0b5f50c3c90 | paymentId: pay_mockpayment999
+[2026-07-19T15:58:54.701Z] [INFO] [verifyPayment] ✅ Verified & Enrolled: Premium Node.js Mastery for user 6a5cf4317665c0b5f50c3c8f
+[2026-07-19T15:58:54.703Z] [INFO] [Webhook] 📩 Event: order.paid | Order: order_TFQ2lFWk2zCJxa | Payment: pay_mockpayment999
+[2026-07-19T15:58:54.793Z] [INFO] [Webhook] Order order_TFQ2lFWk2zCJxa already processed. Skipping webhook handling.
+[2026-07-19T15:58:54.870Z] [INFO] [Webhook] 📩 Event: payment.failed | Order: order_failed_test_888 | Payment: pay_failed_888
+[2026-07-19T15:58:55.128Z] [INFO] [Webhook] Logged payment failure for order: order_failed_test_888
+[2026-07-19T15:58:55.200Z] [INFO] [Webhook] 📩 Event: refund.created | Order: order_TFQ2lFWk2zCJxa | Payment: pay_mockpayment999
+[2026-07-19T15:58:55.512Z] [INFO] [Webhook] Logged refund event for order: order_TFQ2lFWk2zCJxa

@@ -157,7 +157,7 @@
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <link rel="dns-prefetch" href="https://fonts.googleapis.com">
     <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
-    <link rel="dns-prefetch" href="https://sdk.cashfree.com">
+    <link rel="dns-prefetch" href="https://checkout.razorpay.com">
 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
         rel="stylesheet">
@@ -166,7 +166,8 @@
     <link rel="stylesheet" href="css/navigation.css">
     <script src="js/navigation.js?v=1.3" defer></script>
     <script src="js/analytics.js" defer></script>
-    <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
+    <!-- Razorpay Checkout SDK -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <style>
         :root {
             --brand: #4f46e5;
@@ -930,19 +931,17 @@
 
             if (paymentVerify && orderIdFromUrl) {
                 try {
-                    const vRes = await fetch(`${API}/api/cashfree/verify`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-                        body: JSON.stringify({ orderId: orderIdFromUrl, courseId: 'placeholder' })
+                    const vRes = await fetch(`${API}/api/razorpay/order-status/${orderIdFromUrl}`, {
+                        headers: { Authorization: 'Bearer ' + token }
                     });
                     const vData = await vRes.json();
-                    if (vData.ok) {
+                    if (vData.ok && vData.status === 'paid') {
                         const cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
                         window.history.replaceState({ path: cleanUrl }, '', cleanUrl);
                         await loadUserStatus(); // Refresh dashboard
                         await fetchCoursesFromServer(); // Refresh courses list
                     } else {
-                        alert('Payment verification failed: ' + vData.message);
+                        alert('Payment verification is pending or failed.');
                     }
                 } catch (ve) {
                     console.error('Verification error:', ve);
@@ -1294,7 +1293,7 @@
             }
             try {
                 // Create Order via backend
-                const res = await fetch(`${API}/api/cashfree/create-order`, {
+                const res = await fetch(`${API}/api/razorpay/create-order`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                     body: JSON.stringify({ courseId })
@@ -1313,40 +1312,54 @@
                     return;
                 }
 
-                // Fetch SDK mode
-                let sdkMode = 'production';
-                try {
-                    const configRes = await fetch(`${API}/api/cashfree/config`);
-                    const configData = await configRes.json();
-                    sdkMode = configData.mode || 'production';
-                } catch (e) {}
-
-                console.log(`[Checkout] Mode: ${sdkMode} | SessionId: ${orderData.payment_session_id?.slice(0,20)}...`);
-
-                // Launch Cashfree SDK
-                if (typeof Cashfree === 'undefined') {
-                    alert('Payment gateway not loaded. Please refresh and try again.');
+                if (typeof Razorpay === 'undefined') {
+                    alert('Payment gateway SDK not loaded. Please refresh the page and try again.');
                     return;
                 }
 
-                const cashfreeInstance = Cashfree({ mode: sdkMode });
-                
-                // Build the return URL pointing to course-content.html for auto-enrollment
-                const returnUrl = `${window.location.origin}/course-content?course=${orderData.courseId || courseId}&payment=verify&order_id=${orderData.orderId}`;
-
-                cashfreeInstance.checkout({ 
-                    paymentSessionId: orderData.payment_session_id,
-                    redirectTarget: '_self',
-                    returnUrl: returnUrl
-                }).then((result) => {
-                    if (result.error) {
-                        console.error('[Cashfree SDK Error]', result.error);
-                        alert(`Payment Error: ${result.error.message}`);
+                const options = {
+                    key: orderData.keyId,
+                    amount: orderData.amount,
+                    currency: orderData.currency || 'INR',
+                    name: 'CourseNova',
+                    description: `Unlock Course - ${orderData.courseTitle || 'Premium Content'}`,
+                    image: 'images/coursenova-logo.png',
+                    order_id: orderData.razorpay_order_id,
+                    handler: async function (response) {
+                        try {
+                            const verifyRes = await fetch(`${API}/api/razorpay/verify`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                                body: JSON.stringify({
+                                    razorpay_order_id: response.razorpay_order_id,
+                                    razorpay_payment_id: response.razorpay_payment_id,
+                                    razorpay_signature: response.razorpay_signature
+                                })
+                            });
+                            const verifyData = await verifyRes.json();
+                            if (verifyData.ok) {
+                                showToast('🎉 Payment verified! Course unlocked.', 'success');
+                                setTimeout(() => window.location.href = `course-content?course=${courseId}`, 1000);
+                            } else {
+                                alert('Verification failed: ' + verifyData.message);
+                            }
+                        } catch (verr) {
+                            console.error(verr);
+                            alert('Verification error. Please contact support.');
+                        }
+                    },
+                    prefill: {
+                        name: orderData.prefill?.name || '',
+                        email: orderData.prefill?.email || '',
+                        contact: orderData.prefill?.contact || ''
+                    },
+                    theme: {
+                        color: '#1D4ED8'
                     }
-                }).catch((err) => {
-                    console.error('[Cashfree checkout error]', err);
-                    alert('Payment gateway error. Please try again.');
-                });
+                };
+
+                const rzp = new Razorpay(options);
+                rzp.open();
 
             } catch (err) {
                 console.error('Purchase Error:', err);

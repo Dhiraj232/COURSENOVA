@@ -655,7 +655,7 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
         }
 
-        /* --- Cashfree payment modal drawer --- */
+        /* --- Razorpay payment modal drawer --- */
         .checkout-box {
             display: flex;
             flex-direction: column;
@@ -839,8 +839,8 @@
                         <div class="payment-option-desc">All major Indian banks supported</div>
                     </div>
                 </div>
-                <button class="submit-btn" style="background:var(--brand); font-weight:700; border:none; color:white; padding:12px; border-radius:10px; cursor:pointer;" onclick="triggerCashfreePayment()">
-                    <i class="fas fa-lock"></i> Pay via Cashfree Escrow
+                <button class="submit-btn" style="background:var(--brand); font-weight:700; border:none; color:white; padding:12px; border-radius:10px; cursor:pointer;" onclick="triggerRazorpayPayment()">
+                    <i class="fas fa-lock"></i> Pay via Razorpay Escrow
                 </button>
             </div>
         </div>
@@ -1500,16 +1500,16 @@
             card.classList.add('selected');
         }
 
-        async function triggerCashfreePayment() {
+        async function triggerRazorpayPayment() {
             const btn = document.querySelector('#checkoutModal .submit-btn');
             btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Initializing Cashfree payment...';
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Initializing Razorpay payment...';
 
             setTimeout(() => {
-                alert(`✅ Payment of ₹${currentPayable} received successfully via Cashfree Escrow!\n\nThe amount is safely secured in CourseNova Escrow. Seller will be notified to coordinate pickup/shipment.`);
+                alert(`✅ Payment of ₹${currentPayable} received successfully via Razorpay Escrow!\n\nThe amount is safely secured in CourseNova Escrow. Seller will be notified to coordinate pickup/shipment.`);
                 closeCheckout();
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-lock"></i> Pay via Cashfree Escrow';
+                btn.innerHTML = '<i class="fas fa-lock"></i> Pay via Razorpay Escrow';
                 
                 // Add success notification in chat
                 sendMsg("👍 Payment Secured! Please schedule pickup coordinates.");
