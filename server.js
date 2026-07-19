@@ -63,7 +63,7 @@ const GoogleStrategy = require('passport-google-oauth20').Strategy;
 console.log("Loading Routes...");
 // ─── Store & Marketplace Routers (MongoDB-backed) ──────────────
 let storeRouter, booksRoutes, ordersRoutes, cartRoutes, sellersRoutes, reviewsRoutes, wishlistRoutes, chatsRoutes, usedBooksRoutes;
-let paymentRoutes, enrollmentRoutes, certificateRoutes, courseRoutes, coursesRoutes, communityRoutes, dashboardRoutes;
+let paymentRoutes, enrollmentRoutes, certificateRoutes, courseRoutes, coursesRoutes, communityRoutes, dashboardRoutes, razorpayRoutes;
 
 try { storeRouter = require('./routes/store'); } catch (err) { console.error('❌ Failed to load store routes:', err.message); }
 try { booksRoutes = require('./routes/booksRoutes'); } catch (err) { console.error('❌ Failed to load books routes:', err.message); }
@@ -81,6 +81,7 @@ try { courseRoutes = require('./routes/courseRoutes'); } catch (err) { console.e
 try { coursesRoutes = require('./routes/courses'); } catch (err) { console.error('❌ Failed to load courses routes:', err.message); }
 try { communityRoutes = require('./routes/community'); } catch (err) { console.error('❌ Failed to load community routes:', err.message); }
 try { dashboardRoutes = require('./routes/dashboardRoutes'); } catch (err) { console.error('❌ Failed to load dashboard routes:', err.message); }
+try { razorpayRoutes = require('./routes/razorpayRoutes'); } catch (err) { console.error('❌ Failed to load razorpay routes:', err.message); }
 
 // ─── Environment Configuration Setup ────────────────────────────
 const isProduction = process.env.NODE_ENV === 'production';
@@ -705,7 +706,7 @@ app.use('/certificates', express.static(path.join(__dirname, 'certificates'), st
 
 // ─── Razorpay API Routes (Payment-rate-limited) ──────────────────────────────
 try {
-  app.use('/api/razorpay', paymentLimiter, require('./routes/razorpayRoutes'));
+  app.use('/api/razorpay', paymentLimiter, razorpayRoutes);
 } catch (err) {
   console.error('❌ Razorpay routes mount failed:', err.message);
 }

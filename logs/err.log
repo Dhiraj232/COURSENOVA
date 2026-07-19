@@ -40,3 +40,4 @@ memory, and will not scale past a single process.
 2026-06-22 21:33:54 +05:30: ⚠️  Test APP_ID detected but CASHFREE_ENV=PRODUCTION — enforcing SANDBOX.
 [2026-07-19T15:58:53.247Z] [ERROR] [verifyPayment] Signature mismatch. Generated: 59e552322bfdf83ba9f9c67b575eaed3b5aa835556c9ac4cfd11dfbb79290f7c, Received: forged_signature_here
 [2026-07-19T16:26:06.667Z] [ERROR] [verifyPayment] Signature mismatch. Generated: c6ed033940b04fee96d7c237e0051da2f9cdf6def330f9359899203f880d31f5, Received: forged_signature_here
+[2026-07-19T16:50:08.369Z] [ERROR] [verifyPayment] Signature mismatch. Generated: 4ec1bff0d347dac4b03380179815944bae9222a8abdad3ce5d3f7cdb4c0bde26, Received: forged_signature_here
