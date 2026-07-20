@@ -80,6 +80,11 @@ function detectQuestionPrefix(line, ignoreWeakPrefix = false) {
         return null;
     }
 
+    // Safeguard: Ignore lines that start with option prefixes: A), (B), C., a), b), c), d), (क), (ख), (ग), (घ)
+    if (/^\s*(?:[\(\[\{]?(?:[A-Da-d]|क|ख|ग|घ)[\)\]\}]?\s*[-.:)]\s*)/.test(trimmed)) {
+        return null;
+    }
+
     const patterns = ignoreWeakPrefix 
         ? qPrefixPatterns.slice(0, 3) 
         : qPrefixPatterns;

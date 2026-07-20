@@ -871,6 +871,11 @@ function verifyAndFilterFalsePositives(questions) {
         return a.questionNumber - b.questionNumber;
     });
     
+    // Re-assign clean sequential questionNumbers (1..N) to prevent duplicates like Q#100
+    uniqueQuestions.forEach((q, idx) => {
+        q.questionNumber = idx + 1;
+    });
+
     return { questions: uniqueQuestions, duplicateCount };
 }
 
@@ -975,11 +980,59 @@ function normalizeAIQuestions(aiQuestions, defaultCategory, defaultSubject) {
 }
 
 /**
+ * Pre-splits text lines containing embedded question number boundaries or inline option blocks
+ */
+function preprocessAndSplitTextLines(rawText) {
+    if (!rawText) return [];
+    const initialLines = rawText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    const splitLines = [];
+
+    initialLines.forEach(line => {
+        if (line.startsWith('[PAGE_MARKER_')) {
+            splitLines.push(line);
+            return;
+        }
+
+        // Split embedded question starts in the middle of sentences (e.g. "...idea. 30. They tried to...")
+        let currentLine = line;
+        const embeddedQRegex = /(^|[\.\?\!]\s+)(?:(?:Q|Question|Que|प्र[.]?|प्रश्न)\s*[-.:]?\s*)?(\d{1,4})[\.\)]\s+([A-Z\u0900-\u097F].*)$/;
+        
+        let loopLimit = 5;
+        let match = currentLine.match(embeddedQRegex);
+        while (match && loopLimit > 0) {
+            const matchIndex = match.index + match[1].length;
+            const linePart1 = currentLine.substring(0, matchIndex).trim();
+            const linePart2 = currentLine.substring(matchIndex).trim();
+
+            if (linePart1.length > 0) {
+                splitLines.push(linePart1);
+            }
+            currentLine = linePart2;
+            loopLimit--;
+            match = currentLine.match(embeddedQRegex);
+        }
+
+        if (currentLine.length > 0) {
+            // Split inline multi-option blocks (e.g. "(A) farther (B) further (C) far (D) away")
+            const inlineOptMatch = currentLine.match(/^(.*?)\s+([\(\[]?[A-Da-d1-4क-घ][\)\].]?\s+.*[\(\[]?[B-Db-d2-4ख-घ][\)\].]?\s+.*)$/);
+            if (inlineOptMatch && inlineOptMatch[1].trim().length > 5) {
+                splitLines.push(inlineOptMatch[1].trim());
+                splitLines.push(inlineOptMatch[2].trim());
+            } else {
+                splitLines.push(currentLine);
+            }
+        }
+    });
+
+    return splitLines;
+}
+
+/**
  * Heuristics fallback parsing engine.
  */
 function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultSubject = 'General') {
     const cleanRes = cleanExtractedText(text);
-    const lines = cleanRes.text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    const lines = preprocessAndSplitTextLines(cleanRes.text);
     
     // Scan if the text contains strong question prefixes
     const strongPrefixRegex = /^\s*(?:QUESTION\s+NO\s*\.?|Question|QUESTION|Que|Q|प्र[.]?|प्रश्न\s+संख्या|प्रश्न)\s*[-.:]?\s*[0-9]+/i;
@@ -991,7 +1044,7 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
         }
     }
     
-    const questions = [];
+    const rawQuestions = [];
     let currentQ = null;
     let currentPageNum = 1;
     
@@ -1005,7 +1058,7 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
 
         const match = questionDetector.detectQuestionPrefix(line, usesStrongPrefix);
         if (match) {
-            if (currentQ) questions.push(currentQ);
+            if (currentQ) rawQuestions.push(currentQ);
             
             currentQ = {
                 questionNumber: match.questionNumber,
@@ -1044,9 +1097,16 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
             }
         }
     }
-    if (currentQ) questions.push(currentQ);
+    if (currentQ) rawQuestions.push(currentQ);
 
-    return normalizeAIQuestions(questions, defaultCategory, defaultSubject);
+    // Un-merge embedded questions
+    const unmergedQuestions = [];
+    rawQuestions.forEach(q => {
+        const split = autoFixEngine.splitMergedQuestions(q);
+        unmergedQuestions.push(...split);
+    });
+
+    return normalizeAIQuestions(unmergedQuestions, defaultCategory, defaultSubject);
 }
 
 module.exports = {

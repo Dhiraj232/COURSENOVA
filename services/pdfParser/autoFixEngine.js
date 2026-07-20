@@ -37,61 +37,107 @@ const inlineOptionPatterns = [
     }
 ];
 
+/**
+ * Splits a question object if it contains embedded question starts (e.g. "We're getting... 30. They tried to...")
+ */
+function splitMergedQuestions(q) {
+    if (!q || !q.question) return [q];
+    const qText = q.question;
+    
+    // Look for embedded question number markers in the middle of question text (e.g. ". 30. ", ". Q30. ", ". प्रश्न 30. ")
+    const embeddedMatch = qText.match(/^(.*?)\s+(?:(?:Q|Question|Que|प्र[.]?|प्रश्न)\s*[-.:]?\s*)?(\d{1,4})[\.\)]\s+(.*)$/i);
+    if (embeddedMatch) {
+        const text1 = embeddedMatch[1].trim();
+        const num2 = parseInt(embeddedMatch[2], 10);
+        const text2 = embeddedMatch[3].trim();
+        
+        if (text1.length > 5 && text2.length > 5) {
+            const q1 = {
+                ...q,
+                question: text1,
+                question_en: text1,
+                questionEnglish: text1,
+                options: [...(q.options || [])],
+                options_en: [...(q.options_en || [])]
+            };
+            const q2 = {
+                ...q,
+                questionNumber: num2,
+                question: text2,
+                question_en: text2,
+                questionEnglish: text2,
+                options: ['', '', '', ''],
+                options_en: ['', '', '', ''],
+                correctIndex: 0
+            };
+            return [q1, q2];
+        }
+    }
+    return [q];
+}
+
 function autoFixQuestion(q) {
     if (!q) return q;
 
-    // 1. Extract inline options if current options list is empty or invalid
-    const currentValidOpts = (q.options || []).filter(o => o && o.trim() !== '');
-    
-    if (currentValidOpts.length === 0) {
-        let qText = q.question_en || q.question || '';
+    // 1. Deep untrap inline options trapped inside option fields (e.g., Option B contains "(A) steel (B) steale")
+    let allOptionTexts = [];
+    if (Array.isArray(q.options)) {
+        allOptionTexts = [...q.options];
+    } else {
+        allOptionTexts = [q.optionA || '', q.optionB || '', q.optionC || '', q.optionD || ''];
+    }
+
+    // Check if any option string contains trapped multi-option labels like (A) ... (B) ... or A) ... B) ...
+    for (let idx = 0; idx < allOptionTexts.length; idx++) {
+        const optStr = allOptionTexts[idx] || '';
         for (let pattern of inlineOptionPatterns) {
-            const match = qText.match(pattern.regex);
+            const match = optStr.match(pattern.regex);
             if (match) {
+                const cleanOptIdx = optStr.replace(pattern.regex, '').trim();
                 const optA = match[1].trim();
                 const optB = match[2].trim();
-                const optC = match[3].trim();
-                const optD = match[4].trim();
-                
-                q.options = [optA, optB, optC, optD];
-                q.options_en = [optA, optB, optC, optD];
-                
-                // Strip inline options suffix from question text
-                const stripped = qText.replace(pattern.regex, '').trim();
-                q.question_en = stripped;
-                q.questionEnglish = stripped;
-                q.question = stripped;
-                break;
-            }
-        }
+                const optC = match[3] ? match[3].trim() : '';
+                const optD = match[4] ? match[4].trim() : '';
 
-        // Apply similar logic for Hindi if available
-        let qTextHi = q.question_hi || '';
-        if (qTextHi) {
-            for (let pattern of inlineOptionPatterns) {
-                const match = qTextHi.match(pattern.regex);
-                if (match) {
-                    const optA = match[1].trim();
-                    const optB = match[2].trim();
-                    const optC = match[3].trim();
-                    const optD = match[4].trim();
-                    
-                    q.options_hi = [optA, optB, optC, optD];
-                    const stripped = qTextHi.replace(pattern.regex, '').trim();
-                    q.question_hi = stripped;
-                    q.questionHindi = stripped;
-                    break;
-                }
+                allOptionTexts[idx] = cleanOptIdx || optA;
+                if (idx + 1 < 4) allOptionTexts[idx + 1] = optB;
+                if (idx + 2 < 4 && optC) allOptionTexts[idx + 2] = optC;
+                if (idx + 3 < 4 && optD) allOptionTexts[idx + 3] = optD;
+
+                q.options = allOptionTexts;
+                q.options_en = allOptionTexts;
+                break;
             }
         }
     }
 
-    // 2. Split side-by-side options (e.g. Option A contains (B) label, Option C contains (D) label)
+    // 2. Extract inline options from question text or option strings
+    let qText = q.question_en || q.question || '';
+    for (let pattern of inlineOptionPatterns) {
+        const match = qText.match(pattern.regex);
+        if (match) {
+            const optA = match[1].trim();
+            const optB = match[2].trim();
+            const optC = match[3] ? match[3].trim() : '';
+            const optD = match[4] ? match[4].trim() : '';
+            
+            q.options = [optA, optB, optC, optD];
+            q.options_en = [optA, optB, optC, optD];
+            
+            // Strip inline options suffix from question text
+            const stripped = qText.replace(pattern.regex, '').trim();
+            q.question_en = stripped;
+            q.questionEnglish = stripped;
+            q.question = stripped;
+            break;
+        }
+    }
+
+    // 3. Split side-by-side options (e.g. Option A contains (B) label, Option C contains (D) label)
     const splitSideBySide = (optionsArray) => {
         if (!Array.isArray(optionsArray)) return optionsArray;
         
         let newOpts = [...optionsArray];
-        // Ensure at least 4 items
         while (newOpts.length < 4) newOpts.push('');
         
         // Check A contains B
@@ -99,16 +145,25 @@ function autoFixQuestion(q) {
             const matchB = newOpts[0].match(/(.+?)\s+[(]?(?:B|b|ख|2)[)]?[-.:)]\s*(.+)$/i);
             if (matchB) {
                 newOpts[0] = matchB[1].trim();
-                newOpts[1] = matchB[2].trim();
+                if (!newOpts[1]) newOpts[1] = matchB[2].trim();
             }
         }
         
+        // Check B contains C
+        if (newOpts[1]) {
+            const matchC = newOpts[1].match(/(.+?)\s+[(]?(?:C|c|ग|3)[)]?[-.:)]\s*(.+)$/i);
+            if (matchC) {
+                newOpts[1] = matchC[1].trim();
+                if (!newOpts[2]) newOpts[2] = matchC[2].trim();
+            }
+        }
+
         // Check C contains D
         if (newOpts[2]) {
             const matchD = newOpts[2].match(/(.+?)\s+[(]?(?:D|d|घ|4)[)]?[-.:)]\s*(.+)$/i);
             if (matchD) {
                 newOpts[2] = matchD[1].trim();
-                newOpts[3] = matchD[2].trim();
+                if (!newOpts[3]) newOpts[3] = matchD[2].trim();
             }
         }
         
@@ -119,7 +174,7 @@ function autoFixQuestion(q) {
     if (q.options_en) q.options_en = splitSideBySide(q.options_en);
     if (q.options_hi) q.options_hi = splitSideBySide(q.options_hi);
 
-    // 3. Repair split paragraphs and format math notation
+    // 4. Repair split paragraphs and format math notation
     if (q.question_en) {
         q.question_en = formatAndWrapLaTeX(
             q.question_en
@@ -135,10 +190,10 @@ function autoFixQuestion(q) {
         q.questionHindi = q.question_hi;
     }
 
-    // 4. Repair broken option labels and format options math notation
+    // 5. Repair broken option labels and format options math notation
     const repairOption = (opt) => {
         if (!opt) return '';
-        const cleanedOpt = opt.replace(/^\s*(?:[(]?(?:[A-F]|[a-f]|[1-6]|[①②③④⑤⑥]|[❶❷❸❹❺❻])[)]?[-.:)]\s*|([①②③④⑤⑥]|[❶❷❸❹❺❻])\s*)/, '').trim();
+        const cleanedOpt = opt.replace(/^\s*(?:[(]?(?:[A-F]|[a-f]|[1-6]|[①②③④⑤⑥]|[❶❷❸❹❺❻])[)]?[-.:)]\s*|([①②③④⑤⑥]|[❶❷❸...])\s*)/, '').trim();
         return formatAndWrapLaTeX(cleanedOpt);
     };
 
@@ -152,21 +207,34 @@ function autoFixQuestion(q) {
         q.options_hi = q.options_hi.map(o => repairOption(o));
     }
 
-    // Ensure exactly 4 options
-    while (q.options.length < 4) q.options.push('');
-    while (q.options_en.length < 4) q.options_en.push('');
-    if (q.options_hi.length > 0) {
-        while (q.options_hi.length < 4) q.options_hi.push('');
+    // 6. Guarantee non-empty option strings for 4 options
+    const defaultLabels = ['Option A', 'Option B', 'Option C', 'Option D'];
+    if (!Array.isArray(q.options)) q.options = [];
+    for (let idx = 0; idx < 4; idx++) {
+        if (!q.options[idx] || q.options[idx].trim() === '') {
+            q.options[idx] = defaultLabels[idx];
+        }
+    }
+    if (!Array.isArray(q.options_en)) q.options_en = [];
+    for (let idx = 0; idx < 4; idx++) {
+        if (!q.options_en[idx] || q.options_en[idx].trim() === '') {
+            q.options_en[idx] = q.options[idx];
+        }
     }
 
     // Update correct answer string based on index
     if (q.correctIndex !== undefined && q.correctIndex >= 0 && q.correctIndex < q.options.length) {
         q.correctAnswer = q.options_en[q.correctIndex] || q.options[q.correctIndex] || '';
+    } else {
+        q.correctIndex = 0;
+        q.correctAnswer = q.options[0];
     }
 
     return q;
 }
 
 module.exports = {
-    autoFixQuestion
+    autoFixQuestion,
+    splitMergedQuestions
 };
+
