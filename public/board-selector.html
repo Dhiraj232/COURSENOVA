@@ -325,15 +325,15 @@
             ];
 
             const isSubjectAvailable = (subName) => {
-                const targetSetTest = tests.find(t => 
+                const setMatchingTests = tests.filter(t => 
                     (t.testTitle && t.testTitle.toLowerCase().includes('set ' + selectedSetNum)) || 
+                    (t.testTitle && t.testTitle.toLowerCase().includes('set-' + selectedSetNum)) || 
                     (selectedSetNum === 1 && tests.length === 1)
                 );
 
-                if (targetSetTest) {
-                    // 1. Check per-subject sub-document array
-                    if (Array.isArray(targetSetTest.subjects)) {
-                        const subMatch = targetSetTest.subjects.find(s => 
+                for (let t of setMatchingTests) {
+                    if (Array.isArray(t.subjects)) {
+                        const subMatch = t.subjects.find(s => 
                             (s.subjectName && s.subjectName.toLowerCase() === subName.toLowerCase()) || 
                             (s.subjectId && s.subjectId === subName.toLowerCase().replace(/[^a-z0-9]/g, ''))
                         );
@@ -342,16 +342,18 @@
                         }
                     }
 
-                    // 2. Fallback check questions array
-                    if (Array.isArray(targetSetTest.questions)) {
-                        const hasSubQ = targetSetTest.questions.some(q => 
+                    if (Array.isArray(t.questions)) {
+                        const hasSubQ = t.questions.some(q => 
                             q.subject && q.subject.toLowerCase() === subName.toLowerCase()
                         );
                         if (hasSubQ) return true;
                     }
+
+                    if (t.testTitle && t.testTitle.toLowerCase().includes(subName.toLowerCase())) {
+                        return true;
+                    }
                 }
 
-                // 3. Fallback specific test title match
                 return tests.some(t => 
                     t.testTitle && 
                     t.testTitle.toLowerCase().includes('set ' + selectedSetNum) && 
@@ -416,16 +418,24 @@
         document.getElementById('startBtn').onclick = () => {
             const tests = packData.pack.tests || [];
             
-            let targetTest = tests.find(t => t.testTitle.toLowerCase().includes('set ' + selectedSetNum) && t.testTitle.toLowerCase().includes(selectedSubject.toLowerCase()));
+            let targetTest = tests.find(t => 
+                t.testTitle && 
+                t.testTitle.toLowerCase().includes('set ' + selectedSetNum) && 
+                t.testTitle.toLowerCase().includes(selectedSubject.toLowerCase())
+            );
+
             if (!targetTest) {
-                targetTest = tests.find(t => t.testTitle.toLowerCase().includes('set ' + selectedSetNum)) || tests[0];
+                targetTest = tests.find(t => 
+                    (t.testTitle && t.testTitle.toLowerCase().includes('set ' + selectedSetNum)) ||
+                    (t.subjects && t.subjects.some(s => s.subjectName && s.subjectName.toLowerCase() === selectedSubject.toLowerCase()))
+                ) || tests[0];
             }
             
             const testTitleParam = targetTest ? targetTest.testTitle : `Set ${selectedSetNum} Full Test`;
             const finalPackId = urlPackId || selectedBoard.toLowerCase().replace(/\s+/g, '-');
             
             let url = `quiz-engine.html?mode=mock&board=${encodeURIComponent(selectedBoard)}&subject=${encodeURIComponent(testTitleParam)}&lang=${selectedLanguage}&packId=${encodeURIComponent(finalPackId)}`;
-            if (isBoardExam && selectedSubject) {
+            if (selectedSubject) {
                 url += `&sub=${encodeURIComponent(selectedSubject)}`;
             }
             window.location.href = url;

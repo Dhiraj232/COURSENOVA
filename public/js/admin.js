@@ -1096,9 +1096,14 @@ function renderMockTestModal(title, pack = null) {
                 </div>
 
                 <div id="tab-mt-tests" class="tab-pane">
-                    <div style="display:flex; justify-content:space-between; margin-bottom:15px;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center; flex-wrap:wrap; gap:10px;">
                         <h4>Tests in this Pack</h4>
-                        <button type="button" class="btn btn-sm btn-primary" onclick="addMockTestRow()">+ Add Test</button>
+                        <div style="display:flex; gap:8px;">
+                            <button type="button" class="btn btn-sm btn-outline" style="border-color:#10b981; color:#059669; font-weight:600;" onclick="addFullSetRows()">
+                                <i class="fas fa-layer-group"></i> + Add Full Set (All 5 Subjects)
+                            </button>
+                            <button type="button" class="btn btn-sm btn-primary" onclick="addMockTestRow()">+ Add Test</button>
+                        </div>
                     </div>
                     <div id="mt-list" class="item-list">
                         ${tests.map((t, i) => renderMockTestRow(t, i)).join('')}
@@ -1219,6 +1224,46 @@ function renderMockTestRow(t = {}, i) {
     `;
 }
 
+function addFullSetRows(targetSetNum = null) {
+    const list = document.getElementById('mt-list');
+    if (!list) return;
+
+    let highestSet = 1;
+    const existingRows = list.querySelectorAll('.mt-row');
+    existingRows.forEach(r => {
+        const setSelect = r.querySelector('.mt-helper-set');
+        if (setSelect && setSelect.value) {
+            const num = parseInt(setSelect.value, 10);
+            if (num >= highestSet) highestSet = num;
+        }
+    });
+
+    const setNum = targetSetNum || (existingRows.length > 0 ? highestSet + 1 : 1);
+    const subjects = ['Physics', 'Chemistry', 'Mathematics', 'Biology', 'English'];
+
+    subjects.forEach((sub, idx) => {
+        const testObj = {
+            testTitle: `Set ${setNum} - ${sub}`,
+            testId: `set-${setNum}-${sub.toLowerCase()}`,
+            numQuestions: 0,
+            durationMinutes: 60,
+            totalMarks: 0,
+            questions: []
+        };
+        const tempIndex = Date.now() + idx;
+        const html = renderMockTestRow(testObj, tempIndex);
+        list.insertAdjacentHTML('beforeend', html);
+
+        const newRow = list.lastElementChild;
+        if (newRow) {
+            const setSelect = newRow.querySelector('.mt-helper-set');
+            const subSelect = newRow.querySelector('.mt-helper-sub');
+            if (setSelect) setSelect.value = setNum.toString();
+            if (subSelect) subSelect.value = sub;
+        }
+    });
+}
+
 async function handlePdfToTest(input, index, lang = 'en') {
     const file = input.files[0];
     if (!file) return;
@@ -1231,8 +1276,15 @@ async function handlePdfToTest(input, index, lang = 'en') {
     const countBadge = row.querySelector('.q-count-badge');
     const qIdsInput  = row.querySelector('.mt-t-qids');
 
+    const subSelect = row.querySelector('.mt-helper-sub');
+    const setSelect = row.querySelector('.mt-helper-set');
+    const selectedSubject = subSelect ? subSelect.value : 'General';
+    const selectedSet = setSelect ? setSelect.value : '1';
+
     const formData = new FormData();
     formData.append('pdf', file);
+    formData.append('subject', selectedSubject);
+    formData.append('category', selectedSubject);
 
     const activeStatus = lang === 'hi' ? statusHi : statusEn;
     const activeBtn = lang === 'hi' ? btnHi : btnEn;
@@ -1249,7 +1301,12 @@ async function handlePdfToTest(input, index, lang = 'en') {
 
     try {
         const token = localStorage.getItem('token');
-        const res = await fetch(`${API_BASE}/generate-questions-from-pdf?expectedCount=${expectedCount}`, {
+        const res = await fetch(`${API_BASE}/generate-questions-from-pdf?expectedCount=${expectedCount}&subject=${encodeURIComponent(selectedSubject)}&category=${encodeURIComponent(selectedSubject)}`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: formData,
+            signal: parseController.signal
+        });
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` },
             body: formData,
