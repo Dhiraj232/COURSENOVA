@@ -4,11 +4,32 @@
 
 const API_BASE = '/api/admin';
 
-document.addEventListener('DOMContentLoaded', () => {
-    checkAdminAuth();
-    initNavigation();
-    loadView('dashboard');
-});
+function initAdminApp() {
+    try {
+        checkAdminAuth();
+        initNavigation();
+        loadView('dashboard');
+    } catch (err) {
+        console.error('[AdminApp Init Error]:', err);
+        const contentArea = document.getElementById('content-area');
+        if (contentArea) {
+            contentArea.innerHTML = `
+                <div class="error-state" style="padding:40px; text-align:center; color:#ef4444;">
+                    <i class="fas fa-exclamation-circle" style="font-size:2.5rem; margin-bottom:15px;"></i>
+                    <h3>Initialization Error</h3>
+                    <p style="margin-top:8px;">${err.message || 'Failed to load administrative panel'}</p>
+                    <button class="btn btn-primary" onclick="window.location.reload()" style="margin-top:20px;">Reload Dashboard</button>
+                </div>
+            `;
+        }
+    }
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAdminApp);
+} else {
+    initAdminApp();
+}
 
 function checkAdminAuth() {
     const token = localStorage.getItem('token');
@@ -102,8 +123,20 @@ async function loadView(view) {
         switch (view) {
             case 'dashboard':
                 title.textContent = 'Dashboard Overview';
-                const statsData = await fetchData(`${API_BASE}/stats`);
-                renderDashboard(statsData.stats);
+                try {
+                    const statsData = await fetchData(`${API_BASE}/stats`);
+                    renderDashboard(statsData.stats);
+                } catch (statsErr) {
+                    console.warn('[Dashboard Stats Fallback]:', statsErr);
+                    renderDashboard({
+                        totalUsers: 0,
+                        totalCourses: 0,
+                        totalTests: 0,
+                        totalCertificates: 0,
+                        recentUsers: [],
+                        recentTests: []
+                    });
+                }
                 break;
 
             case 'courses':
