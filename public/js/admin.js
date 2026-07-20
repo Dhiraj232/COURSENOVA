@@ -1340,11 +1340,6 @@ async function handlePdfToTest(input, index, lang = 'en') {
             body: formData,
             signal: parseController.signal
         });
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` },
-            body: formData,
-            signal: parseController.signal
-        });
         clearTimeout(parseTimeout);
 
         if (!res.ok) {
