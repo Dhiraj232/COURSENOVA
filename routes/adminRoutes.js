@@ -1080,42 +1080,70 @@ async function saveQuestionsBulk(questionsArray, replaceDuplicates, defaultCateg
     const validSavedQuestions = finalQuestions.filter(Boolean);
     console.log(`Questions after DB: ${validSavedQuestions.length}`);
 
-    // Link to mock test pack with subject-aware append/update architecture
+    // Link to mock test pack with per-subject independent storage architecture
     if (packId && testId && linkedIds.length > 0) {
         const pack = await MockTestPack.findOne({ id: packId });
         if (pack) {
             const subtest = pack.tests.find(t => t.testId === testId);
             if (subtest) {
-                const existingQIds = subtest.questions || [];
+                const targetSubjectName = defaultSubject || 'General';
+                const targetSubjectId = targetSubjectName.toLowerCase().replace(/[^a-z0-9]/g, '') || 'general';
                 
-                // Keep questions from other subjects
-                const otherQuestions = await PracticeQuestion.find({
-                    _id: { $in: existingQIds },
-                    subject: { $ne: defaultSubject || 'General' }
-                });
-                const otherQIds = otherQuestions.map(q => q._id);
-                
-                // If replaceDuplicates is false, keep existing questions of the current subject as well, and append new ones
-                let currentSubjectQIds = [];
-                if (!replaceDuplicates) {
-                    const currentSubjectQuestions = await PracticeQuestion.find({
-                        _id: { $in: existingQIds },
-                        subject: defaultSubject || 'General'
-                    });
-                    currentSubjectQIds = currentSubjectQuestions.map(q => q._id);
+                if (!Array.isArray(subtest.subjects)) {
+                    subtest.subjects = [];
                 }
-                
-                // Combine and deduplicate
-                const combinedQIds = [...new Set([
-                    ...otherQIds.map(id => id.toString()),
-                    ...currentSubjectQIds.map(id => id.toString()),
-                    ...linkedIds.map(id => id.toString())
-                ])].map(id => new mongoose.Types.ObjectId(id));
-                
-                subtest.questions = combinedQIds;
-                subtest.numQuestions = combinedQIds.length;
-                subtest.totalMarks = combinedQIds.length * 4;
+
+                // Find existing subject entry or create new one
+                let subObj = subtest.subjects.find(s => 
+                    s.subjectId === targetSubjectId || 
+                    s.subjectName.toLowerCase() === targetSubjectName.toLowerCase()
+                );
+
+                if (!subObj) {
+                    subObj = {
+                        subjectId: targetSubjectId,
+                        subjectName: targetSubjectName,
+                        language: 'English',
+                        questions: [],
+                        questionCount: 0,
+                        status: 'uploaded',
+                        version: 1,
+                        uploadDate: new Date()
+                    };
+                    subtest.subjects.push(subObj);
+                }
+
+                // Combine question IDs for THIS subject independently
+                const existingSubQIds = (subObj.questions || []).map(id => id.toString());
+                let updatedSubQIds = [];
+                if (replaceDuplicates) {
+                    updatedSubQIds = [...new Set(linkedIds.map(id => id.toString()))];
+                } else {
+                    updatedSubQIds = [...new Set([...existingSubQIds, ...linkedIds.map(id => id.toString())])];
+                }
+
+                subObj.questions = updatedSubQIds.map(id => new mongoose.Types.ObjectId(id));
+                subObj.questionCount = updatedSubQIds.length;
+                subObj.status = 'uploaded';
+                subObj.uploadDate = new Date();
+                subObj.version = (subObj.version || 1) + 1;
+
+                // Combine question IDs across ALL subjects for the test set
+                const allSubjectQIds = [];
+                subtest.subjects.forEach(s => {
+                    (s.questions || []).forEach(qId => allSubjectQIds.push(qId.toString()));
+                });
+
+                // Also keep legacy questions if any
+                (subtest.questions || []).forEach(qId => allSubjectQIds.push(qId.toString()));
+
+                const uniqueAllQIds = [...new Set(allSubjectQIds)].map(id => new mongoose.Types.ObjectId(id));
+                subtest.questions = uniqueAllQIds;
+                subtest.numQuestions = uniqueAllQIds.length;
+                subtest.totalMarks = uniqueAllQIds.length * 4;
+
                 await pack.save();
+                console.log(`[MockTestPack] Updated Subject '${targetSubjectName}' (${updatedSubQIds.length} Qs). Total Set questions: ${uniqueAllQIds.length}`);
             }
         }
     }

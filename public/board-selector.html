@@ -325,14 +325,38 @@
             ];
 
             const isSubjectAvailable = (subName) => {
-                const specificMatch = tests.some(t => t.testTitle.toLowerCase().includes('set ' + selectedSetNum) && t.testTitle.toLowerCase().includes(subName.toLowerCase()));
-                if (specificMatch) return true;
-                
-                const generalTest = tests.find(t => t.testTitle.toLowerCase().includes('set ' + selectedSetNum) || (selectedSetNum === 1 && tests.length === 1));
-                if (generalTest && generalTest.questions && Array.isArray(generalTest.questions)) {
-                    return generalTest.questions.some(q => q.subject && q.subject.toLowerCase() === subName.toLowerCase());
+                const targetSetTest = tests.find(t => 
+                    (t.testTitle && t.testTitle.toLowerCase().includes('set ' + selectedSetNum)) || 
+                    (selectedSetNum === 1 && tests.length === 1)
+                );
+
+                if (targetSetTest) {
+                    // 1. Check per-subject sub-document array
+                    if (Array.isArray(targetSetTest.subjects)) {
+                        const subMatch = targetSetTest.subjects.find(s => 
+                            (s.subjectName && s.subjectName.toLowerCase() === subName.toLowerCase()) || 
+                            (s.subjectId && s.subjectId === subName.toLowerCase().replace(/[^a-z0-9]/g, ''))
+                        );
+                        if (subMatch && (subMatch.questionCount > 0 || (subMatch.questions && subMatch.questions.length > 0))) {
+                            return true;
+                        }
+                    }
+
+                    // 2. Fallback check questions array
+                    if (Array.isArray(targetSetTest.questions)) {
+                        const hasSubQ = targetSetTest.questions.some(q => 
+                            q.subject && q.subject.toLowerCase() === subName.toLowerCase()
+                        );
+                        if (hasSubQ) return true;
+                    }
                 }
-                return false;
+
+                // 3. Fallback specific test title match
+                return tests.some(t => 
+                    t.testTitle && 
+                    t.testTitle.toLowerCase().includes('set ' + selectedSetNum) && 
+                    t.testTitle.toLowerCase().includes(subName.toLowerCase())
+                );
             };
 
             grid.innerHTML = subjectsList.map(s => {

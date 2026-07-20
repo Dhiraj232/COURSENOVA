@@ -1,5 +1,16 @@
 const mongoose = require('mongoose');
 
+const subjectSchema = new mongoose.Schema({
+    subjectId: { type: String, required: true },
+    subjectName: { type: String, required: true },
+    language: { type: String, default: 'English' },
+    questions: [{ type: mongoose.Schema.Types.ObjectId, ref: 'PracticeQuestion' }],
+    questionCount: { type: Number, default: 0 },
+    status: { type: String, default: 'uploaded' },
+    version: { type: Number, default: 1 },
+    uploadDate: { type: Date, default: Date.now }
+}, { _id: false });
+
 const mockTestPackSchema = new mongoose.Schema({
     id: { type: String, unique: true }, // e.g., 'jee-main-series-2025'
     title: { type: String, required: true },
@@ -19,6 +30,7 @@ const mockTestPackSchema = new mongoose.Schema({
         numQuestions: { type: Number, default: 0 },
         durationMinutes: { type: Number, default: 60 },
         totalMarks: { type: Number, default: 0 },
+        subjects: [subjectSchema],
         questions: [{ type: mongoose.Schema.Types.ObjectId, ref: 'PracticeQuestion' }]
     }],
     isActive: { type: Boolean, default: true },
@@ -26,4 +38,3 @@ const mockTestPackSchema = new mongoose.Schema({
 });
 
 module.exports = mongoose.model('MockTestPack', mockTestPackSchema);
-
