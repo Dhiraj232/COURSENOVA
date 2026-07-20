@@ -597,9 +597,9 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
         });
     }
 
-    // Fallback if no questions were extracted via Gemini
+    // Fallback Phase 1: Local Heuristic Parser on extracted text if Gemini AI parser yielded 0 questions
     if (questions.length === 0) {
-        logs.push('[Parser Fallback] Gemini AI parser yielded 0 questions. Falling back to offline heuristic rule parser...');
+        logs.push('[Parser Fallback Stage 1] Gemini AI parser yielded 0 questions or failed. Falling back to offline heuristic rule parser...');
         
         let fullText = '';
         questionExtractedPages.forEach(p => {
@@ -611,10 +611,51 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
         if (fullText.trim().length > 0) {
             try {
                 const heuristicQuestions = parseQuestionsHeuristically(fullText, defaultCategory, defaultSubject);
-                logs.push(`[Parser Fallback] Local heuristic rule engine successfully extracted ${heuristicQuestions.length} questions.`);
+                logs.push(`[Parser Fallback Stage 1] Local heuristic rule engine extracted ${heuristicQuestions.length} questions from native text.`);
                 questions.push(...heuristicQuestions);
             } catch (fallbackErr) {
-                logs.push(`[Parser Fallback Error] Local heuristic parser failed: ${fallbackErr.message}`);
+                logs.push(`[Parser Fallback Stage 1 Error] Local heuristic parser failed: ${fallbackErr.message}`);
+            }
+        }
+    }
+
+    // Fallback Phase 2: If questions are STILL 0, force OCR rendering on ALL pages and run Heuristic Parser again
+    if (questions.length === 0) {
+        logs.push('[Parser Fallback Stage 2] 0 questions found so far. Force-rendering ALL pages to high-resolution images for full OCR scan...');
+        
+        let ocrFullText = '';
+        for (const p of questionExtractedPages) {
+            try {
+                const page = await doc.getPage(p.pageNum);
+                const rotation = page.rotate || 0;
+                const viewport = page.getViewport({ scale: 2.0, rotation });
+                let canvas = getCreateCanvas()(viewport.width, viewport.height);
+                let context = canvas.getContext('2d');
+                
+                await page.render({
+                    canvasContext: context,
+                    viewport: viewport
+                }).promise;
+
+                let preprocessedCanvas = preprocessPageCanvas(canvas);
+                const pngBuf = preprocessedCanvas.toBuffer('image/png');
+                
+                const pageText = await ocrEngine.runOCR(pngBuf, logs);
+                if (pageText && pageText.trim().length > 0) {
+                    ocrFullText += `[PAGE_MARKER_${p.pageNum}]\n` + pageText + '\n\n';
+                }
+            } catch (forceOcrErr) {
+                logs.push(`[Parser Fallback Stage 2 Warning] Force OCR failed on Page ${p.pageNum}: ${forceOcrErr.message}`);
+            }
+        }
+
+        if (ocrFullText.trim().length > 0) {
+            try {
+                const ocrHeuristicQuestions = parseQuestionsHeuristically(ocrFullText, defaultCategory, defaultSubject);
+                logs.push(`[Parser Fallback Stage 2] Full OCR Heuristic engine extracted ${ocrHeuristicQuestions.length} questions.`);
+                questions.push(...ocrHeuristicQuestions);
+            } catch (ocrHeuristicErr) {
+                logs.push(`[Parser Fallback Stage 2 Error] Full OCR Heuristic parser failed: ${ocrHeuristicErr.message}`);
             }
         }
     }
@@ -666,7 +707,7 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
             validationErrors.push({
                 questionNumber: cleanQ.questionNumber,
                 pageNum: cleanQ.pageNum,
-                text: cleanQ.question.substring(0, 50) + '...',
+                text: (cleanQ.question || '').substring(0, 50) + '...',
                 errors: valRes.errors
             });
             
@@ -691,7 +732,26 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
     const finalQuestions = dedupedResult.questions;
     
     const elapsedSec = ((Date.now() - startTime) / 1000).toFixed(2);
-    logs.push(`[Job Complete] Parsing completed successfully in ${elapsedSec}s.`);
+    logs.push(`[Job Complete] Parsing completed in ${elapsedSec}s. Extracted: ${finalQuestions.length} questions.`);
+
+    // If zero questions extracted after ALL parsers ran, build detailed diagnostic report
+    if (finalQuestions.length === 0) {
+        let totalNativeLen = 0;
+        questionExtractedPages.forEach(p => { totalNativeLen += (p.text || '').length; });
+
+        finalQuestions.diagnostics = {
+            parsersAttempted: ['Native Text Extractor', 'OCR Engine', 'Gemini AI Batch Parser', 'Local Heuristic Rule Engine', 'Full Page Force OCR Engine'],
+            totalPages: totalPages,
+            nativeTextExtractedLength: totalNativeLen,
+            ocrPagesRun: extractedPages.filter(p => p.type === 'vision' || p.type === 'ocr').length,
+            aiParserStatus: process.env.GEMINI_API_KEY ? 'Enabled' : 'Disabled (GEMINI_API_KEY missing)',
+            failureReason: totalNativeLen === 0 
+                ? 'PDF contains no readable text stream or graphics that could be decoded by OCR.' 
+                : 'Text was extracted from PDF, but no standard MCQ question numbering patterns or option structures were detected.',
+            logsSnippet: logs.slice(-10)
+        };
+        logs.push(`[Parser Diagnostic Alert] 0 questions extracted. Diagnostics: ${JSON.stringify(finalQuestions.diagnostics)}`);
+    }
 
     // Attach parsed stats and logs to output array
     finalQuestions.parserLogs = logs;

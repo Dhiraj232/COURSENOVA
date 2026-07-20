@@ -1067,8 +1067,13 @@ async function saveQuestionsBulk(questionsArray, replaceDuplicates, defaultCateg
             const isReplica = client && client.topology && client.topology.description && client.topology.description.type !== 'Single';
             
             if (isReplica) {
-                session.startTransaction();
-                transactionActive = true;
+                try {
+                    session.startTransaction();
+                    transactionActive = true;
+                } catch (txErr) {
+                    console.warn('Could not start transaction, writing without transaction:', txErr.message);
+                    transactionActive = false;
+                }
             }
 
             await PracticeQuestion.bulkWrite(bulkOps, { 
@@ -1081,8 +1086,9 @@ async function saveQuestionsBulk(questionsArray, replaceDuplicates, defaultCateg
             }
         } catch (bulkErr) {
             if (transactionActive) {
-                await session.abortTransaction();
+                try { await session.abortTransaction(); } catch (e) {}
             }
+            console.error('Some bulkWrite operations failed:', bulkErr.message, bulkErr.stack);
             console.error('Some bulkWrite operations failed:', bulkErr.message);
             const writeErrorsCount = bulkErr.writeErrors ? bulkErr.writeErrors.length : 0;
             failedCount += writeErrorsCount;
@@ -1388,13 +1394,29 @@ async function runImportPDFJob(jobId, buffer, defaultCategory, defaultSubject, p
 
         if (!parsedQuestions || parsedQuestions.length === 0) {
             const elapsedSec = ((Date.now() - startTime) / 1000).toFixed(2);
+            const diagnostics = (parsedQuestions && parsedQuestions.diagnostics) || {
+                failureReason: 'No MCQ questions detected across all parsing layers (Native Layout, OCR, Gemini AI, Heuristic Parser).'
+            };
+            
+            // Batch upload parser logs
+            const parserLogs = (parsedQuestions && parsedQuestions.parserLogs) || [];
+            if (parserLogs.length > 0) {
+                const timestamp = new Date().toISOString();
+                const formattedLogs = parserLogs.map(l => `[${timestamp}] ${l}`);
+                await PdfJob.updateOne(
+                    { jobId },
+                    { $push: { logs: { $each: formattedLogs } } }
+                );
+            }
+
             await completeJob(jobId, {
                 totalQuestions: 0,
                 importedCount: 0,
                 duplicateCount: 0,
                 failedCount: 0,
-                importTimeSec: elapsedSec
-            }, `Import completed in ${elapsedSec}s. No questions found.`);
+                importTimeSec: elapsedSec,
+                diagnostics
+            }, `Import completed in ${elapsedSec}s. Diagnostic: ${diagnostics.failureReason}`);
             return;
         }
 

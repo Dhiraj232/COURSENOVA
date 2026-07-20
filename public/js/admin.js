@@ -2695,7 +2695,27 @@ async function handlePdfUpload() {
                 const totalQuestions = result.totalQuestions || result.importedCount || questions.length || 0;
 
                 if (questions.length === 0 && totalQuestions === 0) {
-                    status.innerHTML = `<span style="color:var(--danger)">❌ Import Failed: No questions found.</span>`;
+                    const diag = result.diagnostics || {};
+                    status.innerHTML = `
+                        <div style="background:#fef2f2; border:1.5px solid #fee2e2; border-radius:10px; padding:16px; margin-top:15px; text-align:left;">
+                            <h4 style="color:#dc2626; margin:0 0 8px 0; display:flex; align-items:center; gap:8px;">
+                                <i class="fas fa-exclamation-triangle"></i> Zero Questions Extracted
+                            </h4>
+                            <p style="font-size:0.8rem; color:#991b1b; margin:0 0 12px 0;">
+                                All parsing methods (Native Text, OCR, Gemini AI, Heuristic Regex, Force Page OCR) were attempted, but no valid MCQ questions could be identified.
+                            </p>
+                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; font-size:0.75rem; color:#7f1d1d; background:white; padding:10px; border-radius:6px; border:1px solid #fca5a5; margin-bottom:10px;">
+                                <div><strong>Parsers Attempted:</strong> ${(diag.parsersAttempted || ['Native', 'OCR', 'Gemini AI', 'Heuristic']).join(', ')}</div>
+                                <div><strong>Native Text Length:</strong> ${diag.nativeTextExtractedLength !== undefined ? diag.nativeTextExtractedLength + ' chars' : 'Unknown'}</div>
+                                <div><strong>OCR Pages Run:</strong> ${diag.ocrPagesRun !== undefined ? diag.ocrPagesRun : '0'}</div>
+                                <div><strong>AI Parser Status:</strong> ${diag.aiParserStatus || 'Attempted'}</div>
+                            </div>
+                            <div style="font-size:0.78rem; color:#b91c1c; font-weight:600; margin-bottom:6px;">Diagnostic Reason:</div>
+                            <div style="font-size:0.75rem; color:#450a0a; background:#fff1f2; padding:8px; border-radius:4px;">
+                                ${escapeHtml(diag.failureReason || 'Ensure the PDF file contains valid MCQ questions with clear numbering (e.g. 1. 2. Q1, Q.1) and options (A, B, C, D or क, ख, ग, घ).')}
+                            </div>
+                        </div>
+                    `;
                     return;
                 }
 
