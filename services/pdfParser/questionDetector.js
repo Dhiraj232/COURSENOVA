@@ -131,11 +131,31 @@ function detectQuestionPrefix(line, ignoreWeakPrefix = false) {
     return null;
 }
 
+/**
+ * Detects passage, direction, or comprehension context banners
+ */
+function detectPassageHeader(line) {
+    if (!line) return null;
+    const trimmed = line.trim();
+    const passageRegex = /^\s*(?:Direction|Directions|Passage|Comprehension|Case\s+Study|निर्देश|गद्यांश|पद्यांश)\s*[-.:(]*\s*(?:Q\.?\s*\d+\s*(?:to|-)\s*\d+)?\s*[-.:)]*\s*(.*)/i;
+    const match = trimmed.match(passageRegex);
+    if (match) {
+        return {
+            isPassage: true,
+            title: trimmed,
+            text: match[1] ? match[1].trim() : trimmed
+        };
+    }
+    return null;
+}
+
 module.exports = {
     detectQuestionPrefix,
+    detectPassageHeader,
     qPrefixPatterns,
     romanToInt,
     circleMap,
     devanagariMap
 };
+
 

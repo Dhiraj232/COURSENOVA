@@ -183,6 +183,64 @@ function extractTextFromPageItems(items, pageWidth = 595, pageHeight = 842) {
     };
 }
 
+/**
+ * Extracts text items grouped by line with spatial bounding box coordinates
+ */
+function extractTextBlocksWithBBox(items, pageWidth = 595, pageHeight = 842) {
+    if (!items || items.length === 0) return [];
+    
+    // Sort items top-to-bottom, left-to-right
+    const sorted = [...items].sort((a, b) => {
+        const yA = a.transform[5];
+        const yB = b.transform[5];
+        if (Math.abs(yA - yB) < 4.0) {
+            return a.transform[4] - b.transform[4];
+        }
+        return yB - yA;
+    });
+
+    const lines = [];
+    sorted.forEach(item => {
+        if (!item.str || item.str.trim().length === 0) return;
+        const x = item.transform[4];
+        const y = item.transform[5];
+        const w = item.width || (item.str.length * 6);
+        const h = item.height || 10;
+        
+        let foundLine = lines.find(l => Math.abs(l.y - y) < 4.0);
+        if (foundLine) {
+            foundLine.items.push(item);
+            foundLine.minX = Math.min(foundLine.minX, x);
+            foundLine.maxX = Math.max(foundLine.maxX, x + w);
+            foundLine.minY = Math.min(foundLine.minY, y - h);
+            foundLine.maxY = Math.max(foundLine.maxY, y);
+            foundLine.text += ' ' + item.str;
+        } else {
+            lines.push({
+                y,
+                minX: x,
+                maxX: x + w,
+                minY: y - h,
+                maxY: y,
+                text: item.str,
+                items: [item]
+            });
+        }
+    });
+
+    return lines.map(line => ({
+        text: line.text.trim(),
+        bbox: {
+            x: line.minX,
+            y: pageHeight - line.maxY, // Convert PDF Y to canvas Y
+            width: line.maxX - line.minX,
+            height: line.maxY - line.minY + 4
+        }
+    }));
+}
+
 module.exports = {
-    extractTextFromPageItems
+    extractTextFromPageItems,
+    extractTextBlocksWithBBox
 };
+

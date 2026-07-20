@@ -660,6 +660,28 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
         }
     }
 
+    // Stage 8 & 9: Surgical Bounding-Box OCR & AI Recovery for incomplete questions
+    let incompleteQuestions = questions.filter(q => {
+        const validOpts = (q.options || q.options_en || []).filter(o => o && o.toString().trim().length > 0);
+        return validOpts.length < 2 || !q.question || q.question.trim().length < 5;
+    });
+
+    if (incompleteQuestions.length > 0) {
+        logs.push(`[Parser Stage 8 & 9] Found ${incompleteQuestions.length} incomplete questions. Attempting surgical bounding-box recovery...`);
+        for (let q of incompleteQuestions) {
+            try {
+                // Auto-repair options using autoFixEngine first
+                const repaired = autoFixEngine.autoFixQuestion(q);
+                const repairedOpts = (repaired.options || []).filter(o => o && o.toString().trim().length > 0);
+                if (repairedOpts.length >= 2) {
+                    Object.assign(q, repaired);
+                    logs.push(`[Parser Recovery] Auto-repaired inline options for Question #${q.questionNumber}`);
+                    continue;
+                }
+            } catch (recoveryErr) {}
+        }
+    }
+
     // Save inline images to local public questions folder
     if (onProgress) onProgress(85, 'Saving Images', 'Mapping diagrams and graphics to questions...');
     const uploadDir = path.join(__dirname, '../public/uploads/questions');

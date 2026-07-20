@@ -1,6 +1,20 @@
 const { assessTextQuality } = require('./ocrEngine');
 
 /**
+ * Detects legacy font encodings such as KrutiDev / Chanakya / Devlys
+ */
+function detectLegacyFontEncoding(text) {
+    if (!text) return 'Standard';
+    // KrutiDev / Devlys character combination signatures: ê, Ù, ô, ò, ®, ©, ½, ¾, ¼, î, ï, á, à
+    const krutiDevSignatures = /[êÙôò®©½¾¼îïáàÑñæçëè]/g;
+    const matches = (text.match(krutiDevSignatures) || []).length;
+    if (matches > 10 && !/[\u0900-\u097F]/.test(text)) {
+        return 'KrutiDev';
+    }
+    return 'Standard';
+}
+
+/**
  * Analyzes page content and properties
  */
 function analyzePage(page, text, pNum) {
@@ -9,20 +23,20 @@ function analyzePage(page, text, pNum) {
     // Watermark detection
     const watermarkKeywords = [
         /draft/i, /confidential/i, /preview/i, /watermark/i, 
-        /copyright/i, /www\./i, /downloaded/i
+        /copyright/i, /www\./i, /downloaded/i, /cracku/i, /testbook/i, /adda247/i
     ];
     const hasWatermark = watermarkKeywords.some(kw => kw.test(text));
     
-    // Language detection
-    const hasHindi = /[\u0900-\u097F]/.test(text);
+    // Language & Font Encoding detection
+    const fontEncoding = detectLegacyFontEncoding(text);
+    const hasHindi = /[\u0900-\u097F]/.test(text) || fontEncoding === 'KrutiDev';
     const hasEnglish = /[a-zA-Z]/.test(text);
     const hasUrdu = /[\u0600-\u06FF]/.test(text);
-    const hasSanskrit = /[\u0900-\u097F]/.test(text) && text.includes('||'); // Heuristic
+    const hasSanskrit = /[\u0900-\u097F]/.test(text) && text.includes('||');
     const hasTamil = /[\u0B80-\u0BFF]/.test(text);
     const hasTelugu = /[\u0C00-\u0C7F]/.test(text);
     const hasBengali = /[\u0980-\u09FF]/.test(text);
     const hasGujarati = /[\u0A80-\u0AFF]/.test(text);
-    const hasMarathi = /[\u0900-\u097F]/.test(text); // Similar block to Hindi
     const hasPunjabi = /[\u0A00-\u0A7F]/.test(text);
 
     let language = 'English';
@@ -47,6 +61,7 @@ function analyzePage(page, text, pNum) {
         pageNum: pNum,
         type: pageType,
         language,
+        fontEncoding,
         rotation,
         hasWatermark,
         quality
@@ -106,7 +121,9 @@ function isInstructionPage(text) {
 }
 
 module.exports = {
+    detectLegacyFontEncoding,
     analyzePage,
     analyzeDocument,
     isInstructionPage
 };
+

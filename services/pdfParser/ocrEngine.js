@@ -213,8 +213,44 @@ async function runOCR(pngBuffer, logs = []) {
     }
 }
 
+/**
+ * Surgical Bounding-Box OCR on a targeted sub-region of a page canvas.
+ */
+async function runTargetedBBoxOCR(pngBuffer, bbox, logs = []) {
+    if (!bbox || !bbox.width || !bbox.height) {
+        return await runOCR(pngBuffer, logs);
+    }
+    
+    try {
+        const { createCanvas, loadImage } = require('canvas');
+        const img = await loadImage(pngBuffer);
+        
+        const cropX = Math.max(0, Math.floor(bbox.x || 0));
+        const cropY = Math.max(0, Math.floor(bbox.y || 0));
+        const cropW = Math.min(img.width - cropX, Math.ceil(bbox.width));
+        const cropH = Math.min(img.height - cropY, Math.ceil(bbox.height));
+        
+        if (cropW < 20 || cropH < 20) {
+            return await runOCR(pngBuffer, logs);
+        }
+
+        const canvas = createCanvas(cropW, cropH);
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+        
+        const croppedBuffer = canvas.toBuffer('image/png');
+        logs.push(`[Surgical OCR] Running targeted OCR on cropped bounding box [x:${cropX}, y:${cropY}, w:${cropW}, h:${cropH}]`);
+        return await runOCR(croppedBuffer, logs);
+    } catch (err) {
+        logs.push(`[Surgical OCR Warning] Cropped OCR failed, falling back to full image: ${err.message}`);
+        return await runOCR(pngBuffer, logs);
+    }
+}
+
 module.exports = {
     assessTextQuality,
     runGeminiVisionOCR,
-    runOCR
+    runOCR,
+    runTargetedBBoxOCR
 };
+
