@@ -782,54 +782,17 @@ function getNormalizedHash(text) {
     return crypto.createHash('md5').update(normalized).digest('hex');
 }
 
-// Question validator
+const autoFixEngine = require('../services/pdfParser/autoFixEngine');
+const validationEngine = require('../services/pdfParser/validationEngine');
+
+// Question validator using self-healing validation engine
 function validateQuestion(q) {
     if (!q) return { valid: false, reason: 'Empty question object' };
-    
-    // 1. Question text exists and length > 15 characters
-    const questionText = q.question || q.question_en || q.question_hi || q.questionHindi || '';
-    if (!questionText.trim()) {
-        return { valid: false, reason: 'Empty question text' };
+    const fixed = autoFixEngine.autoFixQuestion(q);
+    const valRes = validationEngine.validateQuestion(fixed);
+    if (!valRes.isValid) {
+        return { valid: false, reason: valRes.errors.join('; ') };
     }
-    if (questionText.trim().length <= 15) {
-        return { valid: false, reason: 'Question text too short (<= 15 chars)' };
-    }
-    
-    // 2. Minimum 4 options
-    const opts = q.options || [];
-    const validOpts = opts.filter(o => o && o.trim() !== '');
-    if (validOpts.length < 4) {
-        return { valid: false, reason: `Insufficient options (found ${validOpts.length}, minimum 4 required)` };
-    }
-    
-    // 3. Correct answer exists
-    if (!q.correctAnswer || !q.correctAnswer.trim()) {
-        return { valid: false, reason: 'Missing correct answer' };
-    }
-    
-    // 4. Correct answer matches one of the options
-    const correctIdx = q.correctIndex !== undefined ? q.correctIndex : -1;
-    const hasMatchingOption = opts.some(o => o && o.trim() === q.correctAnswer.trim());
-    if (correctIdx >= 0 && correctIdx < opts.length && !opts[correctIdx]) {
-        return { valid: false, reason: 'Correct index points to empty option' };
-    }
-    if (correctIdx === -1 && !hasMatchingOption) {
-        return { valid: false, reason: 'Correct answer text not found in options' };
-    }
-    
-    // 5. Question number exists
-    if (q.questionNumber === undefined || q.questionNumber === null) {
-        return { valid: false, reason: 'Missing question number' };
-    }
-
-    // 6. No corrupted encoding (no \uFFFD replacement character)
-    if (questionText.includes('\uFFFD')) {
-        return { valid: false, reason: 'Corrupted encoding detected (\uFFFD)' };
-    }
-    if (opts.some(o => o && o.includes('\uFFFD'))) {
-        return { valid: false, reason: 'Option contains corrupted encoding (\uFFFD)' };
-    }
-    
     return { valid: true };
 }
 
@@ -934,8 +897,9 @@ async function saveQuestionsBulk(questionsArray, replaceDuplicates, defaultCateg
     let failedCount = 0;
     let duplicateCount = 0;
 
-    // Filter valid questions
-    for (let q of questionsArray) {
+    // Auto-fix and filter valid questions
+    for (let rawQ of questionsArray) {
+        const q = autoFixEngine.autoFixQuestion(rawQ);
         const valRes = validateQuestion(q);
         if (valRes.valid) {
             validQuestions.push(q);
