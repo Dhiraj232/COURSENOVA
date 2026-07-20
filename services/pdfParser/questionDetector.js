@@ -85,9 +85,7 @@ function detectQuestionPrefix(line, ignoreWeakPrefix = false) {
         return null;
     }
 
-    const patterns = ignoreWeakPrefix 
-        ? qPrefixPatterns.slice(0, 3) 
-        : qPrefixPatterns;
+    const patterns = qPrefixPatterns;
 
     for (let patternObj of patterns) {
         const regex = patternObj.regex;
