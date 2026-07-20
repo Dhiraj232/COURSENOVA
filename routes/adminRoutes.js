@@ -2128,33 +2128,34 @@ router.put('/mock-tests/:id', requireAdmin, catchAsync(async (req, res) => {
     console.log(`[PUT /mock-tests/${req.params.id}] Received request body:`, JSON.stringify(req.body, null, 2));
     // ── Auto-Pruning Replaced/Orphaned Questions ──
     const oldPack = await MockTestPack.findById(req.params.id);
-    if (oldPack) {
-        const oldQIds = [];
-        oldPack.tests.forEach(t => {
-            if (t.questions) {
-                t.questions.forEach(qid => oldQIds.push(qid.toString()));
-            }
-        });
-
-        const newQIds = [];
-        if (req.body && req.body.tests && Array.isArray(req.body.tests)) {
-            req.body.tests.forEach(t => {
-                if (t.questions) {
-                    t.questions.forEach(qid => newQIds.push(qid.toString()));
-                }
-            });
-        }
-
-        // Find question IDs that were linked before but are not in the new pack update
-        const orphanedQIds = oldQIds.filter(qid => !newQIds.includes(qid));
-        if (orphanedQIds.length > 0) {
-            await PracticeQuestion.deleteMany({ _id: { $in: orphanedQIds } });
-            console.log(`[Auto-Cleanup] Replaced and deleted ${orphanedQIds.length} orphaned questions.`);
-        }
-    }
-
-    if (req.body && req.body.tests && Array.isArray(req.body.tests)) {
+    
+    if (oldPack && req.body && req.body.tests && Array.isArray(req.body.tests)) {
         req.body.tests.forEach(t => {
+            // Find corresponding test in old pack by testId or testTitle
+            const oldTest = oldPack.tests.find(ot => 
+                (ot.testId && t.testId && ot.testId === t.testId) || 
+                (ot.testTitle && t.testTitle && ot.testTitle.toLowerCase() === t.testTitle.toLowerCase())
+            );
+
+            if (oldTest) {
+                // Preserve existing subject sub-documents if not provided in payload
+                if ((!t.subjects || t.subjects.length === 0) && oldTest.subjects && oldTest.subjects.length > 0) {
+                    t.subjects = oldTest.subjects;
+                }
+
+                // Preserve existing question ObjectIds if payload questions list is empty
+                if ((!t.questions || t.questions.length === 0) && oldTest.questions && oldTest.questions.length > 0) {
+                    t.questions = oldTest.questions;
+                } else if (t.questions && oldTest.questions) {
+                    // Combine old and new question IDs to prevent losing questions
+                    const combined = [...new Set([
+                        ...oldTest.questions.map(q => q.toString()),
+                        ...t.questions.map(q => q.toString())
+                    ])].map(id => new mongoose.Types.ObjectId(id));
+                    t.questions = combined;
+                }
+            }
+
             if (t.numQuestions === undefined || t.numQuestions === null || t.numQuestions === 0) {
                 if (t.questions && Array.isArray(t.questions)) {
                     t.numQuestions = t.questions.length;
@@ -2167,6 +2168,7 @@ router.put('/mock-tests/:id', requireAdmin, catchAsync(async (req, res) => {
             }
         });
     }
+
     const pack = await MockTestPack.findByIdAndUpdate(req.params.id, req.body, { new: true });
     if (!pack) throw new AppError('Mock test pack not found', 404);
     await logAdminAction(req, 'UPDATE_MOCK_TEST', pack._id, 'MockTestPack', { title: pack.title });
