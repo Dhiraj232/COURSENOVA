@@ -403,8 +403,9 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
             const hasMathSymbols = /[\u2200-\u22FF\u2190-\u21FF√∛∫∬∑πθ∞≤≥≈≠±×÷→]/.test(pageText) || /\b(vector|matrix|integral|fraction|limit|determinant|equation)\b/i.test(pageText);
             const forceVision = isMathOrScience || hasMathSymbols;
             
-            // Native text clean switch: don't run OCR if native text is clean (>95%) and not a math/science layout
-            if (quality >= 0.95 && pageText.trim().length > 50 && !forceVision) {
+            // Native text extraction priority: Always use native PDF text stream if clean (>85% quality and text length > 50).
+            // Image rendering & OCR is reserved ONLY as fallback for scanned pages with missing/corrupted native text.
+            if (quality >= 0.85 && pageText.trim().length > 50) {
                 result = { pageNum: pNum, text: pageText, type: 'text', layoutType: layoutResult.layoutType };
             } else {
                 logs.push(`[Parser] Page ${pNum} has low text quality (${quality.toFixed(2)}). Rendering to image...`);
