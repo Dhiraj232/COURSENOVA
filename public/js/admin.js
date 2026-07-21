@@ -1408,7 +1408,10 @@ async function handlePdfToTest(input, index, lang = 'en') {
         clearTimeout(parseTimeout);
 
         if (!res.ok) {
-            const errorMsg = await getFetchErrorMessage(res);
+            let errorMsg = await getFetchErrorMessage(res);
+            if (res.status === 413) {
+                errorMsg = 'PDF File size exceeds server limit (Error 413: Request Entity Too Large). Please compress the PDF (e.g. using ilovepdf.com) to under 10MB and try again.';
+            }
             activeStatus.innerHTML = `<span style="color:var(--danger)">❌ Import Failed: ${errorMsg}</span>`;
             btnEn.disabled = false;
             btnHi.disabled = false;
