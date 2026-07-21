@@ -2937,18 +2937,19 @@ async function handlePdfUpload() {
                 if (questions.length > 0) {
                     status.innerHTML = `<span style="color:var(--success)">✅ Processing completed! Loading preview...</span>`;
                     showQuestionsPreviewModal(questions, result.stats || {}, async (editedQuestions, replaceDuplicates) => {
+                        const token = getSafeAuthToken();
                         const saveRes = await fetch(`${API_BASE}/questions?replaceDuplicates=${replaceDuplicates}`, {
                             method: 'POST',
                             headers: { 
                                 'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            questions: editedQuestions,
-                            packId: packSelect.value,
-                            testId: testSelect.value
-                        })
-                    });
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                questions: editedQuestions,
+                                packId: packSelect.value,
+                                testId: testSelect.value
+                            })
+                        });
 
                     if (!saveRes.ok) {
                         const errText = await getFetchErrorMessage(saveRes);
