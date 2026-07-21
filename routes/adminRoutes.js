@@ -1076,7 +1076,18 @@ async function saveQuestionsBulk(questionsArray, replaceDuplicates, defaultCateg
         if (pack) {
             const subtest = pack.tests.find(t => t.testId === testId);
             if (subtest) {
-                const targetSubjectName = defaultSubject || 'General';
+                let targetSubjectName = defaultSubject || 'General';
+                if (targetSubjectName.includes('-')) {
+                    targetSubjectName = targetSubjectName.split('-').pop().trim();
+                }
+
+                // Explicitly normalize subject property on all saved PracticeQuestion documents
+                await PracticeQuestion.updateMany(
+                    { _id: { $in: linkedIds } },
+                    { $set: { subject: targetSubjectName } }
+                );
+                console.log(`[PracticeQuestion] Normalized subject='${targetSubjectName}' on ${linkedIds.length} documents.`);
+
                 const targetSubjectId = targetSubjectName.toLowerCase().replace(/[^a-z0-9]/g, '') || 'general';
                 
                 if (!Array.isArray(subtest.subjects)) {

@@ -1262,6 +1262,9 @@ function renderMockTestRow(t = {}, i) {
                             <option value="__custom__" style="font-weight:bold; color:#166534;">+ Add Custom Subject...</option>
                         </select>
                     </div>
+                    <button type="button" class="btn btn-sm btn-outline" style="padding:2px 8px; font-size:0.75rem; border-color:#166534; color:#166534; background:#ffffff; font-weight:600;" onclick="const subSel = this.previousElementSibling.querySelector('.mt-helper-sub'); if(subSel){ subSel.value='__custom__'; updateTitleFromHelper(subSel); }">
+                        <i class="fas fa-plus"></i> + Add New Subject
+                    </button>
                 </div>
                 <div style="background: var(--bg-light); padding:12px; border-radius:8px; border: 1px dashed var(--border);">
                     <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
