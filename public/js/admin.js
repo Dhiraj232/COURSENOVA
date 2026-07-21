@@ -1363,15 +1363,17 @@ async function handlePdfToTest(input, index, lang = 'en') {
     const countBadge = row.querySelector('.q-count-badge');
     const qIdsInput  = row.querySelector('.mt-t-qids');
 
-    const subSelect = row.querySelector('.mt-helper-sub');
-    const setSelect = row.querySelector('.mt-helper-set');
-    const selectedSubject = subSelect ? subSelect.value : 'General';
-    const selectedSet = setSelect ? setSelect.value : '1';
+    const testIdInput = row.querySelector('.mt-t-id');
+    const selectedTestId = testIdInput ? testIdInput.value.trim() : '';
+    const packForm = document.getElementById('mtForm');
+    const packId = packForm ? packForm.dataset.packId || '' : '';
 
     const formData = new FormData();
     formData.append('pdf', file);
     formData.append('subject', selectedSubject);
     formData.append('category', selectedSubject);
+    formData.append('packId', packId);
+    formData.append('testId', selectedTestId);
 
     const activeStatus = lang === 'hi' ? statusHi : statusEn;
     const activeBtn = lang === 'hi' ? btnHi : btnEn;
@@ -1388,7 +1390,7 @@ async function handlePdfToTest(input, index, lang = 'en') {
 
     try {
         const token = localStorage.getItem('token');
-        const res = await fetch(`${API_BASE}/generate-questions-from-pdf?expectedCount=${expectedCount}&subject=${encodeURIComponent(selectedSubject)}&category=${encodeURIComponent(selectedSubject)}`, {
+        const res = await fetch(`${API_BASE}/generate-questions-from-pdf?expectedCount=${expectedCount}&subject=${encodeURIComponent(selectedSubject)}&category=${encodeURIComponent(selectedSubject)}&packId=${encodeURIComponent(packId)}&testId=${encodeURIComponent(selectedTestId)}`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` },
             body: formData,
@@ -1536,7 +1538,7 @@ async function handlePdfToTest(input, index, lang = 'en') {
                         const saveController = new AbortController();
                         let saveTimeout = setTimeout(() => saveController.abort(), 300000); // 5 min timeout
 
-                        const saveRes = await fetch(`${API_BASE}/questions?replaceDuplicates=${replaceDuplicates}`, {
+                        const saveRes = await fetch(`${API_BASE}/questions?replaceDuplicates=${replaceDuplicates}&packId=${encodeURIComponent(packId)}&testId=${encodeURIComponent(selectedTestId)}&subject=${encodeURIComponent(subjectName)}&category=${encodeURIComponent(packCategory)}`, {
                             method: 'POST',
                             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                             body: JSON.stringify(mappedQuestions),

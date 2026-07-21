@@ -1847,10 +1847,10 @@ router.post('/questions', requireAdmin, catchAsync(async (req, res) => {
         const startTime = Date.now();
         console.log(`[POST /questions] Received bulk save for ${questionsArray.length} questions. replaceDuplicates: ${replaceDuplicates}`);
 
-        const defaultCategory = req.body.category || 'General';
-        const defaultSubject = req.body.subject || 'General';
-        const packId = req.body.packId || req.query.packId;
-        const testId = req.body.testId || req.query.testId;
+        const defaultCategory = req.query.category || req.body.category || (questionsArray[0] && questionsArray[0].category) || 'General';
+        const defaultSubject = req.query.subject || req.body.subject || (questionsArray[0] && questionsArray[0].subject) || 'General';
+        const packId = req.query.packId || req.body.packId || '';
+        const testId = req.query.testId || req.body.testId || '';
 
         const saveRes = await saveQuestionsBulk(
             questionsArray,
