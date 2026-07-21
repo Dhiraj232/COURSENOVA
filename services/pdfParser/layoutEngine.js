@@ -63,7 +63,7 @@ function extractTextFromPageItems(items, pageWidth = 595, pageHeight = 842) {
 
     // Scan horizontal middle ranges for columns
     for (let b = 10; b < 90; b++) {
-        if (bins[b] <= threshold) {
+        if (bins[b] <= threshold + 2) { // Allow minor watermark noise in bins
             if (!inGutter) {
                 inGutter = true;
                 gutterStart = b;
@@ -108,9 +108,33 @@ function extractTextFromPageItems(items, pageWidth = 595, pageHeight = 842) {
     if (colBoundaries.length === 0 && detectedGutters.length >= 1) {
         const g = detectedGutters[0];
         const centerBin = g.start + g.width / 2;
-        if (centerBin >= 30 && centerBin <= 70) {
+        if (centerBin >= 25 && centerBin <= 75) {
             const boundary = minX + centerBin * binWidth;
             colBoundaries = [boundary];
+            layoutType = 'Double Column';
+        }
+    }
+
+    // ── FALLBACK X-CLUSTER DETECTOR FOR WATERMARKED 2-COLUMN PAGES ──
+    if (colBoundaries.length === 0) {
+        const qOptPrefixRegex = /^\s*(?:(?:\d{1,3}|[I|V|X]{1,4})\s*[-.:)]|[\(\[]?[A-Da-d1-4क-घ][\)\]]?\s*[-.:)])/;
+        const leftItems = [];
+        const rightItems = [];
+
+        bodyItems.forEach(item => {
+            const relX = item.transform[4] - minX;
+            if (qOptPrefixRegex.test(item.str)) {
+                if (relX < pageSpan * 0.45) {
+                    leftItems.push(relX);
+                } else if (relX > pageSpan * 0.50) {
+                    rightItems.push(relX);
+                }
+            }
+        });
+
+        if (leftItems.length >= 3 && rightItems.length >= 3) {
+            const midBoundary = minX + (pageSpan * 0.48);
+            colBoundaries = [midBoundary];
             layoutType = 'Double Column';
         }
     }

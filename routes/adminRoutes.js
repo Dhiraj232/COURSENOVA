@@ -1913,7 +1913,7 @@ router.post('/questions', requireAdmin, catchAsync(async (req, res) => {
 
         let savedQ;
         if (existing && replaceDuplicates) {
-            savedQ = await PracticeQuestion.findByIdAndUpdate(existing._id, q, { new: true });
+            savedQ = await PracticeQuestion.findByIdAndUpdate(existing._id, q, { new: true, returnDocument: 'after' });
         } else {
             savedQ = await PracticeQuestion.create(q);
         }

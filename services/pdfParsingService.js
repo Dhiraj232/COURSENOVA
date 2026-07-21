@@ -910,20 +910,40 @@ function verifyAndFilterFalsePositives(questions) {
 function splitBilingualQuestion(text) {
     if (!text) return { en: '', hi: '' };
     
-    // Match English text followed by Hindi text (Devanagari range)
-    const transitionMatch = text.match(/^([a-zA-Z0-9\s.,()\-+*\/=?'"’‘“”$®™:#%;<>_\\{}]+)\s*([\u0900-\u097F].*)$/);
-    if (transitionMatch) {
-        return {
-            en: transitionMatch[1].trim(),
-            hi: transitionMatch[2].trim()
-        };
-    }
+    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+    const enLines = [];
+    const hiLines = [];
     
-    if (/[\u0900-\u097F]/.test(text) && !/[a-zA-Z]/.test(text)) {
-        return { en: '', hi: text.trim() };
-    }
-    
-    return { en: text.trim(), hi: '' };
+    lines.forEach(line => {
+        const hasHindi = /[\u0900-\u097F]/.test(line);
+        const hasEnglish = /[a-zA-Z]/.test(line);
+        const isPureMath = /^[\d\s.,()\-+*\/=?'"’‘“”$®™:#%;<>_\\{}∫√πθαβλ∆ε∞≤≥≈≠±×÷→²³]+$/.test(line);
+
+        if (isPureMath) {
+            enLines.push(line);
+            hiLines.push(line);
+        } else if (hasHindi && hasEnglish) {
+            const transitionMatch = line.match(/^([a-zA-Z0-9\s.,()\-+*\/=?'"’‘“”$®™:#%;<>_\\{}∫√πθαβλ∆ε∞≤≥≈≠±×÷→²³]+)\s*([\u0900-\u097F].*)$/);
+            if (transitionMatch) {
+                if (transitionMatch[1].trim()) enLines.push(transitionMatch[1].trim());
+                if (transitionMatch[2].trim()) hiLines.push(transitionMatch[2].trim());
+            } else {
+                hiLines.push(line);
+            }
+        } else if (hasHindi) {
+            hiLines.push(line);
+        } else {
+            enLines.push(line);
+        }
+    });
+
+    const en = enLines.join(' ').trim();
+    const hi = hiLines.join(' ').trim();
+
+    return {
+        en: en || text.trim(),
+        hi: hi
+    };
 }
 
 /**
