@@ -839,18 +839,20 @@ function isSimilarQuestion(q1, q2) {
  * Question Deduplicator. Keeps best quality version of actual duplicates.
  */
 function verifyAndFilterFalsePositives(questions) {
-    if (questions.length === 0) return { questions: [], duplicateCount: 0 };
+    if (!Array.isArray(questions) || questions.length === 0) return { questions: [], duplicateCount: 0 };
 
     let duplicateCount = 0;
     const uniqueQuestions = [];
     
-    questions.forEach(q => {
-        const num = q.questionNumber;
-        if (num < 1) return;
+    questions.forEach((q, index) => {
+        if (!q) return;
+        if (typeof q.questionNumber !== 'number' || isNaN(q.questionNumber) || q.questionNumber < 1) {
+            q.questionNumber = index + 1;
+        }
         
-        // Find if there is an existing question with the same number and similar text
+        // Find if there is an existing question with high text similarity
         const duplicateIdx = uniqueQuestions.findIndex(existing => 
-            existing.questionNumber === num && isSimilarQuestion(existing, q)
+            isSimilarQuestion(existing, q)
         );
         
         if (duplicateIdx === -1) {
@@ -858,8 +860,8 @@ function verifyAndFilterFalsePositives(questions) {
         } else {
             duplicateCount++;
             const existing = uniqueQuestions[duplicateIdx];
-            const currentScore = (q.isValid ? 1000 : 0) + (q.question ? q.question.length : 0);
-            const existingScore = (existing.isValid ? 1000 : 0) + (existing.question ? existing.question.length : 0);
+            const currentScore = (q.isValid ? 1000 : 0) + (q.options ? q.options.filter(Boolean).length * 100 : 0) + (q.question ? q.question.length : 0);
+            const existingScore = (existing.isValid ? 1000 : 0) + (existing.options ? existing.options.filter(Boolean).length * 100 : 0) + (existing.question ? existing.question.length : 0);
             if (currentScore > existingScore) {
                 uniqueQuestions[duplicateIdx] = q;
             }
@@ -867,11 +869,11 @@ function verifyAndFilterFalsePositives(questions) {
     });
     
     uniqueQuestions.sort((a, b) => {
-        if (a.pageNum !== b.pageNum) return a.pageNum - b.pageNum;
+        if (a.pageNum && b.pageNum && a.pageNum !== b.pageNum) return a.pageNum - b.pageNum;
         return a.questionNumber - b.questionNumber;
     });
     
-    // Re-assign clean sequential questionNumbers (1..N) to prevent duplicates like Q#100
+    // Re-assign clean sequential questionNumbers (1..N) to prevent duplicates
     uniqueQuestions.forEach((q, idx) => {
         q.questionNumber = idx + 1;
     });
