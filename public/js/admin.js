@@ -1351,6 +1351,98 @@ function addFullSetRows(targetSetNum = null) {
     });
 }
 
+async function uploadPdfFileRobust(file, params, updateStatusFn) {
+    const token = localStorage.getItem('token');
+    const chunkSize = 1024 * 1024; // 1MB chunks (never hits proxy 413 limit)
+
+    // Single request path for small PDFs <= 1MB
+    if (file.size <= 1024 * 1024) {
+        const formData = new FormData();
+        formData.append('pdf', file);
+        formData.append('subject', params.subject);
+        formData.append('category', params.category);
+        formData.append('packId', params.packId || '');
+        formData.append('testId', params.testId || '');
+        formData.append('lang', params.lang || 'en');
+        formData.append('language', params.lang || 'en');
+
+        const url = `${API_BASE}/generate-questions-from-pdf?expectedCount=${params.expectedCount || 0}&subject=${encodeURIComponent(params.subject)}&category=${encodeURIComponent(params.category)}&packId=${encodeURIComponent(params.packId || '')}&testId=${encodeURIComponent(params.testId || '')}&lang=${params.lang || 'en'}`;
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: formData
+        });
+        if (res.ok) {
+            const data = await res.json();
+            if (data.ok && data.jobId) return data;
+        }
+        if (res.status !== 413) {
+            const errorMsg = await getFetchErrorMessage(res);
+            throw new Error(errorMsg);
+        }
+    }
+
+    // Chunked upload path for PDFs > 1MB or if 413 occurred
+    const uploadId = `upload_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const totalChunks = Math.ceil(file.size / chunkSize);
+
+    for (let i = 0; i < totalChunks; i++) {
+        const start = i * chunkSize;
+        const end = Math.min(file.size, start + chunkSize);
+        const chunkBlob = file.slice(start, end);
+
+        const chunkFd = new FormData();
+        chunkFd.append('uploadId', uploadId);
+        chunkFd.append('chunkIndex', i);
+        chunkFd.append('totalChunks', totalChunks);
+        chunkFd.append('chunk', chunkBlob, file.name);
+
+        if (updateStatusFn) {
+            const pct = Math.round(((i + 1) / totalChunks) * 100);
+            updateStatusFn(`<i class="fas fa-spinner fa-spin"></i> Uploading PDF (${pct}%)...`);
+        }
+
+        const chunkRes = await fetch(`${API_BASE}/upload-chunk`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: chunkFd
+        });
+
+        if (!chunkRes.ok) {
+            const errText = await getFetchErrorMessage(chunkRes);
+            throw new Error(`Chunk ${i + 1}/${totalChunks} upload failed: ${errText}`);
+        }
+    }
+
+    if (updateStatusFn) updateStatusFn('<i class="fas fa-spinner fa-spin"></i> Merging PDF & Initializing AI...');
+
+    const mergeRes = await fetch(`${API_BASE}/merge-chunks`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            uploadId,
+            fileName: file.name,
+            category: params.category,
+            subject: params.subject,
+            expectedCount: params.expectedCount || 0
+        })
+    });
+
+    if (!mergeRes.ok) {
+        const errText = await getFetchErrorMessage(mergeRes);
+        throw new Error(`Merge failed: ${errText}`);
+    }
+
+    const mergeData = await mergeRes.json();
+    if (!mergeData.ok || !mergeData.jobId) {
+        throw new Error(mergeData.message || 'Failed to initialize processing job.');
+    }
+    return mergeData;
+}
+
 async function handlePdfToTest(input, index, lang = 'en') {
     const file = input.files[0];
     if (!file) return;
@@ -1374,15 +1466,6 @@ async function handlePdfToTest(input, index, lang = 'en') {
     const catInput = document.getElementById('mtCategory');
     const selectedCategory = catInput ? catInput.value.trim() : selectedSubject;
 
-    const formData = new FormData();
-    formData.append('pdf', file);
-    formData.append('subject', selectedSubject);
-    formData.append('category', selectedCategory);
-    formData.append('packId', packId);
-    formData.append('testId', selectedTestId);
-    formData.append('lang', lang);
-    formData.append('language', lang);
-
     const activeStatus = lang === 'hi' ? statusHi : statusEn;
     const activeBtn = lang === 'hi' ? btnHi : btnEn;
 
@@ -1394,34 +1477,17 @@ async function handlePdfToTest(input, index, lang = 'en') {
     const numQsInput = row.querySelector('.mt-t-num-qs');
     const expectedCount = (numQsInput && parseInt(numQsInput.value, 10) > 0) ? parseInt(numQsInput.value, 10) : existingQIds.length;
 
-    const parseController = new AbortController();
-    let parseTimeout = setTimeout(() => parseController.abort(), 600000); // 10 min upload limit
-
     try {
-        const token = localStorage.getItem('token');
-        const res = await fetch(`${API_BASE}/generate-questions-from-pdf?expectedCount=${expectedCount}&subject=${encodeURIComponent(selectedSubject)}&category=${encodeURIComponent(selectedCategory)}&packId=${encodeURIComponent(packId)}&testId=${encodeURIComponent(selectedTestId)}&lang=${lang}`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` },
-            body: formData,
-            signal: parseController.signal
+        const initialData = await uploadPdfFileRobust(file, {
+            subject: selectedSubject,
+            category: selectedCategory,
+            packId,
+            testId: selectedTestId,
+            lang,
+            expectedCount
+        }, (txt) => {
+            activeStatus.innerHTML = txt;
         });
-        clearTimeout(parseTimeout);
-
-        if (!res.ok) {
-            let errorMsg = await getFetchErrorMessage(res);
-            if (res.status === 413) {
-                errorMsg = 'PDF File size exceeds server limit (Error 413: Request Entity Too Large). Please compress the PDF (e.g. using ilovepdf.com) to under 10MB and try again.';
-            }
-            activeStatus.innerHTML = `<span style="color:var(--danger)">❌ Import Failed: ${errorMsg}</span>`;
-            btnEn.disabled = false;
-            btnHi.disabled = false;
-            return;
-        }
-
-        const initialData = await res.json();
-        if (!initialData.ok || !initialData.jobId) {
-            throw new Error(initialData.message || 'No job ID received.');
-        }
 
         activeStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Parsing... <span class="pdf-job-pct">0%</span>';
 
