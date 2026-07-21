@@ -412,26 +412,16 @@ async function parseMCQFromText(text, expectedCount = 100, onProgress = null) {
 
     // Helper functions for matching question/option/answer
     function matchQuestionStart(line) {
-        if (useQPrefix) {
-            // ONLY match lines starting with Q, Question, प्र, प्रश्न
-            const match = line.match(/^(?:(?:Q|Question|प्र[.]?|प्रश्न)\s*[-.:]?\s*(\d+))\s*(.*)/i);
-            if (match) {
-                return { qNum: parseInt(match[1]), rest: match[2].trim() };
-            }
-            return null;
-        } else {
-            // Fallback match
-            let match = line.match(/^(?:(?:Q|Question|प्र[.]?|प्रश्न)\s*[-.:]?\s*(\d+)|(?:\[|\()?(\d+)(?:\]|\))|(\d+)\s*[-.:])\s*(.*)/i);
-            if (match) {
-                const qNum = match[1] || match[2] || match[3];
-                return { qNum: parseInt(qNum), rest: match[4].trim() };
-            }
-            match = line.match(/^(\d{1,3})\s+([a-zA-Z\u0900-\u097F].*)/);
-            if (match) {
-                return { qNum: parseInt(match[1]), rest: match[2].trim() };
-            }
-            return null;
+        let match = line.match(/^(?:(?:Q|Question|प्र[.]?|प्रश्न)\s*[-.:]?\s*(\d+)|(?:\[|\()?(\d+)(?:\]|\))|(\d+)\s*[-.:])\s*(.*)/i);
+        if (match) {
+            const qNum = match[1] || match[2] || match[3];
+            return { qNum: parseInt(qNum), rest: match[4].trim() };
         }
+        match = line.match(/^(\d{1,3})\s+([a-zA-Z\u0900-\u097F].*)/);
+        if (match) {
+            return { qNum: parseInt(match[1]), rest: match[2].trim() };
+        }
+        return null;
     }
 
     function parseOptionsFromLine(line, optionsArray, correctIndexRef, optionsStarted) {

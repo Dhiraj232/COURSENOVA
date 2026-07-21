@@ -61,9 +61,9 @@ const qPrefixPatterns = [
         regex: /^\s*([0-9१२३४५६७८९०]+)\s*[-.:)\]]\s*/,
         type: 'digit'
     },
-    // 6. Leading digit followed by space + text (e.g. "1 What is the capital of France?")
+    // 6. Leading digit followed by space + text or math symbol (e.g. "1 What is...", "1 \int...", "1 (x-2)^2")
     {
-        regex: /^\s*([0-9]{1,4})\s+([a-zA-Z\u0900-\u097F].*)/,
+        regex: /^\s*([0-9१२३४५६७८९०]{1,4})\s+([a-zA-Z\u0900-\u097F\\\/()\[\]{}∫√πθαβλ∆∑∞≤≥≠±÷×+=%#@$&_].*)/,
         type: 'digit_space'
     }
 ];
@@ -80,8 +80,8 @@ function detectQuestionPrefix(line, ignoreWeakPrefix = false) {
         return null;
     }
 
-    // Safeguard: Ignore lines that start with option prefixes: A), (B), C., a), b), c), d), (क), (ख), (ग), (घ)
-    if (/^\s*(?:[\(\[\{]?(?:[A-Da-d]|क|ख|ग|घ)[\)\]\}]?\s*[-.:)]\s*)/.test(trimmed)) {
+    // Safeguard: Ignore lines that start with option prefixes: A), (B), C., a), b), c), d), (क), (ख), (ग), (घ), (अ), (ब), (स), (द)
+    if (/^\s*(?:[\(\[\{]?(?:[A-Da-d]|क|ख|ग|घ|अ|ब|स|द)[\)\]\}]?\s*[-.:)]\s*)/.test(trimmed)) {
         return null;
     }
 

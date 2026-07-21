@@ -1157,6 +1157,48 @@ function renderMockTestModal(title, pack = null) {
     });
 }
 
+function updateTitleFromHelper(el) {
+    const row = el.closest('.mt-row');
+    if (!row) return;
+
+    const setSelect = row.querySelector('.mt-helper-set');
+    const subSelect = row.querySelector('.mt-helper-sub');
+    const titleInput = row.querySelector('.mt-t-title');
+    const idInput = row.querySelector('.mt-t-id');
+
+    if (subSelect && subSelect.value === '__custom__') {
+        const customSub = prompt('Enter custom subject name (e.g. Sanskrit, History, Geography, Civics, Economics, etc.):');
+        if (customSub && customSub.trim()) {
+            const cleanSub = customSub.trim();
+            let opt = Array.from(subSelect.options).find(o => o.value.toLowerCase() === cleanSub.toLowerCase());
+            if (!opt) {
+                opt = document.createElement('option');
+                opt.value = cleanSub;
+                opt.textContent = cleanSub;
+                const customOpt = subSelect.querySelector('option[value="__custom__"]');
+                if (customOpt) {
+                    subSelect.insertBefore(opt, customOpt);
+                } else {
+                    subSelect.appendChild(opt);
+                }
+            }
+            subSelect.value = cleanSub;
+        } else {
+            subSelect.value = 'General';
+        }
+    }
+
+    const setVal = setSelect ? setSelect.value : '1';
+    const subVal = subSelect ? subSelect.value : 'General';
+
+    if (titleInput) {
+        titleInput.value = `Set ${setVal} - ${subVal}`;
+    }
+    if (idInput) {
+        idInput.value = `set-${setVal}-${subVal.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+    }
+}
+
 function renderMockTestRow(t = {}, i) {
     const qCount = t.questions ? t.questions.length : 0;
     const hasHindi = t.questions && t.questions.length > 0 && t.questions[0] && t.questions[0].question_hi;
@@ -1201,7 +1243,7 @@ function renderMockTestRow(t = {}, i) {
                     </div>
                     <div style="display:flex; gap:6px; align-items:center;">
                         <label style="font-weight:600; color:#1e293b;">Subject:</label>
-                        <select class="admin-input mt-helper-sub" style="padding:2px 6px; font-size:0.75rem; width:130px; height:auto; min-height:0; border-color:#bbf7d0;" onchange="updateTitleFromHelper(this)">
+                        <select class="admin-input mt-helper-sub" style="padding:2px 6px; font-size:0.75rem; width:150px; height:auto; min-height:0; border-color:#bbf7d0;" onchange="updateTitleFromHelper(this)">
                             <option value="General" ${defaultSub === "General" ? "selected" : ""}>General / Mixed</option>
                             <option value="Physics" ${defaultSub === "Physics" ? "selected" : ""}>Physics</option>
                             <option value="Chemistry" ${defaultSub === "Chemistry" ? "selected" : ""}>Chemistry</option>
@@ -1209,6 +1251,15 @@ function renderMockTestRow(t = {}, i) {
                             <option value="Biology" ${defaultSub === "Biology" ? "selected" : ""}>Biology</option>
                             <option value="English" ${defaultSub === "English" ? "selected" : ""}>English</option>
                             <option value="Hindi" ${defaultSub === "Hindi" ? "selected" : ""}>Hindi</option>
+                            <option value="Sanskrit" ${defaultSub === "Sanskrit" ? "selected" : ""}>Sanskrit</option>
+                            <option value="History" ${defaultSub === "History" ? "selected" : ""}>History</option>
+                            <option value="Geography" ${defaultSub === "Geography" ? "selected" : ""}>Geography</option>
+                            <option value="Polity" ${defaultSub === "Polity" ? "selected" : ""}>Polity / Civics</option>
+                            <option value="Economics" ${defaultSub === "Economics" ? "selected" : ""}>Economics</option>
+                            <option value="Accountancy" ${defaultSub === "Accountancy" ? "selected" : ""}>Accountancy</option>
+                            <option value="Computer Science" ${defaultSub === "Computer Science" ? "selected" : ""}>Computer Science</option>
+                            <option value="Urdu" ${defaultSub === "Urdu" ? "selected" : ""}>Urdu</option>
+                            <option value="__custom__" style="font-weight:bold; color:#166534;">+ Add Custom Subject...</option>
                         </select>
                     </div>
                 </div>

@@ -316,13 +316,50 @@
             const grid = document.getElementById('subjectGrid');
             const tests = packData.pack.tests || [];
             
-            const subjectsList = [
-                { name: 'Physics', icon: 'fa-atom', color: '#3b82f6' },
-                { name: 'Chemistry', icon: 'fa-flask', color: '#8b5cf6' },
-                { name: 'Mathematics', icon: 'fa-calculator', color: '#10b981' },
-                { name: 'Biology', icon: 'fa-dna', color: '#059669' },
-                { name: 'English', icon: 'fa-book-open', color: '#ec4899' }
-            ];
+            const defaultSubjectsMap = {
+                'Physics': { icon: 'fa-atom', color: '#3b82f6' },
+                'Chemistry': { icon: 'fa-flask', color: '#8b5cf6' },
+                'Mathematics': { icon: 'fa-calculator', color: '#10b981' },
+                'Biology': { icon: 'fa-dna', color: '#059669' },
+                'English': { icon: 'fa-book-open', color: '#ec4899' },
+                'Hindi': { icon: 'fa-language', color: '#f59e0b' },
+                'Sanskrit': { icon: 'fa-om', color: '#d97706' },
+                'History': { icon: 'fa-landmark', color: '#84cc16' },
+                'Geography': { icon: 'fa-globe-asia', color: '#06b6d4' },
+                'Economics': { icon: 'fa-chart-line', color: '#6366f1' },
+                'Polity': { icon: 'fa-balance-scale', color: '#a855f7' },
+                'Social Science': { icon: 'fa-users', color: '#14b8a6' },
+                'Accountancy': { icon: 'fa-file-invoice-dollar', color: '#f43f5e' }
+            };
+
+            const knownNames = ['Physics', 'Chemistry', 'Mathematics', 'Biology', 'English', 'Hindi', 'Sanskrit'];
+            const subjectsSet = new Set(knownNames);
+
+            // Dynamically extract any uploaded custom subjects from tests
+            tests.forEach(t => {
+                if (Array.isArray(t.subjects)) {
+                    t.subjects.forEach(s => {
+                        if (s.subjectName && s.subjectName.trim()) {
+                            subjectsSet.add(s.subjectName.trim());
+                        }
+                    });
+                }
+                if (t.testTitle && t.testTitle.includes('-')) {
+                    const titleSub = t.testTitle.split('-').pop().trim();
+                    if (titleSub && !titleSub.toLowerCase().includes('set')) {
+                        subjectsSet.add(titleSub);
+                    }
+                }
+            });
+
+            const subjectsList = Array.from(subjectsSet).map(subName => {
+                const config = defaultSubjectsMap[subName] || { icon: 'fa-book', color: '#6366f1' };
+                return {
+                    name: subName,
+                    icon: config.icon,
+                    color: config.color
+                };
+            });
 
             const isSubjectAvailable = (subName) => {
                 const setMatchingTests = tests.filter(t => 

@@ -4,18 +4,22 @@
  */
 
 // Comprehensive regex for option prefixes at line start
-const optionPrefixRegex = /^\s*(?:[\(\[\{]?([A-Fa-f1-6|कखगघङच|①②③④⑤⑥|❶❷❸❹❺❻|ivxlcdmIVXLCDM]+)[\)\]\}]?\s*[-.:)]\s*|([①②③④⑤⑥]|[❶❷❸❹❺❻])\s*)(.*)/;
+const optionPrefixRegex = /^\s*(?:[\(\[\{]?([A-Fa-f1-6कखगघङचअबसद१२३४५६①-⑥❶-❻ivxlcdmIVXLCDM]+)[\)\]\}]?\s*[-.:)]\s*|([①-⑥]|[❶-❻])\s*)(.*)/;
 
-// Map option labels to 0-based indices (A/1/क/① -> 0, B/2/ख/② -> 1, C/3/ग/③ -> 2, D/4/घ/④ -> 3)
+// Map option labels to 0-based indices
 function mapOptionLabelToIndex(label) {
     if (!label) return -1;
     const trimmed = label.toString().trim().toUpperCase();
 
     const optionMap = {
         'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4, 'F': 5,
+        'a': 0, 'b': 1, 'c': 2, 'd': 3, 'e': 4, 'f': 5,
         '1': 0, '2': 1, '3': 2, '4': 3, '5': 4, '6': 5,
         'I': 0, 'II': 1, 'III': 2, 'IV': 3, 'V': 4, 'VI': 5,
+        'i': 0, 'ii': 1, 'iii': 2, 'iv': 3, 'v': 4, 'vi': 5,
         'क': 0, 'ख': 1, 'ग': 2, 'घ': 3, 'ङ': 4, 'च': 5,
+        'अ': 0, 'ब': 1, 'स': 2, 'द': 3,
+        '१': 0, '२': 1, '३': 2, '४': 3, '५': 4, '६': 5,
         '①': 0, '②': 1, '③': 2, '④': 3, '⑤': 4, '⑥': 5,
         '❶': 0, '❷': 1, '❸': 2, '❹': 3, '❺': 4, '❻': 5
     };
