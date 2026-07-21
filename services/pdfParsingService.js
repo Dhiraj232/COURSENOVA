@@ -523,7 +523,7 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
         }
     });
 
-    await runConcurrentTasks(batchTasks, 6);
+    await runConcurrentTasks(batchTasks, 2);
     console.log('[Stage 3: AI Parsing Complete]');
 
     // Phase 2.5: Parse Answer Key / Solution Pages if available

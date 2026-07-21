@@ -75,8 +75,8 @@ function detectQuestionPrefix(line, ignoreWeakPrefix = false) {
     if (!line) return null;
     const trimmed = line.trim();
 
-    // Safeguard: Ignore lines that represent solution headings, explanations, or answers
-    if (/^\s*(?:(?:QUESTION\s*(?:NO|NUMBER)?\s*\.?|Question|QUESTION|Que|Q|प्र[.]?|प्रश्न\s*(?:संख्या|सं[.]?|क्रमांक)?)?\s*[-.:]?\s*[0-9१२३४५६७८९०A-F①-❿a-f]+\s*[-.:)\]]\s*)?(?:(?:text\s+)?(?:solution|explanation|व्याख्या|हल)\b|answer\s*[-:]|उत्तर\s*[-:])/i.test(trimmed)) {
+    // Safeguard: Ignore lines that represent solution headings, explanations, or standalone answer keys (e.g. "Solution:", "Explanation:", "Ans: A", "उत्तर:")
+    if (/^\s*(?:(?:Solution|Explanation|Sol\.|Exp\.|व्याख्या|हल)\s*[-:]|Ans(?:wer)?\s*:\s*[A-Da-d1-4]\b|उत्तर\s*:\s*[A-Da-d1-4]\b)/i.test(trimmed)) {
         return null;
     }
 
