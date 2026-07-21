@@ -1366,14 +1366,22 @@ async function handlePdfToTest(input, index, lang = 'en') {
     const testIdInput = row.querySelector('.mt-t-id');
     const selectedTestId = testIdInput ? testIdInput.value.trim() : '';
     const packForm = document.getElementById('mtForm');
-    const packId = packForm ? packForm.dataset.packId || '' : '';
+    const packIdInput = document.getElementById('mtId');
+    const packId = packIdInput ? packIdInput.value.trim() : (packForm ? packForm.dataset.packId || '' : '');
+
+    const subSelect = row.querySelector('.mt-helper-sub');
+    const selectedSubject = subSelect ? subSelect.value : 'General';
+    const catInput = document.getElementById('mtCategory');
+    const selectedCategory = catInput ? catInput.value.trim() : selectedSubject;
 
     const formData = new FormData();
     formData.append('pdf', file);
     formData.append('subject', selectedSubject);
-    formData.append('category', selectedSubject);
+    formData.append('category', selectedCategory);
     formData.append('packId', packId);
     formData.append('testId', selectedTestId);
+    formData.append('lang', lang);
+    formData.append('language', lang);
 
     const activeStatus = lang === 'hi' ? statusHi : statusEn;
     const activeBtn = lang === 'hi' ? btnHi : btnEn;
@@ -1382,15 +1390,16 @@ async function handlePdfToTest(input, index, lang = 'en') {
     btnEn.disabled = true;
     btnHi.disabled = true;
 
-    const existingQIds = qIdsInput.value.split(',').map(s => s.trim()).filter(Boolean);
-    const expectedCount = existingQIds.length;
+    const existingQIds = qIdsInput && qIdsInput.value ? qIdsInput.value.split(',').map(s => s.trim()).filter(Boolean) : [];
+    const numQsInput = row.querySelector('.mt-t-num-qs');
+    const expectedCount = (numQsInput && parseInt(numQsInput.value, 10) > 0) ? parseInt(numQsInput.value, 10) : existingQIds.length;
 
     const parseController = new AbortController();
     let parseTimeout = setTimeout(() => parseController.abort(), 600000); // 10 min upload limit
 
     try {
         const token = localStorage.getItem('token');
-        const res = await fetch(`${API_BASE}/generate-questions-from-pdf?expectedCount=${expectedCount}&subject=${encodeURIComponent(selectedSubject)}&category=${encodeURIComponent(selectedSubject)}&packId=${encodeURIComponent(packId)}&testId=${encodeURIComponent(selectedTestId)}`, {
+        const res = await fetch(`${API_BASE}/generate-questions-from-pdf?expectedCount=${expectedCount}&subject=${encodeURIComponent(selectedSubject)}&category=${encodeURIComponent(selectedCategory)}&packId=${encodeURIComponent(packId)}&testId=${encodeURIComponent(selectedTestId)}&lang=${lang}`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` },
             body: formData,

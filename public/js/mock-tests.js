@@ -68,7 +68,9 @@ async function checkPaymentReturn() {
 // ─── Load Packs ─────────────────────────────────────────────────────────────
 async function loadMockPacks() {
     try {
-        const res = await fetch(`${API}/api/mocktest/packs`);
+        const token = getToken();
+        const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+        const res = await fetch(`${API}/api/mocktest/packs`, { headers });
         const data = await res.json();
         if (data.ok && data.packs) {
             allPacks = data.packs;
@@ -147,13 +149,16 @@ function renderPacks(packs) {
             ? pack.totalTests
             : (pack.tests ? pack.tests.length : 1);
 
-        // Detection for Free vs Premium cards
+        // Detection for Free vs Premium vs Unlocked/Enrolled cards
         const isActuallyFree = pack.isFree === true || pack.price === 0;
+        const isUnlocked = pack.isUnlocked || isActuallyFree;
 
         const cardHTML = `
         <div class="test-card" data-id="${pack.id}">
-            ${isActuallyFree 
-                ? '<div class="badge-free"><i class="fas fa-gift"></i> FREE</div>'
+            ${isUnlocked 
+                ? (isActuallyFree 
+                    ? '<div class="badge-free"><i class="fas fa-gift"></i> FREE</div>'
+                    : '<div class="badge-free" style="background: linear-gradient(135deg, #10b981, #059669); color: #fff;"><i class="fas fa-check-circle"></i> ENROLLED</div>')
                 : '<div class="badge-premium"><i class="fas fa-crown"></i> PREMIUM</div>'
             }
             
@@ -177,12 +182,14 @@ function renderPacks(packs) {
             </div>
             <div class="card-footer">
                 <div class="price-box">
-                    ${isActuallyFree
-                        ? `<span class="price-display" style="color:#10b981;">FREE</span> <span class="original-price">₹199</span>`
+                    ${isUnlocked
+                        ? (isActuallyFree
+                            ? `<span class="price-display" style="color:#10b981;">FREE</span> <span class="original-price">₹199</span>`
+                            : `<span class="price-display" style="color:#10b981;">ENROLLED</span> <span class="original-price">₹${pack.price || 99}</span>`)
                         : `<span class="price-display">₹${pack.price || 99}</span> <span class="original-price">₹199</span>`
                     }
                 </div>
-                ${isActuallyFree
+                ${isUnlocked
                     ? `<button class="btn-action btn-start" onclick="handleStart('${pack.id}', true)">
                           Start Now <i class="fas fa-arrow-right"></i>
                        </button>`
@@ -303,14 +310,14 @@ function setupFilters() {
 }
 
 // ─── Start/Unlock ────────────────────────────────────────────────────────────
-async function handleStart(packId, isFree) {
+async function handleStart(packId, isFreeOrUnlocked) {
     if (!getToken()) {
         showToast('Please login to access tests', 'error');
         setTimeout(() => window.location.href = 'signup.html', 1500);
         return;
     }
 
-    if (isFree) {
+    if (isFreeOrUnlocked) {
         // If it's a Board pack with multiple subjects, go to selector
         const pack = allPacks.find(p => p.id === packId);
         if (pack && (pack.totalTests > 1 || (pack.category || '').includes('Board'))) {

@@ -47,7 +47,43 @@ router.get('/packs', async (req, res) => {
         const filter = { isActive: true };
         if (category) filter.category = category;
         const packs = await MockTestPack.find(filter);
-        res.json({ ok: true, packs });
+
+        let userId = null;
+        const auth = req.headers.authorization || '';
+        if (auth.startsWith('Bearer ')) {
+            const token = auth.slice(7);
+            try {
+                const jwt = require('jsonwebtoken');
+                const JWT_SECRET = process.env.JWT_SECRET || 'Dhiraj@2026_secure_key!';
+                const payload = jwt.verify(token, JWT_SECRET);
+                userId = payload.userId || payload.id || null;
+            } catch (e) {}
+        }
+
+        let packsWithAccess = packs;
+        if (userId) {
+            packsWithAccess = await Promise.all(packs.map(async (p) => {
+                const packObj = p.toObject ? p.toObject() : { ...p };
+                if (packObj.isFree || packObj.price === 0) {
+                    packObj.isUnlocked = true;
+                } else {
+                    packObj.isUnlocked = await checkAccess(userId, packObj.id || packObj._id);
+                }
+                return packObj;
+            }));
+        } else {
+            packsWithAccess = packs.map(p => {
+                const packObj = p.toObject ? p.toObject() : { ...p };
+                if (packObj.isFree || packObj.price === 0) {
+                    packObj.isUnlocked = true;
+                } else {
+                    packObj.isUnlocked = false;
+                }
+                return packObj;
+            });
+        }
+
+        res.json({ ok: true, packs: packsWithAccess });
     } catch (err) {
         res.status(500).json({ ok: false, message: 'Packs fetch failed' });
     }
