@@ -96,28 +96,25 @@ function analyzeDocument(pagesAnalysis) {
     };
 }
 
-function isInstructionPage(text) {
-    if (!text) return false;
+function isInstructionPage(text, pNum = 1) {
+    if (!text || pNum > 1) return false; // Never skip page 2+ as instruction page
     const lower = text.toLowerCase();
+    
+    // If page contains clear question prefixes, it is NOT an instruction page
+    const hasQuestionsOnPage = /\b(?:Q|Question|Que|प्र[.]?|प्रश्न)\s*[-.:]?\s*[0-9]+/i.test(text) || /(?:^|\n)\s*[0-9]{1,3}\s*[-.:)]\s+[A-Za-z\u0900-\u097F]/m.test(text);
+    if (hasQuestionsOnPage) return false;
+
     const coverKeywords = [
         /candidate\s+must\s+write/i,
         /अभ्यर्थी\s+अपनी/i,
         /परीक्षार्थी\s+अपनी/i,
-        /ओएमआर\s+उत्तर\s+पत्रक/i,
         /omr\s+answer\s+sheet/i,
+        /read\s+the\s+following\s+instructions/i,
         /general\s+instructions/i,
-        /सामान्य\s+निर्देश/i,
-        /time\s+allowed/i,
-        /maximum\s+marks/i,
-        /पूर्णांक/i,
-        /समय\s*:/i,
-        /कुल\s+प्रश्नों\s+की\s+संख्या/i,
-        /total\s+number\s+of\s+questions/i,
-        /roll\s+number/i,
-        /अनुक्रमांक/i
+        /सामान्य\s+निर्देश/i
     ];
     const matches = coverKeywords.filter(kw => kw.test(lower)).length;
-    return matches >= 3;
+    return matches >= 2;
 }
 
 module.exports = {

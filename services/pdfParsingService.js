@@ -459,7 +459,7 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
         
     // Filter out cover/instruction pages from question pages
     questionExtractedPages = questionExtractedPages.filter(p => {
-        if (pdfAnalyzer.isInstructionPage && pdfAnalyzer.isInstructionPage(p.text)) {
+        if (pdfAnalyzer.isInstructionPage && pdfAnalyzer.isInstructionPage(p.text, p.pageNum)) {
             logs.push(`[Parser Section] Skipped Cover/Instruction Page ${p.pageNum}`);
             return false;
         }
