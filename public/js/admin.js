@@ -1351,8 +1351,16 @@ function addFullSetRows(targetSetNum = null) {
     });
 }
 
+function getSafeAuthToken() {
+    if (typeof getAuthToken === 'function') {
+        const t = getAuthToken();
+        if (t) return t;
+    }
+    return localStorage.getItem('token') || localStorage.getItem('coursenovaToken') || localStorage.getItem('coursenova_token') || '';
+}
+
 async function uploadPdfFileRobust(file, params, updateStatusFn) {
-    const token = localStorage.getItem('token');
+    const token = getSafeAuthToken();
     const chunkSize = 1024 * 1024; // 1MB chunks (never hits proxy 413 limit)
 
     // Single request path for small PDFs <= 1MB
@@ -1525,32 +1533,25 @@ async function handlePdfToTest(input, index, lang = 'en') {
                     }
 
                     showQuestionsPreviewModal(questions, data.stats || {}, async (editedQuestions, replaceDuplicates) => {
-                        // ── MERGE TRANSLATIONS IF QUESTIONS ALREADY EXIST ──
-                        if (existingQIds.length > 0 && existingQIds.length === editedQuestions.length) {
-                            activeStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Merging translations...';
+                        const token = getSafeAuthToken();
+
+                        // ── MERGE HINDI TRANSLATIONS ONLY IF USER EXPLICITLY CLICKED UPLOAD HINDI PDF ON THIS ROW ──
+                        if (lang === 'hi' && existingQIds.length > 0 && existingQIds.length === editedQuestions.length) {
+                            activeStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Merging Hindi translations...';
 
                             const payload = editedQuestions.map((q, i) => {
                                 const opts = q.options || [q.optionA, q.optionB, q.optionC, q.optionD, q.optionE].filter(Boolean);
-                                if (lang === 'hi') {
-                                    return {
-                                        _id: existingQIds[i],
-                                        question_hi: q.question_hi || q.question,
-                                        options_hi: opts
-                                    };
-                                } else {
-                                    return {
-                                        _id: existingQIds[i],
-                                        question_en: q.question_en || q.question,
-                                        options_en: opts
-                                    };
-                                }
+                                return {
+                                    _id: existingQIds[i],
+                                    question_hi: q.question_hi || q.question,
+                                    options_hi: opts
+                                };
                             });
 
-                            const targetEndpoint = lang === 'hi' ? 'add-hindi' : 'add-english';
                             const mergeController = new AbortController();
                             let mergeTimeout = setTimeout(() => mergeController.abort(), 300000); // 5 min timeout
 
-                            const updateRes = await fetch(`${API_BASE}/questions/${targetEndpoint}`, {
+                            const updateRes = await fetch(`${API_BASE}/questions/add-hindi`, {
                                 method: 'POST',
                                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                                 body: JSON.stringify(payload),
@@ -1566,20 +1567,15 @@ async function handlePdfToTest(input, index, lang = 'en') {
                             const updateData = await updateRes.json();
                             
                             if (updateData.ok) {
-                                if (lang === 'hi') {
-                                    statusHi.innerHTML = `<span style="color:#d97706; font-weight:600;">✅ Import Successful: ${editedQuestions.length} Hindi translations merged!</span>`;
-                                    btnHi.innerHTML = '<i class="fas fa-check"></i> Hindi Updated';
-                                } else {
-                                    statusEn.innerHTML = `<span style="color:#6366f1; font-weight:600;">✅ Import Successful: ${editedQuestions.length} English translations merged!</span>`;
-                                    btnEn.innerHTML = '<i class="fas fa-check"></i> English Updated';
-                                }
+                                statusHi.innerHTML = `<span style="color:#d97706; font-weight:600;">✅ Import Successful: ${editedQuestions.length} Hindi translations merged!</span>`;
+                                btnHi.innerHTML = '<i class="fas fa-check"></i> Hindi Updated';
                             } else {
                                 activeStatus.innerHTML = `<span style="color:var(--danger)">❌ Import Failed: Merge failed: ${updateData.message || 'DB error'}</span>`;
                             }
                             return;
                         }
 
-                        // ── SAVE NEW QUESTIONS PATH ──
+                        // ── SAVE NEW QUESTIONS PATH (Physics, Chemistry, Math, English, Biology, etc.) ──
                         activeStatus.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving questions...';
 
                         const packCategory = (document.getElementById('mtCategory')?.value || '').trim() || 'Mock Test';
