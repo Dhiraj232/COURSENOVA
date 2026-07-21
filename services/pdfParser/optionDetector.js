@@ -3,8 +3,8 @@
  * Detects options: A), (B), A., ①, a), 1), (क), क., i), True/False, Yes/No, etc.
  */
 
-// Comprehensive regex for option prefixes at line start
-const optionPrefixRegex = /^\s*(?:[\(\[\{]?([A-Fa-f1-6कखगघङचअबसद१२३४५६①-⑥❶-❻ivxlcdmIVXLCDM]+)[\)\]\}]?\s*[-.:)]\s*|([①-⑥]|[❶-❻])\s*)(.*)/;
+// Comprehensive regex for option prefixes at line start: A), (A), A., A -, A:, (a), (1), (क)
+const optionPrefixRegex = /^\s*(?:[\(\[\{]?([A-Fa-f1-6कखगघङचअबसद१२३४५६①-⑥❶-❻ivxlcdmIVXLCDM]+)[\)\]\}]?\s*[-.:)\s-]\s*|([①-⑥]|[❶-❻])\s*)(.*)/;
 
 // Map option labels to 0-based indices
 function mapOptionLabelToIndex(label) {
@@ -37,17 +37,19 @@ function detectOptionPrefix(line) {
     if (!line) return null;
     const trimmed = line.trim();
     
-    // Check standard prefix formats: A), (B), A., a), ①, 1), (क), क.
+    // Check standard prefix formats: A), (B), A., a), A -, ①, 1), (क), क.
     const match = trimmed.match(optionPrefixRegex);
     if (match) {
         const rawLabel = match[1] || match[2];
         const content = match[3] || '';
         const idx = mapOptionLabelToIndex(rawLabel);
-        return {
-            label: rawLabel,
-            index: idx,
-            content: content.trim()
-        };
+        if (idx >= 0) {
+            return {
+                label: rawLabel,
+                index: idx,
+                content: content.trim()
+            };
+        }
     }
     
     // Check Boolean options (True / False, Yes / No)

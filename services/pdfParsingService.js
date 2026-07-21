@@ -1066,11 +1066,16 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
         if (match) {
             if (currentQ) rawQuestions.push(currentQ);
             
+            const isHindiText = /[\u0900-\u097F]/.test(match.remainingText);
             currentQ = {
                 questionNumber: match.questionNumber,
                 pageNum: currentPageNum,
                 question: match.remainingText,
+                question_en: isHindiText ? '' : match.remainingText,
+                question_hi: isHindiText ? match.remainingText : '',
                 options: [],
+                options_en: [],
+                options_hi: [],
                 correctIndex: 0,
                 correctAnswer: '',
                 category: defaultCategory,
@@ -1086,11 +1091,16 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
                 while (currentQ.options.length < 4) currentQ.options.push('');
                 if (!Array.isArray(currentQ.options_hi)) currentQ.options_hi = [];
                 while (currentQ.options_hi.length < 4) currentQ.options_hi.push('');
+                if (!Array.isArray(currentQ.options_en)) currentQ.options_en = [];
+                while (currentQ.options_en.length < 4) currentQ.options_en.push('');
                 
                 const optIdx = optMatch.index >= 0 ? optMatch.index : answerKeyEngine.mapOptionToIndex(optMatch.label);
                 const contentText = optMatch.content || optMatch.label;
+                const isHindiOpt = /[\u0900-\u097F]/.test(contentText);
                 if (optIdx >= 0 && optIdx < 4) {
                     currentQ.options[optIdx] = contentText;
+                    if (isHindiOpt) currentQ.options_hi[optIdx] = contentText;
+                    else currentQ.options_en[optIdx] = contentText;
                 } else {
                     const emptyIdx = currentQ.options.findIndex(o => !o);
                     if (emptyIdx >= 0 && emptyIdx < 4) {
@@ -1099,6 +1109,11 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
                 }
             } else {
                 currentQ.question += ' ' + line;
+                if (/[\u0900-\u097F]/.test(line)) {
+                    currentQ.question_hi = (currentQ.question_hi ? currentQ.question_hi + ' ' : '') + line;
+                } else {
+                    currentQ.question_en = (currentQ.question_en ? currentQ.question_en + ' ' : '') + line;
+                }
             }
         }
     }
