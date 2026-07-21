@@ -1081,16 +1081,15 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
                 if (!Array.isArray(currentQ.options_hi)) currentQ.options_hi = [];
                 while (currentQ.options_hi.length < 4) currentQ.options_hi.push('');
                 
-                const optIdx = answerKeyEngine.mapOptionToIndex(optMatch.label);
+                const optIdx = optMatch.index >= 0 ? optMatch.index : answerKeyEngine.mapOptionToIndex(optMatch.label);
                 const contentText = optMatch.content || optMatch.label;
                 if (optIdx >= 0 && optIdx < 4) {
-                    if (!currentQ.options[optIdx]) {
-                        currentQ.options[optIdx] = contentText;
-                    } else {
-                        currentQ.options_hi[optIdx] = contentText;
-                    }
+                    currentQ.options[optIdx] = contentText;
                 } else {
-                    currentQ.options.push(contentText);
+                    const emptyIdx = currentQ.options.findIndex(o => !o);
+                    if (emptyIdx >= 0 && emptyIdx < 4) {
+                        currentQ.options[emptyIdx] = contentText;
+                    }
                 }
             } else {
                 currentQ.question += ' ' + line;

@@ -28,26 +28,14 @@ function isAnswerKeySectionStart(text) {
     return false;
 }
 
+const { mapOptionLabelToIndex } = require('./optionDetector');
+
 /**
- * Maps option string (A, B, C, D) to 0-based index (0, 1, 2, 3)
+ * Maps option string (A, B, C, D, 1, 2, 3, 4, अ, ब, स, द, क, ख, ग, घ) to 0-based index (0, 1, 2, 3)
  */
 function mapOptionToIndex(optionStr) {
     if (!optionStr) return -1;
-    const clean = optionStr.trim().toUpperCase();
-    
-    const alphabet = ['A', 'B', 'C', 'D', 'E', 'F'];
-    const idx = alphabet.indexOf(clean);
-    if (idx !== -1) return idx;
-
-    // Check Hindi labels
-    const hindiMap = { 'क': 0, 'ख': 1, 'ग': 2, 'घ': 3, 'अ': 0, 'ब': 1, 'स': 2, 'द': 3 };
-    if (hindiMap[clean] !== undefined) return hindiMap[clean];
-
-    // Check digits
-    const num = parseInt(clean, 10);
-    if (num >= 1 && num <= 6) return num - 1;
-
-    return -1;
+    return mapOptionLabelToIndex(optionStr);
 }
 
 module.exports = {

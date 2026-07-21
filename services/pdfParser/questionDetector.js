@@ -80,8 +80,8 @@ function detectQuestionPrefix(line, ignoreWeakPrefix = false) {
         return null;
     }
 
-    // Safeguard: Ignore lines that start with option prefixes: A), (B), C., a), b), c), d), (क), (ख), (ग), (घ), (अ), (ब), (स), (द)
-    if (/^\s*(?:[\(\[\{]?(?:[A-Da-d]|क|ख|ग|घ|अ|ब|स|द)[\)\]\}]?\s*[-.:)]\s*)/.test(trimmed)) {
+    // Safeguard: Ignore lines that start with option prefixes: (1), 1), (A), A), A., (a), (अ), (क), (i)
+    if (/^\s*(?:[\(\[\{]?(?:[A-Da-d1-4१-४]|क|ख|ग|घ|अ|ब|स|द|iv|iii|ii|i)[\)\]\}]\s*|[\(\[\{]?(?:[A-Da-d]|क|ख|ग|घ|अ|ब|स|द|iv|iii|ii|i)[\)\]\}]?\s*[-.:)]\s*)/i.test(trimmed)) {
         return null;
     }
 
