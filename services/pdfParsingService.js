@@ -130,13 +130,7 @@ async function callGeminiBatchParser(parts, defaults, logs) {
     }
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-        model: 'gemini-1.5-flash',
-        generationConfig: {
-            responseMimeType: 'application/json',
-            responseSchema: responseSchema
-        }
-    });
+    const modelsToTry = ['gemini-1.5-flash', 'gemini-flash-latest', 'gemini-2.0-flash-exp'];
 
     const systemPrompt = `You are a professional exam paper parser. Extract ALL MCQ questions from the provided page segments.
 Support bilingual formats (Hindi + English), scanned graphics, math, and sciences.
@@ -146,38 +140,48 @@ Guidelines:
 2. LANGUAGE: Detect languages automatically. Fill both question_en and question_hi if bilingual. If monolingual, provide translations in the other field.
 3. OPTION PARSING: Always extract exactly 4 options. Search the nearby context if options are truncated.
 4. CORRECT ANSWER: Scan carefully for correct answers indicated by checkmarks (✓, ✔), bold letters, circles, highlights, or answer blocks. If no answer indicator is found, default correctIndex to 0.
-5. JSON SCHEMA: You must return a strict JSON array conforming to the specified schema. Output nothing else.`;
+5. JSON SCHEMA: You must return a strict JSON array of question objects. Output ONLY raw JSON array. Do not include markdown code block syntax.`;
 
     const promptPart = { text: systemPrompt };
     const contentParts = [promptPart, ...parts];
 
-    let retries = 5;
-    let delay = 2000;
-    while (retries > 0) {
-        try {
-            const result = await model.generateContent({
-                contents: [{ role: 'user', parts: contentParts }]
-            });
-            const text = result.response.text().trim();
-            const parsed = JSON.parse(text);
-            if (Array.isArray(parsed)) {
-                return parsed;
+    for (let modelName of modelsToTry) {
+        let retries = 2;
+        while (retries > 0) {
+            try {
+                const model = genAI.getGenerativeModel({
+                    model: modelName,
+                    generationConfig: {
+                        responseMimeType: 'application/json'
+                    }
+                });
+
+                const result = await model.generateContent({
+                    contents: [{ role: 'user', parts: contentParts }]
+                });
+                let text = result.response.text().trim();
+                if (text.startsWith('```')) {
+                    text = text.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
+                }
+                const parsed = JSON.parse(text);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    return parsed;
+                }
+                if (Array.isArray(parsed)) return parsed;
+            } catch (err) {
+                const msg = err.message || '';
+                const isAuthError = msg.includes('401') || msg.includes('Unauthorized') || msg.includes('API key') || msg.includes('invalid credentials');
+                if (isAuthError) {
+                    logs.push(`[Gemini Auth Error] Invalid or expired credentials: ${err.message}. Skipping retries.`);
+                    throw err;
+                }
+                retries--;
+                logs.push(`[Gemini Warning] Model ${modelName} call failed (retries left: ${retries}): ${err.message}`);
+                await new Promise(r => setTimeout(r, 1000));
             }
-            throw new Error('Gemini response is not a JSON array.');
-        } catch (err) {
-            const msg = err.message || '';
-            const isAuthError = msg.includes('401') || msg.includes('Unauthorized') || msg.includes('API key') || msg.includes('invalid credentials');
-            if (isAuthError) {
-                logs.push(`[Gemini Auth Error] Invalid or expired credentials: ${err.message}. Skipping retries.`);
-                throw err;
-            }
-            retries--;
-            logs.push(`[Gemini Warning] API call failed (retries left: ${retries}): ${err.message}`);
-            if (retries === 0) throw err;
-            await new Promise(r => setTimeout(r, delay));
-            delay *= 2.5;
         }
     }
+    return [];
 }
 
 /**
@@ -1099,6 +1103,50 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
         }
     }
     if (currentQ) rawQuestions.push(currentQ);
+
+    // BLOCK/PARAGRAPH FALLBACK if 0 questions were detected by line prefixes
+    if (rawQuestions.length === 0 && cleanRes.text.trim().length > 0) {
+        const blocks = cleanRes.text.split(/\n\s*\n/);
+        let blockQNum = 1;
+        let pendingQText = '';
+
+        for (let block of blocks) {
+            const trimmedBlock = block.trim();
+            if (!trimmedBlock) continue;
+
+            // Check if block contains option indicators like (A), (B), (C), (D) or (1), (2), (3), (4) or A., B., C., D.
+            const optionRegex = /(?:^|\n|\s)(?:[\(\[\{]?(?:[A-Da-d1-4१-४]|क|ख|ग|घ|अ|ब|स|द)[\)\]\}]?\s*[-.:)]\s*)([^\n]+)/g;
+            const optionMatches = [...trimmedBlock.matchAll(optionRegex)];
+
+            if (optionMatches.length >= 2) {
+                const firstOptIndex = optionMatches[0].index;
+                let qText = trimmedBlock.substring(0, firstOptIndex).trim();
+                if (!qText && pendingQText) {
+                    qText = pendingQText;
+                    pendingQText = '';
+                }
+                if (!qText) qText = `Question ${blockQNum}`;
+
+                const options = optionMatches.map(m => m[1].trim()).filter(Boolean).slice(0, 4);
+                while (options.length < 4) options.push('');
+
+                rawQuestions.push({
+                    questionNumber: blockQNum++,
+                    pageNum: 1,
+                    question: qText,
+                    options: options,
+                    options_en: options,
+                    options_hi: options,
+                    correctIndex: 0,
+                    correctAnswer: options[0] || '',
+                    category: defaultCategory,
+                    subject: defaultSubject
+                });
+            } else {
+                pendingQText = pendingQText ? (pendingQText + ' ' + trimmedBlock) : trimmedBlock;
+            }
+        }
+    }
 
     // Un-merge embedded questions
     const unmergedQuestions = [];
