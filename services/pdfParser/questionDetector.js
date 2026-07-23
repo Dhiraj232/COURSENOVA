@@ -44,7 +44,8 @@ const qPrefixPatterns = [
     // 2. Parentheses/Brackets prefix: (1), [1], {1}, (Q1), [Q1], (१), [१], (i), (I)
     {
         regex: /^\s*(?:\[|\()(?:\s*Q\s*[-.:]?)?\s*([0-9१२३४५६७८९०IVXLCDMivxlcdm]+)\s*(?:\]|\))\s*/i,
-        type: 'flexible'
+        type: 'flexible',
+        isWeak: true
     },
     // 3. Circled characters: ①, ❶, ②, ❷, etc.
     {
@@ -54,17 +55,20 @@ const qPrefixPatterns = [
     // 4. Roman numerals with delimiter: I., II., III., IV., i), ii), iii)
     {
         regex: /^\s*([IVXLCDMivxlcdm]{1,8})\s*[-.:)\]]\s+/,
-        type: 'roman'
+        type: 'roman',
+        isWeak: true
     },
     // 5. Leading digits with delimiter: 1., 1-, 1), 1:, १., १)
     {
         regex: /^\s*([0-9१२३४५६७८९०]+)\s*[-.:)\]]\s*/,
-        type: 'digit'
+        type: 'digit',
+        isWeak: true
     },
     // 6. Leading digit followed by space + text or math symbol (e.g. "1 What is...", "1 \int...", "1 (x-2)^2")
     {
         regex: /^\s*([0-9१२३४५६७८९०]{1,4})\s+([a-zA-Z\u0900-\u097F\\\/()\[\]{}∫√πθαβλ∆∑∞≤≥≠±÷×+=%#@$&_].*)/,
-        type: 'digit_space'
+        type: 'digit_space',
+        isWeak: true
     }
 ];
 
@@ -88,6 +92,9 @@ function detectQuestionPrefix(line, ignoreWeakPrefix = false) {
     const patterns = qPrefixPatterns;
 
     for (let patternObj of patterns) {
+        if (ignoreWeakPrefix && patternObj.isWeak) {
+            continue;
+        }
         const regex = patternObj.regex;
         const match = trimmed.match(regex);
         if (match) {

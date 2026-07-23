@@ -1361,7 +1361,7 @@ function getSafeAuthToken() {
 
 async function uploadPdfFileRobust(file, params, updateStatusFn) {
     const token = getSafeAuthToken();
-    const chunkSize = 1024 * 1024; // 1MB chunks (never hits proxy 413 limit)
+    const chunkSize = 512 * 1024; // 512KB chunks (never hits proxy 413 limit)
 
     // Single request path for small PDFs <= 1MB
     if (file.size <= 1024 * 1024) {
@@ -1686,7 +1686,6 @@ async function handlePdfToTest(input, index, lang = 'en') {
             }
         );
     } catch (e) {
-        clearTimeout(parseTimeout);
         const errMsg = e.name === 'AbortError' ? 'Request timed out.' : e.message;
         activeStatus.innerHTML = `<span style="color:var(--danger)">❌ Import Failed: ${errMsg}</span>`;
         btnEn.disabled = false;
@@ -3836,7 +3835,25 @@ window.showQuestionsPreviewModal = function(questions, stats, onConfirm) {
         onConfirm = stats;
         stats = {};
     }
-    window.currentPreviewQuestions = JSON.parse(JSON.stringify(questions));
+    window.currentPreviewQuestions = JSON.parse(JSON.stringify(questions)).map(q => {
+        const opts = q.options || q.options_en || q.options_hi || [];
+        const alphabet = ['A', 'B', 'C', 'D', 'E', 'F'];
+        alphabet.forEach((letter, i) => {
+            const key = `option${letter}`;
+            let val = q[key];
+            if (val === undefined || val === null) {
+                val = opts[i] || '';
+            }
+            if (val === `Option ${letter}` || val === `Option${letter}`) {
+                val = '';
+            }
+            q[key] = val;
+        });
+        q.options = [q.optionA, q.optionB, q.optionC, q.optionD, q.optionE, q.optionF].filter((val, i) => i < 4 || val !== '');
+        q.options_en = [...q.options];
+        q.options_hi = q.options_hi || [...q.options];
+        return q;
+    });
     window.confirmPreviewImportCallback = onConfirm;
 
     let previewContainer = document.getElementById('preview-modal-container');
@@ -4001,7 +4018,7 @@ window.createPreviewCardNode = function(q, idx) {
         return `
             <div style="display:flex; align-items:center; gap:8px;">
                 <span style="font-weight:600; font-size:0.85rem; width:20px; color:${isMissing ? '#ef4444' : 'inherit'};">${letter})</span>
-                <input type="text" class="admin-input" style="padding:6px; font-size:0.85rem; flex:1; ${borderStyle}" value="${escapeHtml(value)}" placeholder="Option ${letter}" oninput="updatePreviewQuestionField(${idx}, 'option${letter}', this.value)">
+                <input type="text" class="admin-input" style="padding:6px; font-size:0.85rem; flex:1; ${borderStyle}" value="${escapeHtml(value)}" placeholder="Enter Option ${letter}" oninput="updatePreviewQuestionField(${idx}, 'option${letter}', this.value)">
             </div>
         `;
     }).join('');

@@ -4,6 +4,7 @@
  */
 
 const { formatAndWrapLaTeX } = require('./formulaEngine');
+const optionDetector = require('./optionDetector');
 
 // Regex patterns to identify inline options merged in the question text
 const inlineOptionPatterns = [
@@ -78,6 +79,41 @@ function splitMergedQuestions(q) {
 
 function autoFixQuestion(q) {
     if (!q) return q;
+
+    // Extract correct answer if embedded inside the question text (e.g., "Correct Option - 1" or "Correct Option : 2")
+    let qTextEn = q.question_en || q.question || '';
+    let qTextHi = q.question_hi || '';
+
+    const correctPattern = /(?:Correct\s+Option|Correct\s+Answer|Ans|Answer)\s*[-:]\s*([1-6A-Fa-f१-६क-चअ-द])/i;
+    
+    // Check English question text first
+    let correctMatch = qTextEn.match(correctPattern);
+    if (correctMatch) {
+        const val = correctMatch[1];
+        const idx = optionDetector.mapOptionLabelToIndex(val);
+        if (idx >= 0 && idx < 6) {
+            q.correctIndex = idx;
+        }
+        // Strip the correct option line from the question
+        qTextEn = qTextEn.replace(correctPattern, '').trim();
+        q.question_en = qTextEn;
+        q.questionEnglish = qTextEn;
+        q.question = qTextEn;
+    }
+
+    // Check Hindi question text
+    const correctPatternHi = /(?:सही\s+विकल्प|उत्तर|हल)\s*[-:]\s*([1-6A-Fa-f१-६क-चअ-द])/;
+    let correctMatchHi = qTextHi.match(correctPatternHi) || qTextHi.match(correctPattern);
+    if (correctMatchHi) {
+        const val = correctMatchHi[1];
+        const idx = optionDetector.mapOptionLabelToIndex(val);
+        if (idx >= 0 && idx < 6) {
+            q.correctIndex = idx;
+        }
+        qTextHi = qTextHi.replace(correctPatternHi, '').replace(correctPattern, '').trim();
+        q.question_hi = qTextHi;
+        q.questionHindi = qTextHi;
+    }
 
     // 1. Deep untrap inline options trapped inside option fields (e.g., Option B contains "(A) steel (B) steale")
     let allOptionTexts = [];
@@ -207,18 +243,17 @@ function autoFixQuestion(q) {
         q.options_hi = q.options_hi.map(o => repairOption(o));
     }
 
-    // 6. Guarantee non-empty option strings for 4 options
-    const defaultLabels = ['Option A', 'Option B', 'Option C', 'Option D'];
+    // 6. Ensure options arrays exist and have at least 4 entries (without inserting fake text)
     if (!Array.isArray(q.options)) q.options = [];
     for (let idx = 0; idx < 4; idx++) {
-        if (!q.options[idx] || q.options[idx].trim() === '') {
-            q.options[idx] = defaultLabels[idx];
+        if (!q.options[idx]) {
+            q.options[idx] = '';
         }
     }
     if (!Array.isArray(q.options_en)) q.options_en = [];
     for (let idx = 0; idx < 4; idx++) {
-        if (!q.options_en[idx] || q.options_en[idx].trim() === '') {
-            q.options_en[idx] = q.options[idx];
+        if (q.options_en[idx] === undefined) {
+            q.options_en[idx] = q.options[idx] || '';
         }
     }
 
@@ -229,6 +264,8 @@ function autoFixQuestion(q) {
         q.correctIndex = 0;
         q.correctAnswer = q.options[0];
     }
+    const alphabet = ['A', 'B', 'C', 'D', 'E', 'F'];
+    q.answer = alphabet[q.correctIndex] || 'A';
 
     return q;
 }
