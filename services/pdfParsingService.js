@@ -24,6 +24,7 @@ const formulaEngine = require('./pdfParser/formulaEngine');
 const validationEngine = require('./pdfParser/validationEngine');
 const autoFixEngine = require('./pdfParser/autoFixEngine');
 const importReport = require('./pdfParser/importReport');
+const { preprocessPageCanvas } = require('../utils/imagePreprocessor');
 
 let cachedCreateCanvas = null;
 function getCreateCanvas() {
@@ -58,7 +59,56 @@ function getCreateCanvas() {
     return cachedCreateCanvas;
 }
 
-const { preprocessPageCanvas } = require('../utils/imagePreprocessor');
+/**
+ * Scans the middle vertical band (40% to 60% width) of canvas to find the exact x-coordinate of the divider gutter.
+ */
+function findVerticalGutter(canvas) {
+    const width = canvas.width;
+    const height = canvas.height;
+    const ctx = canvas.getContext('2d');
+    
+    const minX = Math.floor(width * 0.40);
+    const maxX = Math.floor(width * 0.60);
+    
+    let imgData;
+    try {
+        imgData = ctx.getImageData(minX, 0, maxX - minX, height);
+    } catch (e) {
+        return Math.floor(width / 2);
+    }
+    const data = imgData.data;
+    
+    const colDensity = new Array(maxX - minX).fill(0);
+    for (let y = 0; y < height; y += 4) {
+        const rowOffset = y * (maxX - minX);
+        for (let x = minX; x < maxX; x++) {
+            const idx = (rowOffset + (x - minX)) * 4;
+            const r = data[idx];
+            const g = data[idx + 1];
+            const b = data[idx + 2];
+            if (r < 200 || g < 200 || b < 200) {
+                colDensity[x - minX]++;
+            }
+        }
+    }
+    
+    let minDensity = Infinity;
+    let bestX = Math.floor(width / 2);
+    const windowSize = Math.max(5, Math.floor(width * 0.015));
+    
+    for (let x = minX; x < maxX - windowSize; x++) {
+        let density = 0;
+        for (let w = 0; w < windowSize; w++) {
+            density += colDensity[x - minX + w];
+        }
+        if (density < minDensity) {
+            minDensity = density;
+            bestX = x + Math.floor(windowSize / 2);
+        }
+    }
+    
+    return bestX;
+}
 
 /**
  * Clean and normalize text strings.
@@ -406,7 +456,7 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
             // Native text extraction priority: Always use native PDF text stream if clean (>85% quality and text length > 50).
             // Image rendering & OCR is reserved ONLY as fallback for scanned pages with missing/corrupted native text.
             if (quality >= 0.85 && pageText.trim().length > 50) {
-                result = { pageNum: pNum, text: pageText, type: 'text', layoutType: layoutResult.layoutType };
+                result = [{ pageNum: pNum, text: pageText, type: 'text', layoutType: layoutResult.layoutType }];
             } else {
                 logs.push(`[Parser] Page ${pNum} has low text quality (${quality.toFixed(2)}). Rendering to image...`);
                 const rotation = page.rotate || 0;
@@ -419,34 +469,100 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
                     viewport: viewport
                 }).promise;
 
-                let preprocessedCanvas = preprocessPageCanvas(canvas);
-                const pngBuf = preprocessedCanvas.toBuffer('image/png');
+                let splitOCR = false;
+                if (defaults.category === 'State Board' || defaults.subject === 'Hindi' || defaults.subject === 'English') {
+                    splitOCR = true;
+                }
 
+                if (splitOCR) {
+                    const splitX = findVerticalGutter(canvas);
+                    
+                    // Left Column
+                    let leftCanvas = getCreateCanvas()(splitX, viewport.height);
+                    let leftCtx = leftCanvas.getContext('2d');
+                    leftCtx.drawImage(canvas, 0, 0, splitX, viewport.height, 0, 0, splitX, viewport.height);
+                    let prepLeft = preprocessPageCanvas(leftCanvas);
+                    const leftBuf = prepLeft.toBuffer('image/png');
+                    
+                    // Right Column
+                    let rightCanvas = getCreateCanvas()(viewport.width - splitX, viewport.height);
+                    let rightCtx = rightCanvas.getContext('2d');
+                    rightCtx.drawImage(canvas, splitX, 0, viewport.width - splitX, viewport.height, 0, 0, viewport.width - splitX, viewport.height);
+                    let prepRight = preprocessPageCanvas(rightCanvas);
+                    const rightBuf = prepRight.toBuffer('image/png');
+                    
+                    leftCanvas = null; leftCtx = null; prepLeft = null;
+                    rightCanvas = null; rightCtx = null; prepRight = null;
+                    
+                    try {
+                        const leftText = await ocrEngine.runOCR(leftBuf, logs);
+                        const rightText = await ocrEngine.runOCR(rightBuf, logs);
+                        
+                        const col1Filename = `page_${parseSessionId}_p${pNum}_col1.png`;
+                        const col1Filepath = path.join(pageImagesDir, col1Filename);
+                        fs.writeFileSync(col1Filepath, leftBuf);
+                        
+                        const col2Filename = `page_${parseSessionId}_p${pNum}_col2.png`;
+                        const col2Filepath = path.join(pageImagesDir, col2Filename);
+                        fs.writeFileSync(col2Filepath, rightBuf);
+                        
+                        result = [
+                            {
+                                pageNum: pNum,
+                                imagePath: col1Filepath,
+                                text: cleanExtractedText(leftText).text || '',
+                                type: 'vision',
+                                layoutType: 'Scanned 2-Column Left Column'
+                            },
+                            {
+                                pageNum: pNum,
+                                imagePath: col2Filepath,
+                                text: cleanExtractedText(rightText).text || '',
+                                type: 'vision',
+                                layoutType: 'Scanned 2-Column Right Column'
+                            }
+                        ];
+                    } catch (ocrErr) {
+                        logs.push(`[Parser Warning] Page ${pNum} OCR failed: ${ocrErr.message}`);
+                        let prepFull = preprocessPageCanvas(canvas);
+                        const fullBuf = prepFull.toBuffer('image/png');
+                        const pageImageFilename = `page_${parseSessionId}_p${pNum}.png`;
+                        const pageImageFilepath = path.join(pageImagesDir, pageImageFilename);
+                        fs.writeFileSync(pageImageFilepath, fullBuf);
+                        prepFull = null;
+                        
+                        result = [{ pageNum: pNum, imagePath: pageImageFilepath, text: '', type: 'vision', layoutType: 'Scanned 2-Column Layout' }];
+                    }
+                } else {
+                    let preprocessedCanvas = preprocessPageCanvas(canvas);
+                    const pngBuf = preprocessedCanvas.toBuffer('image/png');
+                    preprocessedCanvas = null;
+                    
+                    try {
+                        const pageImageFilename = `page_${parseSessionId}_p${pNum}.png`;
+                        const pageImageFilepath = path.join(pageImagesDir, pageImageFilename);
+                        fs.writeFileSync(pageImageFilepath, pngBuf);
+                        
+                        const ocrText = await ocrEngine.runOCR(pngBuf, logs);
+                        const cleanOcr = cleanExtractedText(ocrText);
+                        result = [{ 
+                            pageNum: pNum, 
+                            imagePath: pageImageFilepath, 
+                            text: cleanOcr.text || '', 
+                            type: 'vision',
+                            layoutType: 'Scanned Image Layout'
+                        }];
+                    } catch (ocrErr) {
+                        logs.push(`[Parser Warning] Page ${pNum} OCR failed: ${ocrErr.message}`);
+                        const pageImageFilename = `page_${parseSessionId}_p${pNum}.png`;
+                        const pageImageFilepath = path.join(pageImagesDir, pageImageFilename);
+                        fs.writeFileSync(pageImageFilepath, pngBuf);
+                        result = [{ pageNum: pNum, imagePath: pageImageFilepath, text: '', type: 'vision', layoutType: 'Scanned Image Layout' }];
+                    }
+                }
+                
                 canvas = null;
                 context = null;
-                preprocessedCanvas = null;
-
-                try {
-                    const pageImageFilename = `page_${parseSessionId}_p${pNum}.png`;
-                    const pageImageFilepath = path.join(pageImagesDir, pageImageFilename);
-                    fs.writeFileSync(pageImageFilepath, pngBuf);
-                    
-                    const ocrText = await ocrEngine.runOCR(pngBuf, logs);
-                    const cleanOcr = cleanExtractedText(ocrText);
-                    result = { 
-                        pageNum: pNum, 
-                        imagePath: pageImageFilepath, 
-                        text: cleanOcr.text || '', 
-                        type: 'vision',
-                        layoutType: 'Scanned Image Layout'
-                    };
-                } catch (ocrErr) {
-                    logs.push(`[Parser Warning] Page ${pNum} OCR failed: ${ocrErr.message}`);
-                    const pageImageFilename = `page_${parseSessionId}_p${pNum}.png`;
-                    const pageImageFilepath = path.join(pageImagesDir, pageImageFilename);
-                    fs.writeFileSync(pageImageFilepath, pngBuf);
-                    result = { pageNum: pNum, imagePath: pageImageFilepath, text: '', type: 'vision', layoutType: 'Scanned Image Layout' };
-                }
             }
 
             completedPages++;
@@ -464,13 +580,29 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
             if (onProgress) {
                 onProgress(overallPct, 'Extracting Pages', `Processed page ${completedPages}/${totalPages} with errors (${ocrPct}%)...`);
             }
-            return { pageNum: pNum, text: `[Error parsing page ${pNum}]`, type: 'text', layoutType: 'Unknown' };
+            return [{ pageNum: pNum, text: `[Error parsing page ${pNum}]`, type: 'text', layoutType: 'Unknown' }];
         }
     });
 
-    const extractedPages = await runConcurrentTasks(pageProcessors, 4);
+    const extractedPages = (await runConcurrentTasks(pageProcessors, 4)).flat();
     console.log('[Stage 2: OCR Complete]');
     logs.push(`[Parser] Page analysis complete. Extracted text & graphics for all ${totalPages} pages.`);
+
+    // Fallback: If no Answer Key page was detected by Phase 1 (e.g. because they are scanned images),
+    // scan the OCR-extracted texts of all pages to find the Answer Key start page!
+    if (answerKeyStartPage === -1) {
+        let detectedStartPage = -1;
+        for (let p of extractedPages) {
+            if (answerKeyEngine.isAnswerKeySectionStart(p.text)) {
+                detectedStartPage = p.pageNum;
+                break;
+            }
+        }
+        if (detectedStartPage > 0) {
+            answerKeyStartPage = detectedStartPage;
+            logs.push(`[Parser Section] Detected Answer Key starting on Page ${answerKeyStartPage} via OCR fallback search.`);
+        }
+    }
 
     // Split pages into Question pages and Answer pages
     let questionExtractedPages = answerKeyStartPage > 0 
@@ -1028,6 +1160,29 @@ function normalizeAIQuestions(aiQuestions, defaultCategory, defaultSubject) {
     });
 }
 
+function splitInlineOptions(line) {
+    const markerRegex = /(?:[\(\[]([A-DFa-df1-6क-घअ-द])[\)\]]|[\(\[]([1-6])[\)\]]|\b([A-DFa-dfक-घअ-द])[-.:)])/g;
+    let matches = [];
+    let match;
+    markerRegex.lastIndex = 0;
+    while ((match = markerRegex.exec(line)) !== null) {
+        matches.push({ index: match.index, text: match[0] });
+    }
+    if (matches.length <= 1) return [line];
+    
+    const parts = [];
+    if (matches[0].index > 0) {
+        const textBefore = line.substring(0, matches[0].index).trim();
+        if (textBefore.length > 0) parts.push(textBefore);
+    }
+    for (let idx = 0; idx < matches.length; idx++) {
+        const start = matches[idx].index;
+        const end = (idx + 1 < matches.length) ? matches[idx + 1].index : line.length;
+        parts.push(line.substring(start, end).trim());
+    }
+    return parts;
+}
+
 /**
  * Pre-splits text lines containing embedded question number boundaries or inline option blocks
  */
@@ -1062,14 +1217,8 @@ function preprocessAndSplitTextLines(rawText) {
         }
 
         if (currentLine.length > 0) {
-            // Split inline multi-option blocks (e.g. "(A) farther (B) further (C) far (D) away")
-            const inlineOptMatch = currentLine.match(/^(.*?)\s+([\(\[]?[A-Da-d1-4क-घ][\)\].]?\s+.*[\(\[]?[B-Db-d2-4ख-घ][\)\].]?\s+.*)$/);
-            if (inlineOptMatch && inlineOptMatch[1].trim().length > 5) {
-                splitLines.push(inlineOptMatch[1].trim());
-                splitLines.push(inlineOptMatch[2].trim());
-            } else {
-                splitLines.push(currentLine);
-            }
+            const split = splitInlineOptions(currentLine);
+            splitLines.push(...split);
         }
     });
 
@@ -1085,12 +1234,21 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
     
     // Scan if the text contains strong question prefixes
     const strongPrefixRegex = /^\s*(?:QUESTION\s+NO\s*\.?|Question|QUESTION|Que|Q|प्र[.]?|प्रश्न\s+संख्या|प्रश्न)\s*[-.:]?\s*[0-9]+/i;
-    let usesStrongPrefix = false;
+    const weakPrefixRegex = /^\s*[0-9१२३४५६७८९०]+\s*[-.:)\]]\s*/;
+    
+    let strongCount = 0;
+    let weakCount = 0;
     for (let line of lines) {
         if (strongPrefixRegex.test(line)) {
-            usesStrongPrefix = true;
-            break;
+            strongCount++;
+        } else if (weakPrefixRegex.test(line)) {
+            weakCount++;
         }
+    }
+    
+    let usesStrongPrefix = false;
+    if (strongCount > 5 && strongCount > weakCount * 0.2) {
+        usesStrongPrefix = true;
     }
     
     const rawQuestions = [];

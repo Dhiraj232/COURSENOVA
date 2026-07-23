@@ -4,7 +4,7 @@ const path = require('path');
 const { parsePDF } = require('./services/pdfParsingService');
 
 async function main() {
-    const pdfPath = 'C:\\Users\\dhira\\Downloads\\SSC GD 30th March 2024 Shift 1 by Cracku.pdf';
+    const pdfPath = 'C:\\Users\\dhira\\Downloads\\Bihar Board Class 12 (Hindi) Official Paper (Set D) 2024.pdf';
     const logFilePath = './verify_results.txt';
     
     // Clear old logs
@@ -26,7 +26,7 @@ async function main() {
     writeLog('PDF loaded. Starting parser...');
     
     try {
-        const questions = await parsePDF(buffer, { category: 'SSC GD', subject: 'General' }, 80, (progress, stage, log) => {
+        const questions = await parsePDF(buffer, { category: 'State Board', subject: 'Hindi' }, 100, (progress, stage, log) => {
             writeLog(`[Progress ${progress}%] Stage: ${stage} | Log: ${log || ''}`);
         });
         

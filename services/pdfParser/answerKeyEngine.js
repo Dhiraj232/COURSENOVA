@@ -16,11 +16,14 @@ function isAnswerKeySectionStart(text) {
         /\bdiscussion\b/i
     ];
     
+    // Fix trailing word boundary (\b) failing on closing parenthesis like (A) by replacing with negative lookahead
+    const matchDensity = text.match(/\b\d+\s*[-.:)]\s*[(]?[A-D][)]?(?![A-Za-z0-9])/gi) || [];
+    
     const matchesCount = keywords.filter(kw => kw.test(text)).length;
     if (matchesCount >= 2) return true;
+    if (matchesCount >= 1 && matchDensity.length >= 3) return true;
     
     // Check for high density of answer matrix/table indicators: e.g. "1. (b) 2. (c) 3. (a)"
-    const matchDensity = text.match(/\b\d+\s*[-.:)]\s*[(]?[A-D][)]?\b/gi) || [];
     if (matchDensity.length >= 5) {
         return true;
     }
