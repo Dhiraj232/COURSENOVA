@@ -584,42 +584,12 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
             parsedAnswers = extractedAnswers;
             logs.push(`[Parser Section] Extracted correct answers and solutions mapping for ${parsedAnswers.length} questions.`);
         } catch (err) {
-            logs.push(`[Parser Error] Failed to parse Answer Key: ${err.message}`);
+            logs.push(`[Parser Error] Failed to parse Answer Key: ${err.message}. Falling back to offline heuristic answer key parser...`);
+            parsedAnswers = parseAnswerKeyHeuristically(answerKeyExtractedPages, logs);
         }
     }
 
-    // Correlation Phase: Map parsed Answer Key & solutions back to the questions
-    const answerMap = new Map();
-    parsedAnswers.forEach(ans => {
-        answerMap.set(ans.questionNumber, ans);
-    });
-
-    if (questions.length > 0 && answerMap.size > 0) {
-        logs.push(`[Parser Section] Correlating Answer Key with parsed questions...`);
-        questions.forEach(q => {
-            const matchAns = answerMap.get(q.questionNumber);
-            if (matchAns) {
-                if (matchAns.correctIndex !== undefined && matchAns.correctIndex >= 0) {
-                    q.correctIndex = matchAns.correctIndex;
-                    q.correctAnswer = q.options_en?.[matchAns.correctIndex] || q.correctAnswer;
-                } else if (matchAns.correctAnswer) {
-                    const mappedIdx = answerKeyEngine.mapOptionToIndex(matchAns.correctAnswer);
-                    if (mappedIdx >= 0) {
-                        q.correctIndex = mappedIdx;
-                        q.correctAnswer = q.options_en?.[mappedIdx] || matchAns.correctAnswer;
-                    } else {
-                        q.correctAnswer = matchAns.correctAnswer;
-                    }
-                }
-                if (matchAns.explanation) {
-                    q.explanation = matchAns.explanation;
-                }
-                if (matchAns.explanation_hi) {
-                    q.explanation_hi = matchAns.explanation_hi;
-                }
-            }
-        });
-    }
+    // Correlation Phase will be run after fallback stages to cover heuristic questions as well.
 
     // Fallback Phase 1: Local Heuristic Parser on extracted text if Gemini AI parser yielded 0 questions
     if (questions.length === 0) {
@@ -682,6 +652,39 @@ async function parsePDF(pdfBuffer, defaults = {}, expectedCount = 100, onProgres
                 logs.push(`[Parser Fallback Stage 2 Error] Full OCR Heuristic parser failed: ${ocrHeuristicErr.message}`);
             }
         }
+    }
+
+    // Correlation Phase: Map parsed Answer Key & solutions back to the questions
+    const answerMap = new Map();
+    parsedAnswers.forEach(ans => {
+        answerMap.set(ans.questionNumber, ans);
+    });
+
+    if (questions.length > 0 && answerMap.size > 0) {
+        logs.push(`[Parser Section] Correlating Answer Key with parsed questions...`);
+        questions.forEach(q => {
+            const matchAns = answerMap.get(q.questionNumber);
+            if (matchAns) {
+                if (matchAns.correctIndex !== undefined && matchAns.correctIndex >= 0) {
+                    q.correctIndex = matchAns.correctIndex;
+                    q.correctAnswer = q.options_en?.[matchAns.correctIndex] || q.correctAnswer;
+                } else if (matchAns.correctAnswer) {
+                    const mappedIdx = answerKeyEngine.mapOptionToIndex(matchAns.correctAnswer);
+                    if (mappedIdx >= 0) {
+                        q.correctIndex = mappedIdx;
+                        q.correctAnswer = q.options_en?.[mappedIdx] || matchAns.correctAnswer;
+                    } else {
+                        q.correctAnswer = matchAns.correctAnswer;
+                    }
+                }
+                if (matchAns.explanation) {
+                    q.explanation = matchAns.explanation;
+                }
+                if (matchAns.explanation_hi) {
+                    q.explanation_hi = matchAns.explanation_hi;
+                }
+            }
+        });
     }
 
     // Stage 8 & 9: Surgical Bounding-Box OCR & AI Recovery for incomplete questions
@@ -1211,6 +1214,71 @@ function parseQuestionsHeuristically(text, defaultCategory = 'General', defaultS
     });
 
     return normalizeAIQuestions(unmergedQuestions, defaultCategory, defaultSubject);
+}
+
+function parseAnswerKeyHeuristically(answerPages, logs) {
+    const answers = [];
+    
+    // Pattern 1: "1. B" or "1.B" or "1 B" or "1-B" or "1) B"
+    const pattern1 = /\b(\d{1,3})\s*[\.\-\s\)🧭]\s*([A-Da-d])\b/g;
+    
+    // Pattern 2: "1. (b)" or "1 (b)" or "1(b)" or "(1) b"
+    const pattern2 = /\b(\d{1,3})\s*[\.\-\s)]*[\(\[]([A-Da-d])[\)\]]/gi;
+
+    const alphabet = ['A', 'B', 'C', 'D', 'E', 'F'];
+
+    answerPages.forEach(page => {
+        const text = page.text || '';
+        
+        // Try Pattern 2 first (since it is more specific, e.g. "1. (b)")
+        let match;
+        pattern2.lastIndex = 0;
+        const matchedQNums = new Set();
+        
+        while ((match = pattern2.exec(text)) !== null) {
+            const qNum = parseInt(match[1], 10);
+            const ansLetter = match[2].toUpperCase();
+            const correctIdx = alphabet.indexOf(ansLetter);
+            
+            if (qNum > 0 && correctIdx >= 0) {
+                answers.push({
+                    questionNumber: qNum,
+                    correctAnswer: ansLetter,
+                    correctIndex: correctIdx,
+                    explanation: '',
+                    explanation_hi: ''
+                });
+                matchedQNums.add(qNum);
+            }
+        }
+        
+        // Try Pattern 1 for remaining ones
+        pattern1.lastIndex = 0;
+        while ((match = pattern1.exec(text)) !== null) {
+            const qNum = parseInt(match[1], 10);
+            if (matchedQNums.has(qNum)) continue; // skip already matched by pattern 2
+            
+            const ansLetter = match[2].toUpperCase();
+            const correctIdx = alphabet.indexOf(ansLetter);
+            
+            if (qNum > 0 && correctIdx >= 0) {
+                answers.push({
+                    questionNumber: qNum,
+                    correctAnswer: ansLetter,
+                    correctIndex: correctIdx,
+                    explanation: '',
+                    explanation_hi: ''
+                });
+                matchedQNums.add(qNum);
+            }
+        }
+    });
+
+    // Sort answers by questionNumber
+    answers.sort((a, b) => a.questionNumber - b.questionNumber);
+
+    logs.push(`[Heuristic Answer Key] Extracted ${answers.length} answers from answer key pages.`);
+    return answers;
 }
 
 module.exports = {

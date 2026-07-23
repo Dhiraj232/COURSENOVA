@@ -35,12 +35,9 @@ async function main() {
         writeLog('=======================================');
         
         // Print parser logs summary
-        writeLog(`\nParser Logs Summary (first 20 items):`);
         const logs = questions.parserLogs || [];
-        logs.slice(0, 20).forEach(l => writeLog('  ' + l));
-        if (logs.length > 20) {
-            writeLog(`  ... and ${logs.length - 20} more log entries.`);
-        }
+        writeLog(`\nParser Logs Summary (all ${logs.length} items):`);
+        logs.forEach(l => writeLog('  ' + l));
 
         if (questions.length > 0) {
             writeLog('\n--- Sample Question 1 ---');
